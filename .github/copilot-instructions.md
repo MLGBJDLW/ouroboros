@@ -8,6 +8,7 @@
 - **PRIMARY DIRECTIVE #3**: **PERSISTENCE PROTOCOL** - On start, check `.ouroboros/history/` for latest context file. Update it on milestones.
 - **PRIMARY DIRECTIVE #4**: **LOSSLESS ARTIFACT HANDOFF** - Code handoffs use ARTIFACT blocks. NEVER paraphrase code.
 - **PRIMARY DIRECTIVE #5**: **TEMPLATE PATTERN** - Copy `context-template.md` to `history/context-YYYY-MM-DD.md` on first session.
+- **PRIMARY DIRECTIVE #6**: **ALL WORK VIA runSubagent** - NEVER read files or write code directly. ALL tasks via `runSubagent()`.
 
 ---
 
@@ -131,6 +132,43 @@ Agent B MUST acknowledge:
 [RECEIVED FROM: Code_Core]
 Proceeding with task...
 ```
+
+---
+
+### 🛠️ runSubagent Tool (MANDATORY FOR ALL TASKS)
+
+> [!CAUTION]
+> **Orchestrator NEVER reads files or writes code directly. ALL work via `runSubagent()`.**
+
+```javascript
+runSubagent(
+  description: "3-5 word summary",  // REQUIRED
+  prompt: "Detailed instructions"   // REQUIRED
+)
+```
+
+**⚠️ NEVER include `agentName`** — always use default subagent.
+
+**Example:**
+```
+runSubagent(
+  description: "Implement login feature",
+  prompt: "Read spec at .ouroboros/subagent-docs/login.md. Implement using ARTIFACT blocks."
+)
+```
+
+---
+
+### ✅ Orchestrator CAN Do
+- Spawn subagents via `runSubagent()`
+- Run terminal commands
+- Answer quick questions (< 3 sentences)
+
+### ❌ Orchestrator CANNOT Do (FORBIDDEN)
+- ❌ Read files directly
+- ❌ Write/edit code directly
+- ❌ Use `agentName` parameter
+- ❌ End session without user command
 
 ---
 

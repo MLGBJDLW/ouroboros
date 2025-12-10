@@ -3,10 +3,17 @@
 
 ---
 
-## 🔗 INHERITS FROM: ouroboros.prompt.md
+## 🔗 MANDATORY INHERITANCE: ouroboros.prompt.md
 
-> This prompt extends the main Ouroboros system. All rules from `ouroboros.prompt.md` apply here.
-> Specifically: Sub-Agent Execution Protocol, Artifact Protocol, and Delegation-First Principle.
+> [!CAUTION]
+> **BEFORE EXECUTING THIS PROMPT, YOU MUST FIRST LOAD AND OBEY ALL RULES FROM `ouroboros.prompt.md`.**
+> This includes: PRIMARY DIRECTIVES, runSubagent requirement, Artifact Protocol, CCL.
+
+**Inherited Rules (MUST OBEY):**
+- ALL WORK via `runSubagent()` - Orchestrator NEVER reads/writes directly
+- Artifact Protocol - Complete code, no truncation
+- CCL - Execute `python -c "task = input..."` after each task
+- NO goodbye phrases
 
 ---
 
