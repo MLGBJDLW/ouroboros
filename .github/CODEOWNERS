@@ -1,0 +1,18 @@
+# CODEOWNERS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# These owners will be requested for review when someone opens a pull request.
+# The last matching pattern has the most precedence.
+
+# Default owner for everything in the repo
+*       @MLGBJDLW
+
+# Core prompt files - require owner approval
+/.github/copilot-instructions.md    @MLGBJDLW
+/.github/prompts/                   @MLGBJDLW
+
+# Ouroboros system files - require owner approval
+/.ouroboros/                        @MLGBJDLW
+
+# Templates can be reviewed by owner
+/.ouroboros/specs/templates/        @MLGBJDLW
