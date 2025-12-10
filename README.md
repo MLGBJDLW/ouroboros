@@ -28,7 +28,7 @@ Ouroboros solves this:
 
 ```bash
 # Clone and copy core files
-git clone https://github.com/YOUR_USERNAME/ouroboros.git .ouroboros-temp
+git clone https://github.com/MLGBJDLW/ouroboros.git .ouroboros-temp
 cp -r .ouroboros-temp/.github .
 cp -r .ouroboros-temp/.ouroboros .
 rm -rf .ouroboros-temp
