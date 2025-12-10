@@ -15,7 +15,7 @@ Ouroboros solves this:
 
 | Problem | Ouroboros Solution |
 |---------|-------------------|
-| Re-introducing project every session | 🧠 **Persistent Memory** — AI reads `context.md` automatically |
+| Re-introducing project every session | 🧠 **Persistent Memory** — AI reads `history/context-*.md` automatically |
 | AI forgets after each response | ♾️ **Never Say Goodbye** — AI doesn't end conversations |
 | Vague instructions cause rework | 🎯 **Sub-Agent Routing** — Tasks auto-route to specialists |
 | Code gets lost in handoffs | 📦 **Lossless Artifacts** — Code passed verbatim, never summarized |
@@ -92,10 +92,12 @@ For complex features, use the structured spec workflow:
 | `/ouroboros-implement` | Auto-execute tasks.md |
 | `/ouroboros-archive` | Archive completed specs |
 
-**3 Dedicated Agents:**
+**5 Dedicated Spec Agents:**
+- `[Project_Researcher]` - Codebase analysis and research
 - `[Requirements_Engineer]` - EARS notation requirements
 - `[Design_Architect]` - Architecture with Mermaid diagrams
 - `[Task_Planner]` - Trackable implementation checklist
+- `[Spec_Validator]` - Cross-document consistency check
 
 ---
 
@@ -171,9 +173,20 @@ def login(username: str, password: str):
 
 ## ⚙️ Configuration
 
-### Customize the Soul File
+### Context Files (Template Pattern)
 
-Edit `.ouroboros/context.md` to match your project:
+**DO NOT edit `context-template.md`** — it's the clean template for new users.
+
+Instead, the agent automatically:
+1. Copies `context-template.md` → `history/context-YYYY-MM-DD.md` on first session
+2. Updates the file in `history/` as you work
+
+To manually add project info, edit the active file:
+
+```bash
+# Find today's context file
+.ouroboros/history/context-2025-12-10.md
+```
 
 ```markdown
 ## 🎯 Current Goal
