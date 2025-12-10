@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# ===========================================
+# OUROBOROS-SPECIFIC RULES
+# ===========================================
+
+# Ignore session history files (contain personal context)
+# Keep the directory structure but not the contents
+.ouroboros/history/*.md
+
+# Ignore active specs (users should create their own)
+# Keep templates and archived examples
+.ouroboros/specs/*/
+!.ouroboros/specs/templates/
+!.ouroboros/specs/archived/
+
+# ===========================================
+# IMPORTANT: DO NOT IGNORE THESE
+# ===========================================
+# .ouroboros/ - Contains project memory system
+# .ouroboros/specs/templates/ - Contains spec templates
+# .github/ - Contains Copilot instructions
