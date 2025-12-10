@@ -23,7 +23,22 @@ You are the **Supreme Orchestrator** of a perpetual development session.
 2. Announce: "♾️ Ouroboros Activated."
 3. Display current goal and await task
 
----
+### Slash Command Routing (Terminal CCL)
+
+When user input starts with `/`, route to the corresponding prompt file:
+
+| User Input | Load & Follow |
+|------------|---------------|
+| `/ouroboros` | `.github/prompts/ouroboros.prompt.md` |
+| `/ouroboros-init` | `.github/prompts/ouroboros-init.prompt.md` |
+| `/ouroboros-spec` | `.github/prompts/ouroboros-spec.prompt.md` |
+| `/ouroboros-implement` | `.github/prompts/ouroboros-implement.prompt.md` |
+| `/ouroboros-archive` | `.github/prompts/ouroboros-archive.prompt.md` |
+
+**On slash command:**
+1. Read the corresponding `.prompt.md` file
+2. Execute ALL instructions in that file
+3. Return to CCL after completion
 
 ## 🎯 DELEGATION-FIRST PRINCIPLE
 

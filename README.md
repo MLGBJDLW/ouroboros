@@ -70,10 +70,12 @@ your-project/
 │       ├── ouroboros-implement.prompt.md ← ⚡ Auto-implement
 │       └── ouroboros-archive.prompt.md   ← 📦 Archive specs
 ├── .ouroboros/
-│   ├── context-template.md        ← 📋 Template (do not edit)
+│   ├── context-template.md        ← 📋 Context template (do not edit)
+│   ├── project-arch-template.md   ← 🏗️ Architecture template (do not edit)
 │   ├── README.md
 │   ├── history/                   ← 📜 Active session contexts
 │   │   └── context-YYYY-MM-DD.md  ← 🧠 Created by agent
+│   ├── subagent-docs/             ← 📄 Task specs for sub-agents
 │   └── specs/                     ← 📋 Feature specifications
 │       ├── templates/             ← Spec templates
 │       └── archived/              ← Completed specs
@@ -88,6 +90,7 @@ For complex features, use the structured spec workflow:
 
 | Command | Purpose |
 |---------|---------|
+| `/ouroboros-init` | 🆕 First-time project research & setup |
 | `/ouroboros-spec` | Create Requirements → Design → Tasks |
 | `/ouroboros-implement` | Auto-execute tasks.md |
 | `/ouroboros-archive` | Archive completed specs |
@@ -205,6 +208,32 @@ Edit `.github/copilot-instructions.md` to:
 - Add project-specific rules
 - Modify agent behaviors
 - Add custom routing triggers
+
+---
+
+## ⚠️ Important Warnings
+
+> [!CAUTION]
+> **Context Window Degradation**
+> 
+> Long Copilot sessions may experience quality degradation due to:
+> - **Context compression** — AI summarizes previous content to fit more in memory, losing details
+> - **Token accumulation** — Long conversations fill the context window, crowding out instructions
+> - **Attention drift** — Model may "forget" earlier instructions as context grows
+> 
+> **Recommendations:**
+> - Start a **new chat session** every 30-60 minutes for complex tasks
+> - Use `/ouroboros-init` to re-anchor project context after a fresh start
+> - Keep `context-*.md` files concise (under 200 lines)
+> - Archive completed work to prevent context bloat
+
+---
+
+## 🙏 Acknowledgments
+
+Ouroboros was inspired by:
+
+- **[TaskSync](https://github.com/4regab/TaskSync)** — The original concept of persistent AI sessions and the "never say goodbye" protocol. Many of Ouroboros's core ideas evolved from TaskSync's pioneering work.
 
 ---
 
