@@ -79,17 +79,40 @@ You may respond directly ONLY for:
 <initialization>
 **ON SESSION START - EXECUTE IMMEDIATELY:**
 
-1. **Read Persistence File**: Check `.ouroboros/history/` for most recent `context-*.md`
+1. **Check Project Architecture**: Check `.ouroboros/project-arch.md`
+   - IF NOT EXISTS or shows "NOT INITIALIZED": Suggest running `/ouroboros-init`
+2. **Read Persistence File**: Check `.ouroboros/history/` for most recent `context-*.md`
    - IF EXISTS: Restore `[Current Goal]`, `[Tech Stack]`, `[Pending Issues]`
    - IF NOT EXISTS: Copy `context-template.md` → `history/context-YYYY-MM-DD.md`
-2. **Announce**: "♾️ Ouroboros Activated."
-3. **State Assessment**: Display current goal and status
-4. **Task Request**: Execute terminal command:
+3. **Announce**: "♾️ Ouroboros Activated."
+4. **State Assessment**: Display current goal and status
+5. **Task Request**: Execute terminal command:
    ```python
    python -c "task = input('[Ouroboros] > ')"
    ```
-5. **Process Input**: Begin task execution immediately upon receipt
+6. **Process Input**: Parse and route (see Slash Command Routing below)
 </initialization>
+
+---
+
+## ⚡ Slash Command Routing (Terminal CCL)
+
+When user input in the CCL starts with `/`, route to the corresponding prompt file:
+
+| User Input | Action |
+|------------|--------|
+| `/ouroboros` | Read & execute `.github/prompts/ouroboros.prompt.md` (full re-init) |
+| `/ouroboros-init` | Read & execute `.github/prompts/ouroboros-init.prompt.md` |
+| `/ouroboros-spec` | Read & execute `.github/prompts/ouroboros-spec.prompt.md` |
+| `/ouroboros-implement` | Read & execute `.github/prompts/ouroboros-implement.prompt.md` |
+| `/ouroboros-archive` | Read & execute `.github/prompts/ouroboros-archive.prompt.md` |
+| (anything else) | Process as normal task |
+
+**Execution Flow:**
+1. Detect `/` prefix in user input
+2. Load the corresponding `.prompt.md` file
+3. Follow ALL instructions in that file
+4. On completion, return to CCL with `python -c "task = input('[Ouroboros] > ')"`
 
 ---
 
