@@ -57,8 +57,7 @@ Custom agent definitions are available in `.github/agents/`. These can be invoke
 | Task Type | Agent | Motto |
 |-----------|-------|-------|
 | Implementation | `ouroboros-coder` | "Complete, clean, production-ready." |
-| Debugging | `ouroboros-debugger` | "Fix it, don't rewrite it." |
-| Testing | `ouroboros-tester` | "If it's not tested, it's broken." |
+| Testing & Debugging | `ouroboros-qa` | "Test it, fix it, ship it." |
 | Documentation | `ouroboros-writer` | "Clarity over cleverness." |
 | DevOps | `ouroboros-devops` | "Ship fast, rollback faster." |
 | Security | `ouroboros-security` | "Trust nothing, verify everything." |
@@ -104,8 +103,7 @@ runSubagent(
 
 | Trigger Keywords | Agent File |
 |------------------|------------|
-| debug, error, fix | `.ouroboros/agents/ouroboros-debugger.agent.md` |
-| test, mock, coverage | `.ouroboros/agents/ouroboros-tester.agent.md` |
+| test, debug, fix, error, mock, coverage | `.ouroboros/agents/ouroboros-qa.agent.md` |
 | implement, create | `.ouroboros/agents/ouroboros-coder.agent.md` |
 | document, explain | `.ouroboros/agents/ouroboros-writer.agent.md` |
 | deploy, docker | `.ouroboros/agents/ouroboros-devops.agent.md` |
@@ -120,7 +118,7 @@ runSubagent(
 ### Dispatch Example
 
 **User:** "Fix bug in auth.ts"
-**Orchestrator:** Call `runSubagent` with prompt: *"1. READ .ouroboros/agents/ouroboros-debugger.agent.md... 2. Fix bug..."*
+**Orchestrator:** Call `runSubagent` with prompt: *"1. READ .ouroboros/agents/ouroboros-qa.agent.md... 2. Fix bug..."*
 
 ### Violation Consequences
 
@@ -153,7 +151,7 @@ Any **code, config, command, or raw data** produced during a task.
 ### Inter-Agent Handoff Protocol
 When Agent A passes work to Agent B:
 ```
-[HANDOFF: ouroboros-coder → ouroboros-tester]
+[HANDOFF: ouroboros-coder → ouroboros-qa]
 === ARTIFACT START: src/auth.py ===
 [complete code here]
 === ARTIFACT END ===
@@ -227,8 +225,8 @@ runSubagent(
 
 ## Core Rules
 1. **Route tasks** to appropriate agent
-2. **Verify code** before delivery via `ouroboros-security` or `ouroboros-tester`
-3. **Surgical fixes** only - `ouroboros-debugger` FORBIDDEN from rewriting entire files
+2. **Verify code** before delivery via `ouroboros-security` or `ouroboros-qa`
+3. **Surgical fixes** only - `ouroboros-qa` FORBIDDEN from broad refactoring during debug
 
 ### Continuous Command Loop (CCL) - CRITICAL
 

@@ -47,14 +47,13 @@ Project Ouroboros is a persistent context system for GitHub Copilot that reduces
 - **Automatic Context Restoration** — Session state restored from latest `history/context-*.md` on startup
 - **Milestone-Based Updates** — Context files updated on major milestones, not every action
 
-#### 🤖 Custom Agents (12 Specialists in `.github/agents/`)
+#### 🤖 Custom Agents (11 Specialists in `.ouroboros/agents/`)
 
 **Core Agents:**
 | Agent | Trigger | Role |
 |-------|---------|------|
 | `ouroboros-coder` | implement, create, build | Full-stack development |
-| `ouroboros-debugger` | debug, error, fix, bug | Surgical patches only |
-| `ouroboros-tester` | test, mock, coverage | Test creation with assertions |
+| `ouroboros-qa` | test, debug, fix, error, mock, coverage | Testing \& debugging (unified) |
 | `ouroboros-writer` | document, explain | Documentation, no code mods |
 | `ouroboros-devops` | deploy, docker | Deployment with rollback steps |
 | `ouroboros-security` | security, audit | Risk identification |
@@ -124,8 +123,8 @@ Project Ouroboros is a persistent context system for GitHub Copilot that reduces
 
 #### 🛡️ Safety & Guardrails
 - **Destructive Command Protection** — `rm -rf`, `git reset --hard`, `git push --force` require confirmation
-- **Verification Gate** — Code verified via `ouroboros-security` or `ouroboros-tester` before delivery
-- **Surgical Fix Protocol** — `ouroboros-debugger` can only patch bugs, forbidden from rewriting files
+- **Verification Gate** — Code verified via `ouroboros-security` or `ouroboros-qa` before delivery
+- **QA Fix-Verify Cycle** — `ouroboros-qa` handles test+debug with 3-cycle limit to prevent infinite loops
 - **Phase Reset Protocol** — Explicit rules for returning to earlier spec phases
 - **File Whitelist** — Only 5 files allowed in specs: `research.md`, `requirements.md`, `design.md`, `tasks.md`, `validation-report.md`
 
