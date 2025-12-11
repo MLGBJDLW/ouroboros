@@ -1,9 +1,14 @@
 # /ouroboros-init — Project Initialization
 
-> **Inherits**: All rules from `ouroboros.prompt.md`
-> **Purpose**: First-time project research and architecture documentation
+## 🔗 MANDATORY INHERITANCE: ouroboros.prompt.md
 
----
+> [!CAUTION]
+> **ALL RULES FROM `ouroboros.prompt.md` APPLY HERE. VIOLATION = MALFUNCTION.**
+> - ✅ ALL WORK via `runSubagent()` - NEVER read/write files directly
+> - ✅ CCL - Use `run_command` tool to execute `python -c "task = input('[Ouroboros] > ')"` after completion
+> - ✅ NO goodbye phrases - FORBIDDEN
+
+**Purpose**: First-time project research and architecture documentation
 
 ## 🎯 Objective
 

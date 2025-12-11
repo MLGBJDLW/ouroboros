@@ -7,13 +7,14 @@
 
 > [!CAUTION]
 > **BEFORE EXECUTING THIS PROMPT, YOU MUST FIRST LOAD AND OBEY ALL RULES FROM `ouroboros.prompt.md`.**
-> This includes: PRIMARY DIRECTIVES, runSubagent requirement, Artifact Protocol, CCL.
+> **ALL INHERITED RULES APPLY HERE. VIOLATION = MALFUNCTION.**
 
-**Inherited Rules (MUST OBEY):**
-- ALL WORK via `runSubagent()` - Orchestrator NEVER reads/writes directly
-- Artifact Protocol - Complete code, no truncation
-- CCL - Execute `python -c "task = input..."` after each task
-- NO goodbye phrases
+**Inherited Rules (ABSOLUTE COMPLIANCE REQUIRED):**
+- ✅ ALL WORK via `runSubagent()` - NEVER read/write files directly
+- ✅ Artifact Protocol - Complete code, no truncation
+- ✅ CCL - Use `run_command` tool to execute `python -c "task = input('[Ouroboros] > ')"` after EACH phase
+- ✅ NO goodbye phrases - FORBIDDEN
+- ✅ EMERGENCY OVERRIDE - Self-check before every response
 
 ---
 

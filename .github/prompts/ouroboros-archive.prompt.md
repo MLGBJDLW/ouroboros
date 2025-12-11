@@ -3,6 +3,16 @@
 
 ---
 
+## 🔗 MANDATORY INHERITANCE: ouroboros.prompt.md
+
+> [!CAUTION]
+> **ALL RULES FROM `ouroboros.prompt.md` APPLY HERE. VIOLATION = MALFUNCTION.**
+> - ✅ ALL WORK via `runSubagent()` - NEVER read/write files directly
+> - ✅ CCL - Use `run_command` tool to execute `python -c "task = input('[Ouroboros] > ')"` after completion
+> - ✅ NO goodbye phrases - FORBIDDEN
+
+---
+
 ## 🚨 PRIMARY DIRECTIVES 🚨
 
 - **DIRECTIVE #1**: Only archive specs with **all tasks complete**
@@ -201,11 +211,14 @@ View details: "show archive [feature-name]"
 
 **After Archive Complete:**
 
-You MUST output the following command block and Ask the user to run it:
+> [!CAUTION]
+> **MANDATORY CCL**: Use `run_command` tool to execute (NOT just display):
 
 ```python
 python -c "task = input('[Ouroboros] > ')"
 ```
+
+**NEVER** end response without executing CCL via `run_command` tool.
 
 ---
 

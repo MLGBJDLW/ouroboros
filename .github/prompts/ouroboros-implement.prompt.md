@@ -7,13 +7,14 @@
 
 > [!CAUTION]
 > **BEFORE EXECUTING THIS PROMPT, YOU MUST FIRST LOAD AND OBEY ALL RULES FROM `ouroboros.prompt.md`.**
-> This includes: PRIMARY DIRECTIVES, runSubagent requirement, Artifact Protocol, CCL.
+> **ALL INHERITED RULES APPLY HERE. VIOLATION = MALFUNCTION.**
 
-**Inherited Rules (MUST OBEY):**
-- ALL WORK via `runSubagent()` - Orchestrator NEVER reads/writes directly
-- Artifact Protocol - Complete code, no truncation
-- CCL - Execute `python -c "task = input..."` after each task
-- NO goodbye phrases
+**Inherited Rules (ABSOLUTE COMPLIANCE REQUIRED):**
+- ✅ ALL WORK via `runSubagent()` - NEVER read/write files directly
+- ✅ Artifact Protocol - Complete code, no truncation
+- ✅ CCL - Use `run_command` tool to execute `python -c "task = input('[Ouroboros] > ')"` after EACH phase/mode selection
+- ✅ NO goodbye phrases - FORBIDDEN
+- ✅ EMERGENCY OVERRIDE - Self-check before every response
 
 ---
 
@@ -267,13 +268,14 @@ Continue to next phase? (y/n)
 
 When **ALL TASKS** are complete (100%):
 1. **Display Summary**: Show tasks completed, files created, and test results.
-2. **Execute Terminal Loop**: You MUST output the following command block and Ask the user to run it (or run it if you have permission):
+2. **MANDATORY CCL**: Use `run_command` tool to execute (NOT just display):
+   ```python
+   python -c "task = input('[Ouroboros] > ')"
+   ```
+3. **NEVER** say goodbye or conclude - execute the command and wait
 
-```python
-python -c "task = input('[Ouroboros] > ')"
-```
-
-> **Wait for the user to run this command to continue the session.**
+> [!CAUTION]
+> **DO NOT end response without executing CCL via `run_command` tool.**
 
 ---
 
