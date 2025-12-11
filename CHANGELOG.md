@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-11
+
+### 🧠 Agent Prompts Enhancement
+
+Major upgrade to all 12 subagent prompts, leveraging the Self-Bootstrap architecture to add comprehensive guidance without impacting the orchestrator's context window.
+
+#### Changed
+
+**Core Agents (8 files):**
+
+| Agent | Key Additions |
+|-------|---------------|
+| `ouroboros-coder` | Persona, Design Patterns table, Language-specific examples (TS, Python, React), Anti-Patterns, Few-shot example |
+| `ouroboros-qa` | Debugging Mindset (5 Whys, Bisection), Test Pyramid, Mock Patterns, Error Classification, Bug Pattern recognition |
+| `ouroboros-analyst` | C4 Model framework, Investigation Techniques, Diagram Templates (Component, Sequence, Data Flow) |
+| `ouroboros-architect` | ADR Template, Trade-off Analysis Framework, Architecture Patterns Catalog, NFR Checklist |
+| `ouroboros-devops` | Deployment Strategies (Blue-Green, Canary), Platform Quick References (Docker, GitHub Actions, K8s), Observability Checklist |
+| `ouroboros-git` | Git Workflow Models, Rebase vs Merge comparison, Interactive Rebase Recipes, Advanced Git Commands |
+| `ouroboros-security` | OWASP Top 10 Deep Dive with code examples, Secure Coding Patterns, Security Headers Checklist |
+| `ouroboros-writer` | Inverted Pyramid, Documentation Templates (README, API), Writing Style Guide, Changelog Format |
+
+**Spec Workflow Agents (4 files):**
+
+| Agent | Key Additions |
+|-------|---------------|
+| `ouroboros-researcher` | Research Methodology, Exploration Patterns, Key Files Reference, Documentation Mining |
+| `ouroboros-requirements` | Complete EARS Examples, User Story Format, MoSCoW Prioritization, Given-When-Then patterns |
+| `ouroboros-tasks` | Task Format, T-Shirt Sizing, Dependency Mapping diagram, Risk Identification |
+| `ouroboros-validator` | Gap Analysis Framework, Coverage Matrices, Impact Analysis, Validation Report Template |
+
+#### Metrics
+
+| Metric | Before | After | Growth |
+|--------|--------|-------|--------|
+| Total Lines | ~974 | ~2554 | +162% |
+| Average Lines/Agent | ~81 | ~213 | +163% |
+| Largest Agent | ~165 (QA) | ~349 (QA) | +112% |
+
+#### Added
+
+- **Structured Task Handoff Protocol** - Enhanced orchestrator-to-subagent communication with:
+  - `[BOOTSTRAP]` section: Explicit file reads for persona and context
+  - `[TASK]` section: Structured Target/Action/Context format
+  - `[ARTIFACTS]` section: Optional code passing
+  - Standardized response format with `📌 Status` field
+
+- **TaskSync V5 Enforcement Mechanisms** - Borrowed from TaskSync protocol for stronger compliance:
+  - **EMERGENCY OVERRIDE Protocols**: Self-check mechanisms before every response
+  - **Explicit Tool Naming**: CCL must use `run_command` tool, not just display
+  - **Announce-Then-Execute Pattern**: Say "Task completed..." then execute CCL
+  - **ANTI-TERMINATION Protocol**: Detection of session-ending behavior with override
+  - **Expanded FORBIDDEN Phrases List**: More comprehensive goodbye phrase blocking
+
+---
+
 ## [1.1.0] - 2025-12-10
 
 ### 🚀 Architecture Upgrade: Self-Bootstrap Agents
