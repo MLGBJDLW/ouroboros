@@ -11,14 +11,13 @@ This folder is the **persistent memory core** of Project Ouroboros.
 │   ├── ouroboros-analyst.agent.md
 │   ├── ouroboros-architect.agent.md
 │   ├── ouroboros-coder.agent.md
-│   ├── ouroboros-debugger.agent.md
 │   ├── ouroboros-devops.agent.md
 │   ├── ouroboros-git.agent.md
+│   ├── ouroboros-qa.agent.md       # 🧪🔧 Unified Testing & Debugging
 │   ├── ouroboros-requirements.agent.md
 │   ├── ouroboros-researcher.agent.md
 │   ├── ouroboros-security.agent.md
 │   ├── ouroboros-tasks.agent.md
-│   ├── ouroboros-tester.agent.md
 │   ├── ouroboros-validator.agent.md
 │   └── ouroboros-writer.agent.md
 ├── templates/                 # 📋 All templates (READ ONLY)
@@ -157,8 +156,7 @@ All agents are defined in `.github/agents/` and can be invoked as subagents.
 | Agent | Role |
 |-------|------|
 | `ouroboros-coder` | Full-stack implementation |
-| `ouroboros-debugger` | Bug fixing (surgical only) |
-| `ouroboros-tester` | Testing & QA |
+| `ouroboros-qa` | Testing & debugging (unified) |
 | `ouroboros-writer` | Documentation |
 | `ouroboros-devops` | Deployment |
 | `ouroboros-security` | Security review |

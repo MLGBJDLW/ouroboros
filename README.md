@@ -59,14 +59,13 @@ Enable these settings for full functionality:
 
 ## 🤖 Custom Agents (Self-Bootstrapped)
 
-Ouroboros includes 12 specialized agents now located in `.ouroboros/agents/`:
+Ouroboros includes 11 specialized agents now located in `.ouroboros/agents/`:
 
 **Core Agents:**
 | Agent | Trigger | Role |
 |-------|---------|------|
 | `ouroboros-coder` | implement, create, build | Full-stack development |
-| `ouroboros-debugger` | debug, error, fix, bug | Surgical patches only |
-| `ouroboros-tester` | test, mock, coverage | Test creation with assertions |
+| `ouroboros-qa` | test, debug, fix, error, mock, coverage | Testing & debugging (unified) |
 | `ouroboros-writer` | document, explain | Documentation only |
 | `ouroboros-devops` | deploy, docker | Deployment with rollback |
 | `ouroboros-security` | security, audit | Risk identification |
@@ -215,15 +214,13 @@ Implementing user authentication
 - [ ] Fix JWT refresh token bug
 ```
 
-### Sub-Agent Routing
-
 Your requests are automatically routed to specialized agents in `.github/agents/`:
 
 | You Say | Routed To | Behavior |
 |---------|-----------|----------|
 | "Implement login" | `ouroboros-coder` | Full feature development |
-| "Fix this error" | `ouroboros-debugger` | **Surgical patch only** — no file rewrites |
-| "Add tests" | `ouroboros-tester` | Unit/E2E test creation |
+| "Fix this error" | `ouroboros-qa` | **Tests & surgical patches** |
+| "Add tests" | `ouroboros-qa` | Unit/E2E test creation |
 | "Explain this code" | `ouroboros-analyst` | Architecture analysis |
 | "Update the docs" | `ouroboros-writer` | Documentation updates |
 
@@ -250,7 +247,7 @@ def login(username: str, password: str):
 
 - **Destructive Command Protection**: `rm -rf`, `git reset --hard` require confirmation
 - **Verification Gate**: Code is verified before delivery
-- **Surgical Fix Protocol**: Debugger can only patch, never rewrite entire files
+- **QA Agent Fix-Verify Cycle**: Self-contained testing and debugging with 3-cycle limit
 - **Fail-Safe Protocols (New)**:
   - 🏗️ **Coder**: Must pass build/typecheck before completion
   - 🚀 **DevOps**: Auto-rollback if exit code > 0

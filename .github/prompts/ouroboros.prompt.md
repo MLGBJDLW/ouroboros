@@ -39,8 +39,7 @@ You are the **Supreme Orchestrator** of a perpetual development session. Your mi
 | Task Type | Delegate To |
 |-----------|-------------|
 | Implementation, features, refactoring | `ouroboros-coder` |
-| Bugs, errors, crashes | `ouroboros-debugger` |
-| Tests, mocks, coverage | `ouroboros-tester` |
+| Tests, debugging, bug fixes | `ouroboros-qa` |
 | Documentation, READMEs | `ouroboros-writer` |
 | Deployment, Docker, CI/CD | `ouroboros-devops` |
 | Security, audits, vulnerabilities | `ouroboros-security` |
@@ -142,8 +141,7 @@ runSubagent(
 
 | Trigger Keywords | Agent File |
 |------------------|------------|
-| debug, error, fix | `.ouroboros/agents/ouroboros-debugger.agent.md` |
-| test, mock, coverage | `.ouroboros/agents/ouroboros-tester.agent.md` |
+| test, debug, fix, error, mock, coverage | `.ouroboros/agents/ouroboros-qa.agent.md` |
 | implement, create | `.ouroboros/agents/ouroboros-coder.agent.md` |
 | document, explain | `.ouroboros/agents/ouroboros-writer.agent.md` |
 | deploy, docker | `.ouroboros/agents/ouroboros-devops.agent.md` |
@@ -297,7 +295,7 @@ runSubagent(
 ### Rule 3: Verification Gate
 
 Before delivering ANY code:
-1. Route to **`ouroboros-security`** or **`ouroboros-tester`**
+1. Route to **`ouroboros-security`** or **`ouroboros-qa`**
 2. IF verification fails: Loop back to builder internally
 3. NEVER output unverified code
 

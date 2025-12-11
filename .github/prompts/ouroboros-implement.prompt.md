@@ -89,8 +89,7 @@ Execute all tasks without stopping:
 | Task Type | Delegate To |
 |-----------|-------------|
 | Create, Implement, Add | `ouroboros-coder` |
-| Test, Add tests | `ouroboros-tester` |
-| Fix, Debug | `ouroboros-debugger` |
+| Test, Debug, Fix | `ouroboros-qa` |
 | Document, Update docs | `ouroboros-writer` |
 | Deploy, Docker | `ouroboros-devops` |
 
@@ -185,8 +184,7 @@ python -c "print('\\n[1] Task-by-Task  [2] Phase-by-Phase  [3] Auto-Run'); mode 
 | Task Type | Use Agent |
 |-----------|-----------|
 | Create, Implement, Add | `ouroboros-coder` |
-| Test, Add tests | `ouroboros-tester` |
-| Fix, Debug | `ouroboros-debugger` |
+| Test, Debug, Fix | `ouroboros-qa` |
 | Document, Update docs | `ouroboros-writer` |
 | Deploy, Docker | `ouroboros-devops` |
 
@@ -205,7 +203,7 @@ Run a subagent with the following prompt:
 ```
 Run a subagent with the following prompt:
 "
-1. READ .ouroboros/agents/ouroboros-tester.agent.md.
+1. READ .ouroboros/agents/ouroboros-qa.agent.md.
 2. Write tests for `src/auth.py` covering login/logout.
 "
 ```
@@ -254,7 +252,7 @@ Continue to next phase? (y/n)
 ## Error Handling
 
 1. **Stop** execution immediately
-2. **Invoke** `ouroboros-debugger` for diagnosis
+2. **Invoke** `ouroboros-qa` for diagnosis and fix
 3. **Offer** options: Fix and retry | Skip | Abort
 
 ---

@@ -4,7 +4,7 @@ description: "💻 Highly skilled software engineer with extensive knowledge in 
 tools: ['editFiles', 'readFile', 'createFile', 'listFiles', 'terminalLastCommand', 'runSubagent']
 handoffs:
   - label: Run Tests
-    agent: ouroboros-tester
+    agent: ouroboros-qa
     prompt: Write tests for the code just implemented
     send: false
   - label: Security Review
