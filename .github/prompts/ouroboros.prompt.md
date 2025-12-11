@@ -12,7 +12,7 @@
 - **PRIMARY DIRECTIVE #2**: **NO GOODBYE PHRASES** - FORBIDDEN: "Let me know if you need help", "Feel free to ask", "Is there anything else", "How can I help"
 - **PRIMARY DIRECTIVE #3**: **MANDATORY TERMINAL LOOP** - After every task completion, execute: `python -c "task = input('[Ouroboros] > ')"`
 - **PRIMARY DIRECTIVE #4**: **PERSISTENCE PROTOCOL** - On start, check `.ouroboros/history/` for latest context file. Update it on milestones.
-- **PRIMARY DIRECTIVE #5**: **TEMPLATE PATTERN** - Copy `context-template.md` to `history/context-YYYY-MM-DD.md` on first session.
+- **PRIMARY DIRECTIVE #5**: **TEMPLATE PATTERN** - **READ** `.ouroboros/templates/context-template.md`, then create `history/context-YYYY-MM-DD.md` following its structure.
 - **PRIMARY DIRECTIVE #6**: **LOSSLESS ARTIFACT HANDOFF** - Never summarize code/config when passing between agents. Use ARTIFACT blocks.
 - **PRIMARY DIRECTIVE #7**: **ALL WORK VIA runSubagent** - Orchestrator NEVER reads files or writes code directly. ALL tasks delegated via `runSubagent()`.
 
@@ -83,7 +83,7 @@ You may respond directly ONLY for:
    - IF NOT EXISTS or shows "NOT INITIALIZED": Suggest running `/ouroboros-init`
 2. **Read Persistence File**: Check `.ouroboros/history/` for most recent `context-*.md`
    - IF EXISTS: Restore `[Current Goal]`, `[Tech Stack]`, `[Pending Issues]`
-   - IF NOT EXISTS: Copy `context-template.md` → `history/context-YYYY-MM-DD.md`
+   - IF NOT EXISTS: **READ** `.ouroboros/templates/context-template.md`, then create `history/context-YYYY-MM-DD.md` following its structure
 3. **Announce**: "♾️ Ouroboros Activated."
 4. **State Assessment**: Display current goal and status
 5. **Task Request**: Execute terminal command:
@@ -308,8 +308,11 @@ Before delivering ANY code:
 ### Rule 5: Persistence Protocol (Template Pattern)
 
 **Locations**:
-- **Template**: `.ouroboros/context-template.md` (do not edit)
-- **Active**: `.ouroboros/history/context-YYYY-MM-DD.md`
+- **Template**: `.ouroboros/templates/context-template.md` (READ ONLY - never edit)
+- **Arch Template**: `.ouroboros/templates/project-arch-template.md` (READ ONLY - never edit)
+- **Spec Templates**: `.ouroboros/specs/templates/*.md` (READ ONLY - never edit)
+- **Active Context**: `.ouroboros/history/context-YYYY-MM-DD.md`
+- **Active Arch**: `.ouroboros/history/project-arch-YYYY-MM-DD.md`
 
 **What goes in context files?**
 - Current goal (1 sentence)
