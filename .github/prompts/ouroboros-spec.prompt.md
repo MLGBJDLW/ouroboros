@@ -55,7 +55,8 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
     ├── research.md           # Project analysis + tech report
     ├── requirements.md       # User stories + EARS criteria
     ├── design.md             # Technical architecture
-    └── tasks.md              # Implementation checklist
+    ├── tasks.md              # Implementation checklist
+    └── validation-report.md  # Final consistency check + approval
 ```
 
 ### Template Format Notes
@@ -66,6 +67,7 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 | `requirements-template.md` | Introduction, Glossary, Numbered Requirements with EARS notation |
 | `design-template.md` | Design Principles, Components & Interfaces, **Correctness Properties**, Testing Strategy |
 | `tasks-template.md` | Phase + sub-task numbering (1.1, 1.2), Checkpoints, Property test markers (`*`) |
+| `validation-template.md` | Consistency Check, Impact Analysis, Risk Assessment, User Decision |
 
 ---
 
@@ -108,13 +110,75 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 6. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 4 COMPLETE]` and STOP
 7. Orchestrator waits for user approval before invoking Phase 5
 
-### Phase 5: Validation
+### Phase 5: Validation (A+B Approach)
+
+**Part A: Generate Validation Report**
 1. Route to `[Spec_Validator]`
-2. **READ ALL 4 DOCUMENTS** in the feature folder
-3. Output consistency matrix comparing: research ↔ requirements ↔ design ↔ tasks
-4. If gaps found: return to relevant phase
-5. **⚠️ RETURN TO ORCHESTRATOR** — Output `[VALIDATION COMPLETE]` and STOP
-6. Announce: "✅ Spec validated. Use `/ouroboros-implement` to begin."
+2. **READ TEMPLATE**: `.ouroboros/specs/templates/validation-template.md`
+3. **READ ALL 4 DOCUMENTS** in the feature folder
+4. **CREATE**: `.ouroboros/specs/[feature-name]/validation-report.md` (follow template structure)
+   - Executive Summary
+   - Consistency Check (cross-document traceability matrix)
+   - Impact Analysis (files to create/modify/delete)
+   - Risk Assessment (with severity levels)
+   - Implementation Readiness checklist
+
+**Part B: Interactive Terminal Confirmation**
+5. Display summary in terminal:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Spec: [feature-name] — VALIDATION COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 Report: .ouroboros/specs/[feature-name]/validation-report.md
+📊 Files: X new | Y modify | Z delete
+⚠️ Risks: [summary of high/medium risks if any]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Options:
+  [yes]      → Proceed to /ouroboros-implement
+  [revise X] → Return to Phase X (1=Research, 2=Req, 3=Design, 4=Tasks)
+  [abort]    → Cancel this spec
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+6. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 5 COMPLETE]` and STOP
+7. Wait for user input before proceeding
+
+---
+
+## 🔄 Phase Reset Protocol (CRITICAL)
+
+> [!CAUTION]
+> **WHEN USER REQUESTS TO RETURN TO AN EARLIER PHASE OR RESTART:**
+> - **NEVER** create arbitrary spec files (e.g., `spec.md`, `specification.md`)
+> - **ALWAYS** restart from the correct phase using templates
+
+### Allowed Actions on Reset Request
+
+| User Request | Action |
+|--------------|--------|
+| "restart", "start over", "回到第一步" | Begin Phase 1 (Research) using template |
+| "redo phase 1", "重做research" | DELETE existing `research.md`, restart Phase 1 |
+| "go back to requirements" | Restart Phase 2, keeping `research.md` |
+| "修改design" | Restart Phase 3, keeping research + requirements |
+
+### 📁 FILE WHITELIST (STRICTLY ENFORCED)
+
+**The ONLY files allowed in `.ouroboros/specs/[feature-name]/` are:**
+
+| File | Created By | Template |
+|------|------------|----------|
+| `research.md` | `[Project_Researcher]` | `specs/templates/research-template.md` |
+| `requirements.md` | `[Requirements_Engineer]` | `specs/templates/requirements-template.md` |
+| `design.md` | `[Design_Architect]` | `specs/templates/design-template.md` |
+| `tasks.md` | `[Task_Planner]` | `specs/templates/tasks-template.md` |
+| `validation-report.md` | `[Spec_Validator]` | `specs/templates/validation-template.md` |
+
+> [!WARNING]
+> **FORBIDDEN FILE NAMES** (NEVER CREATE THESE):
+> - ❌ `spec.md`, `specification.md`, `feature.md`
+> - ❌ `specs.md`, `plan.md`, `overview.md`
+> - ❌ Any file not in the whitelist above
+
+**Violation Response**: If you find yourself about to create a non-whitelisted file, **STOP** and re-read this protocol.
 
 ---
 
