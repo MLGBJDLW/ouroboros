@@ -57,7 +57,7 @@ Agent updates `history/context-YYYY-MM-DD.md` with:
 | `/ouroboros` | Initialize session and enter CCL |
 | `/ouroboros-init` | Research project & generate architecture doc |
 | `/ouroboros-spec` | Create spec (Research → Requirements → Design → Tasks) |
-| `/ouroboros-implement` | Execute tasks.md automatically |
+| `/ouroboros-implement` | Execute tasks.md with selectable mode |
 | `/ouroboros-archive` | Archive completed specs |
 
 ---
@@ -79,15 +79,45 @@ Use **Spec-Driven Development** for complex features:
    - `[Design_Architect]` → `design.md`
    - `[Task_Planner]` → `tasks.md`
    - `[Spec_Validator]` → cross-document validation
+   - **⚠️ Each phase returns to orchestrator for user approval**
 
 3. **`/ouroboros-implement`** - Execute tasks
-   - Reads `tasks.md`
+   - Select execution mode (see below)
    - Routes to Ouroboros agents via `runSubagent()`
    - Updates checkboxes on completion
 
 4. **`/ouroboros-archive`** - Archive when done
    - Moves to `specs/archived/[feature-YYYY-MM-DD]/`
    - Generates summary
+
+### 🎮 Execution Modes (`/ouroboros-implement`)
+
+| Mode | Description | Best For |
+|------|-------------|----------|
+| 🔧 **Task-by-Task** | Stop after each task for review | High-risk changes |
+| 📦 **Phase-by-Phase** | Stop at checkpoints only | Normal development |
+| 🚀 **Auto-Run All** | Execute all without stopping | Low-risk, trusted tasks |
+
+---
+
+## 📄 Template Features
+
+### requirements-template.md
+- **Introduction** section with core goals
+- **Glossary** for project-specific terms
+- **Numbered requirements** (1, 2, 3...) with EARS notation
+
+### design-template.md
+- **Design Principles** section
+- **Components & Interfaces** with code snippets
+- **Correctness Properties** linking to requirements
+- **Testing Strategy** (unit, property, integration)
+
+### tasks-template.md
+- **Sub-task numbering** (1.1, 1.2, etc.)
+- **Checkpoint tasks** between phases
+- **Property test markers** (`*` for optional tests)
+- **Requirements mapping** inline
 
 ---
 

@@ -1,42 +1,58 @@
-# Feature: [Feature Name]
+# Requirements Document
 
-> **Created**: YYYY-MM-DD
-> **Status**: 🟡 Draft | 🟢 Approved | 🔵 Implemented
+## Introduction
 
----
+[Brief description of the feature and the problem it solves]
 
-## Overview
+**Core Goals:**
+1. [Primary goal]
+2. [Secondary goal]
+3. [Tertiary goal]
 
-[One paragraph description of the feature]
+## Glossary
 
----
-
-## User Stories
-
-### US-1: [User Story Title]
-
-**As a** [role/persona]
-**I want** [capability/action]
-**So that** [benefit/value]
-
-#### Acceptance Criteria (EARS Notation)
-
-- WHEN [trigger/condition] THE SYSTEM SHALL [expected behavior]
-- WHEN [trigger/condition] THE SYSTEM SHALL [expected behavior]
-- WHEN [edge case] THE SYSTEM SHALL [fallback behavior]
+| Term | Definition |
+|------|------------|
+| [Term 1] | [Definition - project-specific terminology] |
+| [Term 2] | [Definition] |
 
 ---
 
-### US-2: [User Story Title]
+## Requirements
 
-**As a** [role/persona]
-**I want** [capability/action]
-**So that** [benefit/value]
+### Requirement 1: [Requirement Title]
 
-#### Acceptance Criteria (EARS Notation)
+**User Story:** As a [role], I want [capability], so that [benefit].
 
-- WHEN [trigger/condition] THE SYSTEM SHALL [expected behavior]
-- WHEN [trigger/condition] THE SYSTEM SHALL [expected behavior]
+#### Acceptance Criteria
+
+1. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
+2. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
+3. IF [condition] THEN the [System_Component] SHALL [fallback behavior]
+4. WHILE [state] THEN the [System_Component] SHALL [ongoing behavior]
+
+---
+
+### Requirement 2: [Requirement Title]
+
+**User Story:** As a [role], I want [capability], so that [benefit].
+
+#### Acceptance Criteria
+
+1. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
+2. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
+3. IF [error condition] THEN the [System_Component] SHALL [error handling]
+
+---
+
+### Requirement 3: [Requirement Title]
+
+**User Story:** As a [role], I want [capability], so that [benefit].
+
+#### Acceptance Criteria
+
+1. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
+2. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
 
 ---
 
