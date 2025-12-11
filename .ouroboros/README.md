@@ -7,12 +7,18 @@ This folder is the **persistent memory core** of Project Ouroboros.
 ```
 .ouroboros/
 ├── README.md                  # 📖 This file
-├── context-template.md        # 📋 Session context template (do not edit directly)
-├── project-arch-template.md   # 🏗️ Project architecture template
-├── history/                   # 📜 Active session contexts
-│   └── context-YYYY-MM-DD.md
+├── templates/                 # 📋 All templates (READ ONLY)
+│   ├── context-template.md    # Session context template
+│   └── project-arch-template.md # Project architecture template
+├── history/                   # 📜 Active/generated files
+│   ├── context-YYYY-MM-DD.md  # Session context (created from template)
+│   └── project-arch-YYYY-MM-DD.md # Architecture doc (created from template)
 ├── specs/                     # 📋 Feature specifications
-│   ├── templates/             # Spec template files
+│   ├── templates/             # Spec template files (READ ONLY)
+│   │   ├── research-template.md
+│   │   ├── requirements-template.md
+│   │   ├── design-template.md
+│   │   └── tasks-template.md
 │   ├── archived/              # Completed specs (timestamped)
 │   └── [feature-name]/        # Active feature specs
 │       ├── research.md        # 🔬 Project analysis
@@ -26,9 +32,10 @@ This folder is the **persistent memory core** of Project Ouroboros.
 ## 🔄 How It Works
 
 ### On First Session
-1. Agent copies `context-template.md` → `history/context-YYYY-MM-DD.md`
-2. Agent updates the new file with current goal, tech stack, etc.
-3. Subsequent updates go to this file
+1. Agent **READS** `templates/context-template.md` (do not edit)
+2. Agent **CREATES** `history/context-YYYY-MM-DD.md` following template structure
+3. Agent updates the new file with current goal, tech stack, etc.
+4. Subsequent updates go to this file
 
 ### On Each Session Start
 1. Agent checks `history/` for the most recent `context-*.md`
@@ -62,10 +69,11 @@ Use **Spec-Driven Development** for complex features:
 ### Workflow
 
 1. **`/ouroboros-init`** - Initialize project (first time only)
-   - `[Project_Researcher]` analyzes codebase
+   - `[Project_Researcher]` **READS** `.ouroboros/project-arch-template.md`
    - Generates `.ouroboros/history/project-arch-YYYY-MM-DD.md`
 
 2. **`/ouroboros-spec`** - Describe your feature
+   - Each agent **READS** corresponding template from `specs/templates/`
    - `[Project_Researcher]` → `research.md`
    - `[Requirements_Engineer]` → `requirements.md`
    - `[Design_Architect]` → `design.md`
@@ -125,11 +133,11 @@ This pattern allows complex task context to be passed without bloating the orche
 
 ## ⚠️ Important Notes
 
-- **Never edit `context-template.md`** — Clean template for cloning
-- **Never edit `project-arch-template.md`** — Architecture template
-- **Edit files in `history/`** — Active session states
+- **Never edit root templates** — `context-template.md`, `project-arch-template.md` are READ ONLY
+- **Never edit spec templates** — `specs/templates/*.md` are READ ONLY  
+- **Edit files in `history/`** — Active session states and architecture docs
 - **Commit `history/`** — Share context with team via version control
-- **Use `specs/templates/`** — Reference for creating new specs
+- **Agents MUST read template first** — Before creating ANY file from template
 - **Use `subagent-docs/`** — For complex task instructions
 
 ---

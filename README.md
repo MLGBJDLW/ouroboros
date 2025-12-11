@@ -70,14 +70,16 @@ your-project/
 │       ├── ouroboros-implement.prompt.md ← ⚡ Auto-implement
 │       └── ouroboros-archive.prompt.md   ← 📦 Archive specs
 ├── .ouroboros/
-│   ├── context-template.md        ← 📋 Context template (do not edit)
-│   ├── project-arch-template.md   ← 🏗️ Architecture template (do not edit)
 │   ├── README.md
-│   ├── history/                   ← 📜 Active session contexts
-│   │   └── context-YYYY-MM-DD.md  ← 🧠 Created by agent
+│   ├── templates/                 ← 📋 All templates (READ ONLY)
+│   │   ├── context-template.md    ← Session context template
+│   │   └── project-arch-template.md ← Architecture template
+│   ├── history/                   ← 📜 Active session files
+│   │   ├── context-YYYY-MM-DD.md  ← 🧠 Created by agent
+│   │   └── project-arch-YYYY-MM-DD.md ← 🏗️ Created by agent
 │   ├── subagent-docs/             ← 📄 Task specs for sub-agents
 │   └── specs/                     ← 📋 Feature specifications
-│       ├── templates/             ← Spec templates
+│       ├── templates/             ← Spec templates (READ ONLY)
 │       └── archived/              ← Completed specs
 └── ... your project files
 ```
@@ -109,11 +111,11 @@ For complex features, use the structured spec workflow:
 
 ### The Template Pattern
 
-1. **First Session**: Agent copies `context-template.md` → `history/context-2025-12-10.md`
+1. **First Session**: Agent **READS** `templates/context-template.md` → creates `history/context-2025-12-10.md`
 2. **Updates**: Agent updates the file in `history/` as you work
 3. **Next Session**: Agent reads the latest file from `history/`
 
-This keeps the template clean for new users!
+This keeps the templates clean for new users!
 
 This is your project's **persistent memory**. The AI:
 - **Reads it** at session start to restore context
@@ -178,11 +180,12 @@ def login(username: str, password: str):
 
 ### Context Files (Template Pattern)
 
-**DO NOT edit `context-template.md`** — it's the clean template for new users.
+**DO NOT edit files in `templates/`** — they are READ ONLY templates.
 
 Instead, the agent automatically:
-1. Copies `context-template.md` → `history/context-YYYY-MM-DD.md` on first session
-2. Updates the file in `history/` as you work
+1. **READS** `templates/context-template.md` on first session
+2. **CREATES** `history/context-YYYY-MM-DD.md` following the template structure
+3. Updates the file in `history/` as you work
 
 To manually add project info, edit the active file:
 
