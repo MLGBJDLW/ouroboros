@@ -35,10 +35,16 @@ Initialize Ouroboros for a new project by:
 runSubagent(
   description: "Research project architecture",
   prompt: "
+    [BOOTSTRAP - MANDATORY FIRST STEP]
+    ⚠️ BEFORE DOING ANY WORK:
     1. READ .ouroboros/agents/ouroboros-researcher.agent.md
-    2. ADOPT persona and Read Project Architecture Template (.ouroboros/templates/project-arch-template.md)
-    3. EXECUTE: Scan project root, identify tech stack/patterns, create history/project-arch-YYYY-MM-DD.md
-    4. RETURN: Output `[PHASE 1 COMPLETE]`
+    2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
+    ❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
+
+    [TASK]
+    1. ADOPT persona and Read Project Architecture Template (.ouroboros/templates/project-arch-template.md)
+    2. EXECUTE: Scan project root, identify tech stack/patterns, create history/project-arch-YYYY-MM-DD.md
+    3. RETURN: Output `[PHASE 1 COMPLETE]`
   "
 )
 ```
@@ -53,10 +59,16 @@ runSubagent(
 runSubagent(
   description: "Initialize session context",
   prompt: "
+    [BOOTSTRAP - MANDATORY FIRST STEP]
+    ⚠️ BEFORE DOING ANY WORK:
     1. READ .ouroboros/agents/ouroboros-writer.agent.md
-    2. ADOPT persona and Read Context Template (.ouroboros/templates/context-template.md)
-    3. EXECUTE: Create history/context-YYYY-MM-DD.md, fill Tech Stack from Phase 1, set Goal: 'Project initialized'
-    4. RETURN: Output `[PHASE 2 COMPLETE]`
+    2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
+    ❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
+
+    [TASK]
+    1. ADOPT persona and Read Context Template (.ouroboros/templates/context-template.md)
+    2. EXECUTE: Create history/context-YYYY-MM-DD.md, fill Tech Stack from Phase 1, set Goal: 'Project initialized'
+    3. RETURN: Output `[PHASE 2 COMPLETE]`
   "
 )
 ```

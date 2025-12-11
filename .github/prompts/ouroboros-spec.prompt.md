@@ -78,13 +78,19 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 > **EVERY PHASE MUST READ THE CORRESPONDING TEMPLATE FIRST.** Output MUST follow template structure.
 > **SUBAGENT MUST RETURN AFTER EACH PHASE.** Do NOT proceed to next phase autonomously.
 
-**To invoke each phase (Self-Bootstrap):**
+**To invoke each phase (Self-Bootstrap with MANDATORY CONFIRMATION):**
 ```
 Run a subagent with the prompt:
 "
-1. READ .ouroboros/agents/ouroboros-researcher.agent.md.
-2. Complete Phase 1: Research.
-3. Follow template: .ouroboros/specs/templates/research-template.md.
+[BOOTSTRAP - MANDATORY FIRST STEP]
+⚠️ BEFORE DOING ANY WORK:
+1. READ .ouroboros/agents/ouroboros-researcher.agent.md
+2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
+❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
+
+[TASK]
+Complete Phase 1: Research
+Template: .ouroboros/specs/templates/research-template.md
 "
 ```
 
