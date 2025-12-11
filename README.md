@@ -79,6 +79,7 @@ Ouroboros includes 12 specialized agents now located in `.ouroboros/agents/`:
 | `ouroboros-researcher` | research, investigate | Structured research reports |
 | `ouroboros-requirements` | requirements, user story | EARS notation |
 | `ouroboros-architect` | design, architecture | Mermaid diagrams required |
+| `ouroboros-tasks` | breakdown, plan, tasks | Task breakdown & estimation |
 | `ouroboros-validator` | validate, verify | Consistency matrix |
 
 
@@ -99,6 +100,7 @@ your-project/
 │       └── ouroboros-archive.prompt.md   ← 📦 Archive specs
 ├── .ouroboros/
 │   ├── README.md
+│   ├── agents/                    ← 🤖 Agent definitions (13 Specialists)
 │   ├── templates/                 ← 📋 All templates (READ ONLY)
 │   │   ├── context-template.md    ← Session context template
 │   │   └── project-arch-template.md ← Architecture template
