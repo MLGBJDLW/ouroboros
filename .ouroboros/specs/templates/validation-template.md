@@ -1,7 +1,7 @@
 # Validation Report: [Feature Name]
 
 > **Generated**: YYYY-MM-DD
-> **Validated by**: [Spec_Validator]
+> **Validated by**: `ouroboros-validator`
 > **Status**: 🟡 Pending Review | 🟢 Approved | 🔴 Revisions Needed
 
 ---

@@ -1,7 +1,7 @@
 # Research: [Feature Name]
 
 > **Created**: YYYY-MM-DD
-> **Analyzed by**: [Project_Researcher]
+> **Analyzed by**: `ouroboros-researcher`
 > **Status**: 🟡 Draft | 🟢 Approved
 
 ---

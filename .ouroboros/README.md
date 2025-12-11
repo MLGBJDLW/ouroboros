@@ -7,6 +7,9 @@ This folder is the **persistent memory core** of Project Ouroboros.
 ```
 .ouroboros/
 ├── README.md                  # 📖 This file
+├── agents/                    # 🤖 Agent definitions (Self-Bootstrap)
+│   ├── ouroboros-coder.agent.md
+│   └── ...
 ├── templates/                 # 📋 All templates (READ ONLY)
 │   ├── context-template.md    # Session context template
 │   └── project-arch-template.md # Project architecture template
@@ -28,6 +31,20 @@ This folder is the **persistent memory core** of Project Ouroboros.
 └── subagent-docs/             # 📄 Subagent task documentation
     └── [task-name].md         # Detailed instructions for runSubagent()
 ```
+
+## 🔄 Self-Bootstrap Dispatch Protocol
+
+Ouroboros uses a highly reliable dispatch method where the Orchestrator instructs subagents to **read their own definition files** before execution.
+
+1. **Orchestrator** receives a task.
+2. **Orchestrator** calls `runSubagent()` with a prompt:
+   > "READ .ouroboros/agents/[Agent].agent.md... then Execute [Task]"
+3. **Subagent** reads the file, adopts the persona/format.
+4. **Subagent** reads `history/context-*.md` to sync with project state (Initialization).
+5. **Subagent** executes specific task via internal protocols.
+6. **Subagent** returns with the requested ARTIFACTS and strict output format.
+
+This ensures 100% adherence to agent rules without relying on hidden system prompts.
 
 ## 🔄 How It Works
 
@@ -69,16 +86,16 @@ Use **Spec-Driven Development** for complex features:
 ### Workflow
 
 1. **`/ouroboros-init`** - Initialize project (first time only)
-   - `[Project_Researcher]` **READS** `.ouroboros/project-arch-template.md`
+   - `ouroboros-researcher` **READS** `.ouroboros/project-arch-template.md`
    - Generates `.ouroboros/history/project-arch-YYYY-MM-DD.md`
 
 2. **`/ouroboros-spec`** - Describe your feature
    - Each agent **READS** corresponding template from `specs/templates/`
-   - `[Project_Researcher]` → `research.md`
-   - `[Requirements_Engineer]` → `requirements.md`
-   - `[Design_Architect]` → `design.md`
-   - `[Task_Planner]` → `tasks.md`
-   - `[Spec_Validator]` → cross-document validation
+   - `ouroboros-researcher` → `research.md`
+   - `ouroboros-requirements` → `requirements.md`
+   - `ouroboros-architect` → `design.md`
+   - `ouroboros-tasks` → `tasks.md`
+   - `ouroboros-validator` → cross-document validation
    - **⚠️ Each phase returns to orchestrator for user approval**
 
 3. **`/ouroboros-implement`** - Execute tasks
@@ -123,26 +140,28 @@ Use **Spec-Driven Development** for complex features:
 
 ## 🤖 Sub-Agents
 
+All agents are defined in `.github/agents/` and can be invoked as subagents.
+
 ### Core Agents
 | Agent | Role |
 |-------|------|
-| `[Code_Core]` | Full-stack implementation |
-| `[Debugger]` | Bug fixing (surgical only) |
-| `[Test_Engineer]` | Testing & QA |
-| `[Tech_Writer]` | Documentation |
-| `[DevOps_Engineer]` | Deployment |
-| `[Security_Auditor]` | Security review |
-| `[Git_Specialist]` | Git operations |
-| `[Project_Analyst]` | Codebase questions |
+| `ouroboros-coder` | Full-stack implementation |
+| `ouroboros-debugger` | Bug fixing (surgical only) |
+| `ouroboros-tester` | Testing & QA |
+| `ouroboros-writer` | Documentation |
+| `ouroboros-devops` | Deployment |
+| `ouroboros-security` | Security review |
+| `ouroboros-git` | Git operations |
+| `ouroboros-analyst` | Codebase questions |
 
 ### Spec Agents
 | Agent | Role |
 |-------|------|
-| `[Project_Researcher]` | Codebase analysis |
-| `[Requirements_Engineer]` | EARS requirements |
-| `[Design_Architect]` | Architecture design |
-| `[Task_Planner]` | Task breakdown |
-| `[Spec_Validator]` | Consistency validation |
+| `ouroboros-researcher` | Codebase analysis |
+| `ouroboros-requirements` | EARS requirements |
+| `ouroboros-architect` | Architecture design |
+| `ouroboros-tasks` | Task breakdown with file paths |
+| `ouroboros-validator` | Consistency validation |
 
 ---
 
@@ -158,6 +177,12 @@ runSubagent(
 ```
 
 This pattern allows complex task context to be passed without bloating the orchestrator's context window.
+
+> [!CAUTION]
+> **Transient Storage Policy**
+> Files in `subagent-docs/` are **TEMPORARY**.
+> The system automatically **DELETES** any file in this folder that hasn't been modified in **3 days**.
+> Do not store permanent documentation here.
 
 ---
 
