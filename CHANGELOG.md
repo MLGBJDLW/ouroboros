@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-10
+
+### 🚀 Architecture Upgrade: Self-Bootstrap Agents
+
+#### Changed
+- **Agent Relocation** — Moved all agent definitions from `.github/agents/` to `.ouroboros/agents/`. This declutters the VS Code UI while maintaining functionality.
+- **Dispatch Protocol** — Replaced "Implicit Dispatch" with **Self-Bootstrap Dispatch Protocol**.
+  - **Old**: `Run the ouroboros-coder agent...` (relied on unstable VS Code agent detection)
+  - **New**: `Read .ouroboros/agents/ouroboros-coder.agent.md then execute...` (guarantees correct persona adoption)
+- **Prompt Updates** — Updated `copilot-instructions.md`, `ouroboros-implement.prompt.md`, and `ouroboros-spec.prompt.md` to enforce the new file-reading dispatch pattern.
+
+#### Added
+- **Auto-Cleanup Protocol** — Added automatic maintenance to `/ouroboros-archive`:
+  - **Subagent Specs**: `.ouroboros/subagent-docs/` files older than 3 days **deleted** (transient data).
+  - **Context History**: `.ouroboros/history/` files older than 7 days moved to archive (persistent data).
+- **Architectural Awareness** — Subagents now automatically read the latest `history/context-*.md` before execution, ensuring they align with the current project state without prompt repetition.
+
+---
+
 ## [1.0.0] - 2025-12-10
 
 ### 🎉 Initial Release
@@ -28,23 +47,34 @@ Project Ouroboros is a persistent context system for GitHub Copilot that reduces
 - **Automatic Context Restoration** — Session state restored from latest `history/context-*.md` on startup
 - **Milestone-Based Updates** — Context files updated on major milestones, not every action
 
-#### 🤖 Sub-Agent Routing (13 Specialists)
+#### 🤖 Custom Agents (12 Specialists in `.github/agents/`)
 
+**Core Agents:**
 | Agent | Trigger | Role |
 |-------|---------|------|
-| `[Code_Core]` | implement, create, build | Full-stack development |
-| `[Debugger]` | debug, error, fix, bug | Surgical patches only |
-| `[Test_Engineer]` | test, mock, coverage | Test creation with assertions |
-| `[Tech_Writer]` | document, explain | Documentation, no code mods |
-| `[DevOps_Engineer]` | deploy, docker | Deployment with rollback steps |
-| `[Security_Auditor]` | security, audit | Risk identification |
-| `[Git_Specialist]` | merge, conflict, rebase | Git operations |
-| `[Project_Analyst]` | how does, where is | Read-only codebase analysis |
-| `[Project_Researcher]` | research, investigate | Structured research reports |
-| `[Requirements_Engineer]` | requirements, user story | EARS notation requirements |
-| `[Design_Architect]` | design, architecture | Mermaid diagrams required |
-| `[Task_Planner]` | tasks, breakdown | File paths required |
-| `[Spec_Validator]` | validate, verify | Coverage matrix output |
+| `ouroboros-coder` | implement, create, build | Full-stack development |
+| `ouroboros-debugger` | debug, error, fix, bug | Surgical patches only |
+| `ouroboros-tester` | test, mock, coverage | Test creation with assertions |
+| `ouroboros-writer` | document, explain | Documentation, no code mods |
+| `ouroboros-devops` | deploy, docker | Deployment with rollback steps |
+| `ouroboros-security` | security, audit | Risk identification |
+| `ouroboros-git` | merge, conflict, rebase | Git operations |
+| `ouroboros-analyst` | how does, where is | Read-only codebase analysis |
+
+**Spec Workflow Agents:**
+| Agent | Trigger | Role |
+|-------|---------|------|
+| `ouroboros-researcher` | research, investigate | Structured research reports |
+| `ouroboros-requirements` | requirements, user story | EARS notation requirements |
+| `ouroboros-architect` | design, architecture | Mermaid diagrams required |
+| `ouroboros-validator` | validate, verify | Coverage matrix output |
+
+**VS Code Settings Required:**
+| Setting | Purpose |
+|---------|---------|
+| `github.copilot.chat.codeGeneration.useInstructionFiles` | Load custom instructions |
+| `github.copilot.chat.agent` | Enable agent mode |
+| `chat.customAgentInSubagent.enabled` | Allow custom subagents (experimental) |
 
 #### ⚡ Slash Commands
 
@@ -56,15 +86,14 @@ Project Ouroboros is a persistent context system for GitHub Copilot that reduces
 | `/ouroboros-implement` | Execute tasks.md with 3 speed modes |
 | `/ouroboros-archive` | Archive completed specs with timestamp |
 
-#### 📋 Spec-Driven Development (5 Phases)
+#### 📋 Spec-Driven Development (4 Phases)
 
 | Phase | Agent | Output |
 |-------|-------|--------|
-| 1. Research | `[Project_Researcher]` | `research.md` — codebase analysis, affected files |
-| 2. Requirements | `[Requirements_Engineer]` | `requirements.md` — EARS notation, numbered requirements |
-| 3. Design | `[Design_Architect]` | `design.md` — architecture, Mermaid diagrams, correctness properties |
-| 4. Tasks | `[Task_Planner]` | `tasks.md` — sub-task numbering, checkpoints, file paths |
-| 5. Validation | `[Spec_Validator]` | `validation-report.md` — consistency check, impact analysis, risk assessment |
+| 1. Research | `ouroboros-researcher` | `research.md` — codebase analysis, affected files |
+| 2. Requirements | `ouroboros-requirements` | `requirements.md` — EARS notation, numbered requirements |
+| 3. Design | `ouroboros-architect` | `design.md` — architecture, Mermaid diagrams, correctness properties |
+| 4. Validation | `ouroboros-validator` | `validation-report.md` — consistency check, impact analysis, risk assessment |
 
 **Validation Phase (A+B Approach):**
 - **Part A**: Generate persistent `validation-report.md` with full analysis
@@ -95,8 +124,8 @@ Project Ouroboros is a persistent context system for GitHub Copilot that reduces
 
 #### 🛡️ Safety & Guardrails
 - **Destructive Command Protection** — `rm -rf`, `git reset --hard`, `git push --force` require confirmation
-- **Verification Gate** — Code verified via `[Security_Auditor]` or `[Test_Engineer]` before delivery
-- **Surgical Fix Protocol** — `[Debugger]` can only patch bugs, forbidden from rewriting files
+- **Verification Gate** — Code verified via `ouroboros-security` or `ouroboros-tester` before delivery
+- **Surgical Fix Protocol** — `ouroboros-debugger` can only patch bugs, forbidden from rewriting files
 - **Phase Reset Protocol** — Explicit rules for returning to earlier spec phases
 - **File Whitelist** — Only 5 files allowed in specs: `research.md`, `requirements.md`, `design.md`, `tasks.md`, `validation-report.md`
 

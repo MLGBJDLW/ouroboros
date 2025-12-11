@@ -30,23 +30,10 @@ Initialize Ouroboros for a new project by:
 runSubagent(
   description: "Research project architecture",
   prompt: "
-    You are [Project_Researcher] - Codebase archaeologist.
-    
-    TASK:
-    1. **READ TEMPLATE FIRST**: `.ouroboros/templates/project-arch-template.md`
-    2. Scan the project root directory structure
-    3. Identify: language, framework, build tools, package manager
-    4. Find entry points and key configuration files
-    5. Detect architecture patterns (MVC, microservices, monolith, etc.)
-    6. List main dependencies from lockfiles
-    
-    OUTPUT:
-    Create `.ouroboros/history/project-arch-YYYY-MM-DD.md` following the template structure,
-    filling in ALL sections with your findings.
-    
-    CONSTRAINT: Read-only analysis. Do NOT modify any project files.
-    
-    ⚠️ RETURN TO ORCHESTRATOR — Output `[PHASE 1 COMPLETE]` and STOP.
+    1. READ .ouroboros/agents/ouroboros-researcher.agent.md
+    2. ADOPT persona and Read Project Architecture Template (.ouroboros/templates/project-arch-template.md)
+    3. EXECUTE: Scan project root, identify tech stack/patterns, create history/project-arch-YYYY-MM-DD.md
+    4. RETURN: Output `[PHASE 1 COMPLETE]`
   "
 )
 ```
@@ -61,17 +48,10 @@ runSubagent(
 runSubagent(
   description: "Initialize session context",
   prompt: "
-    You are [Tech_Writer] - Documentation specialist.
-    
-    TASK:
-    1. **READ TEMPLATE FIRST**: `.ouroboros/templates/context-template.md`
-    2. Create `.ouroboros/history/context-YYYY-MM-DD.md` following the template structure
-    3. Fill in Tech Stack section based on project-arch findings
-    4. Set Current Goal to: 'Project initialized, awaiting first task'
-    
-    OUTPUT: Updated context file in history/
-    
-    ⚠️ RETURN TO ORCHESTRATOR — Output `[PHASE 2 COMPLETE]` and STOP.
+    1. READ .ouroboros/agents/ouroboros-writer.agent.md
+    2. ADOPT persona and Read Context Template (.ouroboros/templates/context-template.md)
+    3. EXECUTE: Create history/context-YYYY-MM-DD.md, fill Tech Stack from Phase 1, set Goal: 'Project initialized'
+    4. RETURN: Output `[PHASE 2 COMPLETE]`
   "
 )
 ```

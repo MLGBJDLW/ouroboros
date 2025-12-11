@@ -2,7 +2,7 @@
 
 > **Status**: ⚪ NOT INITIALIZED
 > **Last Updated**: -
-> **Researched By**: [Project_Researcher]
+> **Researched By**: `ouroboros-researcher`
 
 ---
 

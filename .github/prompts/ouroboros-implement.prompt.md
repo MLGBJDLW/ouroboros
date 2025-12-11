@@ -42,7 +42,11 @@ Select execution mode:
   [2] 📦 Phase-by-Phase — Stop at each checkpoint (Phase X → Phase Y)
   [3] 🚀 Auto-Run All   — Execute all tasks without stopping
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Enter mode (1/2/3):
+```
+
+**Then execute:**
+```bash
+python -c "print('\n[1] Task-by-Task  [2] Phase-by-Phase  [3] Auto-Run'); mode = input('Select mode: ')"
 ```
 
 ---
@@ -84,49 +88,126 @@ Execute all tasks without stopping:
 
 | Task Type | Delegate To |
 |-----------|-------------|
-| Create, Implement, Add | `[Code_Core]` |
-| Test, Add tests | `[Test_Engineer]` |
-| Fix, Debug | `[Debugger]` |
-| Document, Update docs | `[Tech_Writer]` |
-| Deploy, Docker | `[DevOps_Engineer]` |
+| Create, Implement, Add | `ouroboros-coder` |
+| Test, Add tests | `ouroboros-tester` |
+| Fix, Debug | `ouroboros-debugger` |
+| Document, Update docs | `ouroboros-writer` |
+| Deploy, Docker | `ouroboros-devops` |
 
 ---
 
-## Initialization Protocol
+## Initialization Protocol (Smart Resume)
 
 **ON INVOKE:**
 
-1. Find active spec in `.ouroboros/specs/`
-2. Parse `tasks.md` for incomplete tasks `[ ]`
-3. Display execution mode selector (see above)
-4. Wait for user selection
+### Step 1: Scan for Active Specs
+```
+Scan .ouroboros/specs/ for folders containing tasks.md
+Exclude: templates/, archived/
+Sort by: most recently modified
+```
+
+### Step 2: Handle Multiple Specs
+
+**If ONE spec found:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Resuming: [feature-name]
+📄 Path: .ouroboros/specs/[feature-name]/tasks.md
+📊 Progress: X/Y tasks complete (Z%)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Last completed: [Task X.Y description]
+Next task: [Task X.Z description] → `file/path`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Continue? (y/n)
+```
+
+**Then execute:**
+```bash
+python -c "choice = input('Continue with this spec? (y/n): ')"
+
+**If MULTIPLE specs found:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Multiple Active Specs Found
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[1] auth-feature     (3/7 tasks, last modified: 2h ago)
+[2] profile-page     (0/5 tasks, last modified: 1d ago)
+[3] settings-panel   (5/5 tasks, last modified: 3d ago) ✅ COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Select spec (1-3) or 'new' to create:
+```
+
+**Then execute:**
+```bash
+python -c "choice = input('Select spec number or new: ')"
+
+**If NO specs found:**
+```
+⚠️ No active specs found in .ouroboros/specs/
+Run /ouroboros-spec first to create a spec.
+```
+
+### Step 3: Display Progress Details
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Active Spec: [feature-name]
+📊 Progress: X/Y tasks complete (Z%)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Completed Tasks ✅
+- [x] 1.1 Task description → `file`
+- [x] 1.2 Task description → `file`
+
+## Remaining Tasks ⏳
+- [ ] 2.1 Task description → `file` ← NEXT
+- [ ] 2.2 Task description → `file`
+- [ ] 🔍 Checkpoint: Verify Phase 2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Select execution mode:
+  [1] 🔧 Task-by-Task   — Stop after each task for review
+  [2] 📦 Phase-by-Phase — Stop at each checkpoint
+  [3] 🚀 Auto-Run All   — Execute all remaining tasks
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Then execute:**
+```bash
+python -c "print('\\n[1] Task-by-Task  [2] Phase-by-Phase  [3] Auto-Run'); mode = input('Select mode: ')"
 
 ---
 
 ## Execution Protocol
 
-**For each task:**
+**For each task, use the appropriate custom agent as a subagent:**
 
+| Task Type | Use Agent |
+|-----------|-----------|
+| Create, Implement, Add | `ouroboros-coder` |
+| Test, Add tests | `ouroboros-tester` |
+| Fix, Debug | `ouroboros-debugger` |
+| Document, Update docs | `ouroboros-writer` |
+| Deploy, Docker | `ouroboros-devops` |
+
+**Example prompt to AI (Self-Bootstrap):**
 ```
-runSubagent(
-  description: "Execute Task X.Y",
-  prompt: "
-    You are [Agent_Name] - [Role description].
-    
-    TASK:
-    [Task description from tasks.md]
-    
-    FILE: `path/to/file.ext`
-    
-    REQUIREMENTS: [Referenced from tasks.md]
-    
-    OUTPUT:
-    - Complete implementation using ARTIFACT blocks
-    - Verify output meets requirements
-    
-    ⚠️ RETURN TO ORCHESTRATOR — Output `[TASK X.Y COMPLETE]` and STOP.
-  "
-)
+Run a subagent with the following prompt:
+"
+1. READ .ouroboros/agents/ouroboros-coder.agent.md.
+2. Implement Task 2.1: [Task description]
+3. File: `src/auth.py`
+4. Requirements: [Details]
+"
+```
+
+**For testing:**
+```
+Run a subagent with the following prompt:
+"
+1. READ .ouroboros/agents/ouroboros-tester.agent.md.
+2. Write tests for `src/auth.py` covering login/logout.
+"
 ```
 
 **After subagent returns:**
@@ -172,9 +253,8 @@ Continue to next phase? (y/n)
 
 ## Error Handling
 
-If a task fails (applies to ALL modes):
 1. **Stop** execution immediately
-2. **Invoke** `[Debugger]` for diagnosis
+2. **Invoke** `ouroboros-debugger` for diagnosis
 3. **Offer** options: Fix and retry | Skip | Abort
 
 ---
@@ -182,6 +262,20 @@ If a task fails (applies to ALL modes):
 ## Language Protocol
 
 **MIRROR USER LANGUAGE**: Reply in the same language as user input.
+
+---
+
+## 🛑 MISSION COMPLETE RULES
+
+When **ALL TASKS** are complete (100%):
+1. **Display Summary**: Show tasks completed, files created, and test results.
+2. **Execute Terminal Loop**: You MUST output the following command block and Ask the user to run it (or run it if you have permission):
+
+```python
+python -c "task = input('[Ouroboros] > ')"
+```
+
+> **Wait for the user to run this command to continue the session.**
 
 ---
 

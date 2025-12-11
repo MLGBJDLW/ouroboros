@@ -9,7 +9,32 @@
 - **DIRECTIVE #2**: Add **timestamp** to archived folder name
 - **DIRECTIVE #3**: Generate **archive summary** with key stats
 - **DIRECTIVE #4**: Update `context.md` with archive record
-- **DIRECTIVE #5**: Preserve complete spec history for reference
+- **DIRECTIVE #5**: **MAINTENANCE**: **DELETE** old docs (>3d) and **ARCHIVE** old history (>7d)
+- **DIRECTIVE #6**: Preserve complete spec history for reference
+
+---
+
+## 🧹 Maintenance & Cleanup Protocol
+
+> [!TIP]
+> **Keep the workspace clean. Auto-prune temporary files.**
+
+> [!CAUTION]
+> **Files in `subagent-docs/` are considered TEMPORARY.**
+> **They will be DELETED automatically if not modified in 3 days.**
+
+### Cleanup Targets
+
+| Directory | Retention Policy | Action |
+|-----------|------------------|--------|
+| `.ouroboros/subagent-docs/` | **3 Days** | 🗑️ **PERMANENTLY DELETE** |
+| `.ouroboros/history/` | **7 Days** | 📦 Move to `.ouroboros/history/archived/` |
+
+**Execution Logic**:
+1. Get Current Date
+2. Scan target directories
+3. IF `subagent-docs` file > 3 days: **DELETE**
+4. IF `history` file > 7 days: **MOVE** to `.ouroboros/history/archived/`
 
 ---
 
@@ -55,7 +80,7 @@ You are the **Spec Archiver**. Your mission:
 .ouroboros/specs/
 ├── templates/
 ├── archived/                          ← Destination
-│   └── [feature]-[YYYY-MM-DD]/       ← Timestamped folder
+│   └── [date]-[feature-name]/        ← Timestamped folder (e.g. 2025-12-10-auth-feature)
 │       ├── requirements.md
 │       ├── design.md
 │       ├── tasks.md
@@ -82,68 +107,28 @@ You are the **Spec Archiver**. Your mission:
 
 ---
 
-## Archive Protocol
+### Archive Execution (Delegated)
 
-### Step 1: Validate Completion
+**To perform the archive, use `runSubagent`:**
 
-```
-[🔍 Validating]: auth-feature
-[✓] requirements.md exists
-[✓] design.md exists  
-[✓] tasks.md exists
-[✓] All tasks marked complete (7/7)
-[✓] Ready for archive
-```
-
-If incomplete:
-```
-[⚠️ Warning]: 2 tasks still incomplete
-- [ ] Task 3.2: Add error handling
-- [ ] Task 3.3: Write integration tests
-
-Archive anyway? (y/n)
-```
-
-### Step 2: Generate Archive Summary
-
-Create `ARCHIVE_SUMMARY.md`:
-
-```markdown
-# Archive Summary: [Feature Name]
-
-> **Archived**: YYYY-MM-DD HH:MM
-> **Status**: ✅ Complete
-
-## Overview
-[Brief description from requirements.md]
-
-## Statistics
-| Metric | Value |
-|--------|-------|
-| User Stories | X |
-| Components | Y |
-| Tasks Completed | Z |
-| Files Modified | N |
-
-## Key Files Created/Modified
-- `src/services/auth.py` - Authentication service
-- `src/components/LoginForm.tsx` - Login UI
-- `tests/test_auth.py` - Unit tests
-
-## Requirements Addressed
-- US-1: User Login ✓
-- US-2: Password Reset ✓
-- US-3: Session Management ✓
-
-## Notes
-[Any additional notes or learnings]
-```
-
-### Step 3: Move to Archive
-
-```bash
-# Rename with timestamp
-mv .ouroboros/specs/auth-feature .ouroboros/specs/archived/auth-feature-2025-12-10
+```javascript
+runSubagent(
+  description: "Archive spec [feature-name]",
+  prompt: `
+    1. READ .ouroboros/agents/ouroboros-writer.agent.md
+    2. ADOPT persona: Spec Archiver
+    3. EXECUTE:
+       - **STEP 0: MAINTENANCE CLEANUP**
+         - Check `.ouroboros/subagent-docs/` for files > 3 days old -> **DELETE**
+         - Check `.ouroboros/history/` for files > 7 days old -> Move to `archived/`
+       - **STEP 1: SPEC ARCHIVAL**
+         - Validate [feature-name] tasks are complete
+         - Create .ouroboros/specs/archived/[date]-[feature]/ARCHIVE_SUMMARY.md
+         - Move spec folder to archived/[date]-[feature]/
+         - Update .ouroboros/history/context-*.md
+    4. RETURN: Output [ARCHIVE COMPLETE]
+  `
+)
 ```
 
 ### Step 4: Update Context
@@ -214,4 +199,14 @@ View details: "show archive [feature-name]"
 
 ---
 
-**♾️ Complete. Archive. Remember. ♾️**
+**After Archive Complete:**
+
+You MUST output the following command block and Ask the user to run it:
+
+```python
+python -c "task = input('[Ouroboros] > ')"
+```
+
+---
+
+**♾️ History Preserved. Context Renewed. ♾️**

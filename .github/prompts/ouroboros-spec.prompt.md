@@ -35,11 +35,11 @@
 
 | Phase | Delegate To | Hard Constraint |
 |-------|-------------|-----------------|
-| Research | `[Project_Researcher]` 🔬 | Structured report, NO code mods |
-| Requirements | `[Requirements_Engineer]` 📋 | EARS notation required |
-| Design | `[Design_Architect]` 🏗️ | Mermaid diagram required |
-| Tasks | `[Task_Planner]` ✅ | File paths required |
-| Validation | `[Spec_Validator]` ✓ | Coverage matrix required |
+| 1. Research | `ouroboros-researcher` 🔬 | Structured report, NO code mods |
+| 2. Requirements | `ouroboros-requirements` 📋 | EARS notation required |
+| 3. Design | `ouroboros-architect` 🏗️ | Mermaid diagram required |
+| 4. Tasks | `ouroboros-tasks` ✅ | File paths required |
+| 5. Validation | `ouroboros-validator` ✓ | Coverage matrix required |
 
 ---
 
@@ -77,8 +77,20 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 > **EVERY PHASE MUST READ THE CORRESPONDING TEMPLATE FIRST.** Output MUST follow template structure.
 > **SUBAGENT MUST RETURN AFTER EACH PHASE.** Do NOT proceed to next phase autonomously.
 
+**To invoke each phase (Self-Bootstrap):**
+```
+Run a subagent with the prompt:
+"
+1. READ .ouroboros/agents/ouroboros-researcher.agent.md.
+2. Complete Phase 1: Research.
+3. Follow template: .ouroboros/specs/templates/research-template.md.
+"
+```
+
 ### Phase 1: Research
-1. Route to `[Project_Researcher]`
+1. Execute `runSubagent`:
+   > "1. READ .ouroboros/agents/ouroboros-researcher.agent.md
+   > 2. Complete Phase 1: Research task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/research-template.md`
 3. Analyze existing codebase, identify affected files
 4. **CREATE**: `.ouroboros/specs/[feature-name]/research.md` (follow template structure)
@@ -86,7 +98,9 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 6. Orchestrator waits for user approval before invoking Phase 2
 
 ### Phase 2: Requirements
-1. Route to `[Requirements_Engineer]`
+1. Execute `runSubagent`:
+   > "1. READ .ouroboros/agents/ouroboros-requirements.agent.md
+   > 2. Complete Phase 2: Requirements task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/requirements-template.md`
 3. Reference `research.md` for context
 4. **CREATE**: `.ouroboros/specs/[feature-name]/requirements.md` (follow template structure, use EARS notation)
@@ -94,7 +108,9 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 6. Orchestrator waits for user approval before invoking Phase 3
 
 ### Phase 3: Design
-1. Route to `[Design_Architect]`
+1. Execute `runSubagent`:
+   > "1. READ .ouroboros/agents/ouroboros-architect.agent.md
+   > 2. Complete Phase 3: Design task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/design-template.md`
 3. Reference `research.md` and `requirements.md`
 4. **CREATE**: `.ouroboros/specs/[feature-name]/design.md` (follow template structure, include Mermaid diagrams)
@@ -102,20 +118,24 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 6. Orchestrator waits for user approval before invoking Phase 4
 
 ### Phase 4: Tasks
-1. Route to `[Task_Planner]`
+1. Execute `runSubagent`:
+   > "1. READ .ouroboros/agents/ouroboros-tasks.agent.md
+   > 2. Complete Phase 4: Tasks breakdown..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/tasks-template.md`
-3. Reference all previous docs
-4. **CREATE**: `.ouroboros/specs/[feature-name]/tasks.md` (follow template structure, include file paths)
-5. Each task MUST include: file path, estimated effort, dependencies
+3. Reference all previous docs (research, requirements, design)
+4. **CREATE**: `.ouroboros/specs/[feature-name]/tasks.md` (follow template structure)
+5. Each task MUST include: file path, effort estimate, dependencies, requirement reference
 6. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 4 COMPLETE]` and STOP
 7. Orchestrator waits for user approval before invoking Phase 5
 
 ### Phase 5: Validation (A+B Approach)
 
 **Part A: Generate Validation Report**
-1. Route to `[Spec_Validator]`
+1. Execute `runSubagent`:
+   > "1. READ .ouroboros/agents/ouroboros-validator.agent.md
+   > 2. Complete Phase 5: Validation task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/validation-template.md`
-3. **READ ALL 4 DOCUMENTS** in the feature folder
+3. **READ ALL 5 DOCUMENTS** in the feature folder
 4. **CREATE**: `.ouroboros/specs/[feature-name]/validation-report.md` (follow template structure)
    - Executive Summary
    - Consistency Check (cross-document traceability matrix)
@@ -139,8 +159,14 @@ Options:
   [abort]    → Cancel this spec
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+**Then execute:**
+```bash
+python -c "print('\\n[yes] Proceed  [revise 1-4] Return to phase  [abort] Cancel'); choice = input('Decision: ')"
+```
+
 6. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 5 COMPLETE]` and STOP
-7. Wait for user input before proceeding
+7. Process user input: `yes` → proceed, `revise X` → return to phase X, `abort` → cancel
 
 ---
 
@@ -166,11 +192,11 @@ Options:
 
 | File | Created By | Template |
 |------|------------|----------|
-| `research.md` | `[Project_Researcher]` | `specs/templates/research-template.md` |
-| `requirements.md` | `[Requirements_Engineer]` | `specs/templates/requirements-template.md` |
-| `design.md` | `[Design_Architect]` | `specs/templates/design-template.md` |
-| `tasks.md` | `[Task_Planner]` | `specs/templates/tasks-template.md` |
-| `validation-report.md` | `[Spec_Validator]` | `specs/templates/validation-template.md` |
+| `research.md` | `ouroboros-researcher` | `specs/templates/research-template.md` |
+| `requirements.md` | `ouroboros-requirements` | `specs/templates/requirements-template.md` |
+| `design.md` | `ouroboros-architect` | `specs/templates/design-template.md` |
+| `tasks.md` | `ouroboros-tasks` | `specs/templates/tasks-template.md` |
+| `validation-report.md` | `ouroboros-validator` | `specs/templates/validation-template.md` |
 
 > [!WARNING]
 > **FORBIDDEN FILE NAMES** (NEVER CREATE THESE):

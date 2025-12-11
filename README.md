@@ -44,15 +44,43 @@ Or manually copy these folders to your project root:
 2. Search: `github.copilot.chat.codeGeneration.useInstructionFiles`
 3. ✅ **Enable it**
 
-### Step 3: Enable Copilot Sub-Agents (Important!)
+### Step 3: Enable VS Code Settings (Important!)
 
-For the sub-agent routing to work, you need to enable Copilot's agent features:
+Enable these settings for full functionality:
 
-1. Open Settings (`Ctrl+,` / `Cmd+,`)
-2. Search: `github.copilot.chat.agent`
-3. ✅ **Enable Agent Mode**
+| Setting | Search For | Purpose |
+|---------|------------|---------|
+| 🔧 **Custom Instructions** | `github.copilot.chat.codeGeneration.useInstructionFiles` | Load `.github/copilot-instructions.md` |
+| 🤖 **Agent Mode** | `github.copilot.chat.agent` | Enable agent-based interactions |
 
-> **Note**: Sub-agent routing is a conceptual framework. The AI simulates specialized agents within its responses to provide more focused, role-specific outputs.
+> **Note**: Ouroboros now uses a **Self-Bootstrap Protocol** where agents read their own definitions from `.ouroboros/agents/`. This ensures reliable execution without depending on experimental VS Code settings.
+
+---
+
+## 🤖 Custom Agents (Self-Bootstrapped)
+
+Ouroboros includes 12 specialized agents now located in `.ouroboros/agents/`:
+
+**Core Agents:**
+| Agent | Trigger | Role |
+|-------|---------|------|
+| `ouroboros-coder` | implement, create, build | Full-stack development |
+| `ouroboros-debugger` | debug, error, fix, bug | Surgical patches only |
+| `ouroboros-tester` | test, mock, coverage | Test creation with assertions |
+| `ouroboros-writer` | document, explain | Documentation only |
+| `ouroboros-devops` | deploy, docker | Deployment with rollback |
+| `ouroboros-security` | security, audit | Risk identification |
+| `ouroboros-git` | merge, conflict, rebase | Git operations |
+| `ouroboros-analyst` | how does, where is | Read-only codebase analysis |
+
+**Spec Workflow Agents:**
+| Agent | Trigger | Role |
+|-------|---------|------|
+| `ouroboros-researcher` | research, investigate | Structured research reports |
+| `ouroboros-requirements` | requirements, user story | EARS notation |
+| `ouroboros-architect` | design, architecture | Mermaid diagrams required |
+| `ouroboros-validator` | validate, verify | Consistency matrix |
+
 
 ---
 
@@ -147,11 +175,11 @@ Our templates follow industry best practices:
 
 | Agent | Role |
 |-------|------|
-| `[Project_Researcher]` | Codebase analysis and research |
-| `[Requirements_Engineer]` | EARS notation requirements |
-| `[Design_Architect]` | Architecture with Mermaid diagrams |
-| `[Task_Planner]` | Trackable implementation checklist |
-| `[Spec_Validator]` | Cross-document consistency check |
+| `ouroboros-researcher` | Codebase analysis and research |
+| `ouroboros-requirements` | EARS notation requirements |
+| `ouroboros-architect` | Architecture with Mermaid diagrams |
+| `ouroboros-tasks` | Task breakdown with file paths |
+| `ouroboros-validator` | Cross-document consistency check |
 
 ---
 
@@ -187,15 +215,15 @@ Implementing user authentication
 
 ### Sub-Agent Routing
 
-Your requests are automatically routed to specialized "virtual agents":
+Your requests are automatically routed to specialized agents in `.github/agents/`:
 
 | You Say | Routed To | Behavior |
 |---------|-----------|----------|
-| "Implement login" | `[Code_Core]` | Full feature development |
-| "Fix this error" | `[Debugger]` | **Surgical patch only** — no file rewrites |
-| "Add tests" | `[Test_Engineer]` | Unit/E2E test creation |
-| "Explain this code" | `[Project_Analyst]` | Architecture analysis |
-| "Update the docs" | `[Tech_Writer]` | Documentation updates |
+| "Implement login" | `ouroboros-coder` | Full feature development |
+| "Fix this error" | `ouroboros-debugger` | **Surgical patch only** — no file rewrites |
+| "Add tests" | `ouroboros-tester` | Unit/E2E test creation |
+| "Explain this code" | `ouroboros-analyst` | Architecture analysis |
+| "Update the docs" | `ouroboros-writer` | Documentation updates |
 
 ### Artifact Protocol (Zero Tolerance)
 
@@ -221,6 +249,11 @@ def login(username: str, password: str):
 - **Destructive Command Protection**: `rm -rf`, `git reset --hard` require confirmation
 - **Verification Gate**: Code is verified before delivery
 - **Surgical Fix Protocol**: Debugger can only patch, never rewrite entire files
+- **Fail-Safe Protocols (New)**:
+  - 🏗️ **Coder**: Must pass build/typecheck before completion
+  - 🚀 **DevOps**: Auto-rollback if exit code > 0
+  - 🛑 **Git**: Immediate halt on merge conflicts
+- **Initialization Protocol**: All agents read project context before acting
 
 ---
 
