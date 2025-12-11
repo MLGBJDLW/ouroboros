@@ -31,7 +31,7 @@
 runSubagent(
   description: "Initialize session context",
   prompt: `
-[BOOTSTRAP] Follow .ouroboros/agents/ouroboros-analyst.agent.md
+[BOOTSTRAP] Follow .ouroboros/agents/ouroboros-analyst.prompt.md
 
 [TASK]
 1. Check if .ouroboros/project-arch.md exists
@@ -73,7 +73,7 @@ runSubagent(
   description: "3-5 word summary",
   prompt: `
 [BOOTSTRAP - MANDATORY]
-1. Follow instructions in .ouroboros/agents/[agent].agent.md
+1. Follow instructions in .ouroboros/agents/[agent].prompt.md
 2. Read context from .ouroboros/history/context-*.md
 3. OUTPUT this confirmation IMMEDIATELY:
 

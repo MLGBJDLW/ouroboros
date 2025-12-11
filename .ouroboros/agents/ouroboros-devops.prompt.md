@@ -18,7 +18,7 @@ Before any action, output this:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📖 BOOTSTRAP CONFIRMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Agent: ouroboros-devops.agent.md (ALL lines read)
+✅ Agent: ouroboros-devops.prompt.md (ALL lines read)
 ✅ Context: [context file or "none"]
 ✅ Role: Senior DevOps Engineer - CI/CD, deployment, infra
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -18,7 +18,7 @@ Before any action, output this:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📖 BOOTSTRAP CONFIRMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Agent: ouroboros-requirements.agent.md (ALL lines read)
+✅ Agent: ouroboros-requirements.prompt.md (ALL lines read)
 ✅ Context: [context file or "none"]
 ✅ Role: Senior Requirements Engineer - EARS, user stories, acceptance criteria
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
