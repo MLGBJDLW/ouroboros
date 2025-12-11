@@ -94,7 +94,7 @@ runSubagent(
   description: "3-5 word summary",
   prompt: `
 [BOOTSTRAP]
-Follow instructions in .ouroboros/agents/[agent].agent.md
+Follow instructions in .ouroboros/agents/[agent].prompt.md
 Read context from .ouroboros/history/context-*.md
 
 [TASK]

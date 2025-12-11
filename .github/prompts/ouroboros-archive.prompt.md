@@ -127,7 +127,7 @@ runSubagent(
   prompt: `
     [BOOTSTRAP - MANDATORY FIRST STEP]
     ⚠️ BEFORE DOING ANY WORK:
-    1. Follow instructions in .ouroboros/agents/ouroboros-writer.agent.md (read ENTIRE file)
+    1. Follow instructions in .ouroboros/agents/ouroboros-writer.prompt.md (read ENTIRE file)
     2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
     ❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
 

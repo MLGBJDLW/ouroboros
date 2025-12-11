@@ -8,18 +8,18 @@ This folder is the **persistent memory core** of Project Ouroboros.
 .ouroboros/
 ├── README.md                  # 📖 This file
 ├── agents/                    # 🤖 Agent definitions (Self-Bootstrap)
-│   ├── ouroboros-analyst.agent.md
-│   ├── ouroboros-architect.agent.md
-│   ├── ouroboros-coder.agent.md
-│   ├── ouroboros-devops.agent.md
-│   ├── ouroboros-git.agent.md
-│   ├── ouroboros-qa.agent.md       # 🧪🔧 Unified Testing & Debugging
-│   ├── ouroboros-requirements.agent.md
-│   ├── ouroboros-researcher.agent.md
-│   ├── ouroboros-security.agent.md
-│   ├── ouroboros-tasks.agent.md
-│   ├── ouroboros-validator.agent.md
-│   └── ouroboros-writer.agent.md
+│   ├── ouroboros-analyst.prompt.md
+│   ├── ouroboros-architect.prompt.md
+│   ├── ouroboros-coder.prompt.md
+│   ├── ouroboros-devops.prompt.md
+│   ├── ouroboros-git.prompt.md
+│   ├── ouroboros-qa.prompt.md       # 🧪🔧 Unified Testing & Debugging
+│   ├── ouroboros-requirements.prompt.md
+│   ├── ouroboros-researcher.prompt.md
+│   ├── ouroboros-security.prompt.md
+│   ├── ouroboros-tasks.prompt.md
+│   ├── ouroboros-validator.prompt.md
+│   └── ouroboros-writer.prompt.md
 ├── templates/                 # 📋 All templates (READ ONLY)
 │   ├── context-template.md    # Session context template
 │   └── project-arch-template.md # Project architecture template
@@ -48,7 +48,7 @@ Ouroboros uses a highly reliable dispatch method where the Orchestrator instruct
 
 1. **Orchestrator** receives a task.
 2. **Orchestrator** calls `runSubagent()` with a prompt:
-   > "READ .ouroboros/agents/[Agent].agent.md... then Execute [Task]"
+   > "READ .ouroboros/agents/[Agent].prompt.md... then Execute [Task]"
 3. **Subagent** reads the file, adopts the persona/format.
 4. **Subagent** reads `history/context-*.md` to sync with project state (Initialization).
 5. **Subagent** executes specific task via internal protocols.

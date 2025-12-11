@@ -5,7 +5,7 @@ tools: ['readFile', 'listFiles', 'editFiles', 'createFile', 'runSubagent']
 ---
 
 > [!CAUTION]
-> **📏 THIS FILE HAS 100 LINES. Read ALL lines before proceeding.**
+> **📏 THIS FILE HAS 115 LINES. Read ALL lines before proceeding.**
 
 # Identity
 
