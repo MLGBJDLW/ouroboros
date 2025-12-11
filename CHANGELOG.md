@@ -39,10 +39,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.ouroboros/README.md` with specs system documentation
 
 ---
-
-## [Unreleased]
-
-### Planned
-- Example specs folder with completed feature example
-- VS Code extension for better Copilot integration
-- Multi-language prompt templates
