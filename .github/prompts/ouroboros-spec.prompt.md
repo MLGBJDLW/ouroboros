@@ -58,33 +58,46 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
     └── tasks.md              # Implementation checklist
 ```
 
+### Template Format Notes
+
+| Template | Key Sections |
+|----------|--------------|
+| `research-template.md` | Tech Stack, Affected Files (Frontend/Backend), Recommended Approach |
+| `requirements-template.md` | Introduction, Glossary, Numbered Requirements with EARS notation |
+| `design-template.md` | Design Principles, Components & Interfaces, **Correctness Properties**, Testing Strategy |
+| `tasks-template.md` | Phase + sub-task numbering (1.1, 1.2), Checkpoints, Property test markers (`*`) |
+
 ---
 
 ## 📋 Workflow Protocol
 
 > [!CAUTION]
 > **EVERY PHASE MUST READ THE CORRESPONDING TEMPLATE FIRST.** Output MUST follow template structure.
+> **SUBAGENT MUST RETURN AFTER EACH PHASE.** Do NOT proceed to next phase autonomously.
 
 ### Phase 1: Research
 1. Route to `[Project_Researcher]`
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/research-template.md`
 3. Analyze existing codebase, identify affected files
 4. **CREATE**: `.ouroboros/specs/[feature-name]/research.md` (follow template structure)
-5. **WAIT for user approval before proceeding**
+5. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 1 COMPLETE]` and STOP
+6. Orchestrator waits for user approval before invoking Phase 2
 
 ### Phase 2: Requirements
 1. Route to `[Requirements_Engineer]`
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/requirements-template.md`
 3. Reference `research.md` for context
 4. **CREATE**: `.ouroboros/specs/[feature-name]/requirements.md` (follow template structure, use EARS notation)
-5. **WAIT for user approval before proceeding**
+5. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 2 COMPLETE]` and STOP
+6. Orchestrator waits for user approval before invoking Phase 3
 
 ### Phase 3: Design
 1. Route to `[Design_Architect]`
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/design-template.md`
 3. Reference `research.md` and `requirements.md`
 4. **CREATE**: `.ouroboros/specs/[feature-name]/design.md` (follow template structure, include Mermaid diagrams)
-5. **WAIT for user approval before proceeding**
+5. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 3 COMPLETE]` and STOP
+6. Orchestrator waits for user approval before invoking Phase 4
 
 ### Phase 4: Tasks
 1. Route to `[Task_Planner]`
@@ -92,13 +105,16 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 3. Reference all previous docs
 4. **CREATE**: `.ouroboros/specs/[feature-name]/tasks.md` (follow template structure, include file paths)
 5. Each task MUST include: file path, estimated effort, dependencies
+6. **⚠️ RETURN TO ORCHESTRATOR** — Output `[PHASE 4 COMPLETE]` and STOP
+7. Orchestrator waits for user approval before invoking Phase 5
 
 ### Phase 5: Validation
 1. Route to `[Spec_Validator]`
 2. **READ ALL 4 DOCUMENTS** in the feature folder
 3. Output consistency matrix comparing: research ↔ requirements ↔ design ↔ tasks
 4. If gaps found: return to relevant phase
-5. Announce: "✅ Spec validated. Use `/ouroboros-implement` to begin."
+5. **⚠️ RETURN TO ORCHESTRATOR** — Output `[VALIDATION COMPLETE]` and STOP
+6. Announce: "✅ Spec validated. Use `/ouroboros-implement` to begin."
 
 ---
 

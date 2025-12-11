@@ -86,26 +86,74 @@ your-project/
 
 ---
 
-## 📋 Spec-Driven Development (NEW!)
+## ♾️ Core Usage: Persistent Sessions
+
+The foundation of Ouroboros is the **persistent session loop** — AI that never forgets and never says goodbye.
+
+### Start a Session
+
+```
+/ouroboros
+```
+
+This command:
+1. ✅ Loads your project context from `history/context-*.md`
+2. ✅ Activates the **Continuous Command Loop (CCL)**
+3. ✅ Routes tasks to specialized sub-agents automatically
+4. ✅ Never ends until you say "stop", "end", "terminate", or "quit"
+
+### The "Never Say Goodbye" Protocol
+
+Once `/ouroboros` is active, the AI will:
+- ❌ Never say "Let me know if you need anything else"
+- ❌ Never end the conversation prematurely
+- ✅ Always execute: `python -c "task = input('[Ouroboros] > ')"` after each task
+- ✅ Wait for your next instruction continuously
+
+---
+
+## 📋 Spec-Driven Development
 
 For complex features, use the structured spec workflow:
 
 | Command | Purpose |
 |---------|---------|
 | `/ouroboros-init` | 🆕 First-time project research & setup |
-| `/ouroboros-spec` | Create Requirements → Design → Tasks |
+| `/ouroboros-spec` | Create Research → Requirements → Design → Tasks |
 | `/ouroboros-implement` | Auto-execute tasks.md |
 | `/ouroboros-archive` | Archive completed specs |
 
-**5 Dedicated Spec Agents:**
-- `[Project_Researcher]` - Codebase analysis and research
-- `[Requirements_Engineer]` - EARS notation requirements
-- `[Design_Architect]` - Architecture with Mermaid diagrams
-- `[Task_Planner]` - Trackable implementation checklist
-- `[Spec_Validator]` - Cross-document consistency check
+### 🎮 Execution Modes (`/ouroboros-implement`)
+
+Choose how to execute your implementation plan:
+
+| Mode | Speed | Control | Best For |
+|------|-------|---------|----------|
+| 🔧 **Task-by-Task** | Slowest | Highest | High-risk changes, learning |
+| 📦 **Phase-by-Phase** | Medium | Medium | Normal development |
+| 🚀 **Auto-Run All** | Fastest | Lowest | Low-risk, trusted tasks |
+
+### 📄 Enhanced Spec Templates
+
+Our templates follow industry best practices:
+
+| Template | Key Features |
+|----------|--------------|
+| **requirements.md** | Introduction, Glossary, Numbered EARS requirements |
+| **design.md** | Design Principles, Code Interfaces, **Correctness Properties** |
+| **tasks.md** | Sub-task numbering (1.1, 1.2), Checkpoints, Property test markers |
+
+### 🤖 Spec Agents (5 Specialists)
+
+| Agent | Role |
+|-------|------|
+| `[Project_Researcher]` | Codebase analysis and research |
+| `[Requirements_Engineer]` | EARS notation requirements |
+| `[Design_Architect]` | Architecture with Mermaid diagrams |
+| `[Task_Planner]` | Trackable implementation checklist |
+| `[Spec_Validator]` | Cross-document consistency check |
 
 ---
-
 
 ## 🧠 How It Works
 

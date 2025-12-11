@@ -14,7 +14,15 @@ Initialize Ouroboros for a new project by:
 
 ---
 
-## 📋 Initialization Checklist
+## � PHASE EXECUTION RULES 🚨
+
+> [!CAUTION]
+> **EXECUTE ONE PHASE AT A TIME.** After each phase, RETURN to orchestrator.
+> Do NOT proceed to next phase until orchestrator invokes you again.
+
+---
+
+## �📋 Initialization Checklist
 
 ### Phase 1: Project Research
 
@@ -37,9 +45,15 @@ runSubagent(
     filling in ALL sections with your findings.
     
     CONSTRAINT: Read-only analysis. Do NOT modify any project files.
+    
+    ⚠️ RETURN TO ORCHESTRATOR — Output `[PHASE 1 COMPLETE]` and STOP.
   "
 )
 ```
+
+**After Phase 1**: Wait for user confirmation before Phase 2.
+
+---
 
 ### Phase 2: Context Initialization
 
@@ -56,13 +70,19 @@ runSubagent(
     4. Set Current Goal to: 'Project initialized, awaiting first task'
     
     OUTPUT: Updated context file in history/
+    
+    ⚠️ RETURN TO ORCHESTRATOR — Output `[PHASE 2 COMPLETE]` and STOP.
   "
 )
 ```
 
+**After Phase 2**: Proceed to confirmation.
+
+---
+
 ### Phase 3: Confirmation
 
-After both phases complete:
+After both phases complete, orchestrator displays:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

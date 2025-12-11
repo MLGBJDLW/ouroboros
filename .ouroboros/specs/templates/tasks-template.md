@@ -1,4 +1,4 @@
-# Implementation Tasks: [Feature Name]
+# Implementation Plan
 
 > **Created**: YYYY-MM-DD
 > **Design**: [Link to design.md]
@@ -12,58 +12,88 @@
 |-------|-------|--------|
 | Phase 1 | 0/3 | ⬜ |
 | Phase 2 | 0/3 | ⬜ |
-| Verification | 0/2 | ⬜ |
+| Phase 3 | 0/2 | ⬜ |
 | **Total** | **0/8** | **0%** |
 
 ---
 
-## Phase 1: [Foundation/Backend/Core]
+## Phase 1: [Foundation / Backend / Core]
 
-- [ ] **Task 1.1**: [Clear, actionable description]
-  - File: `path/to/file.ext`
-  - Dependencies: None
-  - Outcome: [Verifiable result]
+- [ ] 1. [Task Group Name]
 
-- [ ] **Task 1.2**: [Clear, actionable description]
-  - File: `path/to/file.ext`
-  - Dependencies: Task 1.1
-  - Outcome: [Verifiable result]
+  - [ ] 1.1 [Specific task description]
+    - File: `path/to/file.ext`
+    - Dependencies: None
+    - _Requirements: 1.1_
 
-- [ ] **Task 1.3**: [Clear, actionable description]
-  - File: `path/to/file.ext`
-  - Dependencies: Task 1.1
-  - Outcome: [Verifiable result]
+  - [ ] 1.2 [Specific task description]
+    - File: `path/to/file.ext`
+    - Dependencies: Task 1.1
+    - _Requirements: 1.2_
 
----
+  - [ ]* 1.3 Write tests for [component]
+    - **Property 1: [Property Name]**
+    - **Validates: Requirements 1.1, 1.2**
 
-## Phase 2: [Integration/Frontend/Features]
-
-- [ ] **Task 2.1**: [Clear, actionable description]
-  - File: `path/to/file.ext`
-  - Dependencies: Phase 1 complete
-  - Outcome: [Verifiable result]
-
-- [ ] **Task 2.2**: [Clear, actionable description]
-  - File: `path/to/file.ext`
-  - Dependencies: Task 2.1
-  - Outcome: [Verifiable result]
-
-- [ ] **Task 2.3**: [Clear, actionable description]
-  - File: `path/to/file.ext`
-  - Dependencies: None
-  - Outcome: [Verifiable result]
+- [ ] 2. Checkpoint - Verify Phase 1
+  - Ensure all tests pass
+  - Ask user if questions arise
 
 ---
 
-## Verification
+## Phase 2: [Integration / Frontend / Features]
 
-- [ ] **Test 1**: Unit tests pass
-  - Command: `npm test` / `pytest` / etc.
-  - Coverage: [Target %]
+- [ ] 3. [Task Group Name]
 
-- [ ] **Test 2**: Integration/E2E tests pass
-  - Command: [Test command]
-  - Scenarios: [Key scenarios tested]
+  - [ ] 3.1 [Specific task description]
+    - File: `path/to/file.ext`
+    - Dependencies: Phase 1 complete
+    - _Requirements: 2.1_
+
+  - [ ] 3.2 [Specific task description]
+    - File: `path/to/file.ext`
+    - Dependencies: Task 3.1
+    - _Requirements: 2.2_
+
+  - [ ]* 3.3 Write tests for [component]
+    - **Property 2: [Property Name]**
+    - **Validates: Requirements 2.1, 2.2**
+
+- [ ] 4. Checkpoint - Verify Phase 2
+  - Ensure all tests pass
+  - Ask user if questions arise
+
+---
+
+## Phase 3: [Polish / Verification / Documentation]
+
+- [ ] 5. [Task Group Name]
+
+  - [ ] 5.1 [Specific task description]
+    - File: `path/to/file.ext`
+    - Dependencies: Phase 2 complete
+    - _Requirements: 3.1_
+
+  - [ ] 5.2 Update documentation
+    - File: `README.md`, `docs/`
+    - _Requirements: 3.2_
+
+- [ ] 6. Final Checkpoint
+  - All tests pass
+  - Documentation updated
+  - Ready for archive
+
+---
+
+## Legend
+
+| Symbol | Meaning |
+|--------|---------|
+| `[ ]` | Not started |
+| `[/]` | In progress |
+| `[x]` | Complete |
+| `[-]` | Blocked / Skipped |
+| `[ ]*` | Optional (e.g., property test) |
 
 ---
 
@@ -73,7 +103,7 @@
 - [List any blockers encountered]
 
 ### Decisions Made
-- [Document any implementation decisions]
+- [Document implementation decisions]
 
 ### Deferred Items
 - [Items pushed to future iterations]
@@ -83,6 +113,7 @@
 ## Completion Checklist
 
 - [ ] All tasks marked complete
+- [ ] All checkpoints passed
 - [ ] Tests passing
 - [ ] Code reviewed
 - [ ] Documentation updated
