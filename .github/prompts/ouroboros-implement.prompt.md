@@ -189,23 +189,35 @@ python -c "print('\\n[1] Task-by-Task  [2] Phase-by-Phase  [3] Auto-Run'); mode 
 | Document, Update docs | `ouroboros-writer` |
 | Deploy, Docker | `ouroboros-devops` |
 
-**Example prompt to AI (Self-Bootstrap):**
+**Example prompt to AI (Self-Bootstrap with MANDATORY CONFIRMATION):**
 ```
 Run a subagent with the following prompt:
 "
-1. READ .ouroboros/agents/ouroboros-coder.agent.md.
-2. Implement Task 2.1: [Task description]
-3. File: `src/auth.py`
-4. Requirements: [Details]
+[BOOTSTRAP - MANDATORY FIRST STEP]
+⚠️ BEFORE DOING ANY WORK:
+1. READ .ouroboros/agents/ouroboros-coder.agent.md
+2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
+❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
+
+[TASK]
+Implement Task 2.1: [Task description]
+File: `src/auth.py`
+Requirements: [Details]
 "
 ```
 
-**For testing:**
+**For testing (Self-Bootstrap with MANDATORY CONFIRMATION):**
 ```
 Run a subagent with the following prompt:
 "
-1. READ .ouroboros/agents/ouroboros-qa.agent.md.
-2. Write tests for `src/auth.py` covering login/logout.
+[BOOTSTRAP - MANDATORY FIRST STEP]
+⚠️ BEFORE DOING ANY WORK:
+1. READ .ouroboros/agents/ouroboros-qa.agent.md
+2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
+❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
+
+[TASK]
+Write tests for `src/auth.py` covering login/logout.
 "
 ```
 

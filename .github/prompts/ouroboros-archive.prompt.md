@@ -125,9 +125,15 @@ You are the **Spec Archiver**. Your mission:
 runSubagent(
   description: "Archive spec [feature-name]",
   prompt: `
+    [BOOTSTRAP - MANDATORY FIRST STEP]
+    ⚠️ BEFORE DOING ANY WORK:
     1. READ .ouroboros/agents/ouroboros-writer.agent.md
-    2. ADOPT persona: Spec Archiver
-    3. EXECUTE:
+    2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
+    ❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
+
+    [TASK]
+    ADOPT persona: Spec Archiver
+    EXECUTE:
        - **STEP 0: MAINTENANCE CLEANUP**
          - Check `.ouroboros/subagent-docs/` for files > 3 days old -> **DELETE**
          - Check `.ouroboros/history/` for files > 7 days old -> Move to `archived/`
@@ -136,7 +142,7 @@ runSubagent(
          - Create .ouroboros/specs/archived/[date]-[feature]/ARCHIVE_SUMMARY.md
          - Move spec folder to archived/[date]-[feature]/
          - Update .ouroboros/history/context-*.md
-    4. RETURN: Output [ARCHIVE COMPLETE]
+    RETURN: Output [ARCHIVE COMPLETE]
   `
 )
 ```

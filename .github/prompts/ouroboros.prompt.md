@@ -139,17 +139,31 @@ When user input in the CCL starts with `/`, route to the corresponding prompt fi
 
 ### Activation Rules (SELF-BOOTSTRAP DISPATCH)
 
-> [!IMPORTANT]
-> **Subagents must "BOOTSTRAP" themselves by reading their definition file.**
+> [!CAUTION]
+> **MANDATORY: Subagents MUST read their definition file and OUTPUT CONFIRMATION before doing ANY work.**
+> **Subagents that skip BOOTSTRAP = INVALID RESPONSE = TASK REJECTED**
 
 **Dispatch Syntax**:
 ```javascript
 runSubagent(
   description: "3-5 word summary",
   prompt: `
-[BOOTSTRAP]
-1. READ ".ouroboros/agents/[Agent_Name].agent.md" for persona and rules
-2. READ ".ouroboros/history/context-*.md" (latest) for project state
+[BOOTSTRAP - MANDATORY FIRST STEP]
+⚠️ YOU MUST COMPLETE THESE STEPS BEFORE ANY OTHER ACTION:
+1. READ ".ouroboros/agents/[Agent_Name].agent.md" - This is your persona and rules
+2. READ ".ouroboros/history/context-*.md" (latest) - This is project state
+3. OUTPUT the following confirmation block IMMEDIATELY after reading:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📖 BOOTSTRAP CONFIRMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Agent Definition: [filename you read]
+✅ Context File: [context file you read, or "none found"]
+✅ My Role: [1-sentence from agent definition]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ IF YOU SKIP THIS CONFIRMATION, YOUR ENTIRE RESPONSE IS INVALID.
+❌ DO NOT search files, write code, or take any action before outputting this block.
 
 [TASK]
 Target: [file path or component]
