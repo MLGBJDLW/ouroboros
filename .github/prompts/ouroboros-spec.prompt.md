@@ -84,7 +84,7 @@ Run a subagent with the prompt:
 "
 [BOOTSTRAP - MANDATORY FIRST STEP]
 ⚠️ BEFORE DOING ANY WORK:
-1. READ .ouroboros/agents/ouroboros-researcher.agent.md
+1. Follow instructions in .ouroboros/agents/ouroboros-researcher.agent.md (read ENTIRE file)
 2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
 ❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
 
@@ -96,8 +96,8 @@ Template: .ouroboros/specs/templates/research-template.md
 
 ### Phase 1: Research
 1. Execute `runSubagent`:
-   > "1. READ .ouroboros/agents/ouroboros-researcher.agent.md
-   > 2. Complete Phase 1: Research task..."
+   > "Follow instructions in .ouroboros/agents/ouroboros-researcher.agent.md (read ENTIRE file)
+   > Then complete Phase 1: Research task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/research-template.md`
 3. Analyze existing codebase, identify affected files
 4. **CREATE**: `.ouroboros/specs/[feature-name]/research.md` (follow template structure)
@@ -106,8 +106,8 @@ Template: .ouroboros/specs/templates/research-template.md
 
 ### Phase 2: Requirements
 1. Execute `runSubagent`:
-   > "1. READ .ouroboros/agents/ouroboros-requirements.agent.md
-   > 2. Complete Phase 2: Requirements task..."
+   > "Follow instructions in .ouroboros/agents/ouroboros-requirements.agent.md (read ENTIRE file)
+   > Then complete Phase 2: Requirements task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/requirements-template.md`
 3. Reference `research.md` for context
 4. **CREATE**: `.ouroboros/specs/[feature-name]/requirements.md` (follow template structure, use EARS notation)
@@ -116,8 +116,8 @@ Template: .ouroboros/specs/templates/research-template.md
 
 ### Phase 3: Design
 1. Execute `runSubagent`:
-   > "1. READ .ouroboros/agents/ouroboros-architect.agent.md
-   > 2. Complete Phase 3: Design task..."
+   > "Follow instructions in .ouroboros/agents/ouroboros-architect.agent.md (read ENTIRE file)
+   > Then complete Phase 3: Design task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/design-template.md`
 3. Reference `research.md` and `requirements.md`
 4. **CREATE**: `.ouroboros/specs/[feature-name]/design.md` (follow template structure, include Mermaid diagrams)
@@ -126,8 +126,8 @@ Template: .ouroboros/specs/templates/research-template.md
 
 ### Phase 4: Tasks
 1. Execute `runSubagent`:
-   > "1. READ .ouroboros/agents/ouroboros-tasks.agent.md
-   > 2. Complete Phase 4: Tasks breakdown..."
+   > "Follow instructions in .ouroboros/agents/ouroboros-tasks.agent.md (read ENTIRE file)
+   > Then complete Phase 4: Tasks breakdown..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/tasks-template.md`
 3. Reference all previous docs (research, requirements, design)
 4. **CREATE**: `.ouroboros/specs/[feature-name]/tasks.md` (follow template structure)
@@ -139,8 +139,8 @@ Template: .ouroboros/specs/templates/research-template.md
 
 **Part A: Generate Validation Report**
 1. Execute `runSubagent`:
-   > "1. READ .ouroboros/agents/ouroboros-validator.agent.md
-   > 2. Complete Phase 5: Validation task..."
+   > "Follow instructions in .ouroboros/agents/ouroboros-validator.agent.md (read ENTIRE file)
+   > Then complete Phase 5: Validation task..."
 2. **READ TEMPLATE**: `.ouroboros/specs/templates/validation-template.md`
 3. **READ ALL 5 DOCUMENTS** in the feature folder
 4. **CREATE**: `.ouroboros/specs/[feature-name]/validation-report.md` (follow template structure)
