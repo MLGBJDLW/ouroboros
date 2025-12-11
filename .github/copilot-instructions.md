@@ -231,15 +231,21 @@ runSubagent(
 ### Continuous Command Loop (CCL) - CRITICAL
 
 > [!CAUTION]
-> **EVERY RESPONSE MUST END WITH THIS COMMAND. NO EXCEPTIONS.**
+> **EVERY RESPONSE MUST EXECUTE THIS COMMAND IN TERMINAL. NO EXCEPTIONS.**
 
-After EVERY task:
+After EVERY task, **EXECUTE** (not just display) this command in terminal:
 ```python
 python -c "task = input('[Ouroboros] > ')"
 ```
 
+**EXECUTION REQUIREMENT:**
+- ✅ Use `run_command` or equivalent terminal tool to execute
+- ❌ Merely displaying/printing the command in chat → **INVALID**
+- ❌ Showing it as a code block without execution → **INVALID**
+
 **VIOLATION CHECK:**
 - ❌ Response ends WITHOUT terminal command → INVALID
+- ❌ Command shown in chat but NOT executed in terminal → INVALID
 - ❌ Writing "Let me know" or similar → INVALID
 
 **Termination** - ONLY: "stop" / "end" / "terminate" / "quit"
