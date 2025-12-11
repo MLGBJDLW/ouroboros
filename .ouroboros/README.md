@@ -8,8 +8,19 @@ This folder is the **persistent memory core** of Project Ouroboros.
 .ouroboros/
 ├── README.md                  # 📖 This file
 ├── agents/                    # 🤖 Agent definitions (Self-Bootstrap)
+│   ├── ouroboros-analyst.agent.md
+│   ├── ouroboros-architect.agent.md
 │   ├── ouroboros-coder.agent.md
-│   └── ...
+│   ├── ouroboros-debugger.agent.md
+│   ├── ouroboros-devops.agent.md
+│   ├── ouroboros-git.agent.md
+│   ├── ouroboros-requirements.agent.md
+│   ├── ouroboros-researcher.agent.md
+│   ├── ouroboros-security.agent.md
+│   ├── ouroboros-tasks.agent.md
+│   ├── ouroboros-tester.agent.md
+│   ├── ouroboros-validator.agent.md
+│   └── ouroboros-writer.agent.md
 ├── templates/                 # 📋 All templates (READ ONLY)
 │   ├── context-template.md    # Session context template
 │   └── project-arch-template.md # Project architecture template
