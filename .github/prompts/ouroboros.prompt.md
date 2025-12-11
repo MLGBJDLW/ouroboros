@@ -315,7 +315,7 @@ Before delivering ANY code:
 
 2.  **Write-One (Guardian)**:
     - **ONLY** the Orchestrator or `ouroboros-writer` may EDIT the context file.
-    - **Standard Agents (Coder, Tester, etc.)**: Do **NOT** edit `context.md`.
+    - **Standard Agents (Coder, QA, etc.)**: Do **NOT** edit `context.md`.
       - Instead, output your results/findings for the Orchestrator to log.
     - **Subagent-Docs**: Created by Sender, Read by Receiver, Deleted by System (3 days).
 **Locations**:

@@ -214,7 +214,7 @@ Implementing user authentication
 - [ ] Fix JWT refresh token bug
 ```
 
-Your requests are automatically routed to specialized agents in `.github/agents/`:
+Your requests are automatically routed to specialized agents in `.ouroboros/agents/`:
 
 | You Say | Routed To | Behavior |
 |---------|-----------|----------|

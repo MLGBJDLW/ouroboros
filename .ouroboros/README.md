@@ -150,7 +150,7 @@ Use **Spec-Driven Development** for complex features:
 
 ## 🤖 Sub-Agents
 
-All agents are defined in `.github/agents/` and can be invoked as subagents.
+All agents are defined in `.ouroboros/agents/` and can be invoked as subagents.
 
 ### Core Agents
 | Agent | Role |
