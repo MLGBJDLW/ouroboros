@@ -91,20 +91,20 @@ All agents are located in `.github/agents/`. The orchestrator (`ouroboros`) stri
 Ouroboros v2.0 uses a strict **Hub-and-Spoke** model. You never talk to the subagents; you talk to the Orchestrator, and it calls them for you.
 
 ```mermaid
-graph TD
-    User((User)) -->|Chat| Orch[Main Agent (ouroboros)]
+flowchart TD
+    User(("User")) -->|Chat| Orch["Main Agent (ouroboros)"]
     
-    Orch -->|runSubagent| Coder[ouroboros-coder]
-    Orch -->|runSubagent| QA[ouroboros-qa]
-    Orch -->|runSubagent| Writer[ouroboros-writer]
-    Orch -->|runSubagent| Specs[Spec Agents...]
+    Orch -->|runSubagent| Coder["ouroboros-coder"]
+    Orch -->|runSubagent| QA["ouroboros-qa"]
+    Orch -->|runSubagent| Writer["ouroboros-writer"]
+    Orch -->|runSubagent| Specs["Spec Agents..."]
     
     Coder -->|Return Result| Orch
     QA -->|Return Result| Orch
     Writer -->|Return Result| Orch
     Specs -->|Return Result| Orch
     
-    Orch -->|Updates Context| Memory[(context.md)]
+    Orch -->|Updates Context| Memory[("context.md")]
 ```
 
 ### The Return Protocol
