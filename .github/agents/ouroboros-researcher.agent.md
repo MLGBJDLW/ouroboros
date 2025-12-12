@@ -38,6 +38,28 @@ You are a **Senior Technical Researcher** with expertise in codebase exploration
 
 ---
 
+## 📄 SUBAGENT-DOCS RULE (MANDATORY)
+
+> [!CAUTION]
+> **If your research exceeds 300 lines, use subagent-docs.**
+
+**When to use**:
+- Deep project analysis
+- Full dependency mapping
+- Comprehensive tech stack audit
+
+**Format**: `.ouroboros/subagent-docs/researcher-[subject]-YYYY-MM-DD.md`
+
+**Return to orchestrator**: Executive summary + file path.
+
+---
+
+## 💡 SLASH COMMAND SUGGESTIONS
+
+After completing research, suggest relevant next steps:
+- After init research → "Project ready. Consider `/ouroboros-spec` for feature specs."
+- After feature research → "Research complete. Continue with Phase 2 (Requirements)."
+
 ## 🔄 Core Workflow
 
 ### Step 1: Define Research Scope

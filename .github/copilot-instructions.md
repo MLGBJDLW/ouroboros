@@ -205,13 +205,17 @@ python -c "task = input('[Ouroboros] > ')"
 
 ## Slash Command Routing
 
-| Input | Load |
-|-------|------|
-| `/ouroboros` | `.github/prompts/ouroboros.prompt.md` |
-| `/ouroboros-init` | `.github/prompts/ouroboros-init.prompt.md` |
-| `/ouroboros-spec` | `.github/prompts/ouroboros-spec.prompt.md` |
-| `/ouroboros-implement` | `.github/prompts/ouroboros-implement.prompt.md` |
-| `/ouroboros-archive` | `.github/prompts/ouroboros-archive.prompt.md` |
+| Input | Agent | Prompt (Reference) |
+|-------|-------|-------------------|
+| `/ouroboros` | `ouroboros` | `.github/prompts/ouroboros.prompt.md` |
+| `/ouroboros-init` | `ouroboros-init` | `.github/prompts/ouroboros-init.prompt.md` |
+| `/ouroboros-spec` | `ouroboros-spec` | `.github/prompts/ouroboros-spec.prompt.md` |
+| `/ouroboros-implement` | `ouroboros-implement` | `.github/prompts/ouroboros-implement.prompt.md` |
+| `/ouroboros-archive` | `ouroboros-archive` | `.github/prompts/ouroboros-archive.prompt.md` |
+
+> [!NOTE]
+> Each slash command routes to a **dedicated agent** with specialized tools and instructions.
+> The prompt files are lightweight references that invoke the agent.
 
 ---
 
@@ -239,14 +243,72 @@ runSubagent(
 
 ---
 
-## Context Update Protocol
+## Context Update Protocol (MANDATORY)
+
+> [!CAUTION]
+> **ALL AGENTS MUST UPDATE CONTEXT ON SIGNIFICANT EVENTS.**
 
 **Update `.ouroboros/history/context-*.md` when:**
-- Task completed → Add to `## Completed`
-- Error encountered → Add to `## Pending Issues`
-- New file created → Add to `## Files Modified`
 
-**Dispatch to `ouroboros-writer` for updates.**
+| Event | Action | Section |
+|-------|--------|---------|
+| Task completed | Add entry | `## Completed` |
+| Error encountered | Log error | `## Pending Issues` |
+| New file created | Record path | `## Files Modified` |
+| Spec phase complete | Record phase | `## Completed` |
+| Major milestone | Update goal | `## Current Goal` |
+
+**Execution**: Delegate to `ouroboros-writer` for ALL context updates.
+
+**Example Dispatch**:
+```javascript
+runSubagent(
+  agent: "ouroboros-writer",
+  prompt: `Update .ouroboros/history/context-*.md:
+  - Add to ## Completed: "Implemented user authentication"
+  - Add to ## Files Modified: "src/auth.py, src/login.tsx"`
+)
+```
+
+---
+
+## Subagent-Docs Protocol (MANDATORY)
+
+> [!IMPORTANT]
+> **Long outputs (>500 lines) MUST go to subagent-docs.**
+
+**Location**: `.ouroboros/subagent-docs/[agent]-[task]-YYYY-MM-DD.md`
+
+| Agent | When to Use | Example |
+|-------|-------------|---------|
+| `ouroboros-analyst` | Large codebase scan, dependency tree | `analyst-auth-scan-2025-12-11.md` |
+| `ouroboros-coder` | Multi-file implementation | `coder-auth-impl-2025-12-11.md` |
+| `ouroboros-qa` | Full test suite results | `qa-test-report-2025-12-11.md` |
+| `ouroboros-researcher` | Deep project analysis | `researcher-init-2025-12-11.md` |
+
+**Rules**:
+1. Save long output to subagent-docs
+2. Return SUMMARY to orchestrator (not full content)
+3. Include file path in response: "Full details: `.ouroboros/subagent-docs/...`"
+
+---
+
+## Slash Command Reference (ALL AGENTS)
+
+> [!NOTE]
+> All agents should understand and be able to reference these commands.
+
+| Command | Agent | Purpose |
+|---------|-------|---------|
+| `/ouroboros` | `ouroboros` | Main orchestrator, start session |
+| `/ouroboros-init` | `ouroboros-init` | First-time project setup |
+| `/ouroboros-spec` | `ouroboros-spec` | 5-phase spec workflow |
+| `/ouroboros-implement` | `ouroboros-implement` | Execute tasks from spec |
+| `/ouroboros-archive` | `ouroboros-archive` | Archive completed specs |
+
+**Subagents can suggest commands** when appropriate:
+- After researching a new feature → "Consider running `/ouroboros-spec` to create specs"
+- After completing all tasks → "Consider running `/ouroboros-archive` to archive"
 
 ---
 

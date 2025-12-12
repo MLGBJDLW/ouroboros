@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-12-12
+
+### 🔄 Workflow Orchestrator Architecture
+
+Introduced dedicated **Workflow Orchestrators** — sub-orchestrators that manage major workflows while inheriting CCL enforcement and delegation rules from the main orchestrator.
+
+#### Added
+- **4 New Workflow Agents** — Created specialized orchestrators for each major workflow:
+  | Agent | Purpose |
+  |-------|---------|
+  | `ouroboros-init` | Project initialization workflow |
+  | `ouroboros-spec` | 5-phase spec creation workflow |
+  | `ouroboros-implement` | Task execution workflow |
+  | `ouroboros-archive` | Archive management workflow |
+
+- **Prompt-to-Agent Routing** — Each prompt file now routes to its dedicated agent:
+  - `ouroboros-init.prompt.md` → `agent: ouroboros-init`
+  - `ouroboros-spec.prompt.md` → `agent: ouroboros-spec`
+  - `ouroboros-implement.prompt.md` → `agent: ouroboros-implement`
+  - `ouroboros-archive.prompt.md` → `agent: ouroboros-archive`
+
+- **Orchestrator Constraints on Workflow Agents**:
+  - **BLIND/MUTE Rules**: Cannot read/write files directly → DELEGATE
+  - **CCL Enforcement**: Mandatory heartbeat after every response
+  - **Tool Lockdown**: `edit` and `read` tools forbidden (delegate to workers)
+  - **Handoff Protocol**: Return to main orchestrator after completion
+
+#### Changed
+- **Agent Count**: 12 → 16 agents (added 4 workflow orchestrators)
+- **Architecture Diagram**: Updated mermaid diagram to show workflow orchestrators
+- **Routing Table**: `copilot-instructions.md` now shows agent targets for slash commands
+- **File Structure**: Updated to show new agent organization
+
+#### Fixed
+- **Instructions Confusion**: Previously, prompts with `agent: ouroboros` caused instruction mixing. Now each workflow has its dedicated agent with clear boundaries.
+
+---
+
 ## [2.0.0] - 2025-12-11
 
 ### 🚀 Major Architecture Overhaul: Centralized Orchestration
