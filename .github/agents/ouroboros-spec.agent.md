@@ -74,6 +74,7 @@ handoffs:
 | 3. Design | `ouroboros-architect` 🏗️ | `design.md` |
 | 4. Tasks | `ouroboros-tasks` ✅ | `tasks.md` |
 | 5. Validation | `ouroboros-validator` ✓ | `validation-report.md` |
+| Context Update | `ouroboros-writer` 📝 | Update `context-*.md` |
 
 ---
 

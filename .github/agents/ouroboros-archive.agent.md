@@ -58,6 +58,15 @@ handoffs:
 
 ---
 
+## 📋 AVAILABLE AGENTS
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `ouroboros-analyst` | Scan for completed specs | Check tasks.md completion status |
+| `ouroboros-writer` | File operations | Move files, update context, cleanup |
+
+---
+
 ## 🧹 Maintenance & Cleanup Protocol
 
 > [!CAUTION]

@@ -57,6 +57,16 @@ Initialize Ouroboros for a new project by:
 
 ---
 
+## 📋 AVAILABLE AGENTS
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `ouroboros-researcher` | Project analysis | Scan tech stack, patterns |
+| `ouroboros-writer` | File creation | Create context, project-arch files |
+| `ouroboros-analyst` | Deep code analysis | Complex dependency mapping |
+
+---
+
 ## 🚀 ON INVOKE — UNIQUE WELCOME SEQUENCE
 
 **IMMEDIATELY display this banner:**
