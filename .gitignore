@@ -41,6 +41,11 @@ build/
 !.ouroboros/specs/templates/
 !.ouroboros/specs/archived/
 
+# Ignore toggle script generated files
+.ouroboros/scripts/backups/
+.ouroboros/scripts/ouroboros.config.json
+.ouroboros/scripts/ouroboros.history
+
 # ===========================================
 # IMPORTANT: DO NOT IGNORE THESE
 # ===========================================

@@ -153,11 +153,18 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
     """Convert default mode commands to enhanced mode. Returns (new_content, count)."""
     changes = 0
     
-    # Type A: Standard CCL
-    pattern_a = r'python -c "task = input\(\'\\[Ouroboros\\] > \'\)"'
+    # Type A: Standard CCL - match multiple formats
+    # Format 1: python -c "task = input('[Ouroboros] > ')"
+    # Format 2: python -c "task = input(\'[Ouroboros] > \')"
+    patterns_a = [
+        r'python -c "task = input\(\'\[Ouroboros\] > \'\)"',
+        r'python -c "task = input\(\\\'\[Ouroboros\] > \\\'\)"',
+        r"python -c \"task = input\('[Ouroboros] > '\)\"",
+    ]
     replacement_a = 'python .ouroboros/scripts/ouroboros_input.py'
-    content, n = re.subn(pattern_a, replacement_a, content)
-    changes += n
+    for pattern in patterns_a:
+        content, n = re.subn(pattern, replacement_a, content)
+        changes += n
     
     # Type B: Menu with print + choice
     def replace_menu(match):
@@ -206,20 +213,16 @@ def convert_to_default(content: str) -> tuple[str, int]:
     """Convert enhanced mode commands back to default mode. Returns (new_content, count)."""
     changes = 0
     
-    # Type A: Standard CCL
-    pattern_a = r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s|$)'
-    # Need to be careful not to match with arguments
-    def replace_ccl(match):
-        return 'python -c "task = input(\'[Ouroboros] > \')"'
-    
-    # Match only the basic call without arguments
-    pattern_a_exact = r'python \.ouroboros/scripts/ouroboros_input\.py(?=\s*$|\s*\n|\s*```)'
-    content, n = re.subn(pattern_a_exact, replace_ccl, content, flags=re.MULTILINE)
+    # Type A: Standard CCL - match standalone calls (no --arguments after)
+    # Use negative lookahead to avoid matching calls with arguments
+    pattern_a_exact = r'python \.ouroboros/scripts/ouroboros_input\.py(?!\s+--)'
+    replacement_a = 'python -c "task = input(\'[Ouroboros] > \')"'
+    content, n = re.subn(pattern_a_exact, replacement_a, content)
     changes += n
     
     # Type B: Menu with header + prompt
     def replace_menu(match):
-        header = match.group(1).replace('\\n', '\\\\n').replace('"', "'")
+        header = match.group(1).replace('"', "'")
         prompt = match.group(2).replace('"', "'")
         return f'python -c "print(\'{header}\'); choice = input(\'{prompt}\')"'
     
