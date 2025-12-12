@@ -218,16 +218,32 @@ def get_terminal_width() -> int:
 def get_box_width(config: dict, args) -> int:
     """Get appropriate box width based on terminal size."""
     term_width = get_terminal_width()
-    # Cap at reasonable max, ensure minimum
-    return min(max(term_width, 50), 80)
+    # Use full width minus border characters (2)
+    return term_width - 2
 
 # Pre-compile regex for performance
 import re
+import unicodedata
 _ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 
+def char_width(char: str) -> int:
+    """Get display width of a single character."""
+    # East Asian Width property
+    ea = unicodedata.east_asian_width(char)
+    # Wide (W) and Full-width (F) characters are 2 columns
+    if ea in ('W', 'F'):
+        return 2
+    # Emoji often have width 2 (check for variation selector or ZWJ)
+    code = ord(char)
+    if code >= 0x1F300:  # Most emoji ranges
+        return 2
+    return 1
+
 def visible_len(text: str) -> int:
-    """Get visible length of text (ignoring ANSI escape codes)."""
-    return len(_ANSI_ESCAPE.sub('', text))
+    """Get visible length of text (ignoring ANSI escape codes, accounting for character width)."""
+    # Remove ANSI escape sequences
+    clean = _ANSI_ESCAPE.sub('', text)
+    return sum(char_width(c) for c in clean)
 
 def pad_line(text: str, width: int, fill: str = ' ') -> str:
     """Pad text to width accounting for ANSI codes."""
@@ -286,9 +302,9 @@ def print_welcome_box(config: dict, args) -> None:
     ui_print(f"{colors['border']}{box['lj']}{box['h'] * width}{box['rj']}{colors['reset']}")
     # Shortcuts section
     print_box_line(f"  {colors['info']}⌨️  Shortcuts:{colors['reset']} ", width, colors, box)
-    print_box_line(f"    • Paste: auto-detected as multi-line ", width, colors, box)
-    print_box_line(f"    • Manual multi-line: type {colors['warning']}<<<{colors['reset']} then {colors['warning']}>>>{colors['reset']} to end ", width, colors, box)
-    print_box_line(f"    • Submit: {colors['success']}Enter{colors['reset']}  |  Cancel: {colors['error']}Ctrl+C{colors['reset']} ", width, colors, box)
+    print_box_line(f"    • Paste: auto-detected as multi-line", width, colors, box)
+    print_box_line(f"    • Multi-line: {colors['warning']}<<<{colors['reset']} to start, {colors['warning']}>>>{colors['reset']} to end", width, colors, box)
+    print_box_line(f"    • Submit: {colors['success']}Enter{colors['reset']} | Cancel: {colors['error']}Ctrl+C{colors['reset']}", width, colors, box)
     # Bottom border
     ui_print(f"{colors['border']}{box['bl']}{box['h'] * width}{box['br']}{colors['reset']}")
     ui_print()
