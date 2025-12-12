@@ -218,7 +218,7 @@ Upgrade your terminal input with the Enhanced CCL system — featuring visual UI
 
 **Double-Click**:
 - Windows: `.ouroboros/scripts/toggle.bat`
-- Mac/Linux: `.ouroboros/scripts/ouroboros_toggle.py`
+- Mac/Linux: `.ouroboros/scripts/toggle.sh` (run `chmod +x toggle.sh` first)
 
 **Command Line**:
 ```bash

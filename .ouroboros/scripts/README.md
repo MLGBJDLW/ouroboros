@@ -11,7 +11,7 @@ This directory contains the Enhanced Continuous Command Loop (CCL) input system.
 **Option 1: Double-Click (Recommended)**
 
 - **Windows**: Double-click `.ouroboros/scripts/toggle.bat`
-- **Mac/Linux**: Double-click `.ouroboros/scripts/ouroboros_toggle.py`
+- **Mac/Linux**: Double-click `.ouroboros/scripts/toggle.sh` (run `chmod +x toggle.sh` first)
 
 **Option 2: Command Line**
 
