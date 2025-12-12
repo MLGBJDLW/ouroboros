@@ -256,12 +256,12 @@ class WelcomeBox:
         
         writeln()
         writeln(f"{c['border']}{BOX['tl']}{BOX['h'] * width}{BOX['tr']}{c['reset']}")
-        box_line(f"  ♾️  Ouroboros - Awaiting Command")
+        box_line(f"  [*] Ouroboros - Awaiting Command")
         writeln(f"{c['border']}{BOX['lj']}{BOX['h'] * width}{BOX['rj']}{c['reset']}")
-        box_line(f"  {c['info']}⌨️  Shortcuts:{c['reset']}")
-        box_line(f"    • Paste: auto-detected as multi-line")
-        box_line(f"    • Multi-line: {c['warning']}<<<{c['reset']} to start, {c['warning']}>>>{c['reset']} to end")
-        box_line(f"    • Submit: {c['success']}Enter{c['reset']} | Cancel: {c['error']}Ctrl+C{c['reset']}")
+        box_line(f"  {c['info']}[?] Shortcuts:{c['reset']}")
+        box_line(f"      Paste: auto-detected as multi-line")
+        box_line(f"      Multi-line: {c['warning']}<<<{c['reset']} to start, {c['warning']}>>>{c['reset']} to end")
+        box_line(f"      Submit: {c['success']}Enter{c['reset']} | Cancel: {c['error']}Ctrl+C{c['reset']}")
         writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * width}{BOX['br']}{c['reset']}")
         writeln()
 
@@ -276,10 +276,22 @@ class OutputBox:
         width = min(cols - 4, 60)
         sep = BOX['h'] * width
         
+        # Header
         print(f"{BOX['tl']}{sep}{BOX['tr']}")
-        print(f"{BOX['v']} 📝 {marker.upper()}")
+        header = f" [>] {marker.upper()}"
+        padded_header = header.ljust(width)
+        print(f"{BOX['v']}{padded_header}{BOX['v']}")
         print(f"{BOX['lj']}{sep}{BOX['rj']}")
-        print(content)
+        
+        # Content with side borders
+        for line in content.split('\n'):
+            # Truncate or pad each line
+            if len(line) > width:
+                line = line[:width - 3] + "..."
+            padded_line = line.ljust(width)
+            print(f"{BOX['v']}{padded_line}{BOX['v']}")
+        
+        # Footer
         print(f"{BOX['bl']}{sep}{BOX['br']}")
 
 
