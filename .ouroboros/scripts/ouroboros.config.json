@@ -1,0 +1,8 @@
+{
+  "platform": "windows",
+  "ansi_colors": true,
+  "unicode_box": true,
+  "theme": "mystic_purple",
+  "auto_multiline": true,
+  "compress_threshold": 10
+}

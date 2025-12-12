@@ -30,6 +30,12 @@ This directory serves as the **persistent memory** and **state management core**
 │       ├── design.md          # Phase 3: Design
 │       ├── tasks.md           # Phase 4: Tasks
 │       └── validation-report.md # Phase 5: Validation
+├── scripts/                   # 🎨 Enhanced CCL Input (Optional)
+│   ├── ouroboros_input.py     # Enhanced input handler
+│   ├── ouroboros_toggle.py    # Mode toggle script
+│   ├── ouroboros.config.json  # Cached environment config
+│   ├── ouroboros.history      # Command history
+│   └── README.md              # Full documentation
 └── subagent-docs/             # 📄 Transient Subagent Outputs
     └── [agent]-[task]-YYYY-MM-DD.md
 ```
@@ -79,6 +85,55 @@ If you need to manually injection information into the AI's brain:
 
 ---
 
+## 🎨 Enhanced CCL Input System (Optional)
+
+The Enhanced Continuous Command Loop provides an improved terminal input experience with visual UI, command history, and intelligent content detection.
+
+### Quick Toggle
+
+```bash
+# Check current mode
+python .ouroboros/scripts/ouroboros_toggle.py --status
+
+# Enable enhanced mode
+python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
+
+# Disable enhanced mode
+python .ouroboros/scripts/ouroboros_toggle.py --mode default
+```
+
+### ✅ Advantages
+
+| Feature | Description |
+|---------|-------------|
+| **Mystic Purple Theme** | Beautiful, branded terminal UI with colors |
+| **Display Compression** | Large pastes (>10 lines) show compact preview |
+| **Auto Multi-line** | Automatically detects pasted content |
+| **File Detection** | Recognizes dragged image/video/code files |
+| **Command History** | Saves and recalls previous commands |
+| **Zero Dependencies** | Python standard library only |
+
+### ⚠️ Limitations
+
+| Limitation | Reason |
+|------------|--------|
+| No Shift+Enter (manual) | Python `input()` can't detect key modifiers; pastes still auto-detected |
+| No ↑/↓ on Windows | Windows lacks readline (history saved to file) |
+| Terminal-dependent | Old terminals may lack ANSI/Unicode support |
+
+### Requirements
+
+- Python 3.6+
+- No pip install needed
+- Works on: Windows 10+, Linux, macOS
+
+### Documentation
+
+See [`.ouroboros/scripts/README.md`](scripts/README.md) for full usage guide.
+
+---
+
 <p align="center">
   <strong>The Memory Persists. The Loop Continues.</strong>
 </p>
+

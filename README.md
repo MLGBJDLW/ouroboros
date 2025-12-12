@@ -200,6 +200,44 @@ Once `/ouroboros` is active, the AI will:
 
 ---
 
+## 🎨 Enhanced CCL Input (Optional)
+
+Upgrade your terminal input with the Enhanced CCL system — featuring visual UI, command history, and intelligent content detection.
+
+### Quick Toggle
+
+```bash
+# Check current mode
+python .ouroboros/scripts/ouroboros_toggle.py --status
+
+# Enable enhanced mode
+python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
+
+# Switch back to default
+python .ouroboros/scripts/ouroboros_toggle.py --mode default
+```
+
+### Features
+
+| ✅ Advantage | Description |
+|-------------|-------------|
+| **Mystic Purple Theme** | Beautiful branded terminal UI |
+| **Display Compression** | Large pastes show compact preview |
+| **Auto Multi-line** | Automatically detects pasted content |
+| **File Detection** | Recognizes dragged image/video files |
+| **Command History** | Saves and recalls previous commands |
+| **Zero Dependencies** | Python standard library only |
+
+### Limitations
+
+| ⚠️ Limitation | Reason |
+|---------------|--------|
+| No Shift+Enter (manual) | Python `input()` can't detect keys; pastes auto-detected |
+| No ↑/↓ on Windows | Windows lacks readline (history saved to file) |
+| Terminal-dependent | Old terminals may lack ANSI/Unicode support |
+
+> See [`.ouroboros/scripts/README.md`](.ouroboros/scripts/README.md) for full documentation.
+
 ## 📋 Spec-Driven Development
 
 For complex features, use the structured spec workflow:
@@ -258,7 +296,11 @@ your-project/
 │   ├── templates/                 ← 📋 All templates (READ ONLY)
 │   ├── history/                   ← 📜 Active session files
 │   ├── subagent-docs/             ← 📄 Long output storage
-│   └── specs/                     ← 📋 Feature specifications
+│   ├── specs/                     ← 📋 Feature specifications
+│   └── scripts/                   ← 🎨 Enhanced CCL (optional)
+│       ├── ouroboros_input.py     ← Enhanced input handler
+│       ├── ouroboros_toggle.py    ← Mode toggle script
+│       └── README.md              ← Scripts documentation
 └── ... your project files
 ```
 
