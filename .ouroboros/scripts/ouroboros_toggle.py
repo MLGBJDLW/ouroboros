@@ -361,6 +361,78 @@ def toggle_mode(repo_root: Path, target_mode: str | None, dry_run: bool) -> None
     else:
         print(f"\n  ✓ Mode switched to {target_mode.upper()}\n")
 
+# =============================================================================
+# INTERACTIVE MENU (TUI)
+# =============================================================================
+
+def clear_screen() -> None:
+    """Clear the terminal screen."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def print_header(repo_root: Path) -> None:
+    """Print the interactive menu header."""
+    mode = detect_current_mode(repo_root)
+    mode_display = "🎨 ENHANCED" if mode == "enhanced" else "📝 DEFAULT"
+    
+    print("\n" + "=" * 50)
+    print("  ♾️  OUROBOROS CCL TOGGLE")
+    print("=" * 50)
+    print(f"  Project: {repo_root.name}")
+    print(f"  Current Mode: {mode_display}")
+    print("=" * 50 + "\n")
+
+def interactive_menu(repo_root: Path) -> None:
+    """Display interactive menu for double-click users."""
+    clear_screen()
+    print_header(repo_root)
+    
+    current_mode = detect_current_mode(repo_root)
+    opposite_mode = "enhanced" if current_mode == "default" else "default"
+    opposite_display = "🎨 Enhanced" if opposite_mode == "enhanced" else "📝 Default"
+    
+    print("  Choose an option:\n")
+    print(f"    [1] Switch to {opposite_display} mode")
+    print("    [2] Preview changes (dry run)")
+    print("    [3] Show detailed status")
+    print("    [0] Exit\n")
+    print("-" * 50)
+    
+    try:
+        choice = input("  Enter choice (0-3): ").strip()
+    except EOFError:
+        choice = "0"
+    
+    print()
+    
+    if choice == "1":
+        toggle_mode(repo_root, opposite_mode, dry_run=False)
+    elif choice == "2":
+        toggle_mode(repo_root, opposite_mode, dry_run=True)
+    elif choice == "3":
+        print_status(repo_root)
+    elif choice == "0":
+        print("  Goodbye! ♾️\n")
+        return
+    else:
+        print("  ❌ Invalid choice. Please enter 0-3.\n")
+        interactive_menu(repo_root)
+        return
+    
+    # Wait for user to see results
+    wait_for_exit()
+
+def wait_for_exit() -> None:
+    """Wait for user input before closing (for double-click users)."""
+    print("-" * 50)
+    try:
+        input("  Press Enter to exit...")
+    except EOFError:
+        pass
+
+def is_double_clicked() -> bool:
+    """Check if script was likely double-clicked (no args and stdin is terminal)."""
+    return len(sys.argv) == 1 and sys.stdin.isatty()
+
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -368,7 +440,7 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python ouroboros_toggle.py                  # Auto-toggle mode
+  python ouroboros_toggle.py                  # Interactive menu (double-click)
   python ouroboros_toggle.py --mode enhanced  # Switch to enhanced mode
   python ouroboros_toggle.py --mode default   # Switch to default mode
   python ouroboros_toggle.py --dry-run        # Preview changes
@@ -393,6 +465,11 @@ Examples:
         help='Show current mode status'
     )
     parser.add_argument(
+        '--interactive', '-i',
+        action='store_true',
+        help='Force interactive menu mode'
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f'ouroboros_toggle.py {VERSION}'
@@ -403,9 +480,35 @@ Examples:
 def main() -> None:
     """Main entry point."""
     args = parse_args()
-    repo_root = find_repo_root()
     
-    if args.status:
+    # Find repo root from script location first, then CWD
+    script_path = Path(__file__).resolve().parent
+    
+    # Try to find from script location (for double-click)
+    current = script_path
+    repo_root = None
+    while current != current.parent:
+        if (current / ".github").exists():
+            repo_root = current
+            break
+        current = current.parent
+    
+    # Fallback to CWD-based search
+    if repo_root is None:
+        repo_root = find_repo_root()
+    
+    # Check if project structure exists
+    if not (repo_root / ".github").exists():
+        print("\n❌ Error: Could not find Ouroboros project.")
+        print("   Make sure .github/ and .ouroboros/ exist in your project.\n")
+        if is_double_clicked():
+            wait_for_exit()
+        sys.exit(1)
+    
+    # Interactive mode for double-click or --interactive flag
+    if is_double_clicked() or args.interactive:
+        interactive_menu(repo_root)
+    elif args.status:
         print_status(repo_root)
     else:
         toggle_mode(repo_root, args.mode, args.dry_run)

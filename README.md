@@ -1,10 +1,11 @@
-# ♾️ Project Ouroboros v2.0
+# ♾️ Project Ouroboros v3.0
 
 > **Save Money on GitHub Copilot** — A persistent context system that reduces redundant conversations and maximizes your Copilot subscription value.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Copilot Compatible](https://img.shields.io/badge/GitHub%20Copilot-Compatible-blue)](https://github.com/features/copilot)
-[![Version: 2.0](https://img.shields.io/badge/Version-2.0-green)](https://github.com/MLGBJDLW/ouroboros)
+[![Version: 3.0](https://img.shields.io/badge/Version-3.0-green)](https://github.com/MLGBJDLW/ouroboros)
+[![CI](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml/badge.svg)](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml)
 
 ---
 
@@ -25,19 +26,28 @@ Ouroboros solves this:
 
 ## 🚀 Quick Start (3 Steps!)
 
+> **Requirement**: Python 3.6+ must be installed on your system. The Continuous Command Loop uses `python -c` for terminal interaction.
+
 ### Step 1: Copy to Your Project
 
+**Option A: Download Release (Recommended)**
+
+1. Download the latest `ouroboros-vX.X.X.zip` from [Releases](https://github.com/MLGBJDLW/ouroboros/releases)
+2. Extract to your project root
+3. Done! You should now have `.github/` and `.ouroboros/` folders
+
+**Option B: Git Clone**
+
 ```bash
-# Clone and copy core files
 git clone https://github.com/MLGBJDLW/ouroboros.git .ouroboros-temp
 cp -r .ouroboros-temp/.github .
 cp -r .ouroboros-temp/.ouroboros .
 rm -rf .ouroboros-temp
 ```
 
-Or manually copy these folders to your project root:
-- `.github/` — Contains Copilot instructions and agents
-- `.ouroboros/` — Contains the persistent memory files
+Either way, your project should have:
+- `.github/` — Copilot instructions and agents
+- `.ouroboros/` — Persistent memory system
 
 ### Step 2: Enable Custom Instructions in VS Code
 
@@ -206,14 +216,12 @@ Upgrade your terminal input with the Enhanced CCL system — featuring visual UI
 
 ### Quick Toggle
 
+**Double-Click**: Navigate to `.ouroboros/scripts/` and double-click `ouroboros_toggle.py`
+
+**Command Line**:
 ```bash
-# Check current mode
-python .ouroboros/scripts/ouroboros_toggle.py --status
-
-# Enable enhanced mode
+python .ouroboros/scripts/ouroboros_toggle.py                # Interactive menu
 python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
-
-# Switch back to default
 python .ouroboros/scripts/ouroboros_toggle.py --mode default
 ```
 

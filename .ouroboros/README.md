@@ -91,14 +91,12 @@ The Enhanced Continuous Command Loop provides an improved terminal input experie
 
 ### Quick Toggle
 
+**Double-Click**: Navigate to `scripts/` and double-click `ouroboros_toggle.py`
+
+**Command Line**:
 ```bash
-# Check current mode
-python .ouroboros/scripts/ouroboros_toggle.py --status
-
-# Enable enhanced mode
+python .ouroboros/scripts/ouroboros_toggle.py                # Interactive menu
 python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
-
-# Disable enhanced mode
 python .ouroboros/scripts/ouroboros_toggle.py --mode default
 ```
 

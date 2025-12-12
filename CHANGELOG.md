@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-12-12
+
+### 🎨 Enhanced CCL Input System & CI/CD
+
+Major milestone release introducing the Enhanced Continuous Command Loop (CCL) input system and GitHub Actions automation.
+
+#### Added
+- **GitHub Actions CI/CD** — Automated markdown validation, structure checking, and release automation
+  - `ci.yml`: Runs on PR/push to `main`/`dev` — validates markdown, checks project structure, verifies links
+  - `release.yml`: Creates GitHub Releases when `v*` tags are pushed
+- **Enhanced Input Scripts** — `.ouroboros/scripts/` with:
+  - Mystic Purple themed terminal UI
+  - Display compression for large pastes
+  - Auto multi-line detection
+  - File/image drag detection
+  - Command history persistence
+- **Toggle System** — Easy switch between default and enhanced input modes via `ouroboros_toggle.py`
+
+#### Changed
+- Version bump to 3.0 to mark Enhanced CCL Scripts as stable feature
+- README badges updated to v3.0 with CI status badge
+
+#### Technical Notes
+- Zero external dependencies maintained (Python stdlib only)
+- All scripts require Python 3.6+
+- CHANGELOG updates remain **manual** for precision
+
+---
+
 ## [2.2.0] - 2025-12-12
 
 ### 📌 Agent Communication Protocol Upgrade

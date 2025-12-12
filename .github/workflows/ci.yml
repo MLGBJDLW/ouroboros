@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-markdown:
+    name: Validate Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint Markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v18
+        with:
+          globs: |
+            **/*.md
+            !**/node_modules/**
+
+  check-structure:
+    name: Check Project Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify core files exist
+        run: |
+          echo "📂 Checking core project files..."
+          
+          # Required files
+          required_files=(
+            "README.md"
+            "CHANGELOG.md"
+            "LICENSE"
+            ".github/copilot-instructions.md"
+            ".ouroboros/README.md"
+          )
+          
+          # Required directories
+          required_dirs=(
+            ".github/agents"
+            ".github/prompts"
+            ".ouroboros/templates"
+            ".ouroboros/specs"
+          )
+          
+          missing=0
+          
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing file: $file"
+              missing=$((missing + 1))
+            else
+              echo "✅ Found: $file"
+            fi
+          done
+          
+          for dir in "${required_dirs[@]}"; do
+            if [ ! -d "$dir" ]; then
+              echo "❌ Missing directory: $dir"
+              missing=$((missing + 1))
+            else
+              echo "✅ Found: $dir"
+            fi
+          done
+          
+          if [ $missing -gt 0 ]; then
+            echo ""
+            echo "❌ $missing required files/directories are missing!"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All required files and directories present!"
+
+      - name: Count agents
+        run: |
+          echo "🤖 Counting agent files..."
+          agent_count=$(find .github/agents -name "*.agent.md" | wc -l)
+          echo "Found $agent_count agent files"
+          
+          if [ "$agent_count" -lt 10 ]; then
+            echo "⚠️ Warning: Expected at least 10 agents, found $agent_count"
+          else
+            echo "✅ Agent count looks good!"
+          fi
+
+  check-links:
+    name: Check Internal Links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/mlc_config.json'
+        continue-on-error: true  # Don't fail on external link issues
