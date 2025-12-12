@@ -218,6 +218,7 @@ Your work is complete when:
 📌 Target: [file path]
 📌 Type: [README / Config / Code / Doc / Context]
 📌 Template: [used / N/A]
+📌 Status: OK | PARTIAL | FAIL | BLOCKED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 === ARTIFACT: path/to/file.ext ===

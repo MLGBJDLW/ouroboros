@@ -160,9 +160,20 @@ python -c "print('\\n[1] Task-by-Task  [2] Phase-by-Phase  [3] Auto-Run'); mode 
 runSubagent(
   agent: "ouroboros-coder",
   prompt: `
+[Spec]: [feature-name]
+[Task]: 2.1 - [Task description]
+[Progress]: X/Y tasks
+[Mode]: Task-by-Task | Phase-by-Phase | Auto-Run
+
+## Task
 Implement Task 2.1: [Task description]
+
+## Target
 File: src/auth.py
-Requirements: [Details]
+Ref: .ouroboros/specs/[feature]/tasks.md#2.1
+
+## Return
+Status + FILES
   `
 )
 ```
@@ -197,6 +208,7 @@ Requirements: [Details]
 [🔧 Current Task]: [description]
 [🤖 Routing]: [Agent invoked]
 [⚡ Mode]: Task-by-Task | Phase-by-Phase | Auto-Run
+[📌 Status]: OK | PARTIAL | FAIL | BLOCKED
 ```
 
 ---

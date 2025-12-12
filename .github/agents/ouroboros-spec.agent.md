@@ -123,7 +123,20 @@ python -c "feature = input('What feature are you building? (e.g., auth-system, p
 ```javascript
 runSubagent(
   agent: "ouroboros-researcher",
-  prompt: `Complete Phase 1: Research. Template: .ouroboros/specs/templates/research-template.md`
+  prompt: `
+[Feature]: [feature-name]
+[Spec]: .ouroboros/specs/[feature-name]/
+[Phase]: 1/5 - Research
+
+## Task
+Complete Phase 1: Research
+
+## Template
+.ouroboros/specs/templates/research-template.md
+
+## Return
+Status + [PHASE 1 COMPLETE]
+  `
 )
 ```
 **Output**: `[PHASE 1 COMPLETE]` → Wait for user approval
@@ -205,9 +218,10 @@ python -c "print('\\n[1] Implement  [2] Revise  [3] Return'); choice = input('Ch
 
 ```
 [📋 Spec]: [feature-name]
-[🎯 Phase]: Research | Requirements | Design | Tasks | Validation
+[🎯 Phase]: X/5 - Research | Requirements | Design | Tasks | Validation
 [🤖 Agent]: [Sub-agent invoked]
 [📄 Document]: [Path to file]
+[📌 Status]: OK | PARTIAL | FAIL | BLOCKED
 ```
 
 ---

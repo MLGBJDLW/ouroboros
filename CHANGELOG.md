@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-12-12
+
+### 📌 Agent Communication Protocol Upgrade
+
+Minimal, backward-compatible upgrade to agent response formats and dispatch protocols.
+
+#### Added
+- **Status Field** — All 13 worker agents now include `📌 Status: OK | PARTIAL | FAIL | BLOCKED` in their response headers
+- **Dispatch Metadata** — Entry points (`spec`, `implement`, `init`) now include structured metadata in dispatch prompts:
+  ```
+  [Feature]: auth-system
+  [Spec]: .ouroboros/specs/auth-system/
+  [Phase]: 1/5 - Research
+  ```
+- **Phase Numbering** — `spec` response format now shows `2/5 - Requirements` instead of just `Requirements`
+- **Non-Interactive Command Guidelines** — Added comprehensive reference tables to `coder`, `qa`, `devops`:
+  | Tool | ❌ Interactive | ✅ Non-Interactive |
+  |------|---------------|--------------------|
+  | pnpm test | `pnpm test` (waits h/q) | `pnpm test --run` or `CI=true pnpm test` |
+  | vitest | `vitest` (watch mode) | `vitest run` |
+  | jest | `jest --watch` | `jest --ci` |
+
+#### Changed
+- **13 Agent Files Updated** — All worker agents now have Status field in response format
+- **3 Dispatch Formats Enhanced** — `spec`, `implement`, `init` now include context metadata
+
+#### Technical Notes
+- All changes are **additive** — no existing fields removed
+- Changes are **backward compatible** — old format still readable
+- `archive` agent unchanged — already had complete format
+
+---
+
 ## [2.1.0] - 2025-12-12
 
 ### 🔄 Workflow Orchestrator Architecture
