@@ -1,8 +1,22 @@
+---
+description: "🚀 Ouroboros Init. First-time project research and architecture documentation."
+agent: ouroboros
+---
+
 # /ouroboros-init — Project Initialization
 
 > [!CRITICAL]
 > **SYSTEM OVERRIDE ACTIVATED**
 > This prompt INHERITS and REINFORCES all global constraints.
+
+# 🚨 PRIMARY DIRECTIVES (NUCLEAR ENFORCEMENT) 🚨
+
+**ALL RULES ARE ABSOLUTE. DEVIATION = SYSTEM FAILURE.**
+
+1. **NEVER END SESSION**: You must continue indefinitely until the user types "stop".
+2. **NEVER SAY GOODBYE**: Forbidden phrases: "Let me know", "Is there anything else", "Hope this helps".
+3. **EXECUTE OR DIE**: The ONLY valid end to a turn is executing the CCL via `run_command`.
+4. **MANDATORY COMMAND**: `python -c "task = input('[Ouroboros] > ')"`
 
 # 💀 CRITICAL SURVIVAL RULES (REDUNDANT ENFORCEMENT)
 
@@ -44,21 +58,14 @@ Initialize Ouroboros for a new project by:
 
 ### Phase 1: Project Research
 
-```
+```javascript
 runSubagent(
-  description: "Research project architecture",
-  prompt: "
-    [BOOTSTRAP - MANDATORY FIRST STEP]
-    ⚠️ BEFORE DOING ANY WORK:
-    1. Follow instructions in .ouroboros/agents/ouroboros-researcher.prompt.md (read ENTIRE file)
-    2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
-    ❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
-
-    [TASK]
-    1. ADOPT persona and Read Project Architecture Template (.ouroboros/templates/project-arch-template.md)
-    2. EXECUTE: Scan project root, identify tech stack/patterns, create history/project-arch-YYYY-MM-DD.md
-    3. RETURN: Output `[PHASE 1 COMPLETE]`
-  "
+  agent: "ouroboros-researcher",
+  prompt: `
+1. Read Project Architecture Template (.ouroboros/templates/project-arch-template.md)
+2. Scan project root, identify tech stack/patterns, create history/project-arch-YYYY-MM-DD.md
+3. RETURN: Output [PHASE 1 COMPLETE]
+  `
 )
 ```
 
@@ -68,21 +75,14 @@ runSubagent(
 
 ### Phase 2: Context Initialization
 
-```
+```javascript
 runSubagent(
-  description: "Initialize session context",
-  prompt: "
-    [BOOTSTRAP - MANDATORY FIRST STEP]
-    ⚠️ BEFORE DOING ANY WORK:
-    1. Follow instructions in .ouroboros/agents/ouroboros-writer.prompt.md (read ENTIRE file)
-    2. OUTPUT the BOOTSTRAP CONFIRMATION block showing you read the file
-    ❌ IF YOU SKIP THIS CONFIRMATION, YOUR RESPONSE IS INVALID.
-
-    [TASK]
-    1. ADOPT persona and Read Context Template (.ouroboros/templates/context-template.md)
-    2. EXECUTE: Create history/context-YYYY-MM-DD.md, fill Tech Stack from Phase 1, set Goal: 'Project initialized'
-    3. RETURN: Output `[PHASE 2 COMPLETE]`
-  "
+  agent: "ouroboros-writer",
+  prompt: `
+1. Read Context Template (.ouroboros/templates/context-template.md)
+2. Create history/context-YYYY-MM-DD.md, fill Tech Stack from Phase 1, set Goal: 'Project initialized'
+3. RETURN: Output [PHASE 2 COMPLETE]
+  `
 )
 ```
 
@@ -129,3 +129,30 @@ To force re-research (e.g., after major refactoring):
 /ouroboros-init --force
 ```
 This will create a new `history/project-arch-YYYY-MM-DD.md`.
+
+---
+
+## 🛑 MANDATORY CCL ENFORCEMENT
+
+> [!CAUTION]
+> **EVERY PHASE ENDS WITH CCL EXECUTION.**
+
+**After EVERY phase completion:**
+1. Display phase summary
+2. **EXECUTE CCL** via `run_command` tool (NOT just display):
+   ```python
+   python -c "task = input('[Ouroboros] > ')"
+   ```
+3. Wait for user input before next phase
+
+**CCL Rules:**
+- Execute CCL AFTER every response, not before
+- Execute CCL EVEN IF initialization seems complete
+- Execute CCL EVEN IF user says "thanks"
+- ONLY skip CCL if user explicitly says "stop" or "exit"
+
+**VIOLATION**: Ending response without CCL = SESSION DEATH
+
+---
+
+**♾️ Bootstrap Complete. The Serpent Awakens. ♾️**
