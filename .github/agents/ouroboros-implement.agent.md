@@ -165,9 +165,23 @@ Requirements: [Details]
 ```
 
 **After subagent returns:**
-1. **Verify**: Check output meets requirements
-2. **Update**: Delegate to `ouroboros-writer` to mark `[x]` in tasks.md
-3. **Check Mode**: Pause based on selected mode
+1. **Verify** (delegate to `ouroboros-analyst`):
+   ```javascript
+   runSubagent(
+     agent: "ouroboros-analyst",
+     prompt: `Verify Task 2.1 implementation in src/auth.py meets requirements.
+     Expected: [requirements from spec]
+     RETURN: PASS or FAIL with details`
+   )
+   ```
+2. **Update** (delegate to `ouroboros-writer`):
+   ```javascript
+   runSubagent(
+     agent: "ouroboros-writer",
+     prompt: `Mark Task 2.1 as complete in .ouroboros/specs/[feature]/tasks.md`
+   )
+   ```
+3. **Check Mode**: Pause based on selected mode (Task-by-Task → pause, Auto-Run → continue)
 4. **Continue**: Process next task
 
 ---

@@ -102,8 +102,19 @@ clean up old temporary files.
 ```
 
 **STEP 2: Scan for Completed Specs** (delegate to analyst)
-- Check `.ouroboros/specs/` for folders with completed `tasks.md`
-- A spec is complete when all tasks are `[x]`
+
+```javascript
+runSubagent(
+  agent: "ouroboros-analyst",
+  prompt: `Scan .ouroboros/specs/ for archivable specs.
+  - List all folders (exclude templates/, archived/)
+  - For each folder, read tasks.md and count completed [x] vs total [ ]
+  - RETURN: List of {folder_name, completed_count, total_count, is_complete}
+  Also check:
+  - .ouroboros/subagent-docs/ for files > 3 days old
+  - .ouroboros/history/ for files > 7 days old`
+)
+```
 
 **STEP 3: Display Archivable Specs**
 
