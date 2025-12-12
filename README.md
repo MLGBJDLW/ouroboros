@@ -63,6 +63,16 @@ Enable these settings for full functionality:
 >
 > This is an inherent limitation of current AI technology, not a bug in Ouroboros.
 
+### Step 4: Configure Agent Tools & MCP (Optional)
+
+Each agent's tools can be configured via VS Code's agent settings:
+
+1. Open agent file (e.g., `.github/agents/ouroboros-coder.agent.md`)
+2. Click the ⚙️ gear icon to open tools configuration
+3. Enable/disable tools as needed (`edit`, `execute`, `memory`, etc.)
+
+**For MCP Servers**: Add your MCP configuration to `.vscode/mcp.json` or VS Code settings to extend agent capabilities with external tools.
+
 ---
 
 ## 🤖 Custom Agents (16 Total)
