@@ -1,6 +1,6 @@
 ---
 description: "📋 Project Manager & Planner. Task breakdown, dependency management, execution planning."
-tools: ['read', 'edit']
+tools: ['read', 'edit', 'vscode']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros

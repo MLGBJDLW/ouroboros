@@ -1,6 +1,6 @@
 ---
 description: "📝 Technical Writer. Unrestricted file writing - documentation, code, configs, any file type."
-tools: ['read', 'edit']
+tools: ['read', 'edit', 'vscode']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros

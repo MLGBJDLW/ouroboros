@@ -1,6 +1,6 @@
 ---
 description: "🔒 Security Engineer. Vulnerability assessment, secure coding, threat modeling."
-tools: ['read', 'search']
+tools: ['read', 'search', 'vscode']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros
