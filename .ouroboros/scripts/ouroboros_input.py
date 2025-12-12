@@ -25,6 +25,7 @@ import sys
 import os
 import time
 import json
+import shutil
 import argparse
 from pathlib import Path
 
@@ -206,6 +207,40 @@ def get_colors(config: dict, args) -> dict:
         return {k: '' for k in COLORS}
     return COLORS
 
+def get_terminal_width() -> int:
+    """Get current terminal width, with fallback."""
+    try:
+        size = shutil.get_terminal_size()
+        return max(size.columns - 4, 40)  # Leave margin, min 40
+    except (ValueError, OSError):
+        return 60  # Fallback
+
+def get_box_width(config: dict, args) -> int:
+    """Get appropriate box width based on terminal size."""
+    term_width = get_terminal_width()
+    # Cap at reasonable max, ensure minimum
+    return min(max(term_width, 50), 80)
+
+# Pre-compile regex for performance
+import re
+_ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
+
+def visible_len(text: str) -> int:
+    """Get visible length of text (ignoring ANSI escape codes)."""
+    return len(_ANSI_ESCAPE.sub('', text))
+
+def pad_line(text: str, width: int, fill: str = ' ') -> str:
+    """Pad text to width accounting for ANSI codes."""
+    visible = visible_len(text)
+    if visible >= width:
+        return text
+    return text + fill * (width - visible)
+
+def print_box_line(content: str, width: int, colors: dict, box: dict) -> None:
+    """Print a line inside a box with auto-alignment."""
+    padded = pad_line(content, width)
+    ui_print(f"{colors['border']}{box['v']}{colors['reset']}{padded}{colors['border']}{box['v']}{colors['reset']}")
+
 def print_header_box(header: str, config: dict, args) -> None:
     """Print the header/menu box."""
     if args.no_ui:
@@ -240,17 +275,42 @@ def print_welcome_box(config: dict, args) -> None:
     
     box = get_box_chars(config, args)
     colors = get_colors(config, args)
-    width = 50
+    width = get_box_width(config, args)  # Dynamic width
     
     ui_print()
+    # Top border
     ui_print(f"{colors['border']}{box['tl']}{box['h'] * width}{box['tr']}{colors['reset']}")
-    ui_print(f"{colors['border']}{box['v']}{colors['reset']}  ♾️  Ouroboros - Awaiting Command{' ' * 15}{colors['border']}{box['v']}{colors['reset']}")
+    # Title
+    print_box_line(f"  ♾️  Ouroboros - Awaiting Command ", width, colors, box)
+    # Separator
     ui_print(f"{colors['border']}{box['lj']}{box['h'] * width}{box['rj']}{colors['reset']}")
-    ui_print(f"{colors['border']}{box['v']}{colors['reset']}  ⌨️  Shortcuts:{' ' * 33}{colors['border']}{box['v']}{colors['reset']}")
-    ui_print(f"{colors['border']}{box['v']}{colors['reset']}  • Multi-line: paste or <<<, end with >>>{' ' * 7}{colors['border']}{box['v']}{colors['reset']}")
-    ui_print(f"{colors['border']}{box['v']}{colors['reset']}  • Submit: Enter | Cancel: Ctrl+C{' ' * 14}{colors['border']}{box['v']}{colors['reset']}")
+    # Shortcuts section
+    print_box_line(f"  {colors['info']}⌨️  Shortcuts:{colors['reset']} ", width, colors, box)
+    print_box_line(f"    • Paste: auto-detected as multi-line ", width, colors, box)
+    print_box_line(f"    • Manual multi-line: type {colors['warning']}<<<{colors['reset']} then {colors['warning']}>>>{colors['reset']} to end ", width, colors, box)
+    print_box_line(f"    • Submit: {colors['success']}Enter{colors['reset']}  |  Cancel: {colors['error']}Ctrl+C{colors['reset']} ", width, colors, box)
+    # Bottom border
     ui_print(f"{colors['border']}{box['bl']}{box['h'] * width}{box['br']}{colors['reset']}")
     ui_print()
+
+def print_input_box_start(config: dict, args) -> None:
+    """Print the start of input box frame."""
+    if args.no_ui:
+        return
+    
+    colors = get_colors(config, args)
+    width = get_box_width(config, args)  # Dynamic width
+    ui_print(f"{colors['border']}╭{'─' * width}╮{colors['reset']}")
+    ui_print(f"{colors['border']}│{colors['reset']} {colors['prompt']}❯{colors['reset']} ", end="")
+
+def print_input_box_end(config: dict, args) -> None:
+    """Print the end of input box frame."""
+    if args.no_ui:
+        return
+    
+    colors = get_colors(config, args)
+    width = get_box_width(config, args)  # Dynamic width
+    ui_print(f"{colors['border']}╰{'─' * width}╯{colors['reset']}")
 
 def print_compression_box(content: str, config: dict, args) -> None:
     """Print compressed preview for large content."""
@@ -441,14 +501,19 @@ def get_multiline_input(first_line: str, config: dict, args) -> str:
     colors = get_colors(config, args)
     box = get_box_chars(config, args)
     
-    ui_print(f"  {colors['info']}↳ Multi-line detected. Double-Enter to submit:{colors['reset']}")
+    ui_print(f"{colors['border']}│{colors['reset']} {colors['info']}↳ Multi-line mode. Double-Enter or >>> to submit:{colors['reset']}")
+    ui_print(f"{colors['border']}│{colors['reset']}")
     
-    lines = [first_line]
+    lines = [first_line] if first_line else []
+    line_num = len(lines) + 1
     empty_count = 0
     
     while True:
         try:
-            line = input(f"  {box['line']} ")
+            # Show line number for multi-line
+            prompt = f"{colors['border']}│{colors['reset']} {colors['warning']}{line_num:2d}{colors['reset']} {box['line']} "
+            ui_print(prompt, end="")
+            line = input()
             
             if line == "":
                 empty_count += 1
@@ -460,12 +525,17 @@ def get_multiline_input(first_line: str, config: dict, args) -> str:
                 if line.strip() == ">>>":
                     break
                 lines.append(line)
+            line_num += 1
                 
         except EOFError:
             break
         except KeyboardInterrupt:
-            ui_print(f"\n  {colors['error']}✗ Cancelled{colors['reset']}")
+            ui_print(f"\n{colors['border']}│{colors['reset']} {colors['error']}✗ Cancelled{colors['reset']}")
             sys.exit(130)
+    
+    # Close multi-line box
+    if not args.no_ui:
+        ui_print(f"{colors['border']}╰{'─' * (get_box_width(config, args))}╯{colors['reset']}")
     
     return '\n'.join(lines).rstrip()
 
@@ -478,7 +548,11 @@ def get_input(args, config: dict) -> str:
     
     # Display prompt to stderr (so it doesn't go to Copilot)
     if args.prompt and args.prompt != "[Ouroboros] > ":
+        # Custom prompt - simple display
         ui_print(f"{prompt_text}", end=" ")
+    elif not args.no_ui:
+        # Standard CCL - use input box
+        print_input_box_start(config, args)
     else:
         ui_print(f"{colors['prompt']}{box['prompt']}{colors['reset']} ", end="")
     
@@ -488,6 +562,8 @@ def get_input(args, config: dict) -> str:
         first_line = input()
         elapsed = time.time() - start_time
     except EOFError:
+        if not args.no_ui and not args.prompt:
+            print_input_box_end(config, args)
         return ""
     except KeyboardInterrupt:
         ui_print(f"\n{colors['error']}✗ Cancelled{colors['reset']}")
@@ -511,6 +587,10 @@ def get_input(args, config: dict) -> str:
         if is_paste(first_line, elapsed) or is_incomplete_syntax(first_line):
             return get_multiline_input(first_line, config, args)
     
+    # Close input box for single-line input
+    if not args.no_ui and not args.prompt:
+        print_input_box_end(config, args)
+    
     return first_line
 
 # =============================================================================
@@ -521,16 +601,24 @@ def format_output(var_name: str, content: str, file_info: dict | None = None) ->
     """Output formatted content to stdout for Copilot to parse."""
     marker_name = var_name.upper()
     
+    # Use dynamic width based on terminal
+    width = min(get_terminal_width() - 2, 60)
+    separator = "─" * width
+    
     if file_info:
         # File detected - use file type prefix
-        print(f"=== {marker_name} START ===")
+        print(f"┌{separator}┐")
+        print(f"│ 📄 {marker_name}")
+        print(f"├{separator}┤")
         print(f"[{file_info['type']}] {file_info['path']}")
-        print(f"=== {marker_name} END ===")
+        print(f"└{separator}┘")
     else:
         # Regular content
-        print(f"=== {marker_name} START ===")
+        print(f"┌{separator}┐")
+        print(f"│ 📝 {marker_name}")
+        print(f"├{separator}┤")
         print(content)
-        print(f"=== {marker_name} END ===")
+        print(f"└{separator}┘")
 
 # =============================================================================
 # MAIN
