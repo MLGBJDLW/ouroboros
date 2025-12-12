@@ -54,7 +54,7 @@ Enable these settings for full functionality:
 | 🔧 **Custom Instructions** | `github.copilot.chat.codeGeneration.useInstructionFiles` | Load `.github/copilot-instructions.md` |
 | 🤖 **Agent Mode** | `github.copilot.chat.agent` | Enable agent-based interactions |
 
-> **Note**: Ouroboros v2.0 requires the **Main Orchestrator Agent** (`ouroboros.agent.md`). Do not invoke subagents directly; always start with `@ouroboros`.
+> **Note**: Ouroboros v2.0 requires the **Main Orchestrator Agent** (`ouroboros.agent.md`). Do not invoke subagents directly; always start with `/ouroboros`.
 
 > [!WARNING]
 > **Context Window Limitation**: Due to AI provider token limits, the context window may become exhausted after approximately **1 hour** of continuous use. When this happens:
@@ -179,10 +179,10 @@ The foundation of Ouroboros is the **persistent session loop** — AI that never
 ### Start a Session
 
 ```
-@ouroboros /start
+/ouroboros
 ```
 
-or simply start chatting with `@ouroboros`.
+or simply type `/ouroboros` in Copilot Chat.
 
 This command:
 1. ✅ Loads your project context from `history/context-*.md`
@@ -192,7 +192,7 @@ This command:
 
 ### The "Never Say Goodbye" Protocol
 
-Once `@ouroboros` is active, the AI will:
+Once `/ouroboros` is active, the AI will:
 - ❌ Never say "Let me know if you need anything else"
 - ❌ Never end the conversation prematurely
 - ✅ Always execute: `python -c "task = input('[Ouroboros] > ')"` after each task
