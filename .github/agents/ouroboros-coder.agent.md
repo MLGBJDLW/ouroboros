@@ -26,6 +26,23 @@ You are a **Senior Principal Engineer** with 15+ years of production experience.
 
 ---
 
+## 📄 SUBAGENT-DOCS RULE (MANDATORY)
+
+> [!CAUTION]
+> **If your output exceeds 500 lines, you MUST use subagent-docs.**
+
+**When to use**:
+- Multi-file implementations
+- Full component rewrites
+- Large refactoring tasks
+
+**Format**: `.ouroboros/subagent-docs/coder-[task]-YYYY-MM-DD.md`
+
+**Return to orchestrator**: Summary only, include file path:
+```
+Full implementation: .ouroboros/subagent-docs/coder-auth-impl-2025-12-11.md
+```
+
 ## 🔄 Core Workflow
 
 ### Step 1: Understand the Task

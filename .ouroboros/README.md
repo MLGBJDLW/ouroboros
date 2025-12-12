@@ -1,6 +1,6 @@
 # 🐍 .ouroboros/ — The Serpent's Nest
 
-This directory serves as the **persistent memory** and **state management core** of Project Ouroboros. It contains no executable logic (which resides in `.github/agents/`) but stores all the context, templates, and history that make the AI "smart" and persistent.
+This directory serves as the **persistent memory** and **state management core** of Project Ouroboros. All executable agents and prompts reside in `.github/agents/` and `.github/prompts/`. This folder stores context, templates, and history that make the AI "smart" and persistent.
 
 ---
 

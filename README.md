@@ -58,14 +58,28 @@ Enable these settings for full functionality:
 
 ---
 
-## 🤖 Custom Agents (12 Specialists)
+## 🤖 Custom Agents (16 Total)
 
-All agents are located in `.github/agents/`. The orchestrator (`ouroboros`) strictly manages them using `runSubagent()`.
+All agents are located in `.github/agents/`. The system uses a **hub-and-spoke** model with one main orchestrator and specialized subagents.
 
-### Core Agents
+### Main Orchestrator
 | Agent | Role |
 |-------|------|
-| `ouroboros` | **ORCHESTRATOR**. The only agent you talk to. Delegates everything. |
+| `ouroboros` | **MAIN ORCHESTRATOR**. The only agent you talk to. Delegates everything via `runSubagent()`. |
+
+### Workflow Orchestrators (Sub-Orchestrators)
+These are specialized orchestrators for major workflows. They inherit CCL enforcement and delegation rules from the main orchestrator.
+
+| Agent | Role | Invoked By |
+|-------|------|------------|
+| `ouroboros-init` | Project initialization workflow | `/ouroboros-init` |
+| `ouroboros-spec` | 5-phase spec workflow | `/ouroboros-spec` |
+| `ouroboros-implement` | Task execution workflow | `/ouroboros-implement` |
+| `ouroboros-archive` | Archive management | `/ouroboros-archive` |
+
+### Worker Agents (Specialists)
+| Agent | Role |
+|-------|------|
 | `ouroboros-coder` | Full-stack development (Edit, Execute, Build) |
 | `ouroboros-qa` | Unified Testing & Debugging (Fix-Verify Cycle) |
 | `ouroboros-writer` | Documentation & File Writing (No code logic) |
@@ -73,7 +87,7 @@ All agents are located in `.github/agents/`. The orchestrator (`ouroboros`) stri
 | `ouroboros-analyst` | Read-only Codebase Analysis |
 | `ouroboros-security`| Security Audits & Vulnerability Checks |
 
-### Spec Workflow Agents
+### Spec Phase Agents (Workers)
 | Agent | Role |
 |-------|------|
 | `ouroboros-researcher` | Project Research (Phase 1) |
@@ -92,19 +106,43 @@ Ouroboros v2.0 uses a strict **Hub-and-Spoke** model. You never talk to the suba
 
 ```mermaid
 flowchart TD
-    User(("User")) -->|Chat| Orch["Main Agent (ouroboros)"]
+    User((User)) -->|Chat| Orch[Main Agent: ouroboros]
     
-    Orch -->|runSubagent| Coder["ouroboros-coder"]
-    Orch -->|runSubagent| QA["ouroboros-qa"]
-    Orch -->|runSubagent| Writer["ouroboros-writer"]
-    Orch -->|runSubagent| Specs["Spec Agents..."]
+    subgraph Workflow_Orchestrators[Workflow Orchestrators]
+        Init[ouroboros-init]
+        Spec[ouroboros-spec]
+        Impl[ouroboros-implement]
+        Arch[ouroboros-archive]
+    end
     
-    Coder -->|Return Result| Orch
-    QA -->|Return Result| Orch
-    Writer -->|Return Result| Orch
-    Specs -->|Return Result| Orch
+    subgraph Worker_Agents[Worker Agents]
+        Coder[ouroboros-coder]
+        QA[ouroboros-qa]
+        Writer[ouroboros-writer]
+        Analyst[ouroboros-analyst]
+    end
     
-    Orch -->|Updates Context| Memory[("context.md")]
+    Orch -->|runSubagent| Init
+    Orch -->|runSubagent| Spec
+    Orch -->|runSubagent| Impl
+    Orch -->|runSubagent| Arch
+    Orch -->|runSubagent| Coder
+    Orch -->|runSubagent| QA
+    Orch -->|runSubagent| Writer
+    
+    Init -->|runSubagent| Analyst
+    Init -->|runSubagent| Writer
+    Spec -->|runSubagent| SpecAgents[Spec Phase Agents]
+    Impl -->|runSubagent| Coder
+    Impl -->|runSubagent| QA
+    Arch -->|runSubagent| Writer
+    
+    Init -->|handoff| Orch
+    Spec -->|handoff| Orch
+    Impl -->|handoff| Orch
+    Arch -->|handoff| Orch
+    
+    Orch -->|Updates| Memory[(context.md)]
 ```
 
 ### The Return Protocol
@@ -187,11 +225,18 @@ Choose how to execute your implementation plan:
 your-project/
 ├── .github/
 │   ├── copilot-instructions.md    ← Copilot reads this automatically
-│   ├── agents/                    ← 🤖 Agent definitions
+│   ├── agents/                    ← 🤖 Agent definitions (16 agents)
 │   │   ├── ouroboros.agent.md     ← MAIN ORCHESTRATOR
-│   │   ├── ouroboros-coder.agent.md
-│   │   └── ... (11 subagents)
-│   └── prompts/                   ← Slash command prompts
+│   │   ├── ouroboros-init.agent.md    ← Workflow: Init
+│   │   ├── ouroboros-spec.agent.md    ← Workflow: Spec
+│   │   ├── ouroboros-implement.agent.md ← Workflow: Implement
+│   │   ├── ouroboros-archive.agent.md ← Workflow: Archive
+│   │   ├── ouroboros-coder.agent.md   ← Worker: Coder
+│   │   └── ... (11 more workers)
+│   └── prompts/                   ← Slash command prompts (lightweight refs)
+│       ├── ouroboros.prompt.md    → agent: ouroboros
+│       ├── ouroboros-init.prompt.md → agent: ouroboros-init
+│       └── ...
 ├── .ouroboros/
 │   ├── templates/                 ← 📋 All templates (READ ONLY)
 │   ├── history/                   ← 📜 Active session files
