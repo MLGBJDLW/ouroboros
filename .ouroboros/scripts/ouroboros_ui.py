@@ -295,6 +295,91 @@ class OutputBox:
         print(f"{BOX['bl']}{sep}{BOX['br']}")
 
 
+class SelectMenu:
+    """
+    Interactive selection menu with arrow key navigation.
+    Allows selecting from options or entering custom input.
+    """
+    
+    def __init__(self, options: list, title: str = "Select an option:", 
+                 allow_custom: bool = True, custom_label: str = "[Custom input...]"):
+        self.options = list(options)
+        self.title = title
+        self.allow_custom = allow_custom
+        self.custom_label = custom_label
+        self.selected_index = 0
+        self.cols, _ = get_terminal_size()
+        self.width = min(self.cols - 4, 60)
+        
+        # Add custom option at the end
+        if allow_custom:
+            self.options.append(custom_label)
+    
+    def render(self) -> None:
+        """Render the selection menu."""
+        c = THEME
+        sep = BOX['h'] * self.width
+        
+        writeln()
+        # Header
+        writeln(f"{c['border']}{BOX['tl']}{sep}{BOX['tr']}{c['reset']}")
+        title_padded = pad_text(f" {self.title}", self.width)
+        writeln(f"{c['border']}{BOX['v']}{c['reset']}{title_padded}{c['border']}{BOX['v']}{c['reset']}")
+        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        
+        # Options
+        for i, option in enumerate(self.options):
+            if i == self.selected_index:
+                prefix = f"{c['prompt']} > "
+                suffix = c['reset']
+            else:
+                prefix = "   "
+                suffix = ""
+            
+            # Truncate if too long
+            display_option = option if len(option) < self.width - 6 else option[:self.width - 9] + "..."
+            option_padded = pad_text(f"{prefix}{display_option}{suffix}", self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{option_padded}{c['border']}{BOX['v']}{c['reset']}")
+        
+        # Footer with hint
+        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        hint = f" {c['info']}[Up/Down]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
+        hint_padded = pad_text(hint, self.width)
+        writeln(f"{c['border']}{BOX['v']}{c['reset']}{hint_padded}{c['border']}{BOX['v']}{c['reset']}")
+        writeln(f"{c['border']}{BOX['bl']}{sep}{BOX['br']}{c['reset']}")
+    
+    def clear_and_rerender(self) -> None:
+        """Clear previous render and redraw."""
+        # Move up to clear previous output
+        lines_to_clear = len(self.options) + 5  # options + header + separator + hint + borders
+        write(ANSI.move_up(lines_to_clear))
+        for _ in range(lines_to_clear):
+            write(ANSI.CLEAR_LINE)
+            write(ANSI.move_down(1))
+        write(ANSI.move_up(lines_to_clear))
+        self.render()
+    
+    def move_up(self) -> None:
+        """Move selection up."""
+        if self.selected_index > 0:
+            self.selected_index -= 1
+            self.clear_and_rerender()
+    
+    def move_down(self) -> None:
+        """Move selection down."""
+        if self.selected_index < len(self.options) - 1:
+            self.selected_index += 1
+            self.clear_and_rerender()
+    
+    def get_selected(self) -> tuple:
+        """
+        Get the selected option.
+        Returns (index, value, is_custom)
+        """
+        is_custom = self.allow_custom and self.selected_index == len(self.options) - 1
+        return (self.selected_index, self.options[self.selected_index], is_custom)
+
+
 # =============================================================================
 # TEST
 # =============================================================================

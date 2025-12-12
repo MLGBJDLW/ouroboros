@@ -34,7 +34,7 @@ if SCRIPT_DIR not in sys.path:
 try:
     from ouroboros_keybuffer import KeyBuffer, Keys, is_pipe_input
     from ouroboros_ui import (
-        ANSI, THEME, BOX, WelcomeBox, InputBox, OutputBox,
+        ANSI, THEME, BOX, WelcomeBox, InputBox, OutputBox, SelectMenu,
         write, writeln, get_terminal_size, visible_len, pad_text, strip_ansi
     )
     MODULES_AVAILABLE = True
@@ -344,6 +344,66 @@ def get_simple_input(prompt: str = "") -> str:
         sys.exit(130)
 
 
+def get_selection_input(options: list, title: str = "Select an option:", 
+                        allow_custom: bool = True) -> str:
+    """
+    Interactive selection menu with arrow key navigation.
+    Returns the selected option or custom input.
+    """
+    if not MODULES_AVAILABLE:
+        # Fallback to numbered selection
+        writeln(title)
+        for i, opt in enumerate(options):
+            writeln(f"  {i+1}. {opt}")
+        if allow_custom:
+            writeln(f"  {len(options)+1}. [Custom input...]")
+        choice = get_simple_input("Enter number: ")
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(options):
+                return options[idx]
+            elif allow_custom and idx == len(options):
+                return get_simple_input("Enter custom input: ")
+        except ValueError:
+            pass
+        return choice  # Return as-is if invalid
+    
+    menu = SelectMenu(options, title=title, allow_custom=allow_custom)
+    menu.render()
+    
+    with KeyBuffer() as kb:
+        while True:
+            try:
+                key = kb.getch()
+                
+                if key == Keys.CTRL_C:
+                    writeln(f"\n{THEME['error']}✗ Cancelled{THEME['reset']}")
+                    sys.exit(130)
+                
+                if key == Keys.UP:
+                    menu.move_up()
+                    continue
+                
+                if key == Keys.DOWN:
+                    menu.move_down()
+                    continue
+                
+                if kb.is_enter(key):
+                    idx, value, is_custom = menu.get_selected()
+                    writeln()  # Clear line
+                    
+                    if is_custom:
+                        # Show custom input box
+                        write(f"\n{THEME['prompt']}Custom input:{THEME['reset']} ")
+                        return get_fallback_input(show_ui=False)
+                    else:
+                        return value
+                
+            except KeyboardInterrupt:
+                writeln(f"\n{THEME['error']}✗ Cancelled{THEME['reset']}")
+                sys.exit(130)
+
+
 # =============================================================================
 # OUTPUT FUNCTIONS
 # =============================================================================
@@ -385,6 +445,8 @@ def parse_args():
     parser.add_argument('--var', default='task', help='Variable name for output marker')
     parser.add_argument('--prompt', default='', help='Custom prompt text')
     parser.add_argument('--header', default='', help='Header/menu text (Type B)')
+    parser.add_argument('--options', nargs='+', help='Options for selection menu (space-separated)')
+    parser.add_argument('--no-custom', action='store_true', help='Disable custom input in selection menu')
     parser.add_argument('--no-ui', action='store_true', help='Disable UI decorations')
     parser.add_argument('--ascii', action='store_true', help='Use ASCII characters')
     parser.add_argument('--no-color', action='store_true', help='Disable colors')
@@ -408,6 +470,16 @@ def main():
             content = get_simple_input(args.prompt)
         else:
             content = get_simple_input()
+        format_output(args.var, content)
+        return
+    
+    # Selection menu mode
+    if args.options and MODULES_AVAILABLE:
+        content = get_selection_input(
+            options=args.options,
+            title=args.prompt or "Select an option:",
+            allow_custom=not args.no_custom
+        )
         format_output(args.var, content)
         return
     
