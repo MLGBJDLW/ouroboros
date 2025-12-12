@@ -1,6 +1,6 @@
 ---
 description: "🧪 Senior QA Engineer. Test everything. Fix surgically. Never assume tests pass."
-tools: ['read', 'edit', 'execute', 'search', 'vscode']
+tools: ['read', 'edit', 'execute', 'search', 'vscode', 'memory']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros
