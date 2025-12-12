@@ -70,6 +70,10 @@ jobs:
           rm -f release-package/.ouroboros/scripts/ouroboros.history
           rm -rf release-package/.ouroboros/scripts/backups
           
+          # Remove CI/CD files (these are for the repo, not for end users)
+          rm -rf release-package/.github/workflows
+          rm -f release-package/.github/mlc_config.json
+          
           # Keep template directories but remove content
           mkdir -p release-package/.ouroboros/history
           mkdir -p release-package/.ouroboros/subagent-docs
