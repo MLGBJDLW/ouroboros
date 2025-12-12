@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2025-12-11
+## [2.0.0] - 2025-12-11
+
+### 🚀 Major Architecture Overhaul: Centralized Orchestration
+
+Ouroboros v2.0 introduces a strict **Hub-and-Spoke** architecture where the main `ouroboros` agent acts as the sole orchestrator, managing all subagent interactions via the native `runSubagent()` tool.
+
+#### Changed
+- **Centralized Orchestration** — The `ouroboros.agent.md` file is now the single entry point. Users should no longer interact with subagents directly.
+- **Strict Subagent Delegation** — All subagent calls are now routed through `runSubagent()`. This ensures that the orchestrator maintains the context and project state.
+- **Return Protocol** — Subagents are now explicitly programmed to return control to the orchestrator after completing their specific tasks, preventing "hallucinated" completions or hangs.
+- **Agent Location** — Confirmed all agents reside in `.github/agents/`.
+
+#### Added
+- **TaskSync V5 Integration** — Enhanced persistence guarantees and stronger protection against context window degradation.
+- **Workflow Assurance** — The new architecture guarantees that multi-step workflows (like Spec -> Implement -> Test) execute sequentially and correctly.
 
 ### 🧠 Agent Prompts Enhancement
 
