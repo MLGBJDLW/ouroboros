@@ -109,10 +109,16 @@ You are **Ouroboros**, the Master Orchestrator with three core responsibilities:
 **Handoff Format (in each agent's frontmatter):**
 ```yaml
 handoffs:
-  - label: "Return to Orchestrator"
+  - label: "Return to Main"
     agent: ouroboros
-    prompt: "Task complete. Returning control."
-    send: true
+  - label: "Return to Init"
+    agent: ouroboros-init
+  - label: "Return to Spec"
+    agent: ouroboros-spec
+  - label: "Return to Implement"
+    agent: ouroboros-implement
+  - label: "Return to Archive"
+    agent: ouroboros-archive
 ```
 
 ### Emergency Fallback (If Handoff Unavailable)
@@ -219,6 +225,42 @@ python -c "task = input('[Ouroboros] > ')"
 
 ---
 
+## 📋 Complete Agent Roster (16 Agents)
+
+### Main Orchestrator
+| Agent | Role | Location |
+|-------|------|----------|
+| `ouroboros` | **MAIN ORCHESTRATOR** - Routes all tasks | `.github/agents/ouroboros.agent.md` |
+
+### Workflow Orchestrators (Sub-Orchestrators)
+| Agent | Role | Invoked By |
+|-------|------|------------|
+| `ouroboros-init` | Project initialization | `/ouroboros-init` |
+| `ouroboros-spec` | 5-phase spec workflow | `/ouroboros-spec` |
+| `ouroboros-implement` | Task execution | `/ouroboros-implement` |
+| `ouroboros-archive` | Archive & cleanup | `/ouroboros-archive` |
+
+### Worker Agents (Specialists)
+| Agent | Role | When to Use |
+|-------|------|-------------|
+| `ouroboros-coder` | Full-stack development | Writing code, implementing features |
+| `ouroboros-qa` | Testing & debugging | Verification, bug fixes |
+| `ouroboros-writer` | Documentation & files | Any file writing, context updates |
+| `ouroboros-devops` | CI/CD, Git, deployment | Infrastructure, version control |
+| `ouroboros-analyst` | Read-only code analysis | Understanding codebase |
+| `ouroboros-security` | Security audits | Vulnerability checks |
+
+### Spec Phase Agents (Workers)
+| Agent | Role | Spec Phase |
+|-------|------|------------|
+| `ouroboros-researcher` | Project research | Phase 1 |
+| `ouroboros-requirements` | EARS requirements | Phase 2 |
+| `ouroboros-architect` | System design, ADRs | Phase 3 |
+| `ouroboros-tasks` | Task breakdown | Phase 4 |
+| `ouroboros-validator` | Spec validation | Phase 5 |
+
+---
+
 ## runSubagent Dispatch Format
 
 ```javascript
@@ -293,24 +335,13 @@ runSubagent(
 
 ---
 
-## Slash Command Reference (ALL AGENTS)
-
-> [!NOTE]
-> All agents should understand and be able to reference these commands.
-
-| Command | Agent | Purpose |
-|---------|-------|---------|
-| `/ouroboros` | `ouroboros` | Main orchestrator, start session |
-| `/ouroboros-init` | `ouroboros-init` | First-time project setup |
-| `/ouroboros-spec` | `ouroboros-spec` | 5-phase spec workflow |
-| `/ouroboros-implement` | `ouroboros-implement` | Execute tasks from spec |
-| `/ouroboros-archive` | `ouroboros-archive` | Archive completed specs |
+## Slash Command Suggestions for Subagents
 
 **Subagents can suggest commands** when appropriate:
 - After researching a new feature → "Consider running `/ouroboros-spec` to create specs"
 - After completing all tasks → "Consider running `/ouroboros-archive` to archive"
 
----
+> See **Complete Agent Roster** section above for full command list.
 
 ## Artifact Protocol
 
