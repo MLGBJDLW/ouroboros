@@ -216,7 +216,9 @@ Upgrade your terminal input with the Enhanced CCL system — featuring visual UI
 
 ### Quick Toggle
 
-**Double-Click**: Navigate to `.ouroboros/scripts/` and double-click `ouroboros_toggle.py`
+**Double-Click**:
+- Windows: `.ouroboros/scripts/toggle.bat`
+- Mac/Linux: `.ouroboros/scripts/ouroboros_toggle.py`
 
 **Command Line**:
 ```bash

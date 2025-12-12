@@ -10,7 +10,8 @@ This directory contains the Enhanced Continuous Command Loop (CCL) input system.
 
 **Option 1: Double-Click (Recommended)**
 
-Navigate to `.ouroboros/scripts/` and double-click `ouroboros_toggle.py` to open the interactive menu.
+- **Windows**: Double-click `.ouroboros/scripts/toggle.bat`
+- **Mac/Linux**: Double-click `.ouroboros/scripts/ouroboros_toggle.py`
 
 **Option 2: Command Line**
 
