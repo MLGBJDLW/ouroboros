@@ -2,9 +2,25 @@
 description: "🔬 Project Researcher. Codebase exploration, tech stack analysis, pattern discovery."
 tools: ['read', 'search', 'web', 'vscode', 'edit']
 handoffs:
-  - label: "Return to Orchestrator"
+  - label: "Return to Main"
     agent: ouroboros
     prompt: "Task complete. Returning control."
+    send: true
+  - label: "Return to Init"
+    agent: ouroboros-init
+    prompt: "Task complete. Returning to init workflow."
+    send: true
+  - label: "Return to Spec"
+    agent: ouroboros-spec
+    prompt: "Task complete. Returning to spec workflow."
+    send: true
+  - label: "Return to Implement"
+    agent: ouroboros-implement
+    prompt: "Task complete. Returning to implement workflow."
+    send: true
+  - label: "Return to Archive"
+    agent: ouroboros-archive
+    prompt: "Task complete. Returning to archive workflow."
     send: true
 ---
 

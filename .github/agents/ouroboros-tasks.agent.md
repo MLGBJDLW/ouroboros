@@ -2,9 +2,25 @@
 description: "📋 Project Manager & Planner. Task breakdown, dependency management, execution planning."
 tools: ['read', 'edit', 'todo', 'vscode']
 handoffs:
-  - label: "Return to Orchestrator"
+  - label: "Return to Main"
     agent: ouroboros
     prompt: "Task complete. Returning control."
+    send: true
+  - label: "Return to Init"
+    agent: ouroboros-init
+    prompt: "Task complete. Returning to init workflow."
+    send: true
+  - label: "Return to Spec"
+    agent: ouroboros-spec
+    prompt: "Task complete. Returning to spec workflow."
+    send: true
+  - label: "Return to Implement"
+    agent: ouroboros-implement
+    prompt: "Task complete. Returning to implement workflow."
+    send: true
+  - label: "Return to Archive"
+    agent: ouroboros-archive
+    prompt: "Task complete. Returning to archive workflow."
     send: true
 ---
 
