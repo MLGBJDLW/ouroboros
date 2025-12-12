@@ -101,6 +101,43 @@ Before completing, verify:
 
 ---
 
+## 🤖 NON-INTERACTIVE COMMAND REFERENCE
+
+> [!CAUTION]
+> **ALL commands MUST be non-interactive. No user input allowed.**
+
+| Category | ❌ Interactive | ✅ Non-Interactive |
+|----------|---------------|--------------------|
+| **npm/pnpm** | `npm init`, `pnpm test` | `npm init -y`, `pnpm test --run` |
+| **yarn** | `yarn` (prompts) | `yarn --non-interactive` |
+| **pip** | `pip install` | `pip install --yes` or `-y` |
+| **apt** | `apt install` | `apt install -y` |
+| **docker** | (usually fine) | `docker run --rm -it` → `docker run --rm` |
+| **git** | `git add -p` | `git add .` or `git add -A` |
+| **vitest/jest** | watch mode | `vitest run`, `jest --ci` |
+
+**Build & Test Commands**:
+```bash
+# Set CI environment for all tools
+CI=true npm run build
+CI=true pnpm test
+
+# Or use specific flags
+pnpm test --run
+vitest run
+jest --ci --passWithNoTests
+```
+
+**Package Installation**:
+```bash
+npm ci --silent        # Prefer ci over install
+pnpm install --frozen-lockfile
+yarn install --frozen-lockfile --non-interactive
+pip install -r requirements.txt --quiet
+```
+
+---
+
 ## 📐 Conventional Commits Format
 
 ```
@@ -201,6 +238,7 @@ Your work is complete when:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Operation: [build / deploy / git / configure]
 📌 Environment: [dev / staging / prod]
+📌 Status: OK | PARTIAL | FAIL | BLOCKED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## Pre-Flight Checks

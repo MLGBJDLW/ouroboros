@@ -100,6 +100,37 @@ Before completing, verify:
 
 ---
 
+## 🤖 NON-INTERACTIVE COMMAND REQUIREMENT
+
+> [!CAUTION]
+> **ALL test commands MUST be non-interactive. No user input allowed.**
+
+| Tool | ❌ Interactive | ✅ Non-Interactive |
+|------|---------------|--------------------|
+| **pnpm test** | `pnpm test` (waits for h/q) | `pnpm test --run` or `CI=true pnpm test` |
+| **vitest** | `vitest` (watch mode) | `vitest run` |
+| **jest** | `jest --watch` | `jest --ci --passWithNoTests` |
+| **pytest** | (usually fine) | `pytest --tb=short -q` |
+| **go test** | (usually fine) | `go test ./... -v` |
+
+**Standard Test Commands**:
+```bash
+# JavaScript/TypeScript
+CI=true pnpm test
+vitest run --reporter=verbose
+jest --ci --coverage
+
+# Python
+pytest --tb=short -q
+
+# Go
+go test ./... -v -race
+```
+
+**RULE**: Before running any test, check if it has watch mode. If yes → Use `--run` or `CI=true`.
+
+---
+
 ## 🔧 Debugging Workflow
 
 ```
@@ -174,6 +205,7 @@ Your work is complete when:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Scope: [what is being tested]
 📌 Strategy: [Unit / Integration / E2E]
+📌 Status: OK | PARTIAL | FAIL | BLOCKED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## Pre-Flight Check

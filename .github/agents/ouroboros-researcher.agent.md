@@ -192,6 +192,7 @@ Your work is complete when:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Scope: [project area or feature]
 📌 Goal: [research objective]
+📌 Status: OK | PARTIAL | FAIL | BLOCKED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## Executive Summary

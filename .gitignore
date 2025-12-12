@@ -47,3 +47,6 @@ build/
 # .ouroboros/ - Contains project memory system
 # .ouroboros/specs/templates/ - Contains spec templates
 # .github/ - Contains Copilot instructions
+
+# Plans
+FUTURE_*

@@ -211,6 +211,7 @@ Every response MUST follow this structure:
 [🎯 Goal]: Current objective
 [🤖 Routing]: → ouroboros-[agent]
 [📦 Result]: Summary of what was done
+[📌 Status]: OK | PARTIAL | FAIL | BLOCKED
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

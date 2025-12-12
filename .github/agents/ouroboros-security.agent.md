@@ -202,6 +202,7 @@ Your work is complete when:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Scope: [file/module/system]
 📌 Assessment: [code review / threat model / audit]
+📌 Status: OK | PARTIAL | FAIL | BLOCKED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## Executive Summary

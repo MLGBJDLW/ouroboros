@@ -102,9 +102,16 @@ python -c "print('\\nReady to begin?'); choice = input('[y/n]: ')"
 runSubagent(
   agent: "ouroboros-researcher",
   prompt: `
+[Init Phase]: 1/2 - Research
+[Target]: .ouroboros/history/project-arch-YYYY-MM-DD.md
+
+## Task
 1. Read Project Architecture Template (.ouroboros/templates/project-arch-template.md)
-2. Scan project root, identify tech stack/patterns, create history/project-arch-YYYY-MM-DD.md
-3. RETURN: Output [PHASE 1 COMPLETE]
+2. Scan project root, identify tech stack/patterns
+3. Create history/project-arch-YYYY-MM-DD.md
+
+## Return
+Status + [PHASE 1 COMPLETE]
   `
 )
 ```

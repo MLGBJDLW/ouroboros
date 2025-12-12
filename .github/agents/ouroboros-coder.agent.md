@@ -123,6 +123,33 @@ Before completing, verify:
 
 ---
 
+## 🤖 NON-INTERACTIVE COMMAND REQUIREMENT
+
+> [!CAUTION]
+> **ALL terminal commands MUST be non-interactive. No user input allowed.**
+
+| Tool | ❌ Interactive | ✅ Non-Interactive |
+|------|---------------|--------------------|
+| **npm/pnpm test** | `pnpm test` (waits for h/q) | `pnpm test --run` or `CI=true pnpm test` |
+| **vitest** | `vitest` (watch mode) | `vitest run` or `vitest --run` |
+| **jest** | `jest --watch` | `jest --ci` or `CI=true jest` |
+| **npm init** | `npm init` | `npm init -y` |
+| **git** | `git add -p` | `git add .` |
+| **pip** | `pip install` | `pip install -y` or `pip install --yes` |
+
+**General Pattern**:
+```bash
+# Set CI environment variable for any command
+CI=true pnpm test
+
+# Or use --run/--ci flags
+pnpm test --run
+vitest run
+jest --ci --passWithNoTests
+```
+
+**RULE**: If command might wait for input → Use `--run`, `--ci`, `-y`, or `CI=true`.
+
 ## ❌ NEVER DO THIS
 
 ```typescript
@@ -166,6 +193,7 @@ Your work is complete when:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Task: [brief description]
 📌 Files: [list of files to modify]
+📌 Status: OK | PARTIAL | FAIL | BLOCKED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## Pre-Flight Check
