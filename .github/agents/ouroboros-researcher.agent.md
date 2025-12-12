@@ -1,6 +1,6 @@
 ---
 description: "🔬 Project Researcher. Codebase exploration, tech stack analysis, pattern discovery."
-tools: ['read', 'search', 'web', 'edit', 'vscode']
+tools: ['read', 'search', 'web', 'vscode', 'edit']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros

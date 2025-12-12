@@ -1,6 +1,6 @@
 ---
 description: "♾️ Ouroboros Master Orchestrator. Context window manager, session controller, task delegation."
-tools: ['agent', 'memory', 'todo', 'execute', 'vscode']
+tools: ['agent', 'runSubagent', 'memory', 'todo', 'execute', 'read', 'vscode', 'search']
 ---
 
 # ♾️ Ouroboros - Master Orchestrator

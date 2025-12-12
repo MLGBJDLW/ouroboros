@@ -1,6 +1,6 @@
 ---
 description: "📋 Requirements Engineer. EARS notation, user stories, acceptance criteria."
-tools: ['read', 'edit', 'vscode']
+tools: ['read', 'edit', 'search', 'vscode']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros
