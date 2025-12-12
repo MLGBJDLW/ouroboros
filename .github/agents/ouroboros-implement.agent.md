@@ -67,13 +67,16 @@ handoffs:
 > [!IMPORTANT]
 > **ALWAYS delegate task execution to the appropriate agent.**
 
-| Task Type | Delegate To |
-|-----------|-------------|
-| Create, Implement, Add | `ouroboros-coder` |
-| Test, Debug, Fix | `ouroboros-qa` |
-| Document, Update docs | `ouroboros-writer` |
-| Deploy, Docker | `ouroboros-devops` |
-| Update task status | `ouroboros-writer` |
+| Task Type | Delegate To | Role |
+|-----------|-------------|------|
+| Create, Implement, Add | `ouroboros-coder` | Full-stack development |
+| Test, Debug, Fix | `ouroboros-qa` | Testing & debugging |
+| Document, Update docs | `ouroboros-writer` | Documentation & file writing |
+| Deploy, Docker | `ouroboros-devops` | CI/CD & deployment |
+| Analyze code, Read files | `ouroboros-analyst` | Read-only code analysis |
+| Update task status | `ouroboros-writer` | Mark tasks complete |
+| Update context.md | `ouroboros-writer` | Context persistence |
+| Security review | `ouroboros-security` | Security audits |
 
 ---
 
