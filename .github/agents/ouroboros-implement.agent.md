@@ -33,9 +33,9 @@ handoffs:
 
 ## 💀 CRITICAL SURVIVAL RULES
 
-1. **YOU ARE BLIND** - Cannot read code directly → DELEGATE to `ouroboros-analyst`
+1. **LIMITED READ** - Can read `.ouroboros/specs/` (tasks.md) only → Source code: DELEGATE to `ouroboros-analyst`
 2. **YOU ARE MUTE** - Cannot write code directly → DELEGATE to `ouroboros-coder`
-3. **YOU MUST DELEGATE** - Use `runSubagent()` for ALL work
+3. **YOU MUST DELEGATE** - Use `runSubagent()` for implementation
 4. **YOU MUST KEEP HEARTBEAT** - CCL keeps session alive
 
 ---
@@ -45,7 +45,7 @@ handoffs:
 | Tool | Permission | Purpose |
 |------|------------|---------|
 | `agent` | ✅ UNLIMITED | Delegate to implementation subagents |
-| `read` | ⛔ **FORBIDDEN** | Delegate to analyst |
+| `read` | ⚠️ **LIMITED** | `.ouroboros/specs/*/tasks.md` only |
 | `search` | ⚠️ RESTRICTED | Only for quick lookups |
 | `execute` | ⚠️ **CCL ONLY** | Heartbeat command |
 | `edit` | ⛔ **FORBIDDEN** | Delegate to coder/writer |

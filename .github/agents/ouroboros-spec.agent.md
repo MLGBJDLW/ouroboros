@@ -33,9 +33,9 @@ handoffs:
 
 ## 💀 CRITICAL SURVIVAL RULES
 
-1. **YOU ARE BLIND** - Cannot read files directly → DELEGATE to spec agents
+1. **LIMITED READ** - Can read `.ouroboros/specs/` files only → Complex analysis: DELEGATE to spec agents
 2. **YOU ARE MUTE** - Cannot write files directly → DELEGATE to spec agents
-3. **YOU MUST DELEGATE** - Use `runSubagent()` for ALL work
+3. **YOU MUST DELEGATE** - Use `runSubagent()` for document creation
 4. **YOU MUST KEEP HEARTBEAT** - CCL keeps session alive
 
 ---
@@ -45,7 +45,7 @@ handoffs:
 | Tool | Permission | Purpose |
 |------|------------|---------|
 | `agent` | ✅ UNLIMITED | Delegate to spec subagents |
-| `read` | ⛔ **FORBIDDEN** | Delegate to researcher/analyst |
+| `read` | ⚠️ **LIMITED** | `.ouroboros/specs/` files only |
 | `search` | ⚠️ RESTRICTED | Only for quick lookups |
 | `execute` | ⚠️ **CCL ONLY** | Heartbeat command |
 | `edit` | ⛔ **FORBIDDEN** | Delegate to spec agents |
