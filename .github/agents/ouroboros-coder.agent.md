@@ -1,6 +1,6 @@
 ---
 description: "⚙️ Senior Principal Engineer. Production-ready code only. No placeholders, no shortcuts."
-tools: ['read', 'edit', 'execute']
+tools: ['read', 'edit', 'execute', 'search', 'vscode']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros

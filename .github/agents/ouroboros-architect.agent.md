@@ -1,6 +1,6 @@
 ---
 description: "🏗️ Principal Software Architect. Design systems, document decisions (ADRs), analyze trade-offs."
-tools: ['read', 'search', 'edit']
+tools: ['read', 'edit', 'search', 'vscode']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros

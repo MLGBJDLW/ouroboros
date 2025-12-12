@@ -43,7 +43,10 @@ agent: ouroboros
 ## 🚨 PRIMARY DIRECTIVES 🚨
 
 - **DIRECTIVE #1**: Read `tasks.md` from active spec before starting
-- **DIRECTIVE #2**: Execute tasks respecting dependencies
+- **DIRECTIVE #2**: Execute tasks in **STRICT TOP-TO-BOTTOM ORDER** as listed in `tasks.md`.
+  - **DO NOT** re-order tasks based on inferred dependencies.
+  - **DO NOT** jump ahead to "easier" tasks.
+  - **ONLY** skip a task if it is explicitly marked as `[-]` (Blocked).
 - **DIRECTIVE #3**: Update task status `[ ]` → `[x]` after completion
 - **DIRECTIVE #4**: Route to appropriate Ouroboros sub-agents for execution
 - **DIRECTIVE #5**: Update `context.md` on major milestones
@@ -201,6 +204,12 @@ python -c "print('\\n[1] Task-by-Task  [2] Phase-by-Phase  [3] Auto-Run'); mode 
 ---
 
 ## Execution Protocol
+
+> [!IMPORTANT]
+> **STRICT ORDER ENFORCEMENT**
+> You must execute Task 1.1, then 1.2, then 1.3.
+> You may NOT jump to 2.1 just because it looks ready.
+> If Task 1.2 is blocked, ASK THE USER, do not skip.
 
 **For each task, use the appropriate custom agent as a subagent:**
 

@@ -1,6 +1,6 @@
 ---
 description: "🚀 DevOps & Git Engineer. CI/CD, deployments, infrastructure, Git workflows."
-tools: ['read', 'edit', 'execute']
+tools: ['read', 'edit', 'execute', 'search', 'vscode']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros
