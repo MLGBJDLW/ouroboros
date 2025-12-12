@@ -56,6 +56,13 @@ Enable these settings for full functionality:
 
 > **Note**: Ouroboros v2.0 requires the **Main Orchestrator Agent** (`ouroboros.agent.md`). Do not invoke subagents directly; always start with `@ouroboros`.
 
+> [!WARNING]
+> **Context Window Limitation**: Due to AI provider token limits, the context window may become exhausted after approximately **1 hour** of continuous use. When this happens:
+> - The AI may lose track of previous context
+> - Performance may degrade or the session may stop responding
+>
+> This is an inherent limitation of current AI technology, not a bug in Ouroboros.
+
 ---
 
 ## 🤖 Custom Agents (16 Total)
@@ -252,6 +259,12 @@ your-project/
 Ouroboros was inspired by:
 
 - **[TaskSync](https://github.com/4regab/TaskSync)** — The original concept of persistent AI sessions and the "never say goodbye" protocol. Many of Ouroboros's core ideas evolved from TaskSync's pioneering work.
+
+---
+
+## 📋 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
 
 ---
 
