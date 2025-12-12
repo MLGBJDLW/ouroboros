@@ -312,7 +312,7 @@ All tasks executed successfully!
 
 **Execute via `run_command`:**
 ```bash
-python -c "print('\\n[1] Archive  [2] Review  [3] Return'); choice = input('Choice: ')"
+python -c "print('\\n[1] Archive\\n[2] Review\\n[3] Return'); choice = input('Choice (1-3): ')"
 ```
 
 **If choice = 1**: Use handoff to `ouroboros-archive`

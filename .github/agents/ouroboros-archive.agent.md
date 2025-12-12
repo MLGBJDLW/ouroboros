@@ -141,7 +141,7 @@ runSubagent(
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 ```bash
-python -c "print('\\n[1-N] Archive specific spec  [all] Archive all  [clean] Cleanup only'); choice = input('Choice: ')"
+python -c "print('\\n[1] Archive specific spec\\n[2] Archive all\\n[3] Cleanup only'); choice = input('Choice (1-3): ')"
 ```
 
 **If NO completed specs:**
@@ -158,7 +158,7 @@ Would you like to run cleanup instead?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 ```bash
-python -c "choice = input('Run cleanup? [y/n]: ')"
+python -c "confirm = input('Run cleanup? [y/n]: ')"
 ```
 
 ---

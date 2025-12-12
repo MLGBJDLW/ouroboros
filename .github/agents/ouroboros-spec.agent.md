@@ -207,7 +207,7 @@ All 5 phases are complete and validated.
 
 **Execute via `run_command`:**
 ```bash
-python -c "print('\\n[1] Implement  [2] Revise  [3] Return'); choice = input('Choice: ')"
+python -c "print('\\n[1] Implement\\n[2] Revise\\n[3] Return'); choice = input('Choice (1-3): ')"
 ```
 
 **If choice = 1**: Use handoff to `ouroboros-implement`

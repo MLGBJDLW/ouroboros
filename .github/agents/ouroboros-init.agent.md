@@ -88,7 +88,7 @@ Estimated time: 1-2 minutes
 
 **Then ask for confirmation:**
 ```bash
-python -c "print('\\nReady to begin?'); choice = input('[y/n]: ')"
+python -c "print('\\nReady to begin?'); confirm = input('[y/n]: ')"
 ```
 
 **If user says 'y' or 'yes'**: Proceed to Phase 1

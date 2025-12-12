@@ -3,7 +3,7 @@
 > **Status**: 📋 Planning Complete - Ready for Implementation
 > **Priority**: Medium
 > **Last Updated**: 2025-12-12
-> **Document Version**: 4.0 (Added Subagent Permission & Input Standardization)
+> **Document Version**: 6.0 (Display Compression + Auto Multi-line Detection)
 
 ---
 
@@ -13,15 +13,18 @@
 2. [Solution Overview](#-solution-overview)
 3. [Dependency Analysis](#-dependency-analysis)
 4. [Architecture Design](#-architecture-design)
-5. [Input Command Standardization](#-input-command-standardization)
-6. [Edge Cases & Solutions](#-edge-cases--solutions)
-7. [File Detection Feature](#-file-detection-feature)
-8. [UI Design Specification](#-ui-design-specification)
-9. [Implementation Plan](#-implementation-plan)
-10. [File Inventory](#-file-inventory)
-11. [Toggle Script Design](#-toggle-script-design)
-12. [Risk Assessment](#-risk-assessment)
-13. [Testing Plan](#-testing-plan)
+5. [Display Compression](#-display-compression) ⭐ NEW
+6. [Auto Multi-line Detection](#-auto-multi-line-detection) ⭐ NEW
+7. [Multi-line Input Methods](#-multi-line-input-methods)
+8. [Input Command Standardization](#-input-command-standardization)
+9. [Edge Cases & Solutions](#-edge-cases--solutions)
+10. [File Detection Feature](#-file-detection-feature)
+11. [UI Design Specification](#-ui-design-specification)
+12. [Implementation Plan](#-implementation-plan)
+13. [File Inventory](#-file-inventory)
+14. [Toggle Script Design](#-toggle-script-design)
+15. [Risk Assessment](#-risk-assessment)
+16. [Testing Plan](#-testing-plan)
 
 ---
 
@@ -37,6 +40,7 @@ python -c "task = input('[Ouroboros] > ')"
 **Limitations:**
 - Single line input only
 - No multi-line support
+- No Shift+Enter newline support (see analysis below)
 - No command history
 - No visual feedback
 - No file drag-and-drop support
@@ -62,13 +66,13 @@ Create an **optional enhanced mode** that provides:
 | Mode | Command | Features |
 |------|---------|----------|
 | **Default** | `python -c "..."` | Simple, stable, universal |
-| **Enhanced** | `python .ouroboros/scripts/ccl.py ...` | Colors, multi-line, history, file detection |
+| **Enhanced** | `python .ouroboros/scripts/ouroboros_input.py` | Colors, multi-line, history, file detection |
 
 ### Toggle Mechanism
 
 Users can switch between modes using:
 ```bash
-python .ouroboros/scripts/toggle-enhanced.py
+python .ouroboros/scripts/ouroboros_toggle.py
 ```
 
 This script will:
@@ -85,41 +89,54 @@ This script will:
 #### Python Standard Library Only
 
 | Module | Purpose | Availability |
-|--------|---------|--------------|
+|--------|---------|--------------| 
 | `sys` | System functions | ✅ Always available |
 | `argparse` | Command line parsing | ✅ Python 2.7+, 3.2+ |
 | `pathlib` | Path operations | ✅ Python 3.4+ |
 | `re` | Regular expressions | ✅ Always available |
 | `os` | OS operations, file detection | ✅ Always available |
+| `msvcrt` | Windows keyboard input | ✅ Windows only |
+| `termios`/`tty` | Unix keyboard input | ✅ Unix/macOS only |
 
-#### Optional Enhancement (Graceful Fallback)
+> [!IMPORTANT]
+> **ZERO EXTERNAL DEPENDENCIES GUARANTEE**
+> 
+> All core features (display compression, auto multi-line detection, file detection, colors, box drawing) use **ONLY Python standard library modules**. No `pip install` required!
 
-| Module | Purpose | Availability | Fallback |
-|--------|---------|--------------|----------|
-| `readline` | History, line editing | ⚠️ See below | No history, still works |
+### Feature Dependency Matrix
 
-### readline Availability by Platform
+| Feature | Required Modules | External Deps? | Windows Status |
+|---------|-----------------|----------------|----------------|
+| **Display Compression** | `time`, `sys`, `os`, `pathlib` | ❌ None | ✅ Works |
+| **Auto Multi-line Detection** | `time`, `sys` | ❌ None | ✅ Works |
+| **Paste Speed Detection** | `time` | ❌ None | ✅ Works |
+| **File/Image Detection** | `os`, `pathlib` | ❌ None | ✅ Works |
+| **ANSI Colors** | None (just strings) | ❌ None | ✅ Works on Win10+ |
+| **Unicode Box Drawing** | None (just strings) | ❌ None | ✅ Works on Win10+ |
+| **Command History** | `readline` | ⚠️ Optional | ⚠️ Graceful fallback |
 
-| Platform | readline Status | Notes |
-|----------|----------------|-------|
-| **Linux** | ✅ Built-in | Part of Python |
-| **macOS** | ✅ Built-in | Part of Python |
-| **Windows** | ❌ Not included | Needs `pyreadline3` |
+### About readline (Optional, NOT Required)
 
-### Windows readline Solution
+`readline` is the ONLY module that differs by platform, and it's **completely optional**:
+
+| Platform | readline Status | What Happens Without It |
+|----------|-----------------|------------------------|
+| **Linux** | ✅ Built-in | Full command history |
+| **macOS** | ✅ Built-in | Full command history |
+| **Windows** | ❌ Not built-in | **Everything still works!** Just no ↑/↓ history |
 
 ```python
-# In ccl.py
+# Safe import pattern - NEVER crashes!
 try:
-    import readline
+    import readline  # Linux/macOS
 except ImportError:
-    try:
-        import pyreadline3 as readline  # Windows alternative
-    except ImportError:
-        pass  # No readline, but still works
+    # Windows: No history feature, but ALL other features work!
+    # We do NOT require pyreadline3 or any external package
+    pass
 ```
 
-**Important**: We do NOT require users to install `pyreadline3`. The script works without it - readline is purely optional enhancement.
+> [!TIP]
+> **Windows Users**: All core features work perfectly. You only lose the ability to press ↑/↓ to recall previous commands - this is a minor convenience feature.
 
 ### ANSI Color Support
 
@@ -160,26 +177,48 @@ else:
 ```
 .ouroboros/
 ├── scripts/
-│   ├── ccl.py              # Enhanced CCL script
-│   └── toggle-enhanced.py   # Mode toggle script
+│   ├── ouroboros_input.py       # ♾️ Enhanced input handler
+│   ├── ouroboros_toggle.py      # ♾️ Mode toggle script
+│   └── ouroboros.config.json    # ♾️ Cached environment config
 └── ...
 
 .github/
-├── copilot-instructions.md  # Contains CCL commands
+├── copilot-instructions.md      # Contains CCL commands
 ├── agents/
-│   ├── ouroboros.agent.md   # Contains CCL commands
-│   ├── ouroboros-*.agent.md # Contain CCL commands
+│   ├── ouroboros.agent.md       # Contains CCL commands
+│   ├── ouroboros-*.agent.md     # Contain CCL commands
 │   └── ...
 └── prompts/
-    ├── ouroboros.prompt.md  # Contains CCL commands
+    ├── ouroboros.prompt.md      # Contains CCL commands
     └── ...
 ```
 
-### CCL Script Features
+### Config Caching System
+
+```json
+// .ouroboros/scripts/ouroboros.config.json (auto-generated on first run)
+{
+    "platform": "windows",           // Cached: "windows" | "unix"
+    "ansi_colors": true,             // Terminal supports ANSI?
+    "unicode_box": true,             // Terminal supports Unicode?
+    "readline_available": false,     // Has readline?
+    "theme": "mystic_purple",        // User preference
+    "auto_multiline": true,          // Enable auto-detection?
+    "compress_threshold": 10,        // Lines before compression
+    "last_verified": "2025-12-12"    // When was this verified?
+}
+```
+
+**Cache Behavior:**
+- **First run**: Detect environment → Save config
+- **Subsequent runs**: Load config → Skip detection (fast!)
+- **On failure**: Re-detect → Update config → Continue
+
+### ouroboros_input.py Features
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  ccl.py                                             │
+│  ouroboros_input.py                                 │
 ├─────────────────────────────────────────────────────┤
 │  Arguments:                                         │
 │  --prompt "text"    Custom prompt text              │
@@ -188,11 +227,14 @@ else:
 │  --no-ui            Disable fancy border            │
 │  --no-color         Disable ANSI colors             │
 │  --ascii            Use ASCII instead of Unicode    │
+│  --reset-config     Force re-detect environment     │
 ├─────────────────────────────────────────────────────┤
 │  Features:                                          │
-│  - Multi-line input (<<< or empty line confirm)     │
+│  - Config caching (fast startup)                    │
+│  - Multi-line input (auto-detect or <<<)            │
+│  - Display compression for large pastes             │
 │  - Command history (if readline available)          │
-│  - ANSI colors (if terminal supports)               │
+│  - ANSI colors (Mystic Purple theme)                │
 │  - Unicode box drawing (with ASCII fallback)        │
 │  - File path detection ([FILE], [IMAGE], [VIDEO])   │
 │  - Shortcut key hints in UI                         │
@@ -202,58 +244,669 @@ else:
 
 ---
 
+## 📦 Display Compression
+
+> [!TIP]
+> **Key UX Feature**: Show compressed preview in terminal, but send FULL content to Copilot!
+
+### The Problem
+
+When users paste large content (logs, code blocks, data), the terminal becomes cluttered:
+
+```
+❯ [user pastes 200 lines of logs]
+2024-12-12 10:00:01 ERROR: Connection failed
+2024-12-12 10:00:02 ERROR: Retry attempt 1
+2024-12-12 10:00:03 ERROR: Retry attempt 2
+... (197 more lines scrolling by)
+2024-12-12 10:03:45 INFO: Connection restored
+```
+
+**Problems:**
+- Terminal history flooded
+- Hard to see what was pasted
+- Overwhelming visual noise
+
+### The Solution
+
+**Display compressed, transmit full!**
+
+```
+❯ [user pastes 200 lines]
+
+╭─────────────────────────────────────╮
+│ 📋 Content Received                 │
+│    Lines: 200                       │
+│    Size: 15.3 KB                    │
+│    Type: Log data (detected)        │
+│                                     │
+│ ┌─ Preview ───────────────────────┐ │
+│ │ 2024-12-12 10:00:01 ERROR: Co...│ │
+│ │ 2024-12-12 10:00:02 ERROR: Re...│ │
+│ │ ... (196 lines hidden) ...      │ │
+│ │ 2024-12-12 10:03:45 INFO: Con...│ │
+│ └─────────────────────────────────┘ │
+╰─────────────────────────────────────╯
+
+→ Full 200 lines sent to Copilot ✓
+```
+
+### Implementation
+
+```python
+import time
+
+# Configuration
+COMPRESS_THRESHOLD_LINES = 10      # Compress if > 10 lines
+COMPRESS_THRESHOLD_CHARS = 500     # Or > 500 chars
+PREVIEW_LINES_HEAD = 2             # Show first 2 lines
+PREVIEW_LINES_TAIL = 2             # Show last 2 lines
+LINE_TRUNCATE_WIDTH = 50           # Truncate long lines in preview
+
+def smart_display(content: str) -> str:
+    """
+    Display compressed preview in terminal, return full content.
+    
+    Args:
+        content: The raw input content
+        
+    Returns:
+        The FULL content (unchanged) for transmission to Copilot
+    """
+    lines = content.split('\n')
+    line_count = len(lines)
+    char_count = len(content)
+    
+    # Check if compression is needed
+    if line_count <= COMPRESS_THRESHOLD_LINES and char_count <= COMPRESS_THRESHOLD_CHARS:
+        # Small content - show as-is
+        return content
+    
+    # Detect content type
+    content_type = detect_content_type(content)
+    
+    # Build compressed display
+    print()
+    print("╭─────────────────────────────────────╮")
+    print("│ 📋 Content Received                 │")
+    print(f"│    Lines: {line_count:<25} │")
+    print(f"│    Size: {format_size(char_count):<26} │")
+    print(f"│    Type: {content_type:<26} │")
+    print("│                                     │")
+    print("│ ┌─ Preview ───────────────────────┐ │")
+    
+    # Show head lines
+    for i in range(min(PREVIEW_LINES_HEAD, line_count)):
+        truncated = truncate_line(lines[i], LINE_TRUNCATE_WIDTH)
+        print(f"│ │ {truncated:<34}│ │")
+    
+    # Show hidden count
+    if line_count > PREVIEW_LINES_HEAD + PREVIEW_LINES_TAIL:
+        hidden = line_count - PREVIEW_LINES_HEAD - PREVIEW_LINES_TAIL
+        print(f"│ │ ... ({hidden} lines hidden) ...{' '*6}│ │")
+    
+    # Show tail lines
+    for i in range(max(0, line_count - PREVIEW_LINES_TAIL), line_count):
+        if i >= PREVIEW_LINES_HEAD:  # Don't repeat head lines
+            truncated = truncate_line(lines[i], LINE_TRUNCATE_WIDTH)
+            print(f"│ │ {truncated:<34}│ │")
+    
+    print("│ └─────────────────────────────────┘ │")
+    print("╰─────────────────────────────────────╯")
+    print()
+    print(f"→ Full {line_count} lines sent to Copilot ✓")
+    
+    # Return FULL content unchanged!
+    return content
+
+def detect_content_type(content: str) -> str:
+    """Detect the type of pasted content."""
+    # Log patterns
+    if any(kw in content.lower() for kw in ['error:', 'warn:', 'info:', 'debug:']):
+        return "Log data (detected)"
+    # JSON
+    if content.strip().startswith('{') or content.strip().startswith('['):
+        return "JSON data (detected)"
+    # Code patterns
+    if any(kw in content for kw in ['def ', 'function ', 'class ', 'import ', 'const ', 'let ']):
+        return "Code (detected)"
+    # Stack trace
+    if 'Traceback' in content or 'at ' in content and '(' in content:
+        return "Stack trace (detected)"
+    return "Text content"
+
+def truncate_line(line: str, max_width: int) -> str:
+    """Truncate a line to fit display width."""
+    if len(line) <= max_width:
+        return line
+    return line[:max_width-3] + "..."
+
+def format_size(chars: int) -> str:
+    """Format character count as human-readable size."""
+    if chars < 1024:
+        return f"{chars} chars"
+    elif chars < 1024 * 1024:
+        return f"{chars/1024:.1f} KB"
+    else:
+        return f"{chars/(1024*1024):.1f} MB"
+```
+
+### Image/File Path Compression
+
+When users drag files, show compressed display:
+
+```python
+def display_file_compressed(file_path: str) -> str:
+    """Display file info in compressed format."""
+    from pathlib import Path
+    import os
+    
+    path = Path(file_path)
+    if not path.exists():
+        return file_path  # Not a file, return as-is
+    
+    size = path.stat().st_size
+    ext = path.suffix.lower()
+    
+    # Determine icon and type
+    if ext in {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'}:
+        icon = "📷"
+        file_type = "IMAGE"
+        note = "Attach in Chat UI for visual analysis"
+    elif ext in {'.mp4', '.mov', '.avi', '.webm', '.mkv'}:
+        icon = "🎬"
+        file_type = "VIDEO"
+        note = "Video path provided for reference"
+    else:
+        icon = "📄"
+        file_type = "FILE"
+        note = "Agent can read this file"
+    
+    # Display compressed
+    print()
+    print(f"  {icon} [{path.name}] ({format_file_size(size)})")
+    print(f"  ℹ️  {note}")
+    print()
+    
+    # Return tagged path for Copilot
+    return f"[{file_type}] {path.absolute()}"
+
+def format_file_size(bytes: int) -> str:
+    """Format bytes as human-readable."""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if bytes < 1024:
+            return f"{bytes:.1f} {unit}"
+        bytes /= 1024
+    return f"{bytes:.1f} TB"
+```
+
+### Visual Examples
+
+**Large log paste:**
+```
+❯ [pastes 500 lines of npm install output]
+
+╭─────────────────────────────────────╮
+│ 📋 Content Received                 │
+│    Lines: 523                       │
+│    Size: 48.2 KB                    │
+│    Type: Log data (detected)        │
+│                                     │
+│ ┌─ Preview ───────────────────────┐ │
+│ │ npm WARN deprecated glob@7.2... │ │
+│ │ npm WARN deprecated inflight... │ │
+│ │ ... (519 lines hidden) ...      │ │
+│ │ added 847 packages in 32s       │ │
+│ │ 127 packages are looking for... │ │
+│ └─────────────────────────────────┘ │
+╰─────────────────────────────────────╯
+
+→ Full 523 lines sent to Copilot ✓
+```
+
+**Image file drop:**
+```
+❯ "C:\Users\me\Desktop\screenshot.png"
+
+  📷 [screenshot.png] (1.2 MB)
+  ℹ️  Attach in Chat UI for visual analysis
+
+→ [IMAGE] C:\Users\me\Desktop\screenshot.png sent to Copilot
+```
+
+**Code block paste:**
+```
+❯ [pastes 150 lines of Python code]
+
+╭─────────────────────────────────────╮
+│ 📋 Content Received                 │
+│    Lines: 150                       │
+│    Size: 4.8 KB                     │
+│    Type: Code (detected)            │
+│                                     │
+│ ┌─ Preview ───────────────────────┐ │
+│ │ import os                       │ │
+│ │ from pathlib import Path        │ │
+│ │ ... (146 lines hidden) ...      │ │
+│ │     return result               │ │
+│ │ if __name__ == "__main__":      │ │
+│ └─────────────────────────────────┘ │
+╰─────────────────────────────────────╯
+
+→ Full 150 lines sent to Copilot ✓
+```
+
+---
+
+## 🔍 Auto Multi-line Detection
+
+> [!IMPORTANT]
+> **No more `<<<` required!** The system auto-detects multi-line content.
+
+### The Problem (Old Approach)
+
+Previously, users had to manually type `<<<` to enter multi-line mode:
+```
+❯ <<<
+  (Multi-line mode. End with: empty line+Enter)
+  │ def hello():
+  │     print("world")
+  │ 
+❯ 
+```
+
+**Issues:**
+- Extra step for users to remember
+- Not intuitive
+- Friction in workflow
+
+### The Solution: Smart Auto-Detection
+
+**Paste Detection** (Primary Method):
+```python
+import time
+import sys
+
+def auto_detect_input(prompt="❯ "):
+    """
+    Automatically detect multi-line paste vs single-line typing.
+    
+    Detection methods:
+    1. Input speed (paste is instant, typing is slow)
+    2. Newline characters in input (some terminals preserve them)
+    3. Content patterns (incomplete syntax)
+    """
+    
+    # Measure input timing
+    start_time = time.time()
+    first_line = input(prompt)
+    elapsed = time.time() - start_time
+    
+    # Calculate typing speed (chars per second)
+    if elapsed > 0:
+        chars_per_sec = len(first_line) / elapsed
+    else:
+        chars_per_sec = float('inf')  # Instant = paste
+    
+    # Detection logic
+    is_paste = False
+    is_incomplete = False
+    
+    # Method 1: Speed detection (paste is very fast)
+    # Typical typing: 5-10 chars/sec
+    # Paste: 100+ chars/sec (essentially instant)
+    if chars_per_sec > 50 and len(first_line) > 20:
+        is_paste = True
+    
+    # Method 2: Check for embedded newlines (some terminals preserve them)
+    if '\n' in first_line or '\r' in first_line:
+        # Terminal preserved the paste with newlines!
+        lines = first_line.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+        return '\n'.join(lines)  # Return as multi-line
+    
+    # Method 3: Syntax pattern detection (looks incomplete)
+    incomplete_patterns = [
+        # Python
+        (':', 'Python function/class definition'),
+        # JavaScript/TypeScript
+        ('{', 'JavaScript object/function'),
+        ('[', 'Array definition'),
+        ('(', 'Function call or tuple'),
+        # String continuations
+        ('"""', 'Python docstring'),
+        ("'''", 'Python docstring'),
+        ('`', 'Template literal'),
+    ]
+    
+    stripped = first_line.rstrip()
+    for pattern, description in incomplete_patterns:
+        if stripped.endswith(pattern):
+            is_incomplete = True
+            break
+    
+    # If detected as multi-line, prompt for more
+    if is_paste or is_incomplete:
+        return continue_multiline_input(first_line)
+    
+    # Single line - return as-is
+    return first_line
+
+def continue_multiline_input(first_line: str) -> str:
+    """
+    Continue collecting multi-line input after detection.
+    """
+    print("  ↳ Multi-line detected. Continue typing (double-Enter to submit):")
+    
+    lines = [first_line]
+    empty_count = 0
+    
+    while True:
+        try:
+            line = input("  │ ")
+            
+            if line == "":
+                empty_count += 1
+                if empty_count >= 2:
+                    # Two empty lines = submit
+                    break
+                lines.append("")  # Preserve single empty line
+            else:
+                empty_count = 0
+                lines.append(line)
+                
+        except EOFError:
+            # Ctrl+D pressed
+            break
+        except KeyboardInterrupt:
+            # Ctrl+C - cancel
+            print("\n  ✗ Cancelled")
+            return ""
+    
+    return '\n'.join(lines).rstrip()
+```
+
+### Detection Methods Summary
+
+| Method | How It Works | Reliability |
+|--------|-------------|-------------|
+| **Speed Detection** | Paste is instant (>50 chars/sec), typing is slow | ⭐⭐⭐ High |
+| **Newline Preservation** | Some terminals keep `\n` in paste | ⭐⭐ Medium (terminal-dependent) |
+| **Syntax Patterns** | Lines ending with `:`, `{`, `[` etc. | ⭐⭐ Medium (heuristic) |
+| **Length Heuristic** | Very long lines (>100 chars) likely pasted | ⭐ Low (supplementary) |
+
+### User Experience Flow
+
+**Automatic detection (no user action needed):**
+```
+❯ def calculate_total(items):        # User types/pastes this
+  ↳ Multi-line detected. Continue typing (double-Enter to submit):
+  │     total = 0
+  │     for item in items:
+  │         total += item.price
+  │     return total
+  │ 
+  │ 
+❯ [submitted automatically]
+```
+
+**Instant paste detection:**
+```
+❯ [user Ctrl+V pastes 50 lines instantly]
+  ↳ Multi-line detected. Continue typing (double-Enter to submit):
+  │ ... (paste continues)
+  │ 
+  │ 
+❯ [submitted automatically]
+```
+
+### Manual Override Still Available
+
+Users can still use explicit triggers if preferred:
+
+| Trigger | Action |
+|---------|--------|
+| `<<<` | Force multi-line mode |
+| `>>>` | End multi-line mode |
+| Double-Enter | Submit current input |
+| Ctrl+D | Submit (EOF signal) |
+| Ctrl+C | Cancel input |
+
+### Configuration Options
+
+```python
+# In ccl.py configuration
+AUTO_DETECT_ENABLED = True         # Enable auto-detection
+PASTE_SPEED_THRESHOLD = 50         # chars/sec to consider as paste
+MIN_PASTE_LENGTH = 20              # Minimum chars to trigger paste detection
+DETECT_INCOMPLETE_SYNTAX = True    # Check for : { [ etc.
+DOUBLE_ENTER_SUBMIT = True         # Two empty lines = submit
+```
+
+---
+
+## ⌨️ Multi-line Input Methods
+
+### Shift+Enter Analysis
+
+> [!IMPORTANT]
+> **Can we support Shift+Enter for newlines like in modern chat UIs?**
+
+#### Answer: ⚠️ **PARTIALLY POSSIBLE** - With significant complexity
+
+#### Technical Analysis
+
+| Approach | Feasibility | Complexity | Platform Support |
+|----------|-------------|------------|------------------|
+| Python `input()` | ❌ Not possible | - | None |
+| Raw keyboard input | ✅ Possible | High | Platform-specific |
+| `curses` library | ✅ Possible | High | Unix only |
+| `msvcrt` (Windows) | ✅ Possible | High | Windows only |
+
+#### Why `input()` Cannot Detect Shift+Enter
+
+Python's built-in `input()` function:
+1. Reads characters until it receives a newline (`\n`)
+2. Strips the trailing newline before returning
+3. Has no access to modifier key states (Shift, Ctrl, Alt)
+4. Cannot distinguish between Enter and Shift+Enter
+
+When you press Shift+Enter in a terminal:
+- Most terminals treat it exactly the same as Enter
+- Both produce the same `\n` character
+- There's no additional information sent to Python
+
+#### Implementation Options
+
+##### Option A: Raw Keyboard Input (RECOMMENDED)
+
+```python
+import sys
+import os
+
+if os.name == 'nt':  # Windows
+    import msvcrt
+    
+    def get_key():
+        """Get a single keypress on Windows."""
+        ch = msvcrt.getwch()
+        if ch in ('\x00', '\xe0'):  # Arrow keys, function keys
+            ch += msvcrt.getwch()
+        return ch
+    
+    def is_shift_pressed():
+        """Check if Shift key is pressed on Windows."""
+        import ctypes
+        VK_SHIFT = 0x10
+        return ctypes.windll.user32.GetKeyState(VK_SHIFT) & 0x8000 != 0
+
+else:  # Unix/macOS
+    import tty
+    import termios
+    
+    def get_key():
+        """Get a single keypress on Unix."""
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+            # Handle escape sequences for arrow keys, etc.
+            if ch == '\x1b':
+                ch += sys.stdin.read(2)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+def enhanced_multiline_input(prompt="❯ "):
+    """
+    Custom input that supports Shift+Enter for newlines.
+    
+    - Enter: Submit input
+    - Shift+Enter (Windows): Insert newline
+    - Ctrl+Enter: Insert newline (fallback)
+    - Ctrl+D: Submit input (EOF)
+    """
+    lines = []
+    current_line = ""
+    
+    print(prompt, end="", flush=True)
+    
+    while True:
+        if os.name == 'nt':  # Windows
+            key = get_key()
+            
+            if key == '\r':  # Enter pressed
+                if is_shift_pressed():
+                    # Shift+Enter: add newline
+                    lines.append(current_line)
+                    current_line = ""
+                    print()  # Move to next line
+                    print("  │ ", end="", flush=True)
+                else:
+                    # Just Enter: submit
+                    lines.append(current_line)
+                    print()
+                    break
+            elif key == '\x03':  # Ctrl+C
+                raise KeyboardInterrupt
+            elif key == '\x04':  # Ctrl+D
+                lines.append(current_line)
+                break
+            elif key == '\x08':  # Backspace
+                if current_line:
+                    current_line = current_line[:-1]
+                    print('\b \b', end="", flush=True)
+            elif key.isprintable():
+                current_line += key
+                print(key, end="", flush=True)
+        else:
+            # Unix implementation (simplified)
+            key = get_key()
+            if key == '\r' or key == '\n':
+                lines.append(current_line)
+                print()
+                break
+            elif key == '\x03':
+                raise KeyboardInterrupt
+            elif key.isprintable():
+                current_line += key
+                print(key, end="", flush=True)
+    
+    return '\n'.join(lines)
+```
+
+##### Option B: Use Explicit Multi-line Trigger (CURRENT APPROACH)
+
+This is the simpler, more reliable approach we're currently planning:
+
+```
+❯ <<<                     # User types <<< to enter multi-line mode
+  (Multi-line mode. End with: empty line+Enter, or Ctrl+D)
+  │ def hello():
+  │     print("world")
+  │                       # Empty line
+  │                       # Another empty line = submit
+```
+
+##### Option C: Ctrl+J for Newline
+
+Some terminals interpret Ctrl+J as a literal newline (`\n`), which can work with `input()`:
+- Ctrl+J produces `\n` directly
+- May work in some terminals without special handling
+
+#### Recommended Approach
+
+> [!TIP]
+> **Use a hybrid approach for best compatibility:**
+
+| Priority | Method | When to Use |
+|----------|--------|-------------|
+| 1 | `<<<` trigger | Always available, most reliable |
+| 2 | Shift+Enter (Windows) | Enhanced mode on Windows with raw input |
+| 3 | Two empty lines | Universal fallback for ending multi-line |
+| 4 | Ctrl+D | Unix standard EOF signal |
+
+### Multi-line Mode Exit Methods
+
+| Method | How | Works On |
+|--------|-----|----------|
+| `>>>` on its own line | Type `>>>` and Enter | All platforms |
+| Two empty lines | Press Enter twice on empty lines | All platforms |
+| Ctrl+D | Press Ctrl+D | All platforms |
+| Ctrl+Z + Enter | Press Ctrl+Z then Enter | Windows |
+
+---
+
 ## 📐 Input Command Standardization
 
-### Current Input Commands Found
+> [!IMPORTANT]
+> **All input commands are now standardized. See `.ouroboros/INPUT_STANDARDS.md` for full documentation.**
 
-From grep search of `.github/`:
+### Command Type Classification
 
-#### Type A: Standard CCL (17 occurrences)
+| Type | Variable | Standard Pattern | Count |
+|------|----------|------------------|-------|
+| **A** | `task` | `python -c "task = input('[Ouroboros] > ')"` | 37 |
+| **B** | `choice` | `python -c "print('\\n[1] X\\n[2] Y'); choice = input('Choice (1-N): ')"` | 5 |
+| **C** | `feature` | `python -c "feature = input('Feature name: ')"` | 3 |
+| **D** | `confirm` | `python -c "confirm = input('[y/n]: ')"` | 2 |
+| **E** | `question` | `python -c "question = input('Question: ')"` | 1 |
+
+### Type B Menu Format (STRICT)
+
 ```python
-python -c "task = input('[Ouroboros] > ')"
+# Standard menu format - each option on its own line
+python -c "print('\\n[1] Option A\\n[2] Option B\\n[3] Option C'); choice = input('Choice (1-3): ')"
 ```
 
-#### Type B: Menu Selection (5 occurrences)
+**Rules:**
+- Options MUST use `[1]`, `[2]`, `[3]` (numbers only)
+- Each option on own line with `\\n`  
+- Prompt MUST end with `Choice (1-N):` showing valid range
+
+### Type D Confirmation Format
+
 ```python
-python -c "print('\\n[1] Option1 [2] Option2'); choice = input('Choice: ')"
+# Standard confirmation format
+python -c "confirm = input('[y/n]: ')"
+
+# With context
+python -c "print('Ready to proceed?'); confirm = input('[y/n]: ')"
 ```
 
-#### Type C: Feature/Name Input (3 occurrences)
-```python
-python -c "feature = input('What feature are you building? ...: ')"
-```
-
-#### Type D: Confirmation (2 occurrences)
-```python
-python -c "choice = input('[y/n]: ')"
-```
-
-#### Type E: Question Input (1 occurrence)
-```python
-python -c "question = input('How can i help you? ')"
-```
-
-### Standardization Rules
-
-All input commands MUST follow one of these patterns:
-
-| Type | Variable | Default Prompt | Purpose |
-|------|----------|----------------|---------|
-| A | `task` | `[Ouroboros] >` | Standard task input |
-| B | `choice` | `Choice:` | Menu selection |
-| C | `feature` | `Feature name:` | Feature naming |
-| D | `confirm` | `[y/n]:` | Yes/No confirmation |
-| E | `question` | `Question:` | Free-form question |
+**Rules:**
+- Variable MUST be `confirm` (not `choice`)
+- Prompt MUST include `[y/n]:`
 
 ### Enhanced Mode Mappings
 
 | Type | Default Mode | Enhanced Mode |
 |------|--------------|---------------|
-| A | `python -c "task = input('[Ouroboros] > ')"` | `python .ouroboros/scripts/ccl.py` |
-| B | `python -c "print('MENU'); choice = input('Choice: ')"` | `python .ouroboros/scripts/ccl.py --header "MENU" --prompt "Choice:" --var choice` |
-| C | `python -c "feature = input('Feature name: ')"` | `python .ouroboros/scripts/ccl.py --prompt "Feature name:" --var feature` |
-| D | `python -c "confirm = input('[y/n]: ')"` | `python .ouroboros/scripts/ccl.py --prompt "[y/n]:" --var confirm --no-ui` |
-| E | `python -c "question = input('Question: ')"` | `python .ouroboros/scripts/ccl.py --prompt "Question:" --var question` |
+| A | `python -c "task = input('[Ouroboros] > ')"` | `python .ouroboros/scripts/ouroboros_input.py` |
+| B | `python -c "print('MENU'); choice = input('Choice (1-N): ')"` | `python .ouroboros/scripts/ouroboros_input.py --header "MENU" --prompt "Choice (1-N):" --var choice` |
+| C | `python -c "feature = input('Feature name: ')"` | `python .ouroboros/scripts/ouroboros_input.py --prompt "Feature name:" --var feature` |
+| D | `python -c "confirm = input('[y/n]: ')"` | `python .ouroboros/scripts/ouroboros_input.py --prompt "[y/n]:" --var confirm --no-ui` |
+| E | `python -c "question = input('Question: ')"` | `python .ouroboros/scripts/ouroboros_input.py --prompt "Question:" --var question` |
 
 ---
 
@@ -379,7 +1032,7 @@ task = task.replace('\r\n', '\n').replace('\r', '\n')
 
 ---
 
-## � File Detection Feature
+## 📁 File Detection Feature
 
 ### Purpose
 
@@ -537,26 +1190,46 @@ When task starts with `[FILE]`, `[IMAGE]`, or `[VIDEO]`:
 > _
 ```
 
-### Color Scheme
+### Color Scheme — Mystic Purple Theme ♾️
 
-| Element | Color | ANSI Code |
-|---------|-------|-----------|
-| Border | Cyan | `\033[96m` |
-| Prompt arrow | Green | `\033[92m` |
-| Hints/Notes | Yellow | `\033[93m` |
-| Errors | Red | `\033[91m` |
-| Bold | Bold | `\033[1m` |
-| Reset | - | `\033[0m` |
+> [!TIP]
+> **Brand Identity**: Magenta/Purple represents infinity, mysticism, and makes Ouroboros instantly recognizable.
+
+| Element | Color | ANSI Code | Rationale |
+|---------|-------|-----------|-----------|
+| **Border** | Magenta | `\033[95m` | ♾️ Infinity, brand identity |
+| **Prompt ❯** | Cyan | `\033[96m` | Modern, clean contrast |
+| **Success** | Green | `\033[92m` | Universal "OK" signal |
+| **Hints/Notes** | Yellow | `\033[93m` | Attention, informational |
+| **Errors** | Red | `\033[91m` | Universal error signal |
+| **Info** | Blue | `\033[94m` | Supplementary info |
+| **Bold** | Bold | `\033[1m` | Emphasis |
+| **Reset** | - | `\033[0m` | Clear formatting |
+
+```python
+# Ouroboros Brand Colors (Python implementation)
+COLORS = {
+    'border':    '\033[95m',  # Magenta (♾️ infinity, brand identity)
+    'prompt':    '\033[96m',  # Cyan (modern, clean)
+    'success':   '\033[92m',  # Green (confirmation)
+    'warning':   '\033[93m',  # Yellow (hints, notes)
+    'error':     '\033[91m',  # Red (errors)
+    'info':      '\033[94m',  # Blue (informational)
+    'reset':     '\033[0m',   # Reset all formatting
+    'bold':      '\033[1m',   # Bold text
+}
+```
 
 ---
 
-## �📝 Implementation Plan
+## 📝 Implementation Plan
 
 ### Phase 1: Core Scripts (Priority: High)
 
 - [ ] **Task 1.1**: Create `.ouroboros/scripts/ccl.py`
   - All argument parsing (`--prompt`, `--header`, `--var`, `--no-ui`, `--no-color`, `--ascii`)
   - Multi-line support with robust exit detection
+  - Optional Shift+Enter support via raw input (Windows)
   - Color/Unicode with fallbacks
   - File path detection and formatting
   - Shortcut key hints in UI
@@ -605,6 +1278,7 @@ When task starts with `[FILE]`, `[IMAGE]`, or `[VIDEO]`:
 - [ ] **Task 4.5**: Verify Copilot correctly parses output markers
 - [ ] **Task 4.6**: Test file drag-and-drop
 - [ ] **Task 4.7**: Test multi-line paste scenarios
+- [ ] **Task 4.8**: Test Shift+Enter on Windows (if implemented)
 
 ---
 
@@ -685,6 +1359,7 @@ python .ouroboros/scripts/toggle-enhanced.py --restore
 | Toggle breaks a file | High | Low | Backup before toggle, dry-run mode |
 | Multi-line paste lost | Medium | Medium | Documentation, warning messages |
 | File path with spaces | Medium | Medium | Quote handling in detection |
+| Shift+Enter fails on some terminals | Low | Medium | Fallback to `<<<` trigger |
 
 ---
 
@@ -699,6 +1374,7 @@ python .ouroboros/scripts/toggle-enhanced.py --restore
 5. **Output format**: Verify `=== TASK START/END ===` markers
 6. **File detection**: Various file types and paths
 7. **Edge cases**: Paths with spaces, unicode filenames
+8. **Shift+Enter** (Windows): Verify newline insertion if implemented
 
 ### Integration Tests
 
@@ -711,7 +1387,7 @@ python .ouroboros/scripts/toggle-enhanced.py --restore
 
 | Platform | Test Items |
 |----------|------------|
-| Windows 10+ | Full features, file paths with backslashes |
+| Windows 10+ | Full features, file paths with backslashes, Shift+Enter |
 | Windows < 10 | ASCII fallback, no color |
 | macOS | Full features, file paths with forward slashes |
 | Linux | Full features |
@@ -725,56 +1401,7 @@ python .ouroboros/scripts/toggle-enhanced.py --restore
 5. **Image drag**: Drag .png → verify `[IMAGE]` output with warning
 6. **Cancel**: Type partial input → Ctrl+C → verify clean exit
 7. **Toggle**: Switch modes → verify all commands updated
-
----
-
-## ✅ Summary
-
-### What We're Building
-
-1. **ccl.py**: Universal enhanced input script
-   - Multi-line support with robust exit detection
-   - Colors, borders, Unicode (with fallbacks)
-   - Shortcut hints in UI
-   - File path detection and formatting
-   - Command history (where available)
-
-2. **toggle-enhanced.py**: One-click mode switcher
-   - Scans all `.github/*.md` files
-   - Pattern-based replacement
-   - Backup and restore
-
-3. **Standardized input formats**: Consistent patterns across all agents
-
-4. **Documentation**: README, copilot-instructions, INPUT_STANDARDS
-
-### Dependencies
-
-| Required | Optional |
-|----------|----------|
-| Python 3.6+ | `readline` (auto on Linux/macOS) |
-| `sys`, `argparse`, `pathlib`, `re`, `os` | `pyreadline3` (Windows, not required) |
-
-### Compatibility
-
-| Platform | Status |
-|----------|--------|
-| Windows 10+ | ✅ Full support |
-| Windows < 10 | ⚠️ Degraded (ASCII, no color) |
-| macOS | ✅ Full support |
-| Linux | ✅ Full support |
-
-### Feature Matrix
-
-| Feature | Default Mode | Enhanced Mode |
-|---------|--------------|---------------|
-| Single-line input | ✅ | ✅ |
-| Multi-line input | ❌ | ✅ |
-| Command history | ❌ | ⚠️ (platform) |
-| Colors/Borders | ❌ | ✅ |
-| Shortcut hints | ❌ | ✅ |
-| File detection | ❌ | ✅ |
-| Zero dependencies | ✅ | ✅ |
+8. **Shift+Enter** (Windows): Verify newline insertion in enhanced mode
 
 ---
 
@@ -934,18 +1561,18 @@ ouroboros-v2.1.0.zip
 
 | Concern | Problem if Allowed | Solution |
 |---------|-------------------|----------|
-| **控制流混乱** | 用户不知道谁在问什么 | 所有交互由 Orchestrator 统一处理 |
-| **Context 碎片化** | Subagent 的问答无法被有效追踪 | Subagent 返回"需要确认"状态给 Orchestrator |
-| **架构一致性** | 违背 Ouroboros 的委托设计 | 保持清晰的层级结构 |
+| **Control flow confusion** | User doesn't know which agent is asking | All interactions handled by Orchestrator |
+| **Context fragmentation** | Subagent Q&A cannot be effectively tracked | Subagent returns "needs confirmation" status to Orchestrator |
+| **Architecture consistency** | Violates Ouroboros delegation design | Maintain clear hierarchical structure |
 
 ### Correct Pattern
 
 ```
-用户 → Orchestrator (CCL) → Subagent (执行任务)
+User → Orchestrator (CCL) → Subagent (execute task)
                 ↑                    ↓
-                ╰─── 需要用户输入时 ←──┘
-                  Subagent 返回给 Orchestrator
-                  Orchestrator 收集问题后统一询问用户
+                ╰─── When user input needed ←──┘
+                  Subagent returns to Orchestrator
+                  Orchestrator collects questions and asks user uniformly
 ```
 
 ### What Subagents SHOULD Do
@@ -956,9 +1583,9 @@ When a subagent needs user input:
 2. **RETURN** to orchestrator with status:
    ```
    [NEED_USER_INPUT]
-   Question: [具体问题]
-   Options: [如果是选择题，列出选项]
-   Context: [为什么需要这个信息]
+   Question: [specific question]
+   Options: [if multiple choice, list options]
+   Context: [why this information is needed]
    ```
 3. **WAIT** for orchestrator to collect user input via CCL
 4. **RECEIVE** input from orchestrator in next dispatch
@@ -974,7 +1601,7 @@ This rule should be added to:
 ## 📐 Terminal Input Standardization Specification
 
 > [!IMPORTANT]
-> **强约束规范** - 必须写入每个 agent 文件以确保遵守
+> **Strict Specification** - Must be written into each agent file to ensure compliance
 
 ### Purpose
 
@@ -996,34 +1623,34 @@ Standardize all `python -c` input commands to enable:
 ### Menu Selection Standardization (Type B) — **STRICT FORMAT**
 
 > [!CAUTION]
-> **菜单选择必须使用以下格式，不允许自由发挥！**
+> **Menu selections must use the following format exactly, no deviations allowed!**
 
 #### Required Format
 
 ```python
-# 二选项
-python -c "print('\\n[1] 选项A\\n[2] 选项B'); choice = input('选择 (1/2): ')"
+# Two options
+python -c "print('\\n[1] Option A\\n[2] Option B'); choice = input('Choice (1/2): ')"
 
-# 三选项
-python -c "print('\\n[1] 选项A\\n[2] 选项B\\n[3] 选项C'); choice = input('选择 (1-3): ')"
+# Three options
+python -c "print('\\n[1] Option A\\n[2] Option B\\n[3] Option C'); choice = input('Choice (1-3): ')"
 
-# 多选项
-python -c "print('\\n[1] 选项A\\n[2] 选项B\\n[3] 选项C\\n[4] 选项D'); choice = input('选择 (1-4): ')"
+# Multiple options
+python -c "print('\\n[1] Option A\\n[2] Option B\\n[3] Option C\\n[4] Option D'); choice = input('Choice (1-4): ')"
 ```
 
 #### Forbidden Formats
 
 ```python
-# ❌ WRONG: 使用字母
+# ❌ WRONG: Using letters
 python -c "print('[a] X [b] Y'); choice = input('Choice: ')"
 
-# ❌ WRONG: 非方括号格式
+# ❌ WRONG: Non-bracket format
 python -c "print('1) Option 1\\n2) Option 2'); ..."
 
-# ❌ WRONG: 使用破折号
+# ❌ WRONG: Using dashes
 python -c "print('- Option 1\\n- Option 2'); ..."
 
-# ❌ WRONG: 无编号
+# ❌ WRONG: No numbering
 python -c "print('Option A\\nOption B'); ..."
 ```
 
@@ -1031,19 +1658,19 @@ python -c "print('Option A\\nOption B'); ..."
 
 | Reason | Explanation |
 |--------|-------------|
-| **键盘效率** | 数字在键盘顶行，单手可达 |
-| **通用性** | 数字在所有语言中一致 |
-| **UI 解析** | `[1]`, `[2]`, `[3]` 易于正则匹配 |
-| **未来扩展** | 数字可以支持更多选项 (1-9+) |
+| **Keyboard efficiency** | Numbers on top row, reachable with one hand |
+| **Universality** | Numbers are consistent across all languages |
+| **UI parsing** | `[1]`, `[2]`, `[3]` easy to match with regex |
+| **Future expansion** | Numbers can support more options (1-9+) |
 
 ### Confirmation Standardization (Type D)
 
 ```python
 # Standard confirmation
-python -c "confirm = input('确认执行? [y/n]: ')"
+python -c "confirm = input('Confirm execution? [y/n]: ')"
 
 # With context
-python -c "print('将删除所有测试数据'); confirm = input('[y/n]: ')"
+python -c "print('Will delete all test data'); confirm = input('[y/n]: ')"
 ```
 
 **Accepted inputs**: `y`, `Y`, `yes`, `Yes`, `n`, `N`, `no`, `No`
@@ -1067,16 +1694,16 @@ pattern = r"\[Ouroboros\] >"
 
 | Terminal Command | UI Can Transform To |
 |-----------------|---------------------|
-| `[1] Deploy [2] Cancel` | 两个按钮 |
-| `[y/n]:` | Yes/No 按钮 |
-| `[1] [2] [3] [4]` | 下拉选择器或按钮组 |
+| `[1] Deploy [2] Cancel` | Two buttons |
+| `[y/n]:` | Yes/No buttons |
+| `[1] [2] [3] [4]` | Dropdown selector or button group |
 
 ---
 
 ## 📝 Agent-Level Enforcement Template
 
 > [!IMPORTANT]
-> **以下规范应添加到每个 agent 文件中**
+> **The following specification should be added to each agent file**
 
 ### Template to Add to ALL Agent Files
 
@@ -1084,20 +1711,20 @@ pattern = r"\[Ouroboros\] >"
 ## 🚨 TERMINAL INPUT STANDARDIZATION (MANDATORY)
 
 > [!CAUTION]
-> **所有终端输入必须遵循标准格式。违反 = 系统错误。**
+> **All terminal input must follow standard format. Violation = System error.**
 
 ### Menu Selection Format
 
 When presenting choices to user via CCL, MUST use:
 
 \`\`\`python
-python -c "print('\\n[1] Option1\\n[2] Option2\\n[3] Option3'); choice = input('选择 (1-3): ')"
+python -c "print('\\n[1] Option1\\n[2] Option2\\n[3] Option3'); choice = input('Choice (1-3): ')"
 \`\`\`
 
 **Rules:**
 - Use `[1]`, `[2]`, `[3]` numbering ONLY (no letters, no other formats)
 - Each option on its own line with `\\n`
-- Prompt ends with `选择 (1-N):` or `Choice (1-N):`
+- Prompt ends with `Choice (1-N):` format
 
 ### Confirmation Format
 
@@ -1156,6 +1783,8 @@ python -c "confirm = input('[y/n]: ')"
 ### What We're Building
 
 1. **ccl.py**: Enhanced input with multi-line, colors, file detection
+   - Optional Shift+Enter support via raw keyboard input (Windows)
+   - Fallback to `<<<`/`>>>` triggers for all platforms
 2. **toggle-enhanced.py**: One-click mode switcher
 3. **Standardized input formats**: Consistent patterns
 4. **Documentation**: README, INPUT_STANDARDS
@@ -1167,13 +1796,14 @@ python -c "confirm = input('[y/n]: ')"
 |----------|----------|
 | Python 3.6+ | `readline` (Linux/macOS) |
 | `sys`, `argparse`, `pathlib`, `re`, `os` | `pyreadline3` (Windows) |
+| `msvcrt` (Windows) / `termios` (Unix) for Shift+Enter | |
 
 ### Compatibility
 
 | Platform | Status |
 |----------|--------|
-| Windows 10+ | ✅ Full support |
-| Windows < 10 | ⚠️ Degraded |
+| Windows 10+ | ✅ Full support (including Shift+Enter) |
+| Windows < 10 | ⚠️ Degraded (ASCII, no color) |
 | macOS | ✅ Full support |
 | Linux | ✅ Full support |
 
@@ -1183,11 +1813,11 @@ python -c "confirm = input('[y/n]: ')"
 |---------|---------|----------|
 | Single-line | ✅ | ✅ |
 | Multi-line | ❌ | ✅ |
-| History | ❌ | ⚠️ |
+| Shift+Enter | ❌ | ⚠️ Windows only |
+| History | ❌ | ⚠️ Platform-dependent |
 | Colors | ❌ | ✅ |
 | File detection | ❌ | ✅ |
 
 ---
 
-*Plan documented 2025-12-12 v3.1. Ready for implementation upon approval.*
-
+*Plan documented 2025-12-12 v5.0. Ready for implementation upon approval.*
