@@ -65,10 +65,10 @@ Major upgrade to all 12 subagent prompts, leveraging the Self-Bootstrap architec
 ### 🚀 Architecture Upgrade: Self-Bootstrap Agents
 
 #### Changed
-- **Agent Relocation** — Moved all agent definitions from `.github/agents/` to `.ouroboros/agents/`. This declutters the VS Code UI while maintaining functionality.
-- **Dispatch Protocol** — Replaced "Implicit Dispatch" with **Self-Bootstrap Dispatch Protocol**.
-  - **Old**: `Run the ouroboros-coder agent...` (relied on unstable VS Code agent detection)
-  - **New**: `Read .ouroboros/agents/ouroboros-coder.agent.md then execute...` (guarantees correct persona adoption)
+- **Agent Relocation** — Agents now in `.github/agents/` with `.agent.md` extension, enabling native Copilot `runSubagent(agent: "name")` calls.
+- **Dispatch Protocol** — Replaced "Self-Bootstrap" with **Native Agent Dispatch**.
+  - **Old**: `Read .ouroboros/agents/ouroboros-coder.prompt.md then execute...`
+  - **New**: `runSubagent(agent: "ouroboros-coder", prompt: ...)` (native Copilot integration)
 - **Prompt Updates** — Updated `copilot-instructions.md`, `ouroboros-implement.prompt.md`, and `ouroboros-spec.prompt.md` to enforce the new file-reading dispatch pattern.
 
 #### Added
@@ -102,7 +102,7 @@ Project Ouroboros is a persistent context system for GitHub Copilot that reduces
 - **Automatic Context Restoration** — Session state restored from latest `history/context-*.md` on startup
 - **Milestone-Based Updates** — Context files updated on major milestones, not every action
 
-#### 🤖 Custom Agents (11 Specialists in `.ouroboros/agents/`)
+#### 🤖 Custom Agents (12 Specialists in `.github/agents/`)
 
 **Core Agents:**
 | Agent | Trigger | Role |

@@ -35,8 +35,8 @@ rm -rf .ouroboros-temp
 ```
 
 Or manually copy these folders to your project root:
-- `.github/` — Contains Copilot instructions
-- `.ouroboros/` — Contains the persistent memory file
+- `.github/` — Contains Copilot instructions and agents
+- `.ouroboros/` — Contains the persistent memory files
 
 ### Step 2: Enable Custom Instructions in VS Code
 
@@ -53,34 +53,98 @@ Enable these settings for full functionality:
 | 🔧 **Custom Instructions** | `github.copilot.chat.codeGeneration.useInstructionFiles` | Load `.github/copilot-instructions.md` |
 | 🤖 **Agent Mode** | `github.copilot.chat.agent` | Enable agent-based interactions |
 
-> **Note**: Ouroboros now uses a **Self-Bootstrap Protocol** where agents read their own definitions from `.ouroboros/agents/`. This ensures reliable execution without depending on experimental VS Code settings.
+> **Note**: Ouroboros uses **GitHub Copilot Custom Agents** in `.github/agents/`. This enables native subagent execution via the `runSubagent(agent: "name")` pattern.
 
 ---
 
-## 🤖 Custom Agents (Self-Bootstrapped)
+## 🤖 Custom Agents (11 Specialists)
 
-Ouroboros includes 11 specialized agents now located in `.ouroboros/agents/`:
+All agents are located in `.github/agents/` and can be invoked automatically by the orchestrator.
 
-**Core Agents:**
-| Agent | Trigger | Role |
-|-------|---------|------|
-| `ouroboros-coder` | implement, create, build | Full-stack development |
-| `ouroboros-qa` | test, debug, fix, error, mock, coverage | Testing & debugging (unified) |
-| `ouroboros-writer` | document, explain | Documentation only |
-| `ouroboros-devops` | deploy, docker | Deployment with rollback |
-| `ouroboros-security` | security, audit | Risk identification |
-| `ouroboros-git` | merge, conflict, rebase | Git operations |
-| `ouroboros-analyst` | how does, where is | Read-only codebase analysis |
+### Core Agents
+| Agent | Tools | Purpose |
+|-------|-------|---------|
+| `ouroboros-coder` | read, edit, execute | Full-stack development |
+| `ouroboros-qa` | read, edit, execute, search | Testing & debugging |
+| `ouroboros-writer` | read, edit **(unrestricted)** | Documentation & **any file writing** |
+| `ouroboros-devops` | read, edit, execute | CI/CD, Git operations |
+| `ouroboros-analyst` | read, search | Read-only codebase analysis |
+| `ouroboros-security` | read, search | Vulnerability assessment |
 
-**Spec Workflow Agents:**
-| Agent | Trigger | Role |
-|-------|---------|------|
-| `ouroboros-researcher` | research, investigate | Structured research reports |
-| `ouroboros-requirements` | requirements, user story | EARS notation |
-| `ouroboros-architect` | design, architecture | Mermaid diagrams required |
-| `ouroboros-tasks` | breakdown, plan, tasks | Task breakdown & estimation |
-| `ouroboros-validator` | validate, verify | Consistency matrix |
+### Spec Workflow Agents
+| Agent | Tools | Purpose |
+|-------|-------|---------|
+| `ouroboros-researcher` | read, search, web, edit | Project research (Phase 1) |
+| `ouroboros-requirements` | read, edit | EARS notation (Phase 2) |
+| `ouroboros-architect` | read, search, edit | Design & ADRs (Phase 3) |
+| `ouroboros-tasks` | read, edit | Task breakdown (Phase 4) |
+| `ouroboros-validator` | read, search, edit | Consistency check (Phase 5) |
 
+---
+
+## 🔧 Customizing Agents (MCP & Tools)
+
+> **You can customize any agent's tools and capabilities!**
+
+### Adding Tools to an Agent
+
+Each agent file in `.github/agents/` has a `tools:` field in its frontmatter:
+
+```yaml
+---
+description: "Agent description"
+tools: ['read', 'edit', 'execute']  # ← Customize this!
+---
+```
+
+### Adding MCP (Model Context Protocol) Tools
+
+To add custom MCP tools to an agent:
+
+1. **Edit the agent file** in `.github/agents/`
+2. **Add your MCP tool** to the `tools:` array
+
+**Example: Adding a database MCP to the coder agent:**
+
+```yaml
+---
+description: "⚙️ Senior Principal Engineer..."
+tools: ['read', 'edit', 'execute', 'mcp_database_query', 'mcp_redis_cache']
+---
+```
+
+### Available Native Tools
+
+| Tool | Capability |
+|------|------------|
+| `read` | Read files |
+| `edit` | Edit files |
+| `execute` | Run commands |
+| `search` | Search files |
+| `web` | Web requests |
+| `agent` | Call other agents |
+| `memory` | Persistent memory |
+| `todo` | Task tracking |
+
+### Creating Custom Agents
+
+You can create your own agents! Copy an existing `.agent.md` file and customize:
+
+```yaml
+---
+description: "🎨 My Custom Agent. Specialized for [domain]."
+tools: ['read', 'edit', 'mcp_my_custom_tool']
+handoffs:
+  - label: "Return to Orchestrator"
+    agent: ouroboros
+    prompt: "Task complete. Returning control."
+    send: true
+---
+
+# 🎨 My Custom Agent
+
+[Your agent instructions here...]
+```
 
 ---
 
@@ -92,21 +156,25 @@ After installation, your project will have:
 your-project/
 ├── .github/
 │   ├── copilot-instructions.md    ← Copilot reads this automatically
-│   └── prompts/
-│       ├── ouroboros.prompt.md    ← Full reference prompt
-│       ├── ouroboros-spec.prompt.md      ← 📋 Spec workflow
-│       ├── ouroboros-implement.prompt.md ← ⚡ Auto-implement
-│       └── ouroboros-archive.prompt.md   ← 📦 Archive specs
+│   ├── agents/                    ← 🤖 Agent definitions (11 Specialists)
+│   │   ├── ouroboros.agent.md     ← Main orchestrator
+│   │   ├── ouroboros-coder.agent.md
+│   │   ├── ouroboros-qa.agent.md
+│   │   └── ... (8 more)
+│   └── prompts/                   ← Slash command prompts
+│       ├── ouroboros.prompt.md
+│       ├── ouroboros-init.prompt.md
+│       ├── ouroboros-spec.prompt.md
+│       ├── ouroboros-implement.prompt.md
+│       └── ouroboros-archive.prompt.md
 ├── .ouroboros/
-│   ├── README.md
-│   ├── agents/                    ← 🤖 Agent definitions (13 Specialists)
 │   ├── templates/                 ← 📋 All templates (READ ONLY)
-│   │   ├── context-template.md    ← Session context template
-│   │   └── project-arch-template.md ← Architecture template
+│   │   ├── context-template.md
+│   │   └── project-arch-template.md
 │   ├── history/                   ← 📜 Active session files
-│   │   ├── context-YYYY-MM-DD.md  ← 🧠 Created by agent
-│   │   └── project-arch-YYYY-MM-DD.md ← 🏗️ Created by agent
-│   ├── subagent-docs/             ← 📄 Task specs for sub-agents
+│   │   ├── context-YYYY-MM-DD.md
+│   │   └── project-arch-YYYY-MM-DD.md
+│   ├── subagent-docs/             ← 📄 Long output storage (auto-cleanup)
 │   └── specs/                     ← 📋 Feature specifications
 │       ├── templates/             ← Spec templates (READ ONLY)
 │       └── archived/              ← Completed specs
@@ -168,23 +236,29 @@ Our templates follow industry best practices:
 
 | Template | Key Features |
 |----------|--------------|
+| **research.md** | Tech stack, affected files, recommended approach |
 | **requirements.md** | Introduction, Glossary, Numbered EARS requirements |
 | **design.md** | Design Principles, Code Interfaces, **Correctness Properties** |
 | **tasks.md** | Sub-task numbering (1.1, 1.2), Checkpoints, Property test markers |
-
-### 🤖 Spec Agents (5 Specialists)
-
-| Agent | Role |
-|-------|------|
-| `ouroboros-researcher` | Codebase analysis and research |
-| `ouroboros-requirements` | EARS notation requirements |
-| `ouroboros-architect` | Architecture with Mermaid diagrams |
-| `ouroboros-tasks` | Task breakdown with file paths |
-| `ouroboros-validator` | Cross-document consistency check |
+| **validation-report.md** | Consistency matrix, gap analysis, pass/fail verdict |
 
 ---
 
 ## 🧠 How It Works
+
+### Orchestrator Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Orchestrator (ouroboros.agent.md)                          │
+│  ├── Context Window Manager                                 │
+│  ├── Task Orchestrator                                      │
+│  └── Session Controller (CCL)                               │
+├─────────────────────────────────────────────────────────────┤
+│  Subagents (ouroboros-*.agent.md)                           │
+│  → Complete task → Return via handoff → Orchestrator CCL    │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### The Template Pattern
 
@@ -193,36 +267,6 @@ Our templates follow industry best practices:
 3. **Next Session**: Agent reads the latest file from `history/`
 
 This keeps the templates clean for new users!
-
-This is your project's **persistent memory**. The AI:
-- **Reads it** at session start to restore context
-- **Updates it** when major milestones are reached
-
-```markdown
-# ♾️ Project Ouroboros: Global Context Anchor
-> **Last Updated**: 2025-12-10
-> **Status**: 🟢 Active
-
-## 🎯 Current Goal
-Implementing user authentication
-
-## 🛠️ Tech Stack
-- Python 3.11 + FastAPI
-- React 18 + TypeScript
-
-## 📋 Pending Issues
-- [ ] Fix JWT refresh token bug
-```
-
-Your requests are automatically routed to specialized agents in `.ouroboros/agents/`:
-
-| You Say | Routed To | Behavior |
-|---------|-----------|----------|
-| "Implement login" | `ouroboros-coder` | Full feature development |
-| "Fix this error" | `ouroboros-qa` | **Tests & surgical patches** |
-| "Add tests" | `ouroboros-qa` | Unit/E2E test creation |
-| "Explain this code" | `ouroboros-analyst` | Architecture analysis |
-| "Update the docs" | `ouroboros-writer` | Documentation updates |
 
 ### Artifact Protocol (Zero Tolerance)
 
@@ -248,11 +292,11 @@ def login(username: str, password: str):
 - **Destructive Command Protection**: `rm -rf`, `git reset --hard` require confirmation
 - **Verification Gate**: Code is verified before delivery
 - **QA Agent Fix-Verify Cycle**: Self-contained testing and debugging with 3-cycle limit
-- **Fail-Safe Protocols (New)**:
+- **Fail-Safe Protocols**:
   - 🏗️ **Coder**: Must pass build/typecheck before completion
   - 🚀 **DevOps**: Auto-rollback if exit code > 0
   - 🛑 **Git**: Immediate halt on merge conflicts
-- **Initialization Protocol**: All agents read project context before acting
+- **RETURN PROTOCOL**: All subagents return to orchestrator after completion
 
 ---
 
@@ -272,17 +316,6 @@ To manually add project info, edit the active file:
 ```bash
 # Find today's context file
 .ouroboros/history/context-2025-12-10.md
-```
-
-```markdown
-## 🎯 Current Goal
-[Your current objective]
-
-## 🛠️ Tech Stack
-- [Your technologies]
-
-## 📋 Pending Issues
-- [ ] [Your known issues]
 ```
 
 ### Customize Instructions
