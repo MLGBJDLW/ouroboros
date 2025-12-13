@@ -1316,7 +1316,7 @@ def parse_menu_options(header: str, prompt: str = "") -> tuple:
     if prompt and re.search(r'\[y/n\]', prompt, re.IGNORECASE):
         # This is a yes/no confirmation
         title = header.replace('\\n', ' ').strip() if header else "Confirm"
-        return (title, ["Yes (是)", "No (否)"])
+        return (title, ["Yes", "No"])
     
     lines = header.split('\\n')  # Note: escaped newline from command line
     
@@ -1392,9 +1392,9 @@ def main():
             )
             # Map Yes/No back to y/n for compatibility
             if '[y/n]' in args.prompt.lower():
-                if content.lower().startswith('yes') or content.startswith('是'):
+                if content.lower().startswith('yes'):
                     content = 'y'
-                elif content.lower().startswith('no') or content.startswith('否'):
+                elif content.lower().startswith('no'):
                     content = 'n'
         else:
             # Not a menu - show header box and get simple input

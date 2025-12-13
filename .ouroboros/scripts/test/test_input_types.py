@@ -27,25 +27,26 @@ def test_parse_menu_options():
         # (header, prompt, expected_title, expected_options, description)
         
         # === [y/n] Confirmation Tests ===
+        # Note: Options are English-only (no Chinese) per user request
         (
             "继续执行下一项任务吗?",
             "[y/n]: ",
             "继续执行下一项任务吗?",
-            ["Yes (是)", "No (否)"],
-            "[y/n] confirmation - Chinese"
+            ["Yes", "No"],
+            "[y/n] confirmation - Chinese header"
         ),
         (
             "Continue with next task?",
             "[Y/N]:",
             "Continue with next task?",
-            ["Yes (是)", "No (否)"],
+            ["Yes", "No"],
             "[Y/N] confirmation - uppercase"
         ),
         (
             "Delete file?\\n\\nThis cannot be undone.",
             "[y/n]",
             "Delete file?  This cannot be undone.",
-            ["Yes (是)", "No (否)"],
+            ["Yes", "No"],
             "[y/n] with multiline header"
         ),
         
@@ -144,23 +145,24 @@ def test_yn_mapping():
     print("Testing y/n mapping logic")
     print("=" * 70)
     
+    # Note: Chinese mapping removed per user request - English only
     test_cases = [
-        ("Yes (是)", "y", "Yes maps to y"),
-        ("No (否)", "n", "No maps to n"),
+        ("Yes", "y", "Yes maps to y"),
+        ("No", "n", "No maps to n"),
         ("yes", "y", "lowercase yes"),
         ("no", "n", "lowercase no"),
-        ("是", "y", "Chinese 是 maps to y"),
-        ("否", "n", "Chinese 否 maps to n"),
+        ("YES", "y", "uppercase YES"),
+        ("NO", "n", "uppercase NO"),
     ]
     
     passed = 0
     failed = 0
     
     for content, expected, description in test_cases:
-        # Simulate the mapping logic from main()
-        if content.lower().startswith('yes') or content.startswith('是'):
+        # Simulate the mapping logic from main() - English only
+        if content.lower().startswith('yes'):
             result = 'y'
-        elif content.lower().startswith('no') or content.startswith('否'):
+        elif content.lower().startswith('no'):
             result = 'n'
         else:
             result = content
