@@ -1220,7 +1220,8 @@ def get_selection_input(options: list, title: str = "Select an option:",
             try:
                 key = kb.getch()
                 
-                if key == Keys.CTRL_C:
+                # Cancel: Ctrl+C or Escape
+                if key == Keys.CTRL_C or key == Keys.ESCAPE:
                     writeln(f"\n{THEME['error']}[x] Cancelled{THEME['reset']}")
                     sys.exit(130)
                 
@@ -1233,23 +1234,27 @@ def get_selection_input(options: list, title: str = "Select an option:",
                     menu.move_down()
                     continue
                 
+                # Page Up/Down for long menus
+                if key in (Keys.PAGE_UP, Keys.WIN_PAGE_UP):
+                    menu.page_up()
+                    continue
+                
+                if key in (Keys.PAGE_DOWN, Keys.WIN_PAGE_DOWN):
+                    menu.page_down()
+                    continue
+                
                 # Quick number selection (1-9)
                 if key.isdigit() and key != '0':
-                    num = int(key) - 1
-                    total = len(options) + (1 if allow_custom else 0)
-                    if 0 <= num < total:
-                        menu.selected_index = num
-                        menu.clear_and_rerender()
-                    continue
+                    num = int(key)
+                    if menu.select_by_number(num):
+                        continue
                 
                 # Home/End for quick navigation (support ANSI, alternate, Windows)
                 if key in (Keys.HOME, Keys.HOME_ALT, Keys.WIN_HOME):
-                    menu.selected_index = 0
-                    menu.clear_and_rerender()
+                    menu.go_to_first()
                     continue
                 if key in (Keys.END, Keys.END_ALT, Keys.WIN_END):
-                    menu.selected_index = len(menu.options) - 1
-                    menu.clear_and_rerender()
+                    menu.go_to_last()
                     continue
                 
                 # Enter to select

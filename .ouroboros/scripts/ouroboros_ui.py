@@ -813,22 +813,43 @@ class SelectMenu:
     """
     Interactive selection menu with arrow key navigation.
     Allows selecting from options or entering custom input.
+    
+    Features:
+    - Arrow key navigation (Up/Down)
+    - Page Up/Down for long menus
+    - Home/End to jump to first/last
+    - Number keys 1-9 for quick selection
+    - Escape or Ctrl+C to cancel
+    - Auto-scrolling for menus taller than terminal
     """
     
     def __init__(self, options: list, title: str = "Select an option:", 
                  allow_custom: bool = True, custom_label: str = "[Custom input...]"):
-        self.options = list(options)
-        self.title = title
+        # Handle empty options
+        self.options = list(options) if options else []
+        self.title = title.strip() if title else "Select an option:"
         self.allow_custom = allow_custom
         self.custom_label = custom_label
         self.selected_index = 0
-        self.cols, _ = get_terminal_size()
-        self.width = min(self.cols - 4, 60)
+        
+        # Get terminal size and calculate dimensions
+        self.cols, self.rows = get_terminal_size()
+        # Minimum width of 30, maximum of 60, constrained by terminal
+        self.width = max(30, min(self.cols - 4, 60))
         self._rendered_lines = 0  # Track how many lines we rendered
+        
+        # Scrolling support for long menus
+        self._scroll_offset = 0
+        # Reserve lines for: header(2) + title(1+) + separator(1) + footer(3)
+        self._max_visible_options = max(3, self.rows - 8)
         
         # Add custom option at the end
         if allow_custom:
             self.options.append(custom_label)
+        
+        # Clean up empty/whitespace-only options
+        self.options = [opt.strip() if opt.strip() else f"(Option {i+1})" 
+                        for i, opt in enumerate(self.options)]
     
     def _truncate_text(self, text: str, max_width: int) -> str:
         """Truncate text to fit within max_width, accounting for visible length."""
@@ -870,6 +891,20 @@ class SelectMenu:
         
         return lines if lines else [self._truncate_text(title, max_width)]
     
+    def _update_scroll(self) -> None:
+        """Update scroll offset to keep selected item visible."""
+        if self.selected_index < self._scroll_offset:
+            self._scroll_offset = self.selected_index
+        elif self.selected_index >= self._scroll_offset + self._max_visible_options:
+            self._scroll_offset = self.selected_index - self._max_visible_options + 1
+    
+    def _get_visible_options(self) -> list:
+        """Get the options currently visible in the viewport."""
+        self._update_scroll()
+        start = self._scroll_offset
+        end = min(start + self._max_visible_options, len(self.options))
+        return list(range(start, end))
+    
     def render(self) -> None:
         """Render the selection menu."""
         c = THEME
@@ -893,8 +928,21 @@ class SelectMenu:
         writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
         line_count += 1
         
-        # Options
-        for i, option in enumerate(self.options):
+        # Show scroll indicator if needed
+        visible_indices = self._get_visible_options()
+        has_more_above = self._scroll_offset > 0
+        has_more_below = self._scroll_offset + self._max_visible_options < len(self.options)
+        
+        # Scroll up indicator
+        if has_more_above:
+            scroll_hint = f"{c['info']}   ↑ {self._scroll_offset} more above{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Options (only visible ones)
+        for i in visible_indices:
+            option = self.options[i]
             if i == self.selected_index:
                 prefix = f"{c['prompt']} > "
                 suffix = c['reset']
@@ -909,10 +957,18 @@ class SelectMenu:
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{option_padded}{c['border']}{BOX['v']}{c['reset']}")
             line_count += 1
         
+        # Scroll down indicator
+        if has_more_below:
+            remaining = len(self.options) - (self._scroll_offset + self._max_visible_options)
+            scroll_hint = f"{c['info']}   ↓ {remaining} more below{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
         # Footer with hint
         writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
         line_count += 1
-        hint = f" {c['info']}[Up/Down]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
+        hint = f" {c['info']}[↑↓]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
         hint_padded = pad_text(hint, self.width)
         writeln(f"{c['border']}{BOX['v']}{c['reset']}{hint_padded}{c['border']}{BOX['v']}{c['reset']}")
         line_count += 1
@@ -958,8 +1014,21 @@ class SelectMenu:
         writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
         line_count += 1
         
-        # Options
-        for i, option in enumerate(self.options):
+        # Show scroll indicator if needed
+        visible_indices = self._get_visible_options()
+        has_more_above = self._scroll_offset > 0
+        has_more_below = self._scroll_offset + self._max_visible_options < len(self.options)
+        
+        # Scroll up indicator
+        if has_more_above:
+            scroll_hint = f"{c['info']}   ↑ {self._scroll_offset} more above{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Options (only visible ones)
+        for i in visible_indices:
+            option = self.options[i]
             if i == self.selected_index:
                 prefix = f"{c['prompt']} > "
                 suffix = c['reset']
@@ -974,10 +1043,18 @@ class SelectMenu:
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{option_padded}{c['border']}{BOX['v']}{c['reset']}")
             line_count += 1
         
+        # Scroll down indicator
+        if has_more_below:
+            remaining = len(self.options) - (self._scroll_offset + self._max_visible_options)
+            scroll_hint = f"{c['info']}   ↓ {remaining} more below{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
         # Footer with hint
         writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
         line_count += 1
-        hint = f" {c['info']}[Up/Down]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
+        hint = f" {c['info']}[↑↓]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
         hint_padded = pad_text(hint, self.width)
         writeln(f"{c['border']}{BOX['v']}{c['reset']}{hint_padded}{c['border']}{BOX['v']}{c['reset']}")
         line_count += 1
@@ -997,6 +1074,40 @@ class SelectMenu:
         if self.selected_index < len(self.options) - 1:
             self.selected_index += 1
             self.clear_and_rerender()
+    
+    def page_up(self) -> None:
+        """Move selection up by one page."""
+        if self.selected_index > 0:
+            self.selected_index = max(0, self.selected_index - self._max_visible_options)
+            self.clear_and_rerender()
+    
+    def page_down(self) -> None:
+        """Move selection down by one page."""
+        if self.selected_index < len(self.options) - 1:
+            self.selected_index = min(len(self.options) - 1, 
+                                      self.selected_index + self._max_visible_options)
+            self.clear_and_rerender()
+    
+    def go_to_first(self) -> None:
+        """Jump to first option."""
+        if self.selected_index != 0:
+            self.selected_index = 0
+            self.clear_and_rerender()
+    
+    def go_to_last(self) -> None:
+        """Jump to last option."""
+        if self.selected_index != len(self.options) - 1:
+            self.selected_index = len(self.options) - 1
+            self.clear_and_rerender()
+    
+    def select_by_number(self, num: int) -> bool:
+        """Select option by number (1-based). Returns True if valid."""
+        idx = num - 1
+        if 0 <= idx < len(self.options):
+            self.selected_index = idx
+            self.clear_and_rerender()
+            return True
+        return False
     
     def get_selected(self) -> tuple:
         """
