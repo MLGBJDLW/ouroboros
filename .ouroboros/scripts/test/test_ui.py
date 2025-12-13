@@ -83,10 +83,10 @@ def test_strip_ansi():
         
         status = "PASS" if success else "FAIL"
         print(f"{status}: [test case]")
-        print(f"  Input: [test data] -> Output: {repr(result)}")
+        print(f"  Input: [test data] -> Output: [result]")
         
         if not success:
-            print(f"  Expected: {repr(expected)}")
+            print(f"  Expected: [expected]")
             failed += 1
         else:
             passed += 1
@@ -190,7 +190,7 @@ def test_box_characters():
     
     for key in required_keys:
         if key in BOX:
-            print(f"PASS: BOX['{key}'] = {repr(BOX[key])}")
+            print(f"PASS: BOX['{key}'] exists")
             passed += 1
         else:
             print(f"FAIL: BOX['{key}'] missing")

@@ -42,7 +42,7 @@ def test_basic_operations():
         print("PASS: Insert characters")
         passed += 1
     else:
-        print(f"FAIL: Insert characters - got {repr(buf.text)}")
+        print(f"FAIL: Insert characters - got [data]")
         failed += 1
     
     # Test 3: Newline
@@ -52,7 +52,7 @@ def test_basic_operations():
         print("PASS: Newline creates new line")
         passed += 1
     else:
-        print(f"FAIL: Newline - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Newline - got [data], lines={buf.line_count}")
         failed += 1
     
     # Test 4: Backspace
@@ -61,7 +61,7 @@ def test_basic_operations():
         print("PASS: Backspace deletes character")
         passed += 1
     else:
-        print(f"FAIL: Backspace - got {repr(buf.text)}")
+        print(f"FAIL: Backspace - got [data]")
         failed += 1
     
     # Test 5: Backspace at line start (merge lines)
@@ -70,7 +70,7 @@ def test_basic_operations():
         print("PASS: Backspace merges lines")
         passed += 1
     else:
-        print(f"FAIL: Backspace merge - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Backspace merge - got [data], lines={buf.line_count}")
         failed += 1
     
     # Test 6: Clear
@@ -187,7 +187,7 @@ def test_insert_text():
         print("PASS: Single line insert")
         passed += 1
     else:
-        print(f"FAIL: Single line - got {repr(buf.text)}")
+        print(f"FAIL: Single line - got [data]")
         failed += 1
     
     # Test multi-line insert
@@ -197,7 +197,7 @@ def test_insert_text():
         print("PASS: Multi-line insert")
         passed += 1
     else:
-        print(f"FAIL: Multi-line - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Multi-line - got [data], lines={buf.line_count}")
         failed += 1
     
     # Test Chinese text
@@ -207,7 +207,7 @@ def test_insert_text():
         print("PASS: Chinese text insert")
         passed += 1
     else:
-        print(f"FAIL: Chinese - got {repr(buf.text)}")
+        print(f"FAIL: Chinese - got [data]")
         failed += 1
     
     # Test mixed content
@@ -217,7 +217,7 @@ def test_insert_text():
         print("PASS: Mixed content insert")
         passed += 1
     else:
-        print(f"FAIL: Mixed - got {repr(buf.text)}")
+        print(f"FAIL: Mixed - got [data]")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -243,7 +243,7 @@ def test_delete_operation():
         print("PASS: Delete at cursor")
         passed += 1
     else:
-        print(f"FAIL: Delete - got {repr(buf.text)}")
+        print(f"FAIL: Delete - got [data]")
         failed += 1
     
     # Delete at end of line (merge with next)
@@ -256,7 +256,7 @@ def test_delete_operation():
         print("PASS: Delete merges lines")
         passed += 1
     else:
-        print(f"FAIL: Delete merge - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Delete merge - got [data], lines={buf.line_count}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")

@@ -61,10 +61,10 @@ def test_keys_constants():
         success = (actual == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: Keys.{name} = {repr(actual)}")
+        print(f"{status}: Keys.{name} = [value]")
         
         if not success:
-            print(f"  Expected: {repr(expected)}")
+            print(f"  Expected: [expected]")
             failed += 1
         else:
             passed += 1
@@ -191,10 +191,10 @@ def test_key_normalization():
         
         status = "PASS" if success else "FAIL"
         print(f"{status}: [test case]")
-        print(f"  {repr(input_key)} -> {repr(result)}")
+        print(f"  [input] -> [result]")
         
         if not success:
-            print(f"  Expected: {repr(expected)}")
+            print(f"  Expected: [expected]")
             failed += 1
         else:
             passed += 1

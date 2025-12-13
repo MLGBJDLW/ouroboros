@@ -165,7 +165,7 @@ def test_textbuffer_edge_cases():
         print("PASS: Emoji insertion")
         passed += 1
     else:
-        print(f"FAIL: Emoji - got {repr(buf.text)}")
+        print(f"FAIL: Emoji - got [data]")
         failed += 1
     
     # Test 8: Mixed newlines (should normalize)
@@ -200,7 +200,7 @@ def test_textbuffer_edge_cases():
         print("PASS: Insert in middle of text")
         passed += 1
     else:
-        print(f"FAIL: Insert middle - got {repr(buf.text)}")
+        print(f"FAIL: Insert middle - got [data]")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -462,7 +462,7 @@ def test_special_key_sequences():
         print(f"{status}: [test case]")
         
         if not success:
-            print(f"  Input: {repr(input_key)}, Expected: {repr(expected)}, Got: {repr(result)}")
+            print(f"  Input: [key], Expected: [expected], Got: [result]")
             failed += 1
         else:
             passed += 1
@@ -524,7 +524,7 @@ def test_yn_response_edge_cases():
         print(f"{status}: [test case]")
         
         if not success:
-            print(f"  Input: {repr(content)}, Expected: {repr(expected)}, Got: {repr(result)}")
+            print(f"  Input: [content], Expected: [expected], Got: [result]")
             failed += 1
         else:
             passed += 1
