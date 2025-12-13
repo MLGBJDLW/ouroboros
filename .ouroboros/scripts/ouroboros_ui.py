@@ -824,22 +824,139 @@ class SelectMenu:
         self.selected_index = 0
         self.cols, _ = get_terminal_size()
         self.width = min(self.cols - 4, 60)
+        self._rendered_lines = 0  # Track how many lines we rendered
         
         # Add custom option at the end
         if allow_custom:
             self.options.append(custom_label)
     
+    def _truncate_text(self, text: str, max_width: int) -> str:
+        """Truncate text to fit within max_width, accounting for visible length."""
+        if visible_len(text) <= max_width:
+            return text
+        # Truncate character by character until it fits
+        result = ""
+        for char in text:
+            if visible_len(result + char + "...") > max_width:
+                return result + "..."
+            result += char
+        return result
+    
+    def _wrap_title(self, title: str, max_width: int) -> list:
+        """Wrap title into multiple lines if needed."""
+        if visible_len(title) <= max_width:
+            return [title]
+        
+        # Simple word-based wrapping
+        words = title.split()
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            test_line = f"{current_line} {word}".strip() if current_line else word
+            if visible_len(test_line) <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                # If single word is too long, truncate it
+                if visible_len(word) > max_width:
+                    current_line = self._truncate_text(word, max_width)
+                else:
+                    current_line = word
+        
+        if current_line:
+            lines.append(current_line)
+        
+        return lines if lines else [self._truncate_text(title, max_width)]
+    
     def render(self) -> None:
         """Render the selection menu."""
         c = THEME
         sep = BOX['h'] * self.width
+        line_count = 0
         
         writeln()
+        line_count += 1
+        
         # Header
         writeln(f"{c['border']}{BOX['tl']}{sep}{BOX['tr']}{c['reset']}")
-        title_padded = pad_text(f" {self.title}", self.width)
-        writeln(f"{c['border']}{BOX['v']}{c['reset']}{title_padded}{c['border']}{BOX['v']}{c['reset']}")
+        line_count += 1
+        
+        # Title - wrap if too long
+        title_lines = self._wrap_title(self.title, self.width - 2)
+        for title_line in title_lines:
+            title_padded = pad_text(f" {title_line}", self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{title_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
         writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
+        
+        # Options
+        for i, option in enumerate(self.options):
+            if i == self.selected_index:
+                prefix = f"{c['prompt']} > "
+                suffix = c['reset']
+            else:
+                prefix = "   "
+                suffix = ""
+            
+            # Truncate if too long (account for prefix)
+            max_option_width = self.width - 4  # 3 for prefix + 1 for padding
+            display_option = self._truncate_text(option, max_option_width)
+            option_padded = pad_text(f"{prefix}{display_option}{suffix}", self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{option_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Footer with hint
+        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
+        hint = f" {c['info']}[Up/Down]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
+        hint_padded = pad_text(hint, self.width)
+        writeln(f"{c['border']}{BOX['v']}{c['reset']}{hint_padded}{c['border']}{BOX['v']}{c['reset']}")
+        line_count += 1
+        writeln(f"{c['border']}{BOX['bl']}{sep}{BOX['br']}{c['reset']}")
+        line_count += 1
+        
+        self._rendered_lines = line_count
+    
+    def clear_and_rerender(self) -> None:
+        """Clear previous render and redraw in place."""
+        # Move cursor up to the start of the menu
+        if self._rendered_lines > 0:
+            write(ANSI.move_up(self._rendered_lines))
+        
+        # Clear all lines
+        for _ in range(self._rendered_lines):
+            write(ANSI.CLEAR_LINE + "\n")
+        
+        # Move back up
+        if self._rendered_lines > 0:
+            write(ANSI.move_up(self._rendered_lines))
+        
+        # Re-render (without the initial newline since we're in place)
+        self._render_in_place()
+    
+    def _render_in_place(self) -> None:
+        """Render menu without initial newline (for in-place updates)."""
+        c = THEME
+        sep = BOX['h'] * self.width
+        line_count = 0
+        
+        # Header (no initial newline)
+        writeln(f"{c['border']}{BOX['tl']}{sep}{BOX['tr']}{c['reset']}")
+        line_count += 1
+        
+        # Title - wrap if too long
+        title_lines = self._wrap_title(self.title, self.width - 2)
+        for title_line in title_lines:
+            title_padded = pad_text(f" {title_line}", self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{title_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
         
         # Options
         for i, option in enumerate(self.options):
@@ -851,27 +968,23 @@ class SelectMenu:
                 suffix = ""
             
             # Truncate if too long
-            display_option = option if len(option) < self.width - 6 else option[:self.width - 9] + "..."
+            max_option_width = self.width - 4
+            display_option = self._truncate_text(option, max_option_width)
             option_padded = pad_text(f"{prefix}{display_option}{suffix}", self.width)
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{option_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
         
         # Footer with hint
         writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
         hint = f" {c['info']}[Up/Down]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
         hint_padded = pad_text(hint, self.width)
         writeln(f"{c['border']}{BOX['v']}{c['reset']}{hint_padded}{c['border']}{BOX['v']}{c['reset']}")
+        line_count += 1
         writeln(f"{c['border']}{BOX['bl']}{sep}{BOX['br']}{c['reset']}")
-    
-    def clear_and_rerender(self) -> None:
-        """Clear previous render and redraw."""
-        # Move up to clear previous output
-        lines_to_clear = len(self.options) + 5  # options + header + separator + hint + borders
-        write(ANSI.move_up(lines_to_clear))
-        for _ in range(lines_to_clear):
-            write(ANSI.CLEAR_LINE)
-            write(ANSI.move_down(1))
-        write(ANSI.move_up(lines_to_clear))
-        self.render()
+        line_count += 1
+        
+        self._rendered_lines = line_count
     
     def move_up(self) -> None:
         """Move selection up."""
