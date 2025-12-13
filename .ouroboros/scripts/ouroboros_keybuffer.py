@@ -257,47 +257,99 @@ class WindowsKeyBuffer:
                 pass
     
     def _read_console_char(self, timeout: Optional[float] = None) -> str:
-        """Read a character using ReadConsoleW (supports IME)."""
-        import ctypes
-        from ctypes import wintypes
+        """
+        Read a character using ReadConsoleW (supports IME).
         
-        kernel32 = ctypes.windll.kernel32
+        Args:
+            timeout: Optional timeout in seconds. None means wait indefinitely.
+            
+        Returns:
+            The character read, or empty string on timeout/error.
+            
+        Raises:
+            No exceptions are raised; errors return empty string and
+            may trigger fallback to msvcrt in the caller.
+        """
+        try:
+            import ctypes
+            from ctypes import wintypes
+        except ImportError:
+            # ctypes not available, signal caller to use fallback
+            return ''
+        
+        try:
+            kernel32 = ctypes.windll.kernel32
+        except (AttributeError, OSError):
+            # Not on Windows or kernel32 not accessible
+            return ''
         
         # Control key state flags
         LEFT_CTRL_PRESSED = 0x0008
         RIGHT_CTRL_PRESSED = 0x0004
         SHIFT_PRESSED = 0x0010
         
-        # Wait for input
-        start_time = time.time()
-        while True:
-            # Check if input is available
-            num_events = wintypes.DWORD()
-            kernel32.GetNumberOfConsoleInputEvents(self._handle, ctypes.byref(num_events))
+        # Validate handle
+        if self._handle is None or self._handle == -1:
+            return ''
+        
+        # Define structures inside try block to catch any ctypes errors
+        try:
+            class KEY_EVENT_RECORD(ctypes.Structure):
+                _fields_ = [
+                    ("bKeyDown", wintypes.BOOL),
+                    ("wRepeatCount", wintypes.WORD),
+                    ("wVirtualKeyCode", wintypes.WORD),
+                    ("wVirtualScanCode", wintypes.WORD),
+                    ("uChar", wintypes.WCHAR),
+                    ("dwControlKeyState", wintypes.DWORD),
+                ]
             
-            if num_events.value > 0:
-                # Read input record
-                class KEY_EVENT_RECORD(ctypes.Structure):
-                    _fields_ = [
-                        ("bKeyDown", wintypes.BOOL),
-                        ("wRepeatCount", wintypes.WORD),
-                        ("wVirtualKeyCode", wintypes.WORD),
-                        ("wVirtualScanCode", wintypes.WORD),
-                        ("uChar", wintypes.WCHAR),
-                        ("dwControlKeyState", wintypes.DWORD),
-                    ]
+            class INPUT_RECORD(ctypes.Structure):
+                _fields_ = [
+                    ("EventType", wintypes.WORD),
+                    ("padding", wintypes.WORD),
+                    ("Event", KEY_EVENT_RECORD),
+                ]
+        except (TypeError, AttributeError) as e:
+            # Structure definition failed
+            return ''
+        
+        # Wait for input with timeout
+        start_time = time.time()
+        max_iterations = 100000  # Safety limit to prevent infinite loop
+        iterations = 0
+        
+        while iterations < max_iterations:
+            iterations += 1
+            
+            try:
+                # Check if input is available
+                num_events = wintypes.DWORD()
+                result = kernel32.GetNumberOfConsoleInputEvents(
+                    self._handle, ctypes.byref(num_events)
+                )
                 
-                class INPUT_RECORD(ctypes.Structure):
-                    _fields_ = [
-                        ("EventType", wintypes.WORD),
-                        ("padding", wintypes.WORD),
-                        ("Event", KEY_EVENT_RECORD),
-                    ]
+                if not result:
+                    # API call failed, wait briefly and retry
+                    time.sleep(0.01)
+                    continue
                 
-                record = INPUT_RECORD()
-                num_read = wintypes.DWORD()
-                
-                if kernel32.ReadConsoleInputW(self._handle, ctypes.byref(record), 1, ctypes.byref(num_read)):
+                if num_events.value > 0:
+                    record = INPUT_RECORD()
+                    num_read = wintypes.DWORD()
+                    
+                    read_result = kernel32.ReadConsoleInputW(
+                        self._handle, 
+                        ctypes.byref(record), 
+                        1, 
+                        ctypes.byref(num_read)
+                    )
+                    
+                    if not read_result:
+                        # Read failed, continue waiting
+                        time.sleep(0.01)
+                        continue
+                    
                     if num_read.value > 0:
                         # KEY_EVENT = 0x0001
                         if record.EventType == 0x0001 and record.Event.bKeyDown:
@@ -357,11 +409,24 @@ class WindowsKeyBuffer:
                                 return Keys.PAGE_UP
                             elif vk == 0x22:  # VK_PAGE_DOWN
                                 return Keys.PAGE_DOWN
-            
-            if timeout is not None and (time.time() - start_time) >= timeout:
+                
+                # Check timeout
+                if timeout is not None and (time.time() - start_time) >= timeout:
+                    return ''
+                
+                # Brief sleep to avoid busy-waiting
+                time.sleep(0.01)
+                
+            except (OSError, ctypes.ArgumentError, ValueError) as e:
+                # Handle specific ctypes/OS errors gracefully
+                # Return empty to trigger fallback
                 return ''
-            time.sleep(0.01)
+            except Exception:
+                # Catch-all for unexpected errors
+                # Return empty to trigger fallback to msvcrt
+                return ''
         
+        # Safety: max iterations reached
         return ''
     
     def getch(self, timeout: Optional[float] = None) -> str:
