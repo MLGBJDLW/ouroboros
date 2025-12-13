@@ -103,3 +103,29 @@ jobs:
           use-quiet-mode: 'yes'
           config-file: '.github/mlc_config.json'
         continue-on-error: true  # Don't fail on external link issues
+
+  test-scripts:
+    name: Test Enhanced CCL Scripts
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.11']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run tests
+        run: python .ouroboros/scripts/test/run_all_tests.py --quick
+
+      - name: Test script imports
+        run: |
+          cd .ouroboros/scripts
+          python -c "from ouroboros_input import parse_menu_options; print('✅ ouroboros_input imports OK')"
+          python -c "from ouroboros_ui import visible_len, THEME, BOX; print('✅ ouroboros_ui imports OK')"
+          python -c "from ouroboros_keybuffer import KeyBuffer, Keys; print('✅ ouroboros_keybuffer imports OK')"

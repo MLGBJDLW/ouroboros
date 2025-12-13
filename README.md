@@ -248,6 +248,24 @@ python .ouroboros/scripts/ouroboros_toggle.py --mode default
 
 > See [`.ouroboros/scripts/README.md`](.ouroboros/scripts/README.md) for full documentation.
 
+### Running Tests
+
+The Enhanced CCL system includes a comprehensive test suite with 200+ test cases:
+
+```bash
+cd .ouroboros/scripts/test
+python run_all_tests.py --quick   # Run all automated tests
+```
+
+| Test File | Coverage |
+|-----------|----------|
+| `test_ui.py` | UI components (visible_len, ANSI, themes) |
+| `test_keybuffer.py` | Keyboard input (Windows/Linux/Mac keys) |
+| `test_textbuffer.py` | Text buffer operations |
+| `test_input_types.py` | Menu detection, [y/n] prompts |
+| `test_edge_cases.py` | Boundary conditions, Unicode, stress tests |
+| `test_keys.py` | Interactive keyboard diagnostics |
+
 ## 📋 Spec-Driven Development
 
 For complex features, use the structured spec workflow:

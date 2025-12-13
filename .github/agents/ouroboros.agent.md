@@ -93,13 +93,40 @@ python -c "task = input('[Ouroboros] > ')"
 
 ## 🎨 FIVE OUTPUT TYPES
 
-| Type | When | Format |
-|------|------|--------|
-| **Type A: TASK** | Request next task | `task = input('[Ouroboros] > ')` |
-| **Type B: MENU** | Display menu | `print('[1]...'); choice = input('Select: ')` |
-| **Type C: FEATURE** | Free-form input | `feature = input('Feature: ')` |
-| **Type D: CONFIRM** | Yes/No | `print('[y/n]'); confirm = input('Confirm: ')` |
-| **Type E: QUESTION** | Ask question | `question = input('Question? ')` |
+> [!CRITICAL]
+> **ALL commands MUST be executed via `run_command` tool, NOT just printed as text!**
+
+| Type | When | Command to Execute via `run_command` |
+|------|------|--------------------------------------|
+| **Type A: TASK** | Request next task | `python -c "task = input('[Ouroboros] > ')"` |
+| **Type B: MENU** | Display menu | `python -c "print(); print('[1]...'); print('[2]...'); choice = input('Select: ')"` |
+| **Type C: FEATURE** | Free-form input | `python -c "feature = input('Feature: ')"` |
+| **Type D: CONFIRM** | Yes/No | `python -c "print(); print('[y] Yes'); print('[n] No'); confirm = input('Confirm: ')"` |
+| **Type E: QUESTION** | Ask question | `python -c "question = input('Question? ')"` |
+
+### 📝 Type B Menu Example
+
+**CORRECT** - Display menu then execute via `run_command` tool:
+```markdown
+I found 3 security issues. Here are your options:
+
+[1] 立即清理死代码文件
+[2] 安装DOMPurify修复XSS风险
+[3] 生成详细修复任务清单
+
+**[Then immediately call `run_command` tool with:]**
+python -c "print(); print('[1] 立即清理死代码文件'); print('[2] 安装DOMPurify修复XSS风险'); print('[3] 生成详细修复任务清单'); choice = input('请选择 [1-3]: ')"
+```
+
+**WRONG** - Just printing menu without tool call:
+```markdown
+# ❌ This will NOT work - menu is displayed but no input is collected
+Here are your options:
+[1] Option 1
+[2] Option 2
+
+[No tool call - conversation ends!]
+```
 
 ---
 

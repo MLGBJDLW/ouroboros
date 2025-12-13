@@ -367,13 +367,25 @@ class InputBox:
             self._update_status_bar()
     
     def expand_height(self, new_height: int) -> None:
-        """Expand the input box to a new height (re-renders the entire box)."""
+        """Expand the input box to a new height (re-renders the entire box).
+        
+        SAFE EXPANSION: Uses newline insertion without ANSI cursor movement
+        to prevent terminal scrolling that would push WelcomeBox off screen.
+        
+        Strategy:
+        1. Calculate available space (terminal height - WelcomeBox - margins)
+        2. Limit expansion to max_height (default 10 lines)
+        3. Use print() with newlines instead of ANSI move_down
+        4. Only expand if we have room without causing scroll
+        """
         if new_height <= self.height:
             return
         
-        # Calculate max height based on terminal
-        max_height = max(1, self.rows - 12)  # Leave room for welcome box and margins
-        new_height = min(new_height, max_height)
+        # Calculate safe max height
+        # Terminal rows - WelcomeBox (7 lines) - margins (2) - status bar (1) = available
+        safe_max_height = max(1, self.rows - 10)
+        max_allowed_height = min(10, safe_max_height)  # Hard limit: 10 lines
+        new_height = min(new_height, max_allowed_height)
         
         if new_height <= self.height:
             return
@@ -383,14 +395,17 @@ class InputBox:
         old_height = self.height
         self.height = new_height
         
-        # Save cursor position
+        # Hide cursor during redraw
+        write(ANSI.HIDE_CURSOR)
+        
+        # Save current cursor position
         write(ANSI.SAVE_CURSOR)
         
         # Move to first input line (from current cursor position)
         if self.cursor_row > 0:
             write(ANSI.move_up(self.cursor_row))
         
-        # Re-render ALL existing lines (in case show_line_numbers changed)
+        # Re-render existing lines in-place (no vertical movement)
         for i in range(old_height):
             write(ANSI.move_to_column(1))
             write(ANSI.CLEAR_LINE)
@@ -400,14 +415,13 @@ class InputBox:
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
-            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            if i < old_height - 1:
+                write('\n')  # Move to next line
         
-        # Clear old bottom border
-        write(ANSI.move_to_column(1))
-        write(ANSI.CLEAR_LINE)
-        
-        # Add new input lines
+        # Add new lines (these will cause controlled scrolling)
         for i in range(old_height, new_height):
+            write('\n')  # New line
             write(ANSI.move_to_column(1))
             if self.show_line_numbers:
                 line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
@@ -415,9 +429,11 @@ class InputBox:
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
-            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
         
-        # Re-draw bottom border with embedded status
+        # Draw new bottom border
+        write('\n')
+        write(ANSI.move_to_column(1))
         if self.show_status:
             mode_text = f" {self._mode} "
             pos_text = f" Ln 1, Col 1 "
@@ -427,11 +443,24 @@ class InputBox:
             right_border_len = content_width - mode_len - pos_len - 4
             mid_border = BOX['h'] * max(1, right_border_len)
             right_border = BOX['h'] * 2
-            writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+            write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         else:
-            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+            write(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
         
-        write(ANSI.RESTORE_CURSOR)
+        # Move cursor back up to first input line
+        lines_to_move_up = new_height + 1  # All new lines + bottom border
+        write(ANSI.move_up(lines_to_move_up))
+        
+        # Reset cursor tracking
+        self.cursor_row = 0
+        self.cursor_col = 0
+        
+        # Position cursor at text start
+        col_offset = 7 if self.show_line_numbers else 3
+        write(ANSI.move_to_column(col_offset + 1))
+        
+        # Show cursor again
+        write(ANSI.SHOW_CURSOR)
     
     def shrink_height(self, new_height: int) -> None:
         """Shrink the input box to a new height (re-renders the entire box).
@@ -447,16 +476,17 @@ class InputBox:
         c = THEME
         content_width = self.width - 2
         old_height = self.height
+        lines_removed = old_height - new_height
         self.height = new_height
         
-        # Save cursor position
-        write(ANSI.SAVE_CURSOR)
+        # Hide cursor during redraw
+        write(ANSI.HIDE_CURSOR)
         
         # Move to first input line (from current cursor position)
         if self.cursor_row > 0:
             write(ANSI.move_up(self.cursor_row))
         
-        # Re-render remaining input lines
+        # Re-render remaining input lines (empty - will be filled by refresh_display)
         for i in range(new_height):
             write(ANSI.move_to_column(1))
             write(ANSI.CLEAR_LINE)
@@ -466,7 +496,8 @@ class InputBox:
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
-            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            write(ANSI.move_down(1))
         
         # Draw new bottom border at new position
         write(ANSI.move_to_column(1))
@@ -480,16 +511,32 @@ class InputBox:
             right_border_len = content_width - mode_len - pos_len - 4
             mid_border = BOX['h'] * max(1, right_border_len)
             right_border = BOX['h'] * 2
-            writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+            write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         else:
-            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+            write(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+        write(ANSI.move_down(1))
         
-        # Clear the lines that are no longer part of the box (old border + extra lines)
-        for _ in range(old_height - new_height):
+        # Clear the lines that are no longer part of the box (old lines + old border)
+        for _ in range(lines_removed):
+            write(ANSI.move_to_column(1))
             write(ANSI.CLEAR_LINE)
             write(ANSI.move_down(1))
         
-        write(ANSI.RESTORE_CURSOR)
+        # Move cursor back to first input line, column 1
+        # Total lines we moved down: new_height (input lines) + 1 (border) + lines_removed (cleared)
+        total_down = new_height + 1 + lines_removed
+        write(ANSI.move_up(total_down))
+        
+        # Reset cursor tracking to row 0
+        self.cursor_row = 0
+        self.cursor_col = 0
+        
+        # Position cursor at text start
+        col_offset = 7 if self.show_line_numbers else 3
+        write(ANSI.move_to_column(col_offset + 1))
+        
+        # Show cursor again
+        write(ANSI.SHOW_CURSOR)
     
     def _update_status_bar(self) -> None:
         """Update the status bar embedded in bottom border with batch rendering."""
@@ -544,7 +591,7 @@ class InputBox:
     def update_line(self, line_index: int, text: str) -> None:
         """Update a specific line in the input box with batch rendering.
         
-        Uses save/restore cursor to avoid position tracking issues when
+        Uses absolute positioning to avoid cursor tracking issues when
         updating multiple lines in sequence.
         """
         if not self._rendered or line_index >= self.height:
@@ -559,11 +606,14 @@ class InputBox:
         # Build all output in a buffer before writing (batch rendering)
         output = []
         
-        # Hide cursor and save position
+        # Hide cursor during update
         output.append(ANSI.HIDE_CURSOR)
+        
+        # Save cursor position
         output.append(ANSI.SAVE_CURSOR)
         
-        # Calculate how far to move from current tracked position
+        # Move to the target line using relative movement from current cursor_row
+        # This is more reliable than absolute positioning
         move_amount = line_index - self.cursor_row
         
         if move_amount > 0:
@@ -571,7 +621,7 @@ class InputBox:
         elif move_amount < 0:
             output.append(ANSI.move_up(-move_amount))
         
-        # Move to start of line content
+        # Move to column 1 and clear the entire line first
         output.append(ANSI.move_to_column(1))
         output.append(ANSI.CLEAR_LINE)
         
@@ -593,9 +643,10 @@ class InputBox:
         else:
             content = pad_text(display_text, line_content_width)
         
+        # Write the line content (no newline - stay on same line)
         output.append(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{content}{c['border']}{BOX['v']}{c['reset']}")
         
-        # Restore cursor position (don't update cursor_row here, let set_cursor handle it)
+        # Restore cursor position
         output.append(ANSI.RESTORE_CURSOR)
         
         # Show cursor again

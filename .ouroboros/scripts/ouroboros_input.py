@@ -748,7 +748,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
     
     buffer = TextBuffer()
     history = get_history()
-    # InputBox: start with 1 line, dynamically expands as content grows
+    # InputBox: Start with 1 line, dynamically expand up to 10 lines max
+    # Beyond 10 lines, use internal scrolling to prevent terminal scrolling
     box = InputBox(height=1, show_line_numbers=True, show_status=True, 
                    full_width=True, prompt_header=prompt_header)
     box.set_mode("INPUT")  # Simple mode name
@@ -808,11 +809,11 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
         # This works with all languages including Chinese paths like D:\文档\项目\file.txt
         import time as _time
         rapid_input_buffer = []
-        # 100ms threshold: generous for catching drag-drop while avoiding false positives
-        # Drag-drop typically sends chars in < 10ms intervals
-        # Human typing is typically 100-300ms between chars (even fast typists)
-        # IME input has gaps during character selection
-        rapid_input_threshold = 0.100  # 100ms between chars = likely system input
+        # 10ms threshold: only catches actual drag-drop/paste (not fast typing)
+        # Drag-drop typically sends chars in < 5ms intervals
+        # Fast human typing is typically 50-150ms between chars
+        # This prevents false positives that cause typing lag
+        rapid_input_threshold = 0.010  # 10ms - only catches system paste/drag-drop
         rapid_input_min_length = 4     # Minimum chars to consider as potential path
         last_char_time = 0
         rapid_input_start_time = 0     # Track when rapid input started
@@ -876,9 +877,9 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
             
             # Not a file path or too short, insert as regular text
             buffer.insert_text(content)
-            # Expand box if needed
-            if buffer.line_count > box.height:
-                box.expand_height(min(buffer.line_count, 15))
+            # Expand box up to 10 lines, then use internal scrolling
+            if buffer.line_count > box.height and box.height < 10:
+                box.expand_height(min(buffer.line_count, 10))
             refresh_display()
             return True
         
@@ -906,9 +907,9 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                             # Regular paste - insert as-is
                             buffer.insert_text(display_text)
                         
-                        # Dynamically expand box if pasted content has multiple lines
-                        if buffer.line_count > box.height:
-                            box.expand_height(min(buffer.line_count, 15))
+                        # Expand box up to 10 lines, then use internal scrolling
+                        if buffer.line_count > box.height and box.height < 10:
+                            box.expand_height(min(buffer.line_count, 10))
                         
                         # Transition out of paste mode
                         if state_machine:
@@ -962,10 +963,9 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     
                     # Regular Enter - Add newline (default multi-line mode)
                     buffer.newline()
-                    # Dynamically expand box as content grows
-                    if buffer.line_count > box.height:
-                        # Expand by 1 line at a time for smooth animation
-                        box.expand_height(min(buffer.line_count, 15))
+                    # Expand box up to 10 lines, then use internal scrolling
+                    if buffer.line_count > box.height and box.height < 10:
+                        box.expand_height(min(buffer.line_count, 10))
                     refresh_display()
                     continue
                 
@@ -985,7 +985,7 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                 if kb.is_backspace(key):
                     old_line_count = buffer.line_count
                     if buffer.backspace():
-                        # Shrink box if line count decreased
+                        # Shrink box if line count decreased (but keep minimum 1 line)
                         if buffer.line_count < old_line_count and buffer.line_count < box.height:
                             box.shrink_height(max(1, buffer.line_count))
                         refresh_display()
@@ -995,14 +995,14 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                 if kb.is_delete(key):
                     old_line_count = buffer.line_count
                     if buffer.delete():
-                        # Shrink box if line count decreased
+                        # Shrink box if line count decreased (but keep minimum 1 line)
                         if buffer.line_count < old_line_count and buffer.line_count < box.height:
                             box.shrink_height(max(1, buffer.line_count))
                         refresh_display()
                     continue
                 
                 # Arrow keys - Up for history when on first line
-                if key == Keys.UP:
+                if key in (Keys.UP, Keys.UP_ALT, Keys.WIN_UP):
                     # On first line (row 0): browse history
                     if buffer.cursor_row == 0 and not buffer.move_up():
                         # Can't move up - we're at top, browse history
@@ -1017,7 +1017,7 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     else:
                         refresh_display()
                     continue
-                if key == Keys.DOWN:
+                if key in (Keys.DOWN, Keys.DOWN_ALT, Keys.WIN_DOWN):
                     # On last line: browse history forward (if browsing)
                     if buffer.cursor_row == buffer.line_count - 1 and not buffer.move_down():
                         # Can't move down - we're at bottom
@@ -1036,26 +1036,26 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     else:
                         refresh_display()
                     continue
-                if key == Keys.LEFT:
+                if key in (Keys.LEFT, Keys.LEFT_ALT, Keys.WIN_LEFT):
                     if buffer.move_left():
                         visible_row = buffer.get_visible_cursor_row()
                         text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
                         box.set_cursor(visible_row, buffer.cursor_col, text_before)
                     continue
-                if key == Keys.RIGHT:
+                if key in (Keys.RIGHT, Keys.RIGHT_ALT, Keys.WIN_RIGHT):
                     if buffer.move_right():
                         visible_row = buffer.get_visible_cursor_row()
                         text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
                         box.set_cursor(visible_row, buffer.cursor_col, text_before)
                     continue
                 
-                # Home/End
-                if key in (Keys.HOME, Keys.HOME_ALT, Keys.CTRL_A):
+                # Home/End (support ANSI, alternate, Windows, and Ctrl shortcuts)
+                if key in (Keys.HOME, Keys.HOME_ALT, Keys.WIN_HOME, Keys.CTRL_A):
                     buffer.home()
                     visible_row = buffer.get_visible_cursor_row()
                     box.set_cursor(visible_row, buffer.cursor_col, '')  # At start, no text before
                     continue
-                if key in (Keys.END, Keys.END_ALT, Keys.CTRL_E):
+                if key in (Keys.END, Keys.END_ALT, Keys.WIN_END, Keys.CTRL_E):
                     buffer.end()
                     visible_row = buffer.get_visible_cursor_row()
                     text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
@@ -1089,12 +1089,12 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     debug_log(f"Char '{key}' time_since_last={time_since_last:.3f}s is_rapid={is_rapid} buffer_len={len(rapid_input_buffer)}")
                     
                     if is_rapid:
-                        # Rapid input detected - accumulate in buffer
+                        # Rapid input detected - accumulate in buffer for path detection
                         if not rapid_input_buffer:
                             rapid_input_start_time = current_time
                         rapid_input_buffer.append(key)
                         last_char_time = current_time
-                        continue
+                        continue  # With 10ms threshold, this only triggers for drag-drop
                     elif rapid_input_buffer:
                         # Gap detected after rapid input - process buffer first
                         # DON'T add current char to buffer - it's the start of new input
@@ -1224,12 +1224,12 @@ def get_selection_input(options: list, title: str = "Select an option:",
                     writeln(f"\n{THEME['error']}[x] Cancelled{THEME['reset']}")
                     sys.exit(130)
                 
-                # Arrow navigation
-                if key == Keys.UP:
+                # Arrow navigation (support both ANSI and Windows key codes)
+                if key in (Keys.UP, Keys.UP_ALT, Keys.WIN_UP):
                     menu.move_up()
                     continue
                 
-                if key == Keys.DOWN:
+                if key in (Keys.DOWN, Keys.DOWN_ALT, Keys.WIN_DOWN):
                     menu.move_down()
                     continue
                 
@@ -1242,12 +1242,12 @@ def get_selection_input(options: list, title: str = "Select an option:",
                         menu.clear_and_rerender()
                     continue
                 
-                # Home/End for quick navigation
-                if key in (Keys.HOME, Keys.HOME_ALT):
+                # Home/End for quick navigation (support ANSI, alternate, Windows)
+                if key in (Keys.HOME, Keys.HOME_ALT, Keys.WIN_HOME):
                     menu.selected_index = 0
                     menu.clear_and_rerender()
                     continue
-                if key in (Keys.END, Keys.END_ALT):
+                if key in (Keys.END, Keys.END_ALT, Keys.WIN_END):
                     menu.selected_index = len(menu.options) - 1
                     menu.clear_and_rerender()
                     continue
@@ -1297,7 +1297,7 @@ def print_header_box(header: str) -> None:
     writeln()
 
 
-def parse_menu_options(header: str) -> tuple:
+def parse_menu_options(header: str, prompt: str = "") -> tuple:
     """Parse numbered options from header text for interactive selection.
     
     Returns:
@@ -1306,8 +1306,17 @@ def parse_menu_options(header: str) -> tuple:
     Example:
         "Select action:\n1. Create feature\n2. Fix bug" 
         -> ("Select action:", ["Create feature", "Fix bug"])
+        
+        header="Continue?", prompt="[y/n]:"
+        -> ("Continue?", ["Yes", "No"])
     """
     import re
+    
+    # Check for [y/n] confirmation pattern in prompt
+    if prompt and re.search(r'\[y/n\]', prompt, re.IGNORECASE):
+        # This is a yes/no confirmation
+        title = header.replace('\\n', ' ').strip() if header else "Confirm"
+        return (title, ["Yes (是)", "No (否)"])
     
     lines = header.split('\\n')  # Note: escaped newline from command line
     
@@ -1371,16 +1380,22 @@ def main():
     
     # Type B: Header/Menu - try to detect numbered options for arrow-key selection
     if args.header:
-        # Try to parse menu options from header
-        title, parsed_options = parse_menu_options(args.header)
+        # Try to parse menu options from header (also pass prompt for [y/n] detection)
+        title, parsed_options = parse_menu_options(args.header, args.prompt)
         
         if parsed_options and MODULES_AVAILABLE:
             # Menu detected - use arrow-key selection
             content = get_selection_input(
                 options=parsed_options,
                 title=title,
-                allow_custom=True  # Allow custom input as fallback
+                allow_custom=False if '[y/n]' in args.prompt.lower() else True
             )
+            # Map Yes/No back to y/n for compatibility
+            if '[y/n]' in args.prompt.lower():
+                if content.lower().startswith('yes') or content.startswith('是'):
+                    content = 'y'
+                elif content.lower().startswith('no') or content.startswith('否'):
+                    content = 'n'
         else:
             # Not a menu - show header box and get simple input
             print_header_box(args.header)
