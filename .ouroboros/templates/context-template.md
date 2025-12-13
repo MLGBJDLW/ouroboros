@@ -4,6 +4,17 @@
 
 ---
 
+## 📅 Session Info
+
+| Field | Value |
+|-------|-------|
+| **Date** | YYYY-MM-DD |
+| **Time** | HH:MM (24h) |
+| **Timezone** | [e.g., UTC+8, PST] |
+| **Session ID** | [Auto-generated or manual] |
+
+---
+
 ## 🎯 Current Goal
 
 [Describe current objective here]
@@ -18,7 +29,7 @@
 
 ---
 
-## 📦 Active Clipboard (Artifact Buffer)
+## � Active Clipboard (Artifact Buffer)
 
 > Last artifact passed between agents. Updated during handoffs.
 
@@ -35,18 +46,20 @@
 
 ---
 
-## 📊 Session Statistics
+## � Session Statistics
 
 | Metric | Value |
 |--------|-------|
 | Tasks Completed | 0 |
 | Current Task | - |
 | Last Agent | - |
+| Session Start | HH:MM |
+| Last Update | HH:MM |
 
 ---
 
 ## 🔄 Action Log
 
-| Date | Action | Agent |
-|------|--------|-------|
-| - | Session initialized | Architect |
+| Timestamp | Action | Agent |
+|-----------|--------|-------|
+| HH:MM | Session initialized | Architect |

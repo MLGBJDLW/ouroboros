@@ -1,10 +1,11 @@
-# ♾️ Project Ouroboros v2.0
+# ♾️ Project Ouroboros v3.0
 
 > **Save Money on GitHub Copilot** — A persistent context system that reduces redundant conversations and maximizes your Copilot subscription value.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Copilot Compatible](https://img.shields.io/badge/GitHub%20Copilot-Compatible-blue)](https://github.com/features/copilot)
-[![Version: 2.0](https://img.shields.io/badge/Version-2.0-green)](https://github.com/MLGBJDLW/ouroboros)
+[![Version: 3.0](https://img.shields.io/badge/Version-3.0-green)](https://github.com/MLGBJDLW/ouroboros)
+[![CI](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml/badge.svg)](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml)
 
 ---
 
@@ -25,19 +26,28 @@ Ouroboros solves this:
 
 ## 🚀 Quick Start (3 Steps!)
 
+> **Requirement**: Python 3.6+ must be installed on your system. The Continuous Command Loop uses `python -c` for terminal interaction.
+
 ### Step 1: Copy to Your Project
 
+**Option A: Download Release (Recommended)**
+
+1. Download the latest `ouroboros-vX.X.X.zip` from [Releases](https://github.com/MLGBJDLW/ouroboros/releases)
+2. Extract to your project root
+3. Done! You should now have `.github/` and `.ouroboros/` folders
+
+**Option B: Git Clone**
+
 ```bash
-# Clone and copy core files
 git clone https://github.com/MLGBJDLW/ouroboros.git .ouroboros-temp
 cp -r .ouroboros-temp/.github .
 cp -r .ouroboros-temp/.ouroboros .
 rm -rf .ouroboros-temp
 ```
 
-Or manually copy these folders to your project root:
-- `.github/` — Contains Copilot instructions and agents
-- `.ouroboros/` — Contains the persistent memory files
+Either way, your project should have:
+- `.github/` — Copilot instructions and agents
+- `.ouroboros/` — Persistent memory system
 
 ### Step 2: Enable Custom Instructions in VS Code
 
@@ -200,6 +210,44 @@ Once `/ouroboros` is active, the AI will:
 
 ---
 
+## 🎨 Enhanced CCL Input (Optional)
+
+Upgrade your terminal input with the Enhanced CCL system — featuring visual UI, command history, and intelligent content detection.
+
+### Quick Toggle
+
+**Double-Click**:
+- Windows: `.ouroboros/scripts/toggle.bat`
+- Mac/Linux: `.ouroboros/scripts/toggle.sh` (run `chmod +x toggle.sh` first)
+
+**Command Line**:
+```bash
+python .ouroboros/scripts/ouroboros_toggle.py                # Interactive menu
+python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
+python .ouroboros/scripts/ouroboros_toggle.py --mode default
+```
+
+### Features
+
+| ✅ Advantage | Description |
+|-------------|-------------|
+| **Mystic Purple Theme** | Beautiful branded terminal UI |
+| **Display Compression** | Large pastes show compact preview |
+| **Auto Multi-line** | Automatically detects pasted content |
+| **File Detection** | Recognizes dragged image/video files |
+| **Command History** | Saves and recalls previous commands |
+| **Zero Dependencies** | Python standard library only |
+
+### Limitations
+
+| ⚠️ Limitation | Reason |
+|---------------|--------|
+| No Shift+Enter (manual) | Python `input()` can't detect keys; pastes auto-detected |
+| No ↑/↓ on Windows | Windows lacks readline (history saved to file) |
+| Terminal-dependent | Old terminals may lack ANSI/Unicode support |
+
+> See [`.ouroboros/scripts/README.md`](.ouroboros/scripts/README.md) for full documentation.
+
 ## 📋 Spec-Driven Development
 
 For complex features, use the structured spec workflow:
@@ -258,7 +306,11 @@ your-project/
 │   ├── templates/                 ← 📋 All templates (READ ONLY)
 │   ├── history/                   ← 📜 Active session files
 │   ├── subagent-docs/             ← 📄 Long output storage
-│   └── specs/                     ← 📋 Feature specifications
+│   ├── specs/                     ← 📋 Feature specifications
+│   └── scripts/                   ← 🎨 Enhanced CCL (optional)
+│       ├── ouroboros_input.py     ← Enhanced input handler
+│       ├── ouroboros_toggle.py    ← Mode toggle script
+│       └── README.md              ← Scripts documentation
 └── ... your project files
 ```
 

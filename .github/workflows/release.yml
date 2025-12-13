@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Releasing version: $VERSION"
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Extract content between this version header and the next version header
+          # Using awk to get the section for this specific version
+          awk -v ver="## \\[$VERSION\\]" '
+            $0 ~ ver { found=1; next }
+            /^## \[/ && found { exit }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          
+          # If changelog section is empty, create a default message
+          if [ ! -s release_notes.md ]; then
+            echo "Release v$VERSION" > release_notes.md
+            echo "" >> release_notes.md
+            echo "See [CHANGELOG.md](CHANGELOG.md) for full details." >> release_notes.md
+          fi
+          
+          echo "📝 Changelog extracted:"
+          cat release_notes.md
+
+      - name: Create release package
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Create a clean package directory
+          mkdir -p release-package
+          
+          # Copy core files (exclude git, temp files, etc.)
+          cp -r .github release-package/
+          cp -r .ouroboros release-package/
+          cp README.md release-package/
+          cp CHANGELOG.md release-package/
+          cp LICENSE release-package/
+          
+          # Remove any generated/temp files from package
+          rm -rf release-package/.ouroboros/history/*
+          rm -rf release-package/.ouroboros/subagent-docs/*
+          rm -rf release-package/.ouroboros/specs/*/
+          rm -f release-package/.ouroboros/scripts/ouroboros.config.json
+          rm -f release-package/.ouroboros/scripts/ouroboros.history
+          rm -rf release-package/.ouroboros/scripts/backups
+          
+          # Remove CI/CD files (these are for the repo, not for end users)
+          rm -rf release-package/.github/workflows
+          rm -f release-package/.github/mlc_config.json
+          rm -f release-package/.github/CODEOWNERS
+          rm -f release-package/.markdownlint.json
+          
+          # Keep template directories but remove content
+          mkdir -p release-package/.ouroboros/history
+          mkdir -p release-package/.ouroboros/subagent-docs
+          touch release-package/.ouroboros/history/.gitkeep
+          touch release-package/.ouroboros/subagent-docs/.gitkeep
+          
+          # Create zip
+          cd release-package
+          zip -r ../ouroboros-v${VERSION}.zip .
+          cd ..
+          
+          echo "📦 Package created: ouroboros-v${VERSION}.zip"
+          ls -lh ouroboros-v${VERSION}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "♾️ Ouroboros v${{ steps.version.outputs.version }}"
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
+          files: |
+            ouroboros-v${{ steps.version.outputs.version }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

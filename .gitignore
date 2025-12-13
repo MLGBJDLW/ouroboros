@@ -41,12 +41,14 @@ build/
 !.ouroboros/specs/templates/
 !.ouroboros/specs/archived/
 
+# Ignore toggle script generated files
+.ouroboros/scripts/backups/
+.ouroboros/scripts/ouroboros.config.json
+.ouroboros/scripts/ouroboros.history
+
 # ===========================================
 # IMPORTANT: DO NOT IGNORE THESE
 # ===========================================
 # .ouroboros/ - Contains project memory system
 # .ouroboros/specs/templates/ - Contains spec templates
 # .github/ - Contains Copilot instructions
-
-# Plans
-FUTURE_*
