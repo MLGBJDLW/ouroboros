@@ -1406,12 +1406,21 @@ def main():
                 elif content.lower().startswith('no'):
                     content = 'n'
         else:
-            # Not a menu - show header box and get simple input
-            print_header_box(args.header)
-            if args.prompt:
-                content = get_simple_input(args.prompt)
+            # Not a menu - show header as welcome message, then use InputBox UI
+            if MODULES_AVAILABLE:
+                # Display header as info box, then show interactive input
+                WelcomeBox.render(args.header)
+                content = get_interactive_input_advanced(
+                    show_ui=True, 
+                    prompt_header=args.prompt if args.prompt else "[Ouroboros] > "
+                )
             else:
-                content = get_simple_input()
+                # Fallback: show header box and get simple input
+                print_header_box(args.header)
+                if args.prompt:
+                    content = get_simple_input(args.prompt)
+                else:
+                    content = get_simple_input()
         
         format_output(args.var, content)
         return
