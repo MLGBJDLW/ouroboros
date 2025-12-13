@@ -70,9 +70,24 @@ class ANSI:
     SAVE_CURSOR = '\x1b[s'
     RESTORE_CURSOR = '\x1b[u'
     
-    # Alternate screen buffer (like vim/less)
-    ENTER_ALT_SCREEN = '\x1b[?1049h'
-    EXIT_ALT_SCREEN = '\x1b[?1049l'
+    # Line insertion/deletion (for scroll-free expansion)
+    @staticmethod
+    def insert_lines(n: int = 1) -> str:
+        """Insert n blank lines at cursor, pushing content down."""
+        return f'\x1b[{n}L' if n > 0 else ''
+    
+    @staticmethod
+    def delete_lines(n: int = 1) -> str:
+        """Delete n lines at cursor, pulling content up."""
+        return f'\x1b[{n}M' if n > 0 else ''
+    
+    # Scroll region
+    @staticmethod
+    def set_scroll_region(top: int, bottom: int) -> str:
+        """Set scrolling region (1-based rows)."""
+        return f'\x1b[{top};{bottom}r'
+    
+    RESET_SCROLL_REGION = '\x1b[r'
     
     # Colors
     RESET = '\x1b[0m'
@@ -253,19 +268,15 @@ def format_display_text(text: str) -> str:
 class InputBox:
     """
     A pre-reserved input box that updates in place.
-    Uses ScreenBuffer for flicker-free, scroll-free rendering.
+    Uses ANSI escape codes to move cursor and redraw.
     
     Features:
     - Auto-stretch to terminal width
     - Optional line numbers
     - Scroll indicator when content exceeds viewport
     - Status bar showing mode and position
-    - Dynamic height with pre-reserved space (no terminal scroll)
-    - Double-buffered rendering via ScreenBuffer
+    - Dynamic height (starts at 1, can expand)
     """
-    
-    # Maximum reserved height for input area
-    MAX_RESERVED_HEIGHT = 5
     
     def __init__(self, height: int = 1, show_line_numbers: bool = False, 
                  show_status: bool = True, full_width: bool = True,
@@ -287,9 +298,6 @@ class InputBox:
         # Height: use provided (default 1 for single line)
         self.height = max(1, height)
         
-        # Pre-reserve space to prevent scrolling
-        self._reserved_height = min(self.MAX_RESERVED_HEIGHT, max(1, self.rows - 15))
-        
         self.lines = ['']  # Current input lines
         self.cursor_row = 0
         self.cursor_col = 0
@@ -298,76 +306,76 @@ class InputBox:
         self._rendered = False
         self._mode = "INPUT"  # INPUT, PASTE, HISTORY
         
-        # ScreenBuffer for double-buffered rendering
-        # Total box height = 1 (top border) + reserved_height (input lines) + 1 (bottom border)
+        # Initialize ScreenBuffer for double-buffered rendering
+        # Total box height = 1 (top border) + height (input lines) + 1 (bottom border)
         self._use_screen_buffer = SCREEN_BUFFER_AVAILABLE
         self._screen_buffer = None
         self._box_start_row = 1  # Terminal row where box starts (1-based)
-        
-        # Calculate box dimensions for ScreenBuffer
-        self._box_total_height = 1 + self._reserved_height + 1  # top + lines + bottom
     
     def render_initial(self) -> None:
-        """Render the initial input box frame.
-        
-        Uses ScreenBuffer for double-buffered rendering when available.
-        Pre-reserves space for expansion to prevent terminal scrolling.
-        """
+        """Render the initial input box frame."""
         c = THEME
-        content_width = self.width - 2  # Inside borders
         
-        # Initialize ScreenBuffer if available
-        if self._use_screen_buffer and SCREEN_BUFFER_AVAILABLE:
-            # Get current cursor position to determine start row
-            # We'll print empty lines first to reserve space, then use ScreenBuffer
-            pass  # ScreenBuffer integration for future enhancement
+        # Calculate content width (inside borders)
+        content_width = self.width - 2  # Account for left and right borders
         
-        # Build top border
+        # Top border with prompt indicator or custom header
         if self.prompt_header:
-            max_header_len = content_width - 6
+            # Custom header (e.g., question text) - use ◇ symbol
+            # Truncate if too long
+            max_header_len = content_width - 6  # Leave room for borders and padding
             header_text = self.prompt_header[:max_header_len] if len(self.prompt_header) > max_header_len else self.prompt_header
             prompt_indicator = f" {c['prompt']}◇ {header_text}{c['reset']} "
-            prompt_visible_len = visible_len(header_text) + 4
+            prompt_visible_len = visible_len(header_text) + 4  # "◇ " + header + " "
         else:
+            # Default header
             prompt_indicator = f" {c['prompt']}◎ INPUT{c['reset']} "
-            prompt_visible_len = 9
+            prompt_visible_len = 9  # "◎ INPUT" visible length
         
         left_border = BOX['h'] * 2
         right_border_len = content_width - prompt_visible_len - 2
         right_border = BOX['h'] * max(0, right_border_len)
         writeln(f"{c['border']}{BOX['tl']}{left_border}{c['reset']}{prompt_indicator}{c['border']}{right_border}{BOX['tr']}{c['reset']}")
         
-        # Render ALL reserved lines upfront (prevents scroll on expansion)
-        for i in range(self._reserved_height):
+        # Empty input lines (pre-reserve space)
+        for i in range(self.height):
             if self.show_line_numbers:
-                if i < self.height:
-                    line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                else:
-                    line_num = f"{c['dim']}   {c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 6
+                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_content_width = content_width - 6  # 3 digits + space + │ + space = 6 chars
             else:
                 line_num = f" {c['border']}›{c['reset']} "
-                line_content_width = content_width - 3
+                line_content_width = content_width - 3  # space + › + space
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
         
-        # Bottom border with status
+        # Bottom border with embedded status (single line)
         if self.show_status:
+            # Embed status in bottom border: ╰── MODE: SINGLE ─────── Ln 1, Col 1 ──╯
             mode_text = f" {self._mode} "
             pos_text = f" Ln 1, Col 1 "
             mode_len = len(mode_text)
             pos_len = len(pos_text)
+            
+            # Calculate border segments
             left_border = BOX['h'] * 2
             right_border_len = content_width - mode_len - pos_len - 4
             mid_border = BOX['h'] * max(1, right_border_len)
             right_border = BOX['h'] * 2
+            
             writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         else:
+            # Simple bottom border
             writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
         
-        # Move cursor to first input line
-        write(ANSI.move_up(self._reserved_height + 1))
+        # Move cursor back to first input line
+        status_lines = 0  # Status is now in bottom border, no extra lines
+        write(ANSI.move_up(self.height + status_lines + 1))
+        # col_offset: number of chars before text area
+        # With line numbers: │ + 3digits + space + │ + space = 1+3+1+1+1 = 7
+        # Without line numbers: │ + space + › + space = 1+1+1+1 = 4... wait let me recount
+        # Actually: "│" + "  1 │ " = 1 + 7 = 8 chars before text? No:
+        # │  1 │ x  <- x is at position 8 (1-based), so col_offset=7 (chars before)
         col_offset = 7 if self.show_line_numbers else 3
-        write(ANSI.move_to_column(col_offset + 1))
+        write(ANSI.move_to_column(col_offset + 1))  # col_offset is 0-based, ANSI is 1-based
         
         self._rendered = True
     
@@ -378,17 +386,23 @@ class InputBox:
             self._update_status_bar()
     
     def expand_height(self, new_height: int) -> None:
-        """Expand the input box within pre-reserved space.
+        """Expand the input box to a new height.
         
-        Since render_initial already reserved MAX_RESERVED_HEIGHT lines,
-        expansion just updates line numbers in-place without adding new lines.
-        This prevents terminal scrolling completely.
+        Uses ANSI Insert Line (IL) to add lines without terminal scrolling.
+        This pushes the bottom border down instead of scrolling the screen.
+        
+        Strategy:
+        1. Move cursor to bottom border position
+        2. Insert new lines (pushes border down, not screen up)
+        3. Render new input lines in the inserted space
+        4. Redraw bottom border at new position
         """
         if new_height <= self.height:
             return
         
-        # Limit to reserved height
-        new_height = min(new_height, self._reserved_height)
+        # Limit to max height (after which internal scrolling kicks in)
+        max_allowed_height = min(10, max(1, self.rows - 10))
+        new_height = min(new_height, max_allowed_height)
         
         if new_height <= self.height:
             return
@@ -396,76 +410,39 @@ class InputBox:
         c = THEME
         content_width = self.width - 2
         old_height = self.height
+        lines_to_add = new_height - old_height
         self.height = new_height
         
         # Hide cursor during redraw
         write(ANSI.HIDE_CURSOR)
         write(ANSI.SAVE_CURSOR)
         
-        # Move to first input line
-        if self.cursor_row > 0:
-            write(ANSI.move_up(self.cursor_row))
+        # Move to bottom border line (from current cursor position)
+        # cursor is at cursor_row, bottom border is at old_height
+        lines_down = old_height - self.cursor_row
+        if lines_down > 0:
+            write(ANSI.move_down(lines_down))
         
-        # Update line numbers for newly active lines (within reserved space)
-        # Only need to update lines from old_height to new_height
-        if old_height > 0:
-            write(ANSI.move_down(old_height))
+        # Insert blank lines at bottom border position
+        # This pushes the border (and anything below) down without scrolling screen up
+        write(ANSI.insert_lines(lines_to_add))
         
-        for i in range(old_height, new_height):
+        # Now render the new input lines in the inserted space
+        for i in range(lines_to_add):
             write(ANSI.move_to_column(1))
+            line_idx = old_height + i
             if self.show_line_numbers:
-                # Update line number from dimmed "   " to active number
-                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_num = f"{c['dim']}{line_idx+1:3d}{c['reset']} {c['border']}│{c['reset']} "
                 line_content_width = content_width - 6
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
             write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
-            if i < new_height - 1:
+            if i < lines_to_add - 1:
                 write(ANSI.move_down(1))
         
-        # Restore cursor position
-        write(ANSI.RESTORE_CURSOR)
-        write(ANSI.SHOW_CURSOR)
-    
-    def shrink_height(self, new_height: int) -> None:
-        """Shrink the input box to a new height (re-renders the entire box).
-        
-        Used when lines are deleted via backspace to dynamically reduce box size.
-        Minimum height is 1.
-        """
-        new_height = max(1, new_height)  # Minimum 1 line
-        
-        if new_height >= self.height:
-            return
-        
-        c = THEME
-        content_width = self.width - 2
-        old_height = self.height
-        lines_removed = old_height - new_height
-        self.height = new_height
-        
-        # Hide cursor during redraw
-        write(ANSI.HIDE_CURSOR)
-        
-        # Move to first input line (from current cursor position)
-        if self.cursor_row > 0:
-            write(ANSI.move_up(self.cursor_row))
-        
-        # Re-render remaining input lines (empty - will be filled by refresh_display)
-        for i in range(new_height):
-            write(ANSI.move_to_column(1))
-            write(ANSI.CLEAR_LINE)
-            if self.show_line_numbers:
-                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 6
-            else:
-                line_num = f" {c['border']}›{c['reset']} "
-                line_content_width = content_width - 3
-            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
-            write(ANSI.move_down(1))
-        
-        # Draw new bottom border at new position
+        # Move to and redraw bottom border
+        write(ANSI.move_down(1))
         write(ANSI.move_to_column(1))
         write(ANSI.CLEAR_LINE)
         if self.show_status:
@@ -480,28 +457,42 @@ class InputBox:
             write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         else:
             write(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
-        write(ANSI.move_down(1))
         
-        # Clear the lines that are no longer part of the box (old lines + old border)
-        for _ in range(lines_removed):
-            write(ANSI.move_to_column(1))
-            write(ANSI.CLEAR_LINE)
-            write(ANSI.move_down(1))
+        # Restore cursor position
+        write(ANSI.RESTORE_CURSOR)
+        write(ANSI.SHOW_CURSOR)
+    
+    def shrink_height(self, new_height: int) -> None:
+        """Shrink the input box by deleting lines.
         
-        # Move cursor back to first input line, column 1
-        # Total lines we moved down: new_height (input lines) + 1 (border) + lines_removed (cleared)
-        total_down = new_height + 1 + lines_removed
-        write(ANSI.move_up(total_down))
+        Uses ANSI Delete Line (DL) to remove lines without leaving gaps.
+        This pulls the bottom border up cleanly.
+        """
+        new_height = max(1, new_height)
         
-        # Reset cursor tracking to row 0
-        self.cursor_row = 0
-        self.cursor_col = 0
+        if new_height >= self.height:
+            return
         
-        # Position cursor at text start
-        col_offset = 7 if self.show_line_numbers else 3
-        write(ANSI.move_to_column(col_offset + 1))
+        c = THEME
+        content_width = self.width - 2
+        lines_to_remove = self.height - new_height
+        self.height = new_height
         
-        # Show cursor again
+        write(ANSI.HIDE_CURSOR)
+        write(ANSI.SAVE_CURSOR)
+        
+        # Move to the first line that will be deleted (new_height position)
+        lines_down = new_height - self.cursor_row
+        if lines_down > 0:
+            write(ANSI.move_down(lines_down))
+        elif lines_down < 0:
+            write(ANSI.move_up(-lines_down))
+        
+        # Delete the extra lines (pulls bottom border up)
+        write(ANSI.delete_lines(lines_to_remove))
+        
+        # Restore cursor
+        write(ANSI.RESTORE_CURSOR)
         write(ANSI.SHOW_CURSOR)
     
     def _update_status_bar(self) -> None:
@@ -689,13 +680,8 @@ class WelcomeBox:
     """The welcome/status box shown above input - compact with all shortcuts."""
     
     @staticmethod
-    def render(message: str = None) -> None:
-        """Render compact welcome box with all shortcuts visible at once.
-        
-        Args:
-            message: Optional custom message to display above shortcuts.
-                     If provided, shows message box first, then shortcuts.
-        """
+    def render(compact: bool = False) -> None:
+        """Render compact welcome box with all shortcuts visible at once."""
         cols, _ = get_terminal_size()
         width = min(cols - 4, 66)
         c = THEME
@@ -705,30 +691,6 @@ class WelcomeBox:
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{padded}{c['border']}{BOX['v']}{c['reset']}")
         
         writeln()
-        
-        # If custom message provided, show it in a separate box first
-        if message:
-            # Message box with accent color
-            msg_title = f" {c['accent']}♾ MESSAGE{c['reset']} "
-            msg_title_len = 11  # visible length
-            left_border = BOX['h'] * 2
-            right_border = BOX['h'] * (width - msg_title_len - 2)
-            writeln(f"{c['border']}{BOX['tl']}{left_border}{c['reset']}{msg_title}{c['border']}{right_border}{BOX['tr']}{c['reset']}")
-            
-            # Wrap message to fit width
-            msg_lines = []
-            for line in message.split('\n'):
-                while visible_len(line) > width - 4:
-                    msg_lines.append(line[:width - 4])
-                    line = line[width - 4:]
-                msg_lines.append(line)
-            
-            for line in msg_lines:
-                padded = pad_text(f"  {c['info']}{line}{c['reset']}", width)
-                writeln(f"{c['border']}{BOX['v']}{c['reset']}{padded}{c['border']}{BOX['v']}{c['reset']}")
-            
-            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * width}{BOX['br']}{c['reset']}")
-            writeln()
         
         # Top border with title
         title = f" {c['accent']}◎ OUROBOROS{c['reset']} "
