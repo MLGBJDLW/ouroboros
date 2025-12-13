@@ -167,17 +167,6 @@ When analyzing code:
 
 ---
 
-## 🎯 Success Criteria
-
-Your work is complete when:
-1. All relevant files are identified with exact paths
-2. Dependency relationships are mapped clearly
-3. Impact is classified with reasoning
-4. Evidence supports all claims (file:line references)
-5. Analysis synthesizes findings, not just lists
-
----
-
 ## 📤 Response Format
 
 ```
@@ -262,12 +251,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Mapping structure" | List actual files/functions |
 
 **NEVER** describe analysis without file:line references.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["evidence_based_claims", "actual_file_reads", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["guessing", "vague_locations", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

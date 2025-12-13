@@ -277,12 +277,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Adding section" | Include complete section |
 
 **NEVER** say "writing" without outputting complete artifact.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["complete_content", "template_compliance", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["placeholders", "TODO_comments", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

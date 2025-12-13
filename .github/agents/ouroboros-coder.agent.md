@@ -211,17 +211,6 @@ import { something } from 'somewhere'  // without verifying it exists
 
 ---
 
-## 🎯 Success Criteria
-
-Your work is complete when:
-1. All target files contain complete, working code
-2. No placeholders, TODOs, or truncation exists
-3. Build passes without errors
-4. Code follows existing project conventions
-5. Changes are minimal and focused on the task
-
----
-
 ## 📤 Response Format
 
 ```
@@ -281,14 +270,4 @@ BEFORE RESPONDING, VERIFY:
 │ 5. ☐ Am I returning via handoff?              → PREPARE IT  │
 └──────────────────────────────────────────────────────────────┘
 IF ANY CHECK FAILS: Correct before output.
-```
-
-## 📊 COMPLIANCE
-
-```json
-{
-  "required": ["complete_code", "read_before_edit", "say_equals_do", "return_via_handoff"],
-  "forbidden": ["placeholders", "truncation", "TODO_comments", "goodbye_phrases", "empty_promises"],
-  "on_violation": "STOP → correct → continue"
-}
 ```
