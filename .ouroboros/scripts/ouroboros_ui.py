@@ -723,8 +723,13 @@ class WelcomeBox:
     """The welcome/status box shown above input - compact with all shortcuts."""
     
     @staticmethod
-    def render(compact: bool = False) -> None:
-        """Render compact welcome box with all shortcuts visible at once."""
+    def render(message: str = None) -> None:
+        """Render compact welcome box with all shortcuts visible at once.
+        
+        Args:
+            message: Optional custom message to display above shortcuts.
+                     If provided, shows message box first, then shortcuts.
+        """
         cols, _ = get_terminal_size()
         width = min(cols - 4, 66)
         c = THEME
@@ -734,6 +739,30 @@ class WelcomeBox:
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{padded}{c['border']}{BOX['v']}{c['reset']}")
         
         writeln()
+        
+        # If custom message provided, show it in a separate box first
+        if message:
+            # Message box with accent color
+            msg_title = f" {c['accent']}♾ MESSAGE{c['reset']} "
+            msg_title_len = 11  # visible length
+            left_border = BOX['h'] * 2
+            right_border = BOX['h'] * (width - msg_title_len - 2)
+            writeln(f"{c['border']}{BOX['tl']}{left_border}{c['reset']}{msg_title}{c['border']}{right_border}{BOX['tr']}{c['reset']}")
+            
+            # Wrap message to fit width
+            msg_lines = []
+            for line in message.split('\n'):
+                while visible_len(line) > width - 4:
+                    msg_lines.append(line[:width - 4])
+                    line = line[width - 4:]
+                msg_lines.append(line)
+            
+            for line in msg_lines:
+                padded = pad_text(f"  {c['info']}{line}{c['reset']}", width)
+                writeln(f"{c['border']}{BOX['v']}{c['reset']}{padded}{c['border']}{BOX['v']}{c['reset']}")
+            
+            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * width}{BOX['br']}{c['reset']}")
+            writeln()
         
         # Top border with title
         title = f" {c['accent']}◎ OUROBOROS{c['reset']} "
