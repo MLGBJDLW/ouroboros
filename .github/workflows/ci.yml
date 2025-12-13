@@ -30,7 +30,7 @@ jobs:
 
       - name: Verify core files exist
         run: |
-          echo "📂 Checking core project files..."
+          echo "Checking core project files..."
           
           # Required files
           required_files=(
@@ -53,41 +53,41 @@ jobs:
           
           for file in "${required_files[@]}"; do
             if [ ! -f "$file" ]; then
-              echo "❌ Missing file: $file"
+              echo "MISSING: $file"
               missing=$((missing + 1))
             else
-              echo "✅ Found: $file"
+              echo "FOUND: $file"
             fi
           done
           
           for dir in "${required_dirs[@]}"; do
             if [ ! -d "$dir" ]; then
-              echo "❌ Missing directory: $dir"
+              echo "MISSING: $dir"
               missing=$((missing + 1))
             else
-              echo "✅ Found: $dir"
+              echo "FOUND: $dir"
             fi
           done
           
           if [ $missing -gt 0 ]; then
             echo ""
-            echo "❌ $missing required files/directories are missing!"
+            echo "ERROR: $missing required files/directories are missing!"
             exit 1
           fi
           
           echo ""
-          echo "✅ All required files and directories present!"
+          echo "SUCCESS: All required files and directories present!"
 
       - name: Count agents
         run: |
-          echo "🤖 Counting agent files..."
+          echo "Counting agent files..."
           agent_count=$(find .github/agents -name "*.agent.md" | wc -l)
           echo "Found $agent_count agent files"
           
           if [ "$agent_count" -lt 10 ]; then
-            echo "⚠️ Warning: Expected at least 10 agents, found $agent_count"
+            echo "WARNING: Expected at least 10 agents, found $agent_count"
           else
-            echo "✅ Agent count looks good!"
+            echo "SUCCESS: Agent count looks good!"
           fi
 
   check-links:
