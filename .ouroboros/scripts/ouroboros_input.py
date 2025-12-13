@@ -42,9 +42,15 @@ try:
         ANSI, THEME, BOX, WelcomeBox, InputBox, OutputBox, SelectMenu,
         write, writeln, get_terminal_size, visible_len, pad_text, strip_ansi
     )
+    from ouroboros_paste import PasteCollector
+    from ouroboros_screen import StateMachine, InputState, InputEvent
     MODULES_AVAILABLE = True
+    PASTE_AVAILABLE = True
+    SCREEN_AVAILABLE = True
 except ImportError:
     MODULES_AVAILABLE = False
+    PASTE_AVAILABLE = False
+    SCREEN_AVAILABLE = False
 
 VERSION = "2.0.0"
 
@@ -222,6 +228,137 @@ def get_history() -> HistoryManager:
     if _history is None:
         _history = HistoryManager()
     return _history
+
+
+# =============================================================================
+# FILE PATH DETECTION AND FORMATTING
+# =============================================================================
+
+# Common file extensions for different categories
+FILE_EXTENSIONS = {
+    # Code files
+    'code': {'.py', '.js', '.ts', '.tsx', '.jsx', '.java', '.c', '.cpp', '.h', '.hpp',
+             '.cs', '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.scala', '.lua',
+             '.pl', '.r', '.m', '.mm', '.sh', '.bash', '.zsh', '.ps1', '.bat', '.cmd'},
+    # Config/data files
+    'config': {'.json', '.yaml', '.yml', '.xml', '.toml', '.ini', '.cfg', '.conf',
+               '.env', '.properties', '.lock'},
+    # Documentation
+    'doc': {'.md', '.markdown', '.rst', '.txt', '.rtf', '.doc', '.docx', '.pdf',
+            '.tex', '.org', '.adoc'},
+    # Images
+    'image': {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico',
+              '.tiff', '.tif', '.psd', '.ai', '.eps'},
+    # Audio/Video
+    'media': {'.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma',
+              '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm'},
+    # Archives
+    'archive': {'.zip', '.tar', '.gz', '.bz2', '.7z', '.rar', '.xz'},
+    # Web
+    'web': {'.html', '.htm', '.css', '.scss', '.sass', '.less'},
+    # Data
+    'data': {'.csv', '.tsv', '.sql', '.db', '.sqlite', '.parquet', '.arrow'},
+}
+
+# Flatten all extensions for quick lookup
+ALL_EXTENSIONS = set()
+for exts in FILE_EXTENSIONS.values():
+    ALL_EXTENSIONS.update(exts)
+
+
+def is_file_path(text: str) -> bool:
+    """
+    Check if the given text looks like a file path.
+    Handles both Windows and Unix paths.
+    """
+    text = text.strip().strip('"').strip("'")  # Remove quotes often added by terminals
+    
+    if not text:
+        return False
+    
+    # Check for common path patterns
+    # Windows: C:\path\file.ext or \\server\share\file.ext
+    # Unix: /path/file.ext or ~/path/file.ext or ./path/file.ext
+    
+    # Windows absolute path
+    if len(text) >= 3 and text[1] == ':' and text[2] in ('\\', '/'):
+        return True
+    
+    # Windows UNC path
+    if text.startswith('\\\\'):
+        return True
+    
+    # Unix absolute path
+    if text.startswith('/'):
+        return True
+    
+    # Home directory
+    if text.startswith('~'):
+        return True
+    
+    # Relative path with known extension
+    ext = os.path.splitext(text)[1].lower()
+    if ext in ALL_EXTENSIONS:
+        return True
+    
+    # Check if it looks like a path (contains path separators and an extension)
+    if ('/' in text or '\\' in text) and '.' in text:
+        ext = os.path.splitext(text)[1].lower()
+        if ext:
+            return True
+    
+    return False
+
+
+def format_file_display(path: str) -> str:
+    """
+    Format a file path for display as [ filename.ext ].
+    Returns the formatted display string.
+    """
+    path = path.strip().strip('"').strip("'")
+    
+    # Extract filename
+    filename = os.path.basename(path)
+    
+    if not filename:
+        # Maybe it's a directory, use the last component
+        parts = path.replace('\\', '/').rstrip('/').split('/')
+        filename = parts[-1] if parts else path
+    
+    return f"[ {filename} ]"
+
+
+def process_pasted_content(content: str) -> tuple:
+    """
+    Process pasted content to detect file paths.
+    
+    Returns:
+        Tuple of (display_text, actual_text, is_file_path)
+        - display_text: What to show in the UI
+        - actual_text: What to store in the buffer (for AI)
+        - is_file_path: Whether this is a file path
+    """
+    content = content.strip()
+    
+    # Check if it's a single file path (not multi-line)
+    if '\n' not in content and is_file_path(content):
+        display = format_file_display(content)
+        # Store the actual path for AI, but display nicely
+        return (display, content, True)
+    
+    # Check for multiple file paths (one per line)
+    lines = content.split('\n')
+    if len(lines) > 1 and all(is_file_path(line.strip()) for line in lines if line.strip()):
+        # Multiple files - format each one
+        display_lines = []
+        for line in lines:
+            if line.strip():
+                display_lines.append(format_file_display(line.strip()))
+        display = '\n'.join(display_lines)
+        return (display, content, True)
+    
+    # Not a file path, return as-is
+    return (content, content, False)
 
 
 # =============================================================================
@@ -553,14 +690,36 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
     
     buffer = TextBuffer()
     history = get_history()
-    # InputBox: start with 3 lines, always multiline mode
-    box = InputBox(height=3, show_line_numbers=True, show_status=True, full_width=True)
+    # InputBox: start with 1 line, dynamically expands as content grows
+    box = InputBox(height=1, show_line_numbers=True, show_status=True, full_width=True)
     box.set_mode("INPUT")  # Simple mode name
     
     if show_ui:
         box.render_initial()
     
-    history_browsing = False  # Track if we're browsing history
+    # Initialize state machine for clean state management
+    state_machine = None
+    if SCREEN_AVAILABLE:
+        state_machine = StateMachine(InputState.IDLE)
+        # Update UI mode based on state changes
+        def on_paste_enter():
+            box.set_mode("PASTE")
+        def on_paste_exit():
+            box.set_mode("INPUT")
+        def on_history_enter():
+            box.set_mode("HISTORY")
+        def on_history_exit():
+            box.set_mode("INPUT")
+        state_machine.on_enter(InputState.PASTE_MODE, on_paste_enter)
+        state_machine.on_exit(InputState.PASTE_MODE, on_paste_exit)
+        state_machine.on_enter(InputState.HISTORY_BROWSE, on_history_enter)
+        state_machine.on_exit(InputState.HISTORY_BROWSE, on_history_exit)
+    
+    history_browsing = False  # Track if we're browsing history (fallback)
+    
+    # Sync cursor position after render_initial
+    if show_ui:
+        box.set_cursor(0, 0, '')
     
     def refresh_display():
         """Refresh the entire input box display."""
@@ -580,9 +739,51 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
         box.update_line(0, f"{THEME['info']}{msg}{THEME['reset']}")
     
     with KeyBuffer() as kb:
-        while True:
-            try:
-                key = kb.getch()
+        # Initialize Bracketed Paste Mode for reliable paste detection
+        paste_collector = None
+        if PASTE_AVAILABLE:
+            paste_collector = PasteCollector()
+            paste_collector.enable()
+        
+        try:
+            while True:
+                # Read input with paste detection if available
+                if paste_collector:
+                    key, is_paste = paste_collector.read(kb.getch)
+                    if is_paste:
+                        # Transition to paste mode
+                        if state_machine:
+                            state_machine.transition(InputEvent.PASTE_START)
+                        
+                        # Process pasted content - detect file paths
+                        display_text, actual_text, is_file = process_pasted_content(key)
+                        
+                        if is_file:
+                            # For file paths: store with special format
+                            # Format: «/full/path/file.ext» 
+                            # UI will render this as [ filename.ext ]
+                            # AI receives the full path when text is extracted
+                            formatted = f"«{actual_text.strip()}»"
+                            buffer.insert_text(formatted)
+                        else:
+                            # Regular paste - insert as-is
+                            buffer.insert_text(display_text)
+                        
+                        # Dynamically expand box if pasted content has multiple lines
+                        if buffer.line_count > box.height:
+                            box.expand_height(min(buffer.line_count, 15))
+                        
+                        # Transition out of paste mode
+                        if state_machine:
+                            state_machine.transition(InputEvent.PASTE_END)
+                        
+                        refresh_display()
+                        continue
+                else:
+                    key = kb.getch()
+                
+                if not key:
+                    continue
                 
                 # Ctrl+C - Cancel
                 if key == Keys.CTRL_C:
@@ -593,7 +794,7 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                 if kb.is_enter(key):
                     text = buffer.text.strip()
                     
-                    # Ctrl+Enter - Submit
+                    # Ctrl+Enter - Force submit
                     if key == Keys.CTRL_ENTER:
                         if text:
                             history.add(text)
@@ -601,16 +802,6 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                                 box.finish()
                             return text
                         continue
-                
-                # Ctrl+D - Force submit (reliable alternative to Ctrl+Enter)
-                if key == Keys.CTRL_D:
-                    text = buffer.text.strip()
-                    if text:
-                        history.add(text)
-                        if show_ui:
-                            box.finish()
-                        return text
-                    continue
                     
                     # Check for >>> end marker
                     if text.rstrip().endswith('>>>'):
@@ -621,11 +812,23 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                             box.finish()
                         return final_text
                     
-                    # Regular Enter or Ctrl+J/L - Add newline
+                    # Regular Enter - Add newline (default multi-line mode)
                     buffer.newline()
+                    # Dynamically expand box as content grows
                     if buffer.line_count > box.height:
-                        box.expand_height(min(buffer.line_count + 2, 15))
+                        # Expand by 1 line at a time for smooth animation
+                        box.expand_height(min(buffer.line_count, 15))
                     refresh_display()
+                    continue
+                
+                # Ctrl+D - Force submit (reliable alternative to Ctrl+Enter)
+                if key == Keys.CTRL_D:
+                    text = buffer.text.strip()
+                    if text:
+                        history.add(text)
+                        if show_ui:
+                            box.finish()
+                        return text
                     continue
                 
                 # Backspace
@@ -643,33 +846,38 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                 
                 # Arrow keys - Up for history when on first line
                 if key == Keys.UP:
-                    if multiline_mode:
-                        # Multiline: move cursor up
-                        if buffer.move_up():
-                            refresh_display()
-                    else:
-                        # Single line: browse history (older)
+                    # On first line (row 0): browse history
+                    if buffer.cursor_row == 0 and not buffer.move_up():
+                        # Can't move up - we're at top, browse history
+                        if state_machine and state_machine.state != InputState.HISTORY_BROWSE:
+                            state_machine.transition(InputEvent.HISTORY_UP)
                         hist_entry = history.go_back(buffer.text)
                         if hist_entry != buffer.text:
                             buffer.clear()
                             buffer.insert_text(hist_entry)
                             history_browsing = True
                             refresh_display()
+                    else:
+                        refresh_display()
                     continue
                 if key == Keys.DOWN:
-                    if multiline_mode:
-                        # Multiline: move cursor down
-                        if buffer.move_down():
-                            refresh_display()
-                    else:
-                        # Single line: browse history (newer)
+                    # On last line: browse history forward (if browsing)
+                    if buffer.cursor_row == buffer.line_count - 1 and not buffer.move_down():
+                        # Can't move down - we're at bottom
                         if history_browsing:
+                            if state_machine:
+                                state_machine.transition(InputEvent.HISTORY_DOWN)
                             hist_entry = history.go_forward()
                             buffer.clear()
                             buffer.insert_text(hist_entry)
                             if history.at_end:
                                 history_browsing = False
+                                # Exit history browsing mode
+                                if state_machine:
+                                    state_machine.transition(InputEvent.CHAR_INPUT)
                             refresh_display()
+                    else:
+                        refresh_display()
                     continue
                 if key == Keys.LEFT:
                     if buffer.move_left():
@@ -710,30 +918,27 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                     refresh_display()
                     continue
                 
-                # Printable characters
+                # Printable characters (including CJK from IME)
                 if kb.is_printable(key):
-                    # Check for paste (rapid input)
-                    if kb.is_pasting and format_paste_mode:
-                        # Read rest of paste
-                        paste_text = kb.read_paste(key)
-                        buffer.insert_formatted_paste(paste_text)
-                        format_paste_mode = False
-                        multiline_mode = True
-                        update_mode()
-                        refresh_display()
-                    else:
-                        buffer.insert_char(key)
-                        visible_row = buffer.get_visible_cursor_row()
-                        if visible_row < box.height:
-                            box.update_line(visible_row, buffer.lines[buffer.cursor_row])
-                            # Skip status bar update during typing to avoid cursor flicker
-                            # (especially important for IME input like Chinese pinyin)
-                            text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
-                            box.set_cursor(visible_row, buffer.cursor_col, text_before, update_status=False)
-                
-            except KeyboardInterrupt:
-                writeln(f"\n{THEME['error']}[x] Cancelled{THEME['reset']}")
-                sys.exit(130)
+                    # Transition to typing state if needed
+                    if state_machine and state_machine.state != InputState.TYPING:
+                        state_machine.transition(InputEvent.CHAR_INPUT)
+                    
+                    # Insert character one by one (IME sends chars quickly, would trigger false paste detection)
+                    buffer.insert_char(key)
+                    visible_row = buffer.get_visible_cursor_row()
+                    if visible_row < box.height:
+                        box.update_line(visible_row, buffer.lines[buffer.cursor_row])
+                        # Skip status bar update during typing to avoid cursor flicker
+                        text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
+                        box.set_cursor(visible_row, buffer.cursor_col, text_before, update_status=False)
+        except KeyboardInterrupt:
+            writeln(f"\n{THEME['error']}[x] Cancelled{THEME['reset']}")
+            sys.exit(130)
+        finally:
+            # Disable Bracketed Paste Mode on exit
+            if paste_collector:
+                paste_collector.disable()
     
     return buffer.text
 
@@ -959,9 +1164,14 @@ def main():
         format_output(args.var, content)
         return
     
-    # Type C/D/E: Simple prompt
+    # Type C/D/E: Prompt with enhanced UI (unless --no-ui)
     if args.prompt:
-        content = get_simple_input(args.prompt)
+        if args.no_ui:
+            content = get_simple_input(args.prompt)
+        else:
+            # Show prompt as header, then use enhanced input
+            writeln(f"\n{THEME['prompt']}  {args.prompt}{THEME['reset']}")
+            content = get_interactive_input_advanced(show_ui=True)
         format_output(args.var, content)
         return
     

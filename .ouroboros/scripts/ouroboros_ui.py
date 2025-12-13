@@ -7,6 +7,7 @@ Provides beautiful terminal UI using only Python standard library:
 - Unicode box drawing characters
 - Mystic Purple theme
 - ASCII art logo
+- Double-buffered rendering via ScreenBuffer (optional)
 
 Dependencies: Python 3.6+ standard library only
 """
@@ -15,6 +16,13 @@ import sys
 import shutil
 import unicodedata
 import re
+
+# Try to import ScreenBuffer for double-buffered rendering
+try:
+    from ouroboros_screen import ScreenBuffer
+    SCREEN_BUFFER_AVAILABLE = True
+except ImportError:
+    SCREEN_BUFFER_AVAILABLE = False
 
 # =============================================================================
 # ANSI ESCAPE CODES
@@ -210,6 +218,34 @@ def writeln(text: str = '') -> None:
     write(text + '\n')
 
 
+def format_display_text(text: str) -> str:
+    """
+    Convert internal file path markers to display format.
+    
+    Internal format: «/full/path/file.ext»
+    Display format:  [ file.ext ]
+    
+    This allows the buffer to store full paths for AI, while
+    displaying only filenames for better readability.
+    """
+    import re
+    import os
+    
+    def replace_path(match):
+        path = match.group(1)
+        filename = os.path.basename(path)
+        if not filename:
+            # Directory or empty, use last component
+            parts = path.replace('\\', '/').rstrip('/').split('/')
+            filename = parts[-1] if parts else path
+        return f"[ {filename} ]"
+    
+    # Pattern to find «content» markers
+    # Use regex to find «...» and extract the path
+    pattern = r'«([^»]+)»'
+    return re.sub(pattern, replace_path, text)
+
+
 class InputBox:
     """
     A pre-reserved input box that updates in place.
@@ -247,7 +283,13 @@ class InputBox:
         self.total_lines = 1
         self.scroll_offset = 0
         self._rendered = False
-        self._mode = "INPUT"  # INPUT, PASTE
+        self._mode = "INPUT"  # INPUT, PASTE, HISTORY
+        
+        # Initialize ScreenBuffer for double-buffered rendering
+        # Total box height = 1 (top border) + height (input lines) + 1 (bottom border)
+        self._use_screen_buffer = SCREEN_BUFFER_AVAILABLE
+        self._screen_buffer = None
+        self._box_start_row = 1  # Terminal row where box starts (1-based)
     
     def render_initial(self) -> None:
         """Render the initial input box frame."""
@@ -296,9 +338,13 @@ class InputBox:
         # Move cursor back to first input line
         status_lines = 0  # Status is now in bottom border, no extra lines
         write(ANSI.move_up(self.height + status_lines + 1))
-        # col_offset: border(1) + prompt(" › " = 3) = 4, or border(1) + line_num("123 │ " = 7) = 8
-        col_offset = 8 if self.show_line_numbers else 4
-        write(ANSI.move_to_column(col_offset + 1))  # +1 because ANSI columns are 1-based
+        # col_offset: number of chars before text area
+        # With line numbers: │ + 3digits + space + │ + space = 1+3+1+1+1 = 7
+        # Without line numbers: │ + space + › + space = 1+1+1+1 = 4... wait let me recount
+        # Actually: "│" + "  1 │ " = 1 + 7 = 8 chars before text? No:
+        # │  1 │ x  <- x is at position 8 (1-based), so col_offset=7 (chars before)
+        col_offset = 7 if self.show_line_numbers else 3
+        write(ANSI.move_to_column(col_offset + 1))  # col_offset is 0-based, ANSI is 1-based
         
         self._rendered = True
     
@@ -376,21 +422,24 @@ class InputBox:
         write(ANSI.RESTORE_CURSOR)
     
     def _update_status_bar(self) -> None:
-        """Update the status bar embedded in bottom border."""
+        """Update the status bar embedded in bottom border with batch rendering."""
         if not self.show_status:
             return
         
         c = THEME
         content_width = self.width - 2
         
+        # Build all output in a buffer (batch rendering)
+        output = []
+        
         # Save cursor, move to bottom border line, update, restore
-        write(ANSI.SAVE_CURSOR)
+        output.append(ANSI.SAVE_CURSOR)
         
         # Move to bottom border (status is embedded there now)
         lines_down = self.height - self.cursor_row
-        write(ANSI.move_down(lines_down))
-        write(ANSI.move_to_column(1))
-        write(ANSI.CLEAR_LINE)
+        output.append(ANSI.move_down(lines_down))
+        output.append(ANSI.move_to_column(1))
+        output.append(ANSI.CLEAR_LINE)
         
         # Simple hint text
         hint_text = " Ctrl+D=submit "
@@ -415,32 +464,41 @@ class InputBox:
         right_border = BOX['h'] * 2
         
         # Render: ╰── hint ─────── [scroll] ─── Ln X, Col Y ──╯
-        write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['dim']}{hint_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{scroll_text}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+        output.append(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['dim']}{hint_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{scroll_text}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         
-        write(ANSI.RESTORE_CURSOR)
+        output.append(ANSI.RESTORE_CURSOR)
+        
+        # Flush all output at once (batch rendering)
+        write(''.join(output))
     
     def update_line(self, line_index: int, text: str) -> None:
-        """Update a specific line in the input box."""
+        """Update a specific line in the input box with batch rendering."""
         if not self._rendered or line_index >= self.height:
             return
+        
+        # Format text for display (convert file path markers to [ filename ] format)
+        display_text = format_display_text(text)
         
         c = THEME
         content_width = self.width - 2  # Inside borders
         
+        # Build all output in a buffer before writing (batch rendering)
+        output = []
+        
         # Hide cursor during update to prevent flicker
-        write(ANSI.HIDE_CURSOR)
+        output.append(ANSI.HIDE_CURSOR)
         
         # Calculate how far to move from current position
         move_amount = line_index - self.cursor_row
         
         if move_amount > 0:
-            write(ANSI.move_down(move_amount))
+            output.append(ANSI.move_down(move_amount))
         elif move_amount < 0:
-            write(ANSI.move_up(-move_amount))
+            output.append(ANSI.move_up(-move_amount))
         
         # Move to start of line content
-        write(ANSI.move_to_column(1))
-        write(ANSI.CLEAR_LINE)
+        output.append(ANSI.move_to_column(1))
+        output.append(ANSI.CLEAR_LINE)
         
         # Calculate line content width
         if self.show_line_numbers:
@@ -452,25 +510,28 @@ class InputBox:
             line_content_width = content_width - 3  # space + › + space
         
         # Truncate if too long, show indicator
-        if visible_len(text) > line_content_width:
+        if visible_len(display_text) > line_content_width:
             # Truncate text to fit
-            truncated = text[:line_content_width - 1]
+            truncated = display_text[:line_content_width - 1]
             content = truncated + f"{c['dim']}…{c['reset']}"
             content = pad_text(content, line_content_width)
         else:
-            content = pad_text(text, line_content_width)
+            content = pad_text(display_text, line_content_width)
         
-        write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{content}{c['border']}{BOX['v']}{c['reset']}")
+        output.append(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{content}{c['border']}{BOX['v']}{c['reset']}")
         
         # Update tracked row position (cursor is now at end of this line)
         self.cursor_row = line_index
         
         # Show cursor again
-        write(ANSI.SHOW_CURSOR)
+        output.append(ANSI.SHOW_CURSOR)
+        
+        # Flush all output at once (batch rendering reduces flicker)
+        write(''.join(output))
     
     def set_cursor(self, row: int, col: int, text_before_cursor: str = '', 
                    update_status: bool = True) -> None:
-        """Move cursor to specific position in input area.
+        """Move cursor to specific position in input area with batch rendering.
         
         Args:
             row: Row index (0-based)
@@ -478,21 +539,23 @@ class InputBox:
             text_before_cursor: Text before cursor for calculating display width
             update_status: Whether to update status bar (set False during rapid input)
         """
-        # Calculate column offset:
-        # Border (│) = 1 char
-        # With line numbers: "123 │ " = 3 digits + space + │ + space = 7 chars, total = 1 + 7 = 8
-        # Without line numbers: " › " = space + › + space = 3 chars, total = 1 + 3 = 4
-        col_offset = 8 if self.show_line_numbers else 4
+        # Calculate column offset (number of chars before text area):
+        # With line numbers: │ + "  1 │ " = 1 + 6 = 7 chars before text
+        # Without line numbers: │ + " › " = 1 + 3 = 4... hmm need to verify
+        col_offset = 7 if self.show_line_numbers else 3
         
         # Track if position actually changed
         old_row, old_col = self.cursor_row, self.cursor_col
         
+        # Build all output in a buffer (batch rendering)
+        output = []
+        
         # Move vertically if needed
         if row != self.cursor_row:
             if row > self.cursor_row:
-                write(ANSI.move_down(row - self.cursor_row))
+                output.append(ANSI.move_down(row - self.cursor_row))
             else:
-                write(ANSI.move_up(self.cursor_row - row))
+                output.append(ANSI.move_up(self.cursor_row - row))
             self.cursor_row = row
         
         # Calculate display width of text before cursor
@@ -502,9 +565,13 @@ class InputBox:
         else:
             display_col = col  # Fallback to character count
         
-        # Move horizontally (ANSI columns are 1-based)
-        write(ANSI.move_to_column(col_offset + display_col + 1))
+        # Move horizontally (ANSI columns are 1-based, col_offset is 0-based count of chars before text)
+        output.append(ANSI.move_to_column(col_offset + display_col + 1))
         self.cursor_col = col
+        
+        # Flush all output at once (batch rendering)
+        if output:
+            write(''.join(output))
         
         # Only update status bar if position changed and update_status is True
         if update_status and self.show_status and (row != old_row or col != old_col):

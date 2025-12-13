@@ -32,13 +32,15 @@ Enhanced terminal input system for the Ouroboros CCL.
 | **Mystic Purple Theme** | Beautiful terminal UI with colors |
 | **Real-time Input** | Character-by-character input with live updates |
 | **Multi-line Support** | `<<<` / `>>>` blocks or Ctrl+J for newlines |
-| **Full-width InputBox** | Auto-stretches to terminal width |
+| **Dynamic InputBox** | Starts as 1 line, grows as you type (up to 15 lines) |
 | **Scroll Support** | Viewport scrolling for long input |
 | **Status Bar** | Shows mode and cursor position |
 | **Selection Menu** | Arrow key navigation with custom input option |
 | **Cross-platform** | Windows (msvcrt) / Unix (termios) |
 | **Zero Dependencies** | Python stdlib only, no pip install |
 | **Auto-generated Config** | Config and history files created automatically |
+| **Bracketed Paste** | Reliable paste detection via terminal protocol (IME-friendly) |
+| **File Drag & Drop** | Dropped files display as `[ filename.ext ]` (full path to AI) |
 
 ---
 
