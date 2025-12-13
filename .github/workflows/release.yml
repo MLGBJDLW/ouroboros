@@ -122,6 +122,7 @@ jobs:
           
           # Remove CI/CD files (these are for the repo, not for end users)
           rm -rf release-package/.github/workflows
+          rm -rf release-package/.github/scripts
           rm -f release-package/.github/mlc_config.json
           rm -f release-package/.github/CODEOWNERS
           rm -f release-package/.markdownlint.json
