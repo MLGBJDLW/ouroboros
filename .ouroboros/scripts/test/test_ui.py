@@ -47,8 +47,8 @@ def test_visible_len():
         success = (result == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
-        print(f"  Input: {repr(text)} -> Length: {result}")
+        print(f"{status}: [test case]")
+        print(f"  Input: [test data] -> Length: {result}")
         
         if not success:
             print(f"  Expected: {expected}")
@@ -82,8 +82,8 @@ def test_strip_ansi():
         success = (result == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
-        print(f"  Input: {repr(text)} -> Output: {repr(result)}")
+        print(f"{status}: [test case]")
+        print(f"  Input: [test data] -> Output: {repr(result)}")
         
         if not success:
             print(f"  Expected: {repr(expected)}")
@@ -118,8 +118,8 @@ def test_pad_text():
         success = (result_len == expected_len)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
-        print(f"  Input: {repr(text)}, width={width}")
+        print(f"{status}: [test case]")
+        print(f"  Input: [test data], width={width}")
         print(f"  Output: {repr(result)}, visible_len={result_len}")
         
         if not success:

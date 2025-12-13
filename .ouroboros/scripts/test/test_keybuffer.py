@@ -104,8 +104,8 @@ def test_is_printable():
         success = (result == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
-        print(f"  is_printable({repr(char)}) = {result}")
+        print(f"{status}: [test case]")
+        print(f"  is_printable([char]) = {result}")
         
         if not success:
             print(f"  Expected: {expected}")
@@ -190,7 +190,7 @@ def test_key_normalization():
         success = (result == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
+        print(f"{status}: [test case]")
         print(f"  {repr(input_key)} -> {repr(result)}")
         
         if not success:

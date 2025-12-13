@@ -264,10 +264,10 @@ def test_menu_parsing_edge_cases():
         success = (detected == should_detect)
         status = "PASS" if success else "FAIL"
         
-        print(f"{status}: {description}")
+        print(f"{status}: [test case]")
         if not success:
             print(f"  Expected menu: {should_detect}, Got: {detected}")
-            print(f"  Header: {repr(header[:50])}...")
+            print(f"  Header: [test data]...")
             failed += 1
         else:
             passed += 1
@@ -320,10 +320,10 @@ def test_visible_len_edge_cases():
         success = (result == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
+        print(f"{status}: [test case]")
         
         if not success:
-            print(f"  Input: {repr(text[:30])}...")
+            print(f"  Input: [test data]...")
             print(f"  Expected: {expected}, Got: {result}")
             failed += 1
         else:
@@ -459,7 +459,7 @@ def test_special_key_sequences():
         success = (result == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
+        print(f"{status}: [test case]")
         
         if not success:
             print(f"  Input: {repr(input_key)}, Expected: {repr(expected)}, Got: {repr(result)}")
@@ -521,7 +521,7 @@ def test_yn_response_edge_cases():
         success = (result == expected)
         
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
+        print(f"{status}: [test case]")
         
         if not success:
             print(f"  Input: {repr(content)}, Expected: {repr(expected)}, Got: {repr(result)}")

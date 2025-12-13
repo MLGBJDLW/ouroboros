@@ -121,7 +121,7 @@ def test_parse_menu_options():
         
         status = "PASS" if success else "FAIL"
         print(f"\n{status}: {description}")
-        print(f"  Header: {repr(header[:50])}...")
+        print(f"  Header: [test data]...")
         print(f"  Prompt: {repr(prompt)}")
         
         if not success:
@@ -169,7 +169,7 @@ def test_yn_mapping():
         
         success = (result == expected)
         status = "PASS" if success else "FAIL"
-        print(f"{status}: {description}")
+        print(f"{status}: [test case]")
         print(f"  Input: {repr(content)} -> Output: {repr(result)}")
         
         if success:
