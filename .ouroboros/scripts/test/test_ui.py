@@ -120,7 +120,7 @@ def test_pad_text():
         status = "PASS" if success else "FAIL"
         print(f"{status}: [test case]")
         print(f"  Input: [test data], width={width}")
-        print(f"  Output: {repr(result)}, visible_len={result_len}")
+        print(f"  Output: [result], visible_len={result_len}")
         
         if not success:
             print(f"  Expected visible_len: {expected_len}")

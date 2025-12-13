@@ -125,11 +125,11 @@ def test_parse_menu_options():
         print(f"  Prompt: {repr(prompt)}")
         
         if not success:
-            print(f"  Expected: title={repr(expected_title)}, options={expected_options}")
-            print(f"  Got:      title={repr(title)}, options={options}")
+            print(f"  Expected: title=[expected], options=[expected]")
+            print(f"  Got:      title=[got], options=[got]")
             failed += 1
         else:
-            print(f"  Result: title={repr(title)}, options={options}")
+            print(f"  Result: title=[result], options=[result]")
             passed += 1
     
     print("\n" + "=" * 70)
