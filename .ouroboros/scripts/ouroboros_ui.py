@@ -260,10 +260,12 @@ class InputBox:
     """
     
     def __init__(self, height: int = 1, show_line_numbers: bool = False, 
-                 show_status: bool = True, full_width: bool = True):
+                 show_status: bool = True, full_width: bool = True,
+                 prompt_header: str = ""):
         self.show_line_numbers = show_line_numbers
         self.show_status = show_status
         self.full_width = full_width
+        self.prompt_header = prompt_header  # Custom header text (e.g., question)
         
         # Get terminal size
         self.cols, self.rows = get_terminal_size()
@@ -298,9 +300,19 @@ class InputBox:
         # Calculate content width (inside borders)
         content_width = self.width - 2  # Account for left and right borders
         
-        # Top border with prompt indicator
-        prompt_indicator = f" {c['prompt']}◎ INPUT{c['reset']} "
-        prompt_visible_len = 9  # "◎ INPUT" visible length
+        # Top border with prompt indicator or custom header
+        if self.prompt_header:
+            # Custom header (e.g., question text) - use ◇ symbol
+            # Truncate if too long
+            max_header_len = content_width - 6  # Leave room for borders and padding
+            header_text = self.prompt_header[:max_header_len] if len(self.prompt_header) > max_header_len else self.prompt_header
+            prompt_indicator = f" {c['prompt']}◇ {header_text}{c['reset']} "
+            prompt_visible_len = visible_len(header_text) + 4  # "◇ " + header + " "
+        else:
+            # Default header
+            prompt_indicator = f" {c['prompt']}◎ INPUT{c['reset']} "
+            prompt_visible_len = 9  # "◎ INPUT" visible length
+        
         left_border = BOX['h'] * 2
         right_border_len = content_width - prompt_visible_len - 2
         right_border = BOX['h'] * max(0, right_border_len)
@@ -310,7 +322,7 @@ class InputBox:
         for i in range(self.height):
             if self.show_line_numbers:
                 line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 7  # 3 digits + space + │ + space
+                line_content_width = content_width - 6  # 3 digits + space + │ + space = 6 chars
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3  # space + › + space
@@ -355,13 +367,25 @@ class InputBox:
             self._update_status_bar()
     
     def expand_height(self, new_height: int) -> None:
-        """Expand the input box to a new height (re-renders the entire box)."""
+        """Expand the input box to a new height (re-renders the entire box).
+        
+        SAFE EXPANSION: Uses newline insertion without ANSI cursor movement
+        to prevent terminal scrolling that would push WelcomeBox off screen.
+        
+        Strategy:
+        1. Calculate available space (terminal height - WelcomeBox - margins)
+        2. Limit expansion to max_height (default 10 lines)
+        3. Use print() with newlines instead of ANSI move_down
+        4. Only expand if we have room without causing scroll
+        """
         if new_height <= self.height:
             return
         
-        # Calculate max height based on terminal
-        max_height = max(1, self.rows - 12)  # Leave room for welcome box and margins
-        new_height = min(new_height, max_height)
+        # Calculate safe max height
+        # Terminal rows - WelcomeBox (7 lines) - margins (2) - status bar (1) = available
+        safe_max_height = max(1, self.rows - 10)
+        max_allowed_height = min(10, safe_max_height)  # Hard limit: 10 lines
+        new_height = min(new_height, max_allowed_height)
         
         if new_height <= self.height:
             return
@@ -371,41 +395,45 @@ class InputBox:
         old_height = self.height
         self.height = new_height
         
-        # Save cursor position
+        # Hide cursor during redraw
+        write(ANSI.HIDE_CURSOR)
+        
+        # Save current cursor position
         write(ANSI.SAVE_CURSOR)
         
         # Move to first input line (from current cursor position)
         if self.cursor_row > 0:
             write(ANSI.move_up(self.cursor_row))
         
-        # Re-render ALL existing lines (in case show_line_numbers changed)
+        # Re-render existing lines in-place (no vertical movement)
         for i in range(old_height):
             write(ANSI.move_to_column(1))
             write(ANSI.CLEAR_LINE)
             if self.show_line_numbers:
                 line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 7
+                line_content_width = content_width - 6
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
-            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            if i < old_height - 1:
+                write('\n')  # Move to next line
         
-        # Clear old bottom border
-        write(ANSI.move_to_column(1))
-        write(ANSI.CLEAR_LINE)
-        
-        # Add new input lines
+        # Add new lines (these will cause controlled scrolling)
         for i in range(old_height, new_height):
+            write('\n')  # New line
             write(ANSI.move_to_column(1))
             if self.show_line_numbers:
                 line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 7
+                line_content_width = content_width - 6
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
-            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
         
-        # Re-draw bottom border with embedded status
+        # Draw new bottom border
+        write('\n')
+        write(ANSI.move_to_column(1))
         if self.show_status:
             mode_text = f" {self._mode} "
             pos_text = f" Ln 1, Col 1 "
@@ -415,11 +443,100 @@ class InputBox:
             right_border_len = content_width - mode_len - pos_len - 4
             mid_border = BOX['h'] * max(1, right_border_len)
             right_border = BOX['h'] * 2
-            writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+            write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         else:
-            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+            write(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
         
-        write(ANSI.RESTORE_CURSOR)
+        # Move cursor back up to first input line
+        lines_to_move_up = new_height + 1  # All new lines + bottom border
+        write(ANSI.move_up(lines_to_move_up))
+        
+        # Reset cursor tracking
+        self.cursor_row = 0
+        self.cursor_col = 0
+        
+        # Position cursor at text start
+        col_offset = 7 if self.show_line_numbers else 3
+        write(ANSI.move_to_column(col_offset + 1))
+        
+        # Show cursor again
+        write(ANSI.SHOW_CURSOR)
+    
+    def shrink_height(self, new_height: int) -> None:
+        """Shrink the input box to a new height (re-renders the entire box).
+        
+        Used when lines are deleted via backspace to dynamically reduce box size.
+        Minimum height is 1.
+        """
+        new_height = max(1, new_height)  # Minimum 1 line
+        
+        if new_height >= self.height:
+            return
+        
+        c = THEME
+        content_width = self.width - 2
+        old_height = self.height
+        lines_removed = old_height - new_height
+        self.height = new_height
+        
+        # Hide cursor during redraw
+        write(ANSI.HIDE_CURSOR)
+        
+        # Move to first input line (from current cursor position)
+        if self.cursor_row > 0:
+            write(ANSI.move_up(self.cursor_row))
+        
+        # Re-render remaining input lines (empty - will be filled by refresh_display)
+        for i in range(new_height):
+            write(ANSI.move_to_column(1))
+            write(ANSI.CLEAR_LINE)
+            if self.show_line_numbers:
+                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_content_width = content_width - 6
+            else:
+                line_num = f" {c['border']}›{c['reset']} "
+                line_content_width = content_width - 3
+            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+            write(ANSI.move_down(1))
+        
+        # Draw new bottom border at new position
+        write(ANSI.move_to_column(1))
+        write(ANSI.CLEAR_LINE)
+        if self.show_status:
+            mode_text = f" {self._mode} "
+            pos_text = f" Ln 1, Col 1 "
+            mode_len = len(mode_text)
+            pos_len = len(pos_text)
+            left_border = BOX['h'] * 2
+            right_border_len = content_width - mode_len - pos_len - 4
+            mid_border = BOX['h'] * max(1, right_border_len)
+            right_border = BOX['h'] * 2
+            write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+        else:
+            write(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+        write(ANSI.move_down(1))
+        
+        # Clear the lines that are no longer part of the box (old lines + old border)
+        for _ in range(lines_removed):
+            write(ANSI.move_to_column(1))
+            write(ANSI.CLEAR_LINE)
+            write(ANSI.move_down(1))
+        
+        # Move cursor back to first input line, column 1
+        # Total lines we moved down: new_height (input lines) + 1 (border) + lines_removed (cleared)
+        total_down = new_height + 1 + lines_removed
+        write(ANSI.move_up(total_down))
+        
+        # Reset cursor tracking to row 0
+        self.cursor_row = 0
+        self.cursor_col = 0
+        
+        # Position cursor at text start
+        col_offset = 7 if self.show_line_numbers else 3
+        write(ANSI.move_to_column(col_offset + 1))
+        
+        # Show cursor again
+        write(ANSI.SHOW_CURSOR)
     
     def _update_status_bar(self) -> None:
         """Update the status bar embedded in bottom border with batch rendering."""
@@ -474,7 +591,7 @@ class InputBox:
     def update_line(self, line_index: int, text: str) -> None:
         """Update a specific line in the input box with batch rendering.
         
-        Uses save/restore cursor to avoid position tracking issues when
+        Uses absolute positioning to avoid cursor tracking issues when
         updating multiple lines in sequence.
         """
         if not self._rendered or line_index >= self.height:
@@ -489,11 +606,14 @@ class InputBox:
         # Build all output in a buffer before writing (batch rendering)
         output = []
         
-        # Hide cursor and save position
+        # Hide cursor during update
         output.append(ANSI.HIDE_CURSOR)
+        
+        # Save cursor position
         output.append(ANSI.SAVE_CURSOR)
         
-        # Calculate how far to move from current tracked position
+        # Move to the target line using relative movement from current cursor_row
+        # This is more reliable than absolute positioning
         move_amount = line_index - self.cursor_row
         
         if move_amount > 0:
@@ -501,7 +621,7 @@ class InputBox:
         elif move_amount < 0:
             output.append(ANSI.move_up(-move_amount))
         
-        # Move to start of line content
+        # Move to column 1 and clear the entire line first
         output.append(ANSI.move_to_column(1))
         output.append(ANSI.CLEAR_LINE)
         
@@ -509,7 +629,7 @@ class InputBox:
         if self.show_line_numbers:
             actual_line_num = self.scroll_offset + line_index + 1
             line_num = f"{c['dim']}{actual_line_num:3d}{c['reset']} {c['border']}│{c['reset']} "
-            line_content_width = content_width - 7  # 3 digits + space + │ + space
+            line_content_width = content_width - 6  # 3 digits + space + │ + space = 6 chars
         else:
             line_num = f" {c['border']}›{c['reset']} "
             line_content_width = content_width - 3  # space + › + space
@@ -523,9 +643,10 @@ class InputBox:
         else:
             content = pad_text(display_text, line_content_width)
         
+        # Write the line content (no newline - stay on same line)
         output.append(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{content}{c['border']}{BOX['v']}{c['reset']}")
         
-        # Restore cursor position (don't update cursor_row here, let set_cursor handle it)
+        # Restore cursor position
         output.append(ANSI.RESTORE_CURSOR)
         
         # Show cursor again
@@ -692,36 +813,222 @@ class SelectMenu:
     """
     Interactive selection menu with arrow key navigation.
     Allows selecting from options or entering custom input.
+    
+    Features:
+    - Arrow key navigation (Up/Down)
+    - Page Up/Down for long menus
+    - Home/End to jump to first/last
+    - Number keys 1-9 for quick selection
+    - Escape or Ctrl+C to cancel
+    - Auto-scrolling for menus taller than terminal
     """
     
     def __init__(self, options: list, title: str = "Select an option:", 
                  allow_custom: bool = True, custom_label: str = "[Custom input...]"):
-        self.options = list(options)
-        self.title = title
+        # Handle empty options
+        self.options = list(options) if options else []
+        self.title = title.strip() if title else "Select an option:"
         self.allow_custom = allow_custom
         self.custom_label = custom_label
         self.selected_index = 0
-        self.cols, _ = get_terminal_size()
-        self.width = min(self.cols - 4, 60)
+        
+        # Get terminal size and calculate dimensions
+        self.cols, self.rows = get_terminal_size()
+        # Minimum width of 30, maximum of 60, constrained by terminal
+        self.width = max(30, min(self.cols - 4, 60))
+        self._rendered_lines = 0  # Track how many lines we rendered
+        
+        # Scrolling support for long menus
+        self._scroll_offset = 0
+        # Reserve lines for: header(2) + title(1+) + separator(1) + footer(3)
+        self._max_visible_options = max(3, self.rows - 8)
         
         # Add custom option at the end
         if allow_custom:
             self.options.append(custom_label)
+        
+        # Clean up empty/whitespace-only options
+        self.options = [opt.strip() if opt.strip() else f"(Option {i+1})" 
+                        for i, opt in enumerate(self.options)]
+    
+    def _truncate_text(self, text: str, max_width: int) -> str:
+        """Truncate text to fit within max_width, accounting for visible length."""
+        if visible_len(text) <= max_width:
+            return text
+        # Truncate character by character until it fits
+        result = ""
+        for char in text:
+            if visible_len(result + char + "...") > max_width:
+                return result + "..."
+            result += char
+        return result
+    
+    def _wrap_title(self, title: str, max_width: int) -> list:
+        """Wrap title into multiple lines if needed."""
+        if visible_len(title) <= max_width:
+            return [title]
+        
+        # Simple word-based wrapping
+        words = title.split()
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            test_line = f"{current_line} {word}".strip() if current_line else word
+            if visible_len(test_line) <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                # If single word is too long, truncate it
+                if visible_len(word) > max_width:
+                    current_line = self._truncate_text(word, max_width)
+                else:
+                    current_line = word
+        
+        if current_line:
+            lines.append(current_line)
+        
+        return lines if lines else [self._truncate_text(title, max_width)]
+    
+    def _update_scroll(self) -> None:
+        """Update scroll offset to keep selected item visible."""
+        if self.selected_index < self._scroll_offset:
+            self._scroll_offset = self.selected_index
+        elif self.selected_index >= self._scroll_offset + self._max_visible_options:
+            self._scroll_offset = self.selected_index - self._max_visible_options + 1
+    
+    def _get_visible_options(self) -> list:
+        """Get the options currently visible in the viewport."""
+        self._update_scroll()
+        start = self._scroll_offset
+        end = min(start + self._max_visible_options, len(self.options))
+        return list(range(start, end))
     
     def render(self) -> None:
         """Render the selection menu."""
         c = THEME
         sep = BOX['h'] * self.width
+        line_count = 0
         
         writeln()
+        line_count += 1
+        
         # Header
         writeln(f"{c['border']}{BOX['tl']}{sep}{BOX['tr']}{c['reset']}")
-        title_padded = pad_text(f" {self.title}", self.width)
-        writeln(f"{c['border']}{BOX['v']}{c['reset']}{title_padded}{c['border']}{BOX['v']}{c['reset']}")
-        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
         
-        # Options
-        for i, option in enumerate(self.options):
+        # Title - wrap if too long
+        title_lines = self._wrap_title(self.title, self.width - 2)
+        for title_line in title_lines:
+            title_padded = pad_text(f" {title_line}", self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{title_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
+        
+        # Show scroll indicator if needed
+        visible_indices = self._get_visible_options()
+        has_more_above = self._scroll_offset > 0
+        has_more_below = self._scroll_offset + self._max_visible_options < len(self.options)
+        
+        # Scroll up indicator
+        if has_more_above:
+            scroll_hint = f"{c['info']}   ↑ {self._scroll_offset} more above{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Options (only visible ones)
+        for i in visible_indices:
+            option = self.options[i]
+            if i == self.selected_index:
+                prefix = f"{c['prompt']} > "
+                suffix = c['reset']
+            else:
+                prefix = "   "
+                suffix = ""
+            
+            # Truncate if too long (account for prefix)
+            max_option_width = self.width - 4  # 3 for prefix + 1 for padding
+            display_option = self._truncate_text(option, max_option_width)
+            option_padded = pad_text(f"{prefix}{display_option}{suffix}", self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{option_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Scroll down indicator
+        if has_more_below:
+            remaining = len(self.options) - (self._scroll_offset + self._max_visible_options)
+            scroll_hint = f"{c['info']}   ↓ {remaining} more below{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Footer with hint
+        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
+        hint = f" {c['info']}[↑↓]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
+        hint_padded = pad_text(hint, self.width)
+        writeln(f"{c['border']}{BOX['v']}{c['reset']}{hint_padded}{c['border']}{BOX['v']}{c['reset']}")
+        line_count += 1
+        writeln(f"{c['border']}{BOX['bl']}{sep}{BOX['br']}{c['reset']}")
+        line_count += 1
+        
+        self._rendered_lines = line_count
+    
+    def clear_and_rerender(self) -> None:
+        """Clear previous render and redraw in place."""
+        # Move cursor up to the start of the menu
+        if self._rendered_lines > 0:
+            write(ANSI.move_up(self._rendered_lines))
+        
+        # Clear all lines
+        for _ in range(self._rendered_lines):
+            write(ANSI.CLEAR_LINE + "\n")
+        
+        # Move back up
+        if self._rendered_lines > 0:
+            write(ANSI.move_up(self._rendered_lines))
+        
+        # Re-render (without the initial newline since we're in place)
+        self._render_in_place()
+    
+    def _render_in_place(self) -> None:
+        """Render menu without initial newline (for in-place updates)."""
+        c = THEME
+        sep = BOX['h'] * self.width
+        line_count = 0
+        
+        # Header (no initial newline)
+        writeln(f"{c['border']}{BOX['tl']}{sep}{BOX['tr']}{c['reset']}")
+        line_count += 1
+        
+        # Title - wrap if too long
+        title_lines = self._wrap_title(self.title, self.width - 2)
+        for title_line in title_lines:
+            title_padded = pad_text(f" {title_line}", self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{title_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
+        line_count += 1
+        
+        # Show scroll indicator if needed
+        visible_indices = self._get_visible_options()
+        has_more_above = self._scroll_offset > 0
+        has_more_below = self._scroll_offset + self._max_visible_options < len(self.options)
+        
+        # Scroll up indicator
+        if has_more_above:
+            scroll_hint = f"{c['info']}   ↑ {self._scroll_offset} more above{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Options (only visible ones)
+        for i in visible_indices:
+            option = self.options[i]
             if i == self.selected_index:
                 prefix = f"{c['prompt']} > "
                 suffix = c['reset']
@@ -730,27 +1037,31 @@ class SelectMenu:
                 suffix = ""
             
             # Truncate if too long
-            display_option = option if len(option) < self.width - 6 else option[:self.width - 9] + "..."
+            max_option_width = self.width - 4
+            display_option = self._truncate_text(option, max_option_width)
             option_padded = pad_text(f"{prefix}{display_option}{suffix}", self.width)
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{option_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
+        
+        # Scroll down indicator
+        if has_more_below:
+            remaining = len(self.options) - (self._scroll_offset + self._max_visible_options)
+            scroll_hint = f"{c['info']}   ↓ {remaining} more below{c['reset']}"
+            scroll_padded = pad_text(scroll_hint, self.width)
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{scroll_padded}{c['border']}{BOX['v']}{c['reset']}")
+            line_count += 1
         
         # Footer with hint
         writeln(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
-        hint = f" {c['info']}[Up/Down]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
+        line_count += 1
+        hint = f" {c['info']}[↑↓]{c['reset']} Navigate  {c['success']}[Enter]{c['reset']} Select"
         hint_padded = pad_text(hint, self.width)
         writeln(f"{c['border']}{BOX['v']}{c['reset']}{hint_padded}{c['border']}{BOX['v']}{c['reset']}")
+        line_count += 1
         writeln(f"{c['border']}{BOX['bl']}{sep}{BOX['br']}{c['reset']}")
-    
-    def clear_and_rerender(self) -> None:
-        """Clear previous render and redraw."""
-        # Move up to clear previous output
-        lines_to_clear = len(self.options) + 5  # options + header + separator + hint + borders
-        write(ANSI.move_up(lines_to_clear))
-        for _ in range(lines_to_clear):
-            write(ANSI.CLEAR_LINE)
-            write(ANSI.move_down(1))
-        write(ANSI.move_up(lines_to_clear))
-        self.render()
+        line_count += 1
+        
+        self._rendered_lines = line_count
     
     def move_up(self) -> None:
         """Move selection up."""
@@ -763,6 +1074,40 @@ class SelectMenu:
         if self.selected_index < len(self.options) - 1:
             self.selected_index += 1
             self.clear_and_rerender()
+    
+    def page_up(self) -> None:
+        """Move selection up by one page."""
+        if self.selected_index > 0:
+            self.selected_index = max(0, self.selected_index - self._max_visible_options)
+            self.clear_and_rerender()
+    
+    def page_down(self) -> None:
+        """Move selection down by one page."""
+        if self.selected_index < len(self.options) - 1:
+            self.selected_index = min(len(self.options) - 1, 
+                                      self.selected_index + self._max_visible_options)
+            self.clear_and_rerender()
+    
+    def go_to_first(self) -> None:
+        """Jump to first option."""
+        if self.selected_index != 0:
+            self.selected_index = 0
+            self.clear_and_rerender()
+    
+    def go_to_last(self) -> None:
+        """Jump to last option."""
+        if self.selected_index != len(self.options) - 1:
+            self.selected_index = len(self.options) - 1
+            self.clear_and_rerender()
+    
+    def select_by_number(self, num: int) -> bool:
+        """Select option by number (1-based). Returns True if valid."""
+        idx = num - 1
+        if 0 <= idx < len(self.options):
+            self.selected_index = idx
+            self.clear_and_rerender()
+            return True
+        return False
     
     def get_selected(self) -> tuple:
         """

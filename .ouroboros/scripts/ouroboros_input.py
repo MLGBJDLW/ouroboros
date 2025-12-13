@@ -715,9 +715,13 @@ def detect_and_format_input(text: str) -> tuple:
 # INPUT FUNCTIONS
 # =============================================================================
 
-def get_interactive_input_advanced(show_ui: bool = True) -> str:
+def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = "") -> str:
     """
     Get input using real-time character-by-character reading.
+    
+    Args:
+        show_ui: Whether to show the UI decorations
+        prompt_header: Custom header text to show in input box (e.g., question)
     
     Key bindings:
         Enter           - Insert new line (default multi-line mode)
@@ -744,8 +748,10 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
     
     buffer = TextBuffer()
     history = get_history()
-    # InputBox: start with 1 line, dynamically expands as content grows
-    box = InputBox(height=1, show_line_numbers=True, show_status=True, full_width=True)
+    # InputBox: Start with 1 line, dynamically expand up to 10 lines max
+    # Beyond 10 lines, use internal scrolling to prevent terminal scrolling
+    box = InputBox(height=1, show_line_numbers=True, show_status=True, 
+                   full_width=True, prompt_header=prompt_header)
     box.set_mode("INPUT")  # Simple mode name
     
     if show_ui:
@@ -803,11 +809,11 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
         # This works with all languages including Chinese paths like D:\文档\项目\file.txt
         import time as _time
         rapid_input_buffer = []
-        # 100ms threshold: generous for catching drag-drop while avoiding false positives
-        # Drag-drop typically sends chars in < 10ms intervals
-        # Human typing is typically 100-300ms between chars (even fast typists)
-        # IME input has gaps during character selection
-        rapid_input_threshold = 0.100  # 100ms between chars = likely system input
+        # 10ms threshold: only catches actual drag-drop/paste (not fast typing)
+        # Drag-drop typically sends chars in < 5ms intervals
+        # Fast human typing is typically 50-150ms between chars
+        # This prevents false positives that cause typing lag
+        rapid_input_threshold = 0.010  # 10ms - only catches system paste/drag-drop
         rapid_input_min_length = 4     # Minimum chars to consider as potential path
         last_char_time = 0
         rapid_input_start_time = 0     # Track when rapid input started
@@ -871,9 +877,9 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
             
             # Not a file path or too short, insert as regular text
             buffer.insert_text(content)
-            # Expand box if needed
-            if buffer.line_count > box.height:
-                box.expand_height(min(buffer.line_count, 15))
+            # Expand box up to 10 lines, then use internal scrolling
+            if buffer.line_count > box.height and box.height < 10:
+                box.expand_height(min(buffer.line_count, 10))
             refresh_display()
             return True
         
@@ -901,9 +907,9 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                             # Regular paste - insert as-is
                             buffer.insert_text(display_text)
                         
-                        # Dynamically expand box if pasted content has multiple lines
-                        if buffer.line_count > box.height:
-                            box.expand_height(min(buffer.line_count, 15))
+                        # Expand box up to 10 lines, then use internal scrolling
+                        if buffer.line_count > box.height and box.height < 10:
+                            box.expand_height(min(buffer.line_count, 10))
                         
                         # Transition out of paste mode
                         if state_machine:
@@ -957,10 +963,9 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                     
                     # Regular Enter - Add newline (default multi-line mode)
                     buffer.newline()
-                    # Dynamically expand box as content grows
-                    if buffer.line_count > box.height:
-                        # Expand by 1 line at a time for smooth animation
-                        box.expand_height(min(buffer.line_count, 15))
+                    # Expand box up to 10 lines, then use internal scrolling
+                    if buffer.line_count > box.height and box.height < 10:
+                        box.expand_height(min(buffer.line_count, 10))
                     refresh_display()
                     continue
                 
@@ -978,19 +983,26 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                 
                 # Backspace
                 if kb.is_backspace(key):
-                    old_row = buffer.cursor_row
+                    old_line_count = buffer.line_count
                     if buffer.backspace():
+                        # Shrink box if line count decreased (but keep minimum 1 line)
+                        if buffer.line_count < old_line_count and buffer.line_count < box.height:
+                            box.shrink_height(max(1, buffer.line_count))
                         refresh_display()
                     continue
                 
                 # Delete
                 if kb.is_delete(key):
+                    old_line_count = buffer.line_count
                     if buffer.delete():
+                        # Shrink box if line count decreased (but keep minimum 1 line)
+                        if buffer.line_count < old_line_count and buffer.line_count < box.height:
+                            box.shrink_height(max(1, buffer.line_count))
                         refresh_display()
                     continue
                 
                 # Arrow keys - Up for history when on first line
-                if key == Keys.UP:
+                if key in (Keys.UP, Keys.UP_ALT, Keys.WIN_UP):
                     # On first line (row 0): browse history
                     if buffer.cursor_row == 0 and not buffer.move_up():
                         # Can't move up - we're at top, browse history
@@ -1005,7 +1017,7 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                     else:
                         refresh_display()
                     continue
-                if key == Keys.DOWN:
+                if key in (Keys.DOWN, Keys.DOWN_ALT, Keys.WIN_DOWN):
                     # On last line: browse history forward (if browsing)
                     if buffer.cursor_row == buffer.line_count - 1 and not buffer.move_down():
                         # Can't move down - we're at bottom
@@ -1024,26 +1036,26 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                     else:
                         refresh_display()
                     continue
-                if key == Keys.LEFT:
+                if key in (Keys.LEFT, Keys.LEFT_ALT, Keys.WIN_LEFT):
                     if buffer.move_left():
                         visible_row = buffer.get_visible_cursor_row()
                         text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
                         box.set_cursor(visible_row, buffer.cursor_col, text_before)
                     continue
-                if key == Keys.RIGHT:
+                if key in (Keys.RIGHT, Keys.RIGHT_ALT, Keys.WIN_RIGHT):
                     if buffer.move_right():
                         visible_row = buffer.get_visible_cursor_row()
                         text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
                         box.set_cursor(visible_row, buffer.cursor_col, text_before)
                     continue
                 
-                # Home/End
-                if key in (Keys.HOME, Keys.HOME_ALT, Keys.CTRL_A):
+                # Home/End (support ANSI, alternate, Windows, and Ctrl shortcuts)
+                if key in (Keys.HOME, Keys.HOME_ALT, Keys.WIN_HOME, Keys.CTRL_A):
                     buffer.home()
                     visible_row = buffer.get_visible_cursor_row()
                     box.set_cursor(visible_row, buffer.cursor_col, '')  # At start, no text before
                     continue
-                if key in (Keys.END, Keys.END_ALT, Keys.CTRL_E):
+                if key in (Keys.END, Keys.END_ALT, Keys.WIN_END, Keys.CTRL_E):
                     buffer.end()
                     visible_row = buffer.get_visible_cursor_row()
                     text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
@@ -1077,12 +1089,12 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                     debug_log(f"Char '{key}' time_since_last={time_since_last:.3f}s is_rapid={is_rapid} buffer_len={len(rapid_input_buffer)}")
                     
                     if is_rapid:
-                        # Rapid input detected - accumulate in buffer
+                        # Rapid input detected - accumulate in buffer for path detection
                         if not rapid_input_buffer:
                             rapid_input_start_time = current_time
                         rapid_input_buffer.append(key)
                         last_char_time = current_time
-                        continue
+                        continue  # With 10ms threshold, this only triggers for drag-drop
                     elif rapid_input_buffer:
                         # Gap detected after rapid input - process buffer first
                         # DON'T add current char to buffer - it's the start of new input
@@ -1208,36 +1220,41 @@ def get_selection_input(options: list, title: str = "Select an option:",
             try:
                 key = kb.getch()
                 
-                if key == Keys.CTRL_C:
+                # Cancel: Ctrl+C or Escape
+                if key == Keys.CTRL_C or key == Keys.ESCAPE:
                     writeln(f"\n{THEME['error']}[x] Cancelled{THEME['reset']}")
                     sys.exit(130)
                 
-                # Arrow navigation
-                if key == Keys.UP:
+                # Arrow navigation (support both ANSI and Windows key codes)
+                if key in (Keys.UP, Keys.UP_ALT, Keys.WIN_UP):
                     menu.move_up()
                     continue
                 
-                if key == Keys.DOWN:
+                if key in (Keys.DOWN, Keys.DOWN_ALT, Keys.WIN_DOWN):
                     menu.move_down()
+                    continue
+                
+                # Page Up/Down for long menus
+                if key in (Keys.PAGE_UP, Keys.WIN_PAGE_UP):
+                    menu.page_up()
+                    continue
+                
+                if key in (Keys.PAGE_DOWN, Keys.WIN_PAGE_DOWN):
+                    menu.page_down()
                     continue
                 
                 # Quick number selection (1-9)
                 if key.isdigit() and key != '0':
-                    num = int(key) - 1
-                    total = len(options) + (1 if allow_custom else 0)
-                    if 0 <= num < total:
-                        menu.selected_index = num
-                        menu.clear_and_rerender()
-                    continue
+                    num = int(key)
+                    if menu.select_by_number(num):
+                        continue
                 
-                # Home/End for quick navigation
-                if key in (Keys.HOME, Keys.HOME_ALT):
-                    menu.selected_index = 0
-                    menu.clear_and_rerender()
+                # Home/End for quick navigation (support ANSI, alternate, Windows)
+                if key in (Keys.HOME, Keys.HOME_ALT, Keys.WIN_HOME):
+                    menu.go_to_first()
                     continue
-                if key in (Keys.END, Keys.END_ALT):
-                    menu.selected_index = len(menu.options) - 1
-                    menu.clear_and_rerender()
+                if key in (Keys.END, Keys.END_ALT, Keys.WIN_END):
+                    menu.go_to_last()
                     continue
                 
                 # Enter to select
@@ -1246,9 +1263,8 @@ def get_selection_input(options: list, title: str = "Select an option:",
                     writeln()  # Clear line
                     
                     if is_custom:
-                        # Show enhanced custom input box
-                        writeln(f"\n{THEME['prompt']}Custom input:{THEME['reset']}")
-                        return get_interactive_input_advanced(show_ui=True)
+                        # Show enhanced custom input box with header
+                        return get_interactive_input_advanced(show_ui=True, prompt_header="Custom input")
                     else:
                         return value
                 
@@ -1286,6 +1302,57 @@ def print_header_box(header: str) -> None:
     writeln()
 
 
+def parse_menu_options(header: str, prompt: str = "") -> tuple:
+    """Parse numbered options from header text for interactive selection.
+    
+    Returns:
+        Tuple of (title, options_list) if menu detected, (None, None) otherwise.
+    
+    Example:
+        "Select action:\n1. Create feature\n2. Fix bug" 
+        -> ("Select action:", ["Create feature", "Fix bug"])
+        
+        header="Continue?", prompt="[y/n]:"
+        -> ("Continue?", ["Yes", "No"])
+    """
+    import re
+    
+    # Check for [y/n] confirmation pattern in prompt
+    if prompt and re.search(r'\[y/n\]', prompt, re.IGNORECASE):
+        # This is a yes/no confirmation
+        title = header.replace('\\n', ' ').strip() if header else "Confirm"
+        return (title, ["Yes", "No"])
+    
+    lines = header.split('\\n')  # Note: escaped newline from command line
+    
+    if len(lines) < 2:
+        return (None, None)
+    
+    title = None
+    options = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        
+        # Try to match numbered option patterns:
+        # "1. Option", "1) Option", "[1] Option", "1: Option"
+        match = re.match(r'^\s*[\[\(]?(\d+)[\.\)\]:\s]\s*(.+)$', line)
+        
+        if match:
+            options.append(match.group(2).strip())
+        elif not options:
+            # First non-option line before options = title
+            title = line
+    
+    # Only return if we found at least 2 options
+    if len(options) >= 2:
+        return (title or "Select an option:", options)
+    
+    return (None, None)
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -1316,17 +1383,36 @@ def main():
         for key in THEME:
             THEME[key] = ''
     
-    # Type B: Header/Menu
+    # Type B: Header/Menu - try to detect numbered options for arrow-key selection
     if args.header:
-        print_header_box(args.header)
-        if args.prompt:
-            content = get_simple_input(args.prompt)
+        # Try to parse menu options from header (also pass prompt for [y/n] detection)
+        title, parsed_options = parse_menu_options(args.header, args.prompt)
+        
+        if parsed_options and MODULES_AVAILABLE:
+            # Menu detected - use arrow-key selection
+            content = get_selection_input(
+                options=parsed_options,
+                title=title,
+                allow_custom=False if '[y/n]' in args.prompt.lower() else True
+            )
+            # Map Yes/No back to y/n for compatibility
+            if '[y/n]' in args.prompt.lower():
+                if content.lower().startswith('yes'):
+                    content = 'y'
+                elif content.lower().startswith('no'):
+                    content = 'n'
         else:
-            content = get_simple_input()
+            # Not a menu - show header box and get simple input
+            print_header_box(args.header)
+            if args.prompt:
+                content = get_simple_input(args.prompt)
+            else:
+                content = get_simple_input()
+        
         format_output(args.var, content)
         return
     
-    # Selection menu mode
+    # Selection menu mode (explicit --options)
     if args.options and MODULES_AVAILABLE:
         content = get_selection_input(
             options=args.options,
@@ -1341,9 +1427,8 @@ def main():
         if args.no_ui:
             content = get_simple_input(args.prompt)
         else:
-            # Show prompt as header, then use enhanced input
-            writeln(f"\n{THEME['prompt']}  {args.prompt}{THEME['reset']}")
-            content = get_interactive_input_advanced(show_ui=True)
+            # Show prompt in input box header (integrated UI)
+            content = get_interactive_input_advanced(show_ui=True, prompt_header=args.prompt)
         format_output(args.var, content)
         return
     

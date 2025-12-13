@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2025-12-13
+
+### Fixed
+- **Windows Arrow Keys** — Fixed `'\x00'` char handling in Console API
+- **Menu Refresh** — In-place update, no more flickering
+- **Text Overflow** — Long titles wrap, options truncate with `...`
+- **[y/n] Prompts** — Now show interactive Yes/No menu
+- **InputBox Scrolling** — Max 10 lines, then internal scroll
+
+### Added
+- **Menu Scrolling** — Auto-scroll with `↑ N more above` / `↓ N more below`
+- **Page Up/Down** — Jump by page in long menus
+- **Home/End** — Jump to first/last option
+- **Escape to Cancel** — Alternative to Ctrl+C
+- **Test Suite** — 200+ tests in `.ouroboros/scripts/test/`
+- **CI/CD Tests** — GitHub Actions (Win/Linux/Mac × Py 3.8/3.11)
+- **Changelog Generator** — `.github/scripts/generate-changelog.sh`
+
+### Changed
+- **English-Only UI** — `[y/n]` shows `Yes`/`No` only
+- **Prompt Optimization** — Streamlined instruction and orchestrator prompts for better LLM compatibility while maintaining quality
+
+---
+
 ## [3.0.0] - 2025-12-12
 
 ### 🎨 Enhanced CCL Input System & CI/CD

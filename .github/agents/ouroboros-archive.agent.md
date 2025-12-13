@@ -140,8 +140,9 @@ runSubagent(
    - history: 2 files > 7 days (will archive)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-```bash
-python -c "print('\\n[1] Archive specific spec\\n[2] Archive all\\n[3] Cleanup only'); choice = input('Choice (1-3): ')"
+**Execute via `run_command` tool (Type B: Menu):**
+```python
+python -c "print(); print('[1] Archive specific spec'); print('[2] Archive all'); print('[3] Cleanup only'); choice = input('Choice [1-3]: ')"
 ```
 
 **If NO completed specs:**
@@ -157,8 +158,9 @@ Would you like to run cleanup instead?
    - Archive old history files (> 7 days)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-```bash
-python -c "confirm = input('Run cleanup? [y/n]: ')"
+**Execute via `run_command` tool (Type D: Confirm):**
+```python
+python -c "print(); print('[y] Yes - run cleanup'); print('[n] No - cancel'); confirm = input('Confirm [y/n]: ')"
 ```
 
 ---
@@ -241,3 +243,41 @@ RETURN: Output [ARCHIVE COMPLETE]
 ---
 
 **♾️ History Preserved. Context Renewed. ♾️**
+
+---
+
+## 🔁 SELF-CHECK PROTOCOL
+
+> **Re-read this BEFORE every response.**
+
+**EVERY-TURN CHECKLIST:**
+```
+┌──────────────────────────────────────────────────────────────┐
+│ 1. ☐ Am I using a forbidden phrase?           → STOP        │
+│ 2. ☐ Am I delegating file ops?                → MUST DO     │
+│ 3. ☐ Will I execute CCL via run_command?      → MUST DO     │
+│ 4. ☐ Am I returning to orchestrator?          → MUST DO     │
+│ 5. ☐ Did I say "I will X" without doing X?    → DO IT NOW   │
+└──────────────────────────────────────────────────────────────┘
+IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
+```
+
+## ⚡ ACTION-COMMITMENT (ARCHIVE-ORCHESTRATOR)
+
+| If You Say | You MUST |
+|------------|----------|
+| "Archiving spec X" | Delegate to writer |
+| "Running cleanup" | Delegate file operations |
+| "Executing CCL" | Use run_command tool |
+| "Checking completion" | Delegate to analyst |
+
+**NEVER** describe archiving without actual delegation.
+
+**COMPLIANCE CONSTRAINTS:**
+```json
+{
+  "required": ["delegate_file_operations", "execute_CCL", "return_via_handoff", "action_follows_statement"],
+  "forbidden": ["direct_file_writes", "goodbye_phrases", "session_termination", "uncommitted_actions"],
+  "on_violation": "STOP → correct → continue"
+}
+```

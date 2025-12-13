@@ -1,6 +1,6 @@
 # Ouroboros Enhanced CCL Scripts
 
-> **Version**: 2.0.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
+> **Version**: 2.1.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
 
 ```
     ╭───◯───╮
@@ -32,7 +32,7 @@ Enhanced terminal input system for the Ouroboros CCL.
 | **Mystic Purple Theme** | Beautiful terminal UI with colors |
 | **Real-time Input** | Character-by-character input with live updates |
 | **Multi-line Support** | `<<<` / `>>>` blocks or Ctrl+J for newlines |
-| **Dynamic InputBox** | Starts as 1 line, grows as you type (up to 15 lines) |
+| **Dynamic InputBox** | Starts as 1 line, grows as you type (up to 10 lines, then scrolls) |
 | **Scroll Support** | Viewport scrolling for long input |
 | **Status Bar** | Shows mode and cursor position |
 | **Selection Menu** | Arrow key navigation with custom input option |
@@ -216,6 +216,28 @@ python .ouroboros/scripts/ouroboros_input.py \
 ## 📜 License
 
 Part of the Ouroboros project. MIT License.
+
+---
+
+---
+
+## 🧪 Testing
+
+Run the test suite to verify everything works:
+
+```bash
+cd .ouroboros/scripts/test
+python run_all_tests.py --quick   # Run all automated tests
+```
+
+| Test File | Coverage |
+|-----------|----------|
+| `test_ui.py` | UI components (visible_len, ANSI, themes, BOX) |
+| `test_keybuffer.py` | Keyboard input (Windows/Linux/Mac key codes) |
+| `test_textbuffer.py` | Text buffer (cursor, insert, delete, scroll) |
+| `test_input_types.py` | Menu detection, [y/n] prompts |
+| `test_edge_cases.py` | Boundary conditions, Unicode, stress tests |
+| `test_keys.py` | Interactive keyboard diagnostics |
 
 ---
 

@@ -294,6 +294,7 @@ class WindowsKeyBuffer:
         
         # Define structures inside try block to catch any ctypes errors
         try:
+            # KEY_EVENT_RECORD structure - matches Windows API exactly
             class KEY_EVENT_RECORD(ctypes.Structure):
                 _fields_ = [
                     ("bKeyDown", wintypes.BOOL),
@@ -304,10 +305,11 @@ class WindowsKeyBuffer:
                     ("dwControlKeyState", wintypes.DWORD),
                 ]
             
+            # INPUT_RECORD uses a union for Event, but we only care about KEY_EVENT
+            # The union is 16 bytes, KEY_EVENT_RECORD is the largest member
             class INPUT_RECORD(ctypes.Structure):
                 _fields_ = [
                     ("EventType", wintypes.WORD),
-                    ("padding", wintypes.WORD),
                     ("Event", KEY_EVENT_RECORD),
                 ]
         except (TypeError, AttributeError) as e:
@@ -373,7 +375,8 @@ class WindowsKeyBuffer:
                                     return '\r'
                             
                             # Handle other keys with Ctrl
-                            if ctrl_pressed and not char:
+                            # Note: For special keys, char is '\x00' (not empty string)
+                            if ctrl_pressed and (not char or char == '\x00'):
                                 # Ctrl+Arrow keys
                                 if vk == 0x26:  # VK_UP
                                     return Keys.CTRL_UP
@@ -384,8 +387,9 @@ class WindowsKeyBuffer:
                                 elif vk == 0x27:  # VK_RIGHT
                                     return Keys.CTRL_RIGHT
                             
-                            # Regular character
-                            if char:
+                            # Regular character (not null/empty)
+                            # Note: For special keys like arrows, char is '\x00'
+                            if char and char != '\x00':
                                 return char
                             
                             # Handle special keys via virtual key code
