@@ -2,8 +2,10 @@ name: Release
 
 on:
   push:
+    branches: [main]  # Auto CD on push to main
     tags:
-      - 'v*'
+      - 'v*'          # Official release on tag
+  workflow_dispatch:  # Manual trigger support
 
 permissions:
   contents: write
@@ -18,12 +20,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract version from tag
+      - name: Determine version and release type
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            # Tagged release - use tag version
+            VERSION=${GITHUB_REF#refs/tags/v}
+            IS_PRERELEASE=false
+            IS_DRAFT=false
+            RELEASE_NAME="♾️ Ouroboros v${VERSION}"
+          else
+            # Push to main - use short SHA
+            VERSION="dev-${GITHUB_SHA::7}"
+            IS_PRERELEASE=true
+            IS_DRAFT=true
+            RELEASE_NAME="🔄 Ouroboros ${VERSION} (Auto Build)"
+          fi
+          
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "📦 Releasing version: $VERSION"
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
+          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          echo "📦 Releasing version: $VERSION (draft=$IS_DRAFT, prerelease=$IS_PRERELEASE)"
 
       - name: Extract changelog for this version
         id: changelog
@@ -93,10 +111,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "♾️ Ouroboros v${{ steps.version.outputs.version }}"
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('dev-{0}', github.sha) }}
+          name: "${{ steps.version.outputs.release_name }}"
           body_path: release_notes.md
-          draft: false
-          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
+          draft: ${{ steps.version.outputs.is_draft }}
+          prerelease: ${{ steps.version.outputs.is_prerelease }}
           files: |
             ouroboros-v${{ steps.version.outputs.version }}.zip
         env:
