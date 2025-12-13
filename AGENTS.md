@@ -93,6 +93,86 @@ All subagents MUST:
 
 ---
 
+## 🧠 Context Management
+
+### Persistent Context Files
+
+Location: `.ouroboros/history/context-YYYY-MM-DD.md`
+
+**When to Update** (delegate to `ouroboros-writer`):
+- After completing a major task or milestone
+- After each spec phase completion
+- After implementation task batches
+- When switching focus areas
+
+**What to Track:**
+- Current goal and progress
+- Tech stack and constraints
+- Completed tasks (brief summary)
+- Files modified
+- Pending issues / blocklist
+
+**Context Update Format:**
+```javascript
+runSubagent(
+  agent: "ouroboros-writer",
+  prompt: `Update .ouroboros/history/context-*.md:
+    - Add to ## Completed: "[task description]"
+    - Add to ## Files Modified: "[file path]"
+    - Update ## Current Goal if changed`
+)
+```
+
+### Subagent-Docs (Long Output Storage)
+
+Location: `.ouroboros/subagent-docs/[agent]-[task]-YYYY-MM-DD.md`
+
+**When to Use:**
+- Output exceeds **500 lines**
+- Multi-file implementations
+- Full component rewrites
+- Large refactoring tasks
+- Detailed analysis reports
+
+**Naming Convention:**
+```
+coder-auth-impl-2025-12-13.md
+qa-test-report-2025-12-13.md
+analyst-dependency-map-2025-12-13.md
+```
+
+**Return to Orchestrator:**
+```
+Full implementation saved to: .ouroboros/subagent-docs/coder-auth-impl-2025-12-13.md
+
+Summary:
+- Created AuthService class with login/logout methods
+- Added JWT token validation
+- Integrated with existing UserRepository
+```
+
+**Auto-Cleanup:** Files older than 3 days are deleted by `/ouroboros-archive`
+
+---
+
+## 📦 Artifact Protocol
+
+When passing code between agents, use ARTIFACT blocks:
+
+```
+=== ARTIFACT: path/to/file.ts ===
+[COMPLETE file contents - no truncation]
+=== END ARTIFACT ===
+```
+
+**Rules:**
+- **NEVER** truncate with `...` or `// rest unchanged`
+- **ALWAYS** include complete file contents
+- **ALWAYS** include ALL imports
+- Multiple artifacts allowed per response
+
+---
+
 ## 📁 File Structure (DO NOT MODIFY)
 
 ```
@@ -196,6 +276,26 @@ Templates in `.ouroboros/templates/` and `.ouroboros/specs/templates/` are READ-
 
 ---
 
+## 🎯 Agent Routing Keywords
+
+Orchestrator routes tasks based on keywords:
+
+| Keywords | Route To | Role |
+|----------|----------|------|
+| test, debug, fix, bug, error | `ouroboros-qa` | Testing & debugging |
+| implement, create, build, code, add | `ouroboros-coder` | Implementation |
+| document, write, update docs, readme | `ouroboros-writer` | Documentation |
+| deploy, docker, ci/cd, git | `ouroboros-devops` | DevOps & deployment |
+| analyze, trace, how does, where is | `ouroboros-analyst` | Code analysis (read-only) |
+| architecture, design, adr | `ouroboros-architect` | System design |
+| security, vulnerability, audit | `ouroboros-security` | Security review |
+| research, investigate | `ouroboros-researcher` | Project research |
+| requirements, user story | `ouroboros-requirements` | EARS requirements |
+| tasks, breakdown, plan | `ouroboros-tasks` | Task planning |
+| validate, verify, check | `ouroboros-validator` | Spec validation |
+
+---
+
 ## 📋 Key Protocols Reference
 
 | Protocol | Location | Purpose |
@@ -206,6 +306,8 @@ Templates in `.ouroboros/templates/` and `.ouroboros/specs/templates/` are READ-
 | Spec Workflow | `ouroboros-spec.agent.md` | 5-phase spec process |
 | Task Batching | `ouroboros-implement.agent.md` | 4-5 tasks per batch |
 | Fix-Verify Cycle | `ouroboros-qa.agent.md` | Debug → Test → Fix → Verify |
+| Context Update | `ouroboros-writer` | After milestones |
+| Long Output | `subagent-docs/` | >500 lines storage |
 
 ---
 
