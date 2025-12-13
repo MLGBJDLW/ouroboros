@@ -472,7 +472,11 @@ class InputBox:
         write(''.join(output))
     
     def update_line(self, line_index: int, text: str) -> None:
-        """Update a specific line in the input box with batch rendering."""
+        """Update a specific line in the input box with batch rendering.
+        
+        Uses save/restore cursor to avoid position tracking issues when
+        updating multiple lines in sequence.
+        """
         if not self._rendered or line_index >= self.height:
             return
         
@@ -485,10 +489,11 @@ class InputBox:
         # Build all output in a buffer before writing (batch rendering)
         output = []
         
-        # Hide cursor during update to prevent flicker
+        # Hide cursor and save position
         output.append(ANSI.HIDE_CURSOR)
+        output.append(ANSI.SAVE_CURSOR)
         
-        # Calculate how far to move from current position
+        # Calculate how far to move from current tracked position
         move_amount = line_index - self.cursor_row
         
         if move_amount > 0:
@@ -520,8 +525,8 @@ class InputBox:
         
         output.append(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{content}{c['border']}{BOX['v']}{c['reset']}")
         
-        # Update tracked row position (cursor is now at end of this line)
-        self.cursor_row = line_index
+        # Restore cursor position (don't update cursor_row here, let set_cursor handle it)
+        output.append(ANSI.RESTORE_CURSOR)
         
         # Show cursor again
         output.append(ANSI.SHOW_CURSOR)

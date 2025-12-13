@@ -361,6 +361,60 @@ def process_pasted_content(content: str) -> tuple:
     return (content, content, False)
 
 
+def convert_unmarked_file_paths(text: str) -> str:
+    """
+    Convert any unmarked file paths in text to the «path» format.
+    
+    This is a safety net for file paths that weren't detected during input
+    (e.g., when Bracketed Paste Mode isn't supported and rapid input detection
+    didn't trigger).
+    
+    Only converts paths that:
+    1. Are not already marked with «»
+    2. Look like absolute file paths (Windows or Unix)
+    3. Are on their own line or surrounded by whitespace
+    
+    Args:
+        text: The input text to process
+        
+    Returns:
+        Text with file paths converted to «path» format
+    """
+    import re
+    
+    # Skip if text already contains markers (already processed)
+    if '«' in text:
+        return text
+    
+    # Pattern to match file paths:
+    # - Windows: C:\path\to\file.ext or "C:\path with spaces\file.ext"
+    # - Unix: /path/to/file or ~/path/to/file
+    # Must be at start of line or after whitespace, and end at line end or before whitespace
+    
+    # Windows absolute path pattern (with optional quotes)
+    win_pattern = r'(?:^|(?<=\s))("?[A-Za-z]:\\[^"\n]*"?)(?=\s|$)'
+    # Unix absolute path pattern
+    unix_pattern = r'(?:^|(?<=\s))((?:/|~/)[^\s\n]+)(?=\s|$)'
+    
+    result = text
+    
+    # Process Windows paths
+    for match in re.finditer(win_pattern, result, re.MULTILINE):
+        path = match.group(1).strip('"')
+        if is_file_path(path):
+            # Replace the match with marked version
+            result = result[:match.start(1)] + f'«{path}»' + result[match.end(1):]
+    
+    # Process Unix paths (only if no Windows paths were found to avoid double processing)
+    if '«' not in result:
+        for match in re.finditer(unix_pattern, result, re.MULTILINE):
+            path = match.group(1)
+            if is_file_path(path):
+                result = result[:match.start(1)] + f'«{path}»' + result[match.end(1):]
+    
+    return result
+
+
 # =============================================================================
 # FALLBACK IMPLEMENTATIONS (if modules not available)
 # =============================================================================
@@ -745,6 +799,84 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
             paste_collector = PasteCollector()
             paste_collector.enable()
         
+        # Rapid input detection for drag-drop (fallback when Bracketed Paste not supported)
+        # This works with all languages including Chinese paths like D:\文档\项目\file.txt
+        import time as _time
+        rapid_input_buffer = []
+        # 100ms threshold: generous for catching drag-drop while avoiding false positives
+        # Drag-drop typically sends chars in < 10ms intervals
+        # Human typing is typically 100-300ms between chars (even fast typists)
+        # IME input has gaps during character selection
+        rapid_input_threshold = 0.100  # 100ms between chars = likely system input
+        rapid_input_min_length = 4     # Minimum chars to consider as potential path
+        last_char_time = 0
+        rapid_input_start_time = 0     # Track when rapid input started
+        
+        # Debug mode - set to True to see what's happening
+        DEBUG_RAPID_INPUT = False
+        
+        def debug_log(msg: str):
+            """Log debug message if debug mode is enabled."""
+            if DEBUG_RAPID_INPUT:
+                write(f"\n{THEME['dim']}[DEBUG] {msg}{THEME['reset']}\n")
+        
+        def process_rapid_input():
+            """Process accumulated rapid input as potential file path."""
+            nonlocal rapid_input_buffer, rapid_input_start_time
+            if not rapid_input_buffer:
+                return False
+            
+            content = ''.join(rapid_input_buffer)
+            rapid_input_buffer = []
+            rapid_input_start_time = 0
+            
+            debug_log(f"Processing rapid input: '{content[:50]}...' (len={len(content)})")
+            
+            # Safety check: if it's just repeated characters (key held down), treat as normal input
+            if len(content) >= 2 and len(set(content)) == 1:
+                debug_log("Detected key repeat, inserting as normal text")
+                # All same character - likely key repeat, insert one by one
+                for char in content:
+                    buffer.insert_char(char)
+                refresh_display()
+                return True
+            
+            # Only check for file path if content is long enough and looks like a path
+            # (contains path separators or starts with drive letter/slash)
+            looks_like_path = (
+                len(content) >= rapid_input_min_length and
+                (
+                    '\\' in content or 
+                    '/' in content or 
+                    (len(content) >= 3 and content[1] == ':') or  # Windows drive
+                    content.startswith('~')  # Unix home
+                )
+            )
+            
+            debug_log(f"Looks like path: {looks_like_path}")
+            
+            if looks_like_path:
+                # Check if it's actually a file path
+                display_text, actual_text, is_file = process_pasted_content(content)
+                
+                debug_log(f"is_file_path result: {is_file}")
+                
+                if is_file:
+                    # Format as file path marker
+                    formatted = f"«{actual_text.strip()}»"
+                    debug_log(f"Formatted as: {formatted}")
+                    buffer.insert_text(formatted)
+                    refresh_display()
+                    return True
+            
+            # Not a file path or too short, insert as regular text
+            buffer.insert_text(content)
+            # Expand box if needed
+            if buffer.line_count > box.height:
+                box.expand_height(min(buffer.line_count, 15))
+            refresh_display()
+            return True
+        
         try:
             while True:
                 # Read input with paste detection if available
@@ -782,6 +914,13 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                 else:
                     key = kb.getch()
                 
+                # Track time for rapid input detection
+                current_time = _time.time()
+                
+                # Process any pending rapid input buffer on non-printable keys
+                if rapid_input_buffer and not kb.is_printable(key):
+                    process_rapid_input()
+                
                 if not key:
                     continue
                 
@@ -797,6 +936,8 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                     # Ctrl+Enter - Force submit
                     if key == Keys.CTRL_ENTER:
                         if text:
+                            # Convert any unmarked file paths before submitting
+                            text = convert_unmarked_file_paths(text)
                             history.add(text)
                             if show_ui:
                                 box.finish()
@@ -807,6 +948,8 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                     if text.rstrip().endswith('>>>'):
                         final_text = text.rsplit('>>>', 1)[0].rstrip()
                         if final_text:
+                            # Convert any unmarked file paths before submitting
+                            final_text = convert_unmarked_file_paths(final_text)
                             history.add(final_text)
                         if show_ui:
                             box.finish()
@@ -825,6 +968,8 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                 if key == Keys.CTRL_D:
                     text = buffer.text.strip()
                     if text:
+                        # Convert any unmarked file paths before submitting
+                        text = convert_unmarked_file_paths(text)
                         history.add(text)
                         if show_ui:
                             box.finish()
@@ -920,11 +1065,38 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                 
                 # Printable characters (including CJK from IME)
                 if kb.is_printable(key):
+                    # Rapid input detection for drag-drop (works with all languages)
+                    # Key insight: IME input has gaps (user selecting characters)
+                    # while drag-drop sends everything at once (< 100ms between chars)
+                    time_since_last = current_time - last_char_time
+                    
+                    # 100ms threshold: fast enough to catch drag-drop
+                    # but slow enough to not interfere with fast typing
+                    is_rapid = time_since_last < rapid_input_threshold and last_char_time > 0
+                    
+                    debug_log(f"Char '{key}' time_since_last={time_since_last:.3f}s is_rapid={is_rapid} buffer_len={len(rapid_input_buffer)}")
+                    
+                    if is_rapid:
+                        # Rapid input detected - accumulate in buffer
+                        if not rapid_input_buffer:
+                            rapid_input_start_time = current_time
+                        rapid_input_buffer.append(key)
+                        last_char_time = current_time
+                        continue
+                    elif rapid_input_buffer:
+                        # Gap detected after rapid input - process buffer first
+                        # DON'T add current char to buffer - it's the start of new input
+                        process_rapid_input()
+                        # Fall through to handle current char normally
+                    
+                    # Update last char time
+                    last_char_time = current_time
+                    
                     # Transition to typing state if needed
                     if state_machine and state_machine.state != InputState.TYPING:
                         state_machine.transition(InputEvent.CHAR_INPUT)
                     
-                    # Insert character one by one (IME sends chars quickly, would trigger false paste detection)
+                    # Insert character one by one
                     buffer.insert_char(key)
                     visible_row = buffer.get_visible_cursor_row()
                     if visible_row < box.height:
