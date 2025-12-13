@@ -24,17 +24,45 @@ jobs:
         id: version
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            # Tagged release - use tag version
+            # Tagged release - use tag version directly
             VERSION=${GITHUB_REF#refs/tags/v}
             IS_PRERELEASE=false
             IS_DRAFT=false
             RELEASE_NAME="♾️ Ouroboros v${VERSION}"
           else
-            # Push to main - use short SHA
-            VERSION="dev-${GITHUB_SHA::7}"
-            IS_PRERELEASE=true
-            IS_DRAFT=true
-            RELEASE_NAME="🔄 Ouroboros ${VERSION} (Auto Build)"
+            # Push to main - auto-increment version starting from v3.0.0
+            # Get the latest version tag
+            LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+            
+            if [ -z "$LATEST_TAG" ]; then
+              # No tags exist, start from v3.0.0
+              VERSION="3.0.0"
+            else
+              # Parse current version and increment patch
+              CURRENT=${LATEST_TAG#v}
+              MAJOR=$(echo $CURRENT | cut -d. -f1)
+              MINOR=$(echo $CURRENT | cut -d. -f2)
+              PATCH=$(echo $CURRENT | cut -d. -f3)
+              
+              # Ensure we're at least v3.0.0
+              if [ "$MAJOR" -lt 3 ]; then
+                VERSION="3.0.0"
+              else
+                # Increment patch version
+                PATCH=$((PATCH + 1))
+                VERSION="${MAJOR}.${MINOR}.${PATCH}"
+              fi
+            fi
+            
+            IS_PRERELEASE=false
+            IS_DRAFT=false
+            RELEASE_NAME="♾️ Ouroboros v${VERSION}"
+            
+            # Create and push the new tag
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "v${VERSION}" -m "Auto release v${VERSION}"
+            git push origin "v${VERSION}"
           fi
           
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -48,22 +76,26 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           
-          # Extract content between this version header and the next version header
-          # Using awk to get the section for this specific version
-          awk -v ver="## \\[$VERSION\\]" '
+          # Escape special regex characters in version for awk
+          ESCAPED_VERSION=$(echo "$VERSION" | sed 's/[][\\.*^$()+?{}|]/\\&/g')
+          
+          # Extract changelog section for this version
+          awk -v ver="## \\[${ESCAPED_VERSION}\\]" '
             $0 ~ ver { found=1; next }
             /^## \[/ && found { exit }
             found { print }
           ' CHANGELOG.md > release_notes.md
           
-          # If changelog section is empty, create a default message
+          # If changelog section is empty or not found, create default message
           if [ ! -s release_notes.md ]; then
             echo "Release v$VERSION" > release_notes.md
+            echo "" >> release_notes.md
+            echo "**Commit:** [\`${GITHUB_SHA::7}\`](https://github.com/${{ github.repository }}/commit/${GITHUB_SHA})" >> release_notes.md
             echo "" >> release_notes.md
             echo "See [CHANGELOG.md](CHANGELOG.md) for full details." >> release_notes.md
           fi
           
-          echo "📝 Changelog extracted:"
+          echo "📝 Release notes:"
           cat release_notes.md
 
       - name: Create release package
@@ -111,11 +143,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('dev-{0}', github.sha) }}
+          tag_name: v${{ steps.version.outputs.version }}
           name: "${{ steps.version.outputs.release_name }}"
           body_path: release_notes.md
-          draft: ${{ steps.version.outputs.is_draft }}
-          prerelease: ${{ steps.version.outputs.is_prerelease }}
+          draft: false
+          prerelease: false
           files: |
             ouroboros-v${{ steps.version.outputs.version }}.zip
         env:
