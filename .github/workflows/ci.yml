@@ -126,6 +126,6 @@ jobs:
       - name: Test script imports
         run: |
           cd .ouroboros/scripts
-          python -c "from ouroboros_input import parse_menu_options; print('✅ ouroboros_input imports OK')"
-          python -c "from ouroboros_ui import visible_len, THEME, BOX; print('✅ ouroboros_ui imports OK')"
-          python -c "from ouroboros_keybuffer import KeyBuffer, Keys; print('✅ ouroboros_keybuffer imports OK')"
+          python -c "from ouroboros_input import parse_menu_options; print('ouroboros_input imports OK')"
+          python -c "from ouroboros_ui import visible_len, THEME, BOX; print('ouroboros_ui imports OK')"
+          python -c "from ouroboros_keybuffer import KeyBuffer, Keys; print('ouroboros_keybuffer imports OK')"
