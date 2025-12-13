@@ -310,7 +310,7 @@ class InputBox:
         for i in range(self.height):
             if self.show_line_numbers:
                 line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 7  # 3 digits + space + │ + space
+                line_content_width = content_width - 6  # 3 digits + space + │ + space = 6 chars
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3  # space + › + space
@@ -384,7 +384,7 @@ class InputBox:
             write(ANSI.CLEAR_LINE)
             if self.show_line_numbers:
                 line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 7
+                line_content_width = content_width - 6
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
@@ -399,7 +399,7 @@ class InputBox:
             write(ANSI.move_to_column(1))
             if self.show_line_numbers:
                 line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 7
+                line_content_width = content_width - 6
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
@@ -509,7 +509,7 @@ class InputBox:
         if self.show_line_numbers:
             actual_line_num = self.scroll_offset + line_index + 1
             line_num = f"{c['dim']}{actual_line_num:3d}{c['reset']} {c['border']}│{c['reset']} "
-            line_content_width = content_width - 7  # 3 digits + space + │ + space
+            line_content_width = content_width - 6  # 3 digits + space + │ + space = 6 chars
         else:
             line_num = f" {c['border']}›{c['reset']} "
             line_content_width = content_width - 3  # space + › + space
