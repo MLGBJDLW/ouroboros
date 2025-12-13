@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **English-Only UI** — `[y/n]` shows `Yes`/`No` only
-- **Agent Prompts** — Added execution mode docs
+- **Prompt Optimization** — Streamlined instructor and orchestrator prompts for better LLM compatibility while maintaining quality
 
 ---
 
