@@ -5,38 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.2] - 2025-12-13
-
-### Fixed
-- **Arrow Keys on Windows** — Fixed `'\x00'` char handling in Windows Console API
-- **Menu In-Place Refresh** — Fixed flickering when navigating with arrow keys
-- **Text Overflow** — Long titles now wrap, options truncate with `...`
-
-### Added
-- **Menu Scrolling** — Auto-scroll for menus with many options (shows `↑ N more above`)
-- **Page Up/Down** — Jump by page in long menus
-- **Home/End** — Jump to first/last option
-- **Escape to Cancel** — Alternative to Ctrl+C
-
-### Changed
-- **UI Hint** — Changed `[Up/Down]` to `[↑↓]` for cleaner display
-- **English-Only UI** — Removed Chinese from `[y/n]` options (`Yes`/`No` only)
-
----
-
 ## [3.0.1] - 2025-12-13
 
 ### Fixed
+- **Windows Arrow Keys** — Fixed `'\x00'` char handling in Console API
+- **Menu Refresh** — In-place update, no more flickering
+- **Text Overflow** — Long titles wrap, options truncate with `...`
 - **[y/n] Prompts** — Now show interactive Yes/No menu
-- **Windows Arrow Keys** — Added `Keys.WIN_UP/DOWN/LEFT/RIGHT` support
 - **InputBox Scrolling** — Max 10 lines, then internal scroll
 
 ### Added
+- **Menu Scrolling** — Auto-scroll with `↑ N more above` / `↓ N more below`
+- **Page Up/Down** — Jump by page in long menus
+- **Home/End** — Jump to first/last option
+- **Escape to Cancel** — Alternative to Ctrl+C
 - **Test Suite** — 200+ tests in `.ouroboros/scripts/test/`
-- **CI/CD Tests** — GitHub Actions matrix (Win/Linux/Mac × Py 3.8/3.11)
+- **CI/CD Tests** — GitHub Actions (Win/Linux/Mac × Py 3.8/3.11)
+- **Changelog Generator** — `.github/scripts/generate-changelog.sh`
 
 ### Changed
-- **Agent Prompts** — Added execution mode docs and `run_command` warning
+- **English-Only UI** — `[y/n]` shows `Yes`/`No` only
+- **Agent Prompts** — Added execution mode docs
 
 ---
 
