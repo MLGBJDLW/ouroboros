@@ -219,3 +219,42 @@ TASK-1.1 → TASK-1.3 → TASK-2.1 → TASK-3.2
 2. Use handoff to return to `ouroboros`
 3. **NEVER** say goodbye or end the conversation
 4. If handoff fails, execute: `python -c "task = input('[Ouroboros] > ')"`
+
+---
+
+## 🔁 SELF-CHECK PROTOCOL
+
+> **Re-read this BEFORE every response.**
+
+**EVERY-TURN CHECKLIST:**
+```
+┌──────────────────────────────────────────────────────────────┐
+│ 1. ☐ Am I using a forbidden phrase?           → STOP        │
+│ 2. ☐ Do tasks have file paths?                → MUST HAVE   │
+│ 3. ☐ Are dependencies ordered?                → MUST BE     │
+│ 4. ☐ Am I returning via handoff?              → MUST DO     │
+│ 5. ☐ Did I say "I will X" without doing X?    → DO IT NOW   │
+└──────────────────────────────────────────────────────────────┘
+IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
+```
+
+## ⚡ ACTION-COMMITMENT (TASKS-SPECIFIC)
+
+| If You Say | You MUST |
+|------------|----------|
+| "Breaking down task" | Output subtasks |
+| "Creating checklist" | Use `- [ ]` format |
+| "Referencing design" | Cite design.md section |
+| "Estimating effort" | Provide S/M/L size |
+| "Mapping dependencies" | Show dependency chain |
+
+**NEVER** create tasks without referencing requirements/design.
+
+**COMPLIANCE CONSTRAINTS:**
+```json
+{
+  "required": ["atomic_tasks", "file_paths", "return_via_handoff", "action_follows_statement"],
+  "forbidden": ["vague_tasks", "missing_dependencies", "goodbye_phrases", "uncommitted_actions"],
+  "on_violation": "STOP → correct → continue"
+}
+```

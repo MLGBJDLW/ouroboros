@@ -260,10 +260,12 @@ class InputBox:
     """
     
     def __init__(self, height: int = 1, show_line_numbers: bool = False, 
-                 show_status: bool = True, full_width: bool = True):
+                 show_status: bool = True, full_width: bool = True,
+                 prompt_header: str = ""):
         self.show_line_numbers = show_line_numbers
         self.show_status = show_status
         self.full_width = full_width
+        self.prompt_header = prompt_header  # Custom header text (e.g., question)
         
         # Get terminal size
         self.cols, self.rows = get_terminal_size()
@@ -298,9 +300,19 @@ class InputBox:
         # Calculate content width (inside borders)
         content_width = self.width - 2  # Account for left and right borders
         
-        # Top border with prompt indicator
-        prompt_indicator = f" {c['prompt']}◎ INPUT{c['reset']} "
-        prompt_visible_len = 9  # "◎ INPUT" visible length
+        # Top border with prompt indicator or custom header
+        if self.prompt_header:
+            # Custom header (e.g., question text) - use ◇ symbol
+            # Truncate if too long
+            max_header_len = content_width - 6  # Leave room for borders and padding
+            header_text = self.prompt_header[:max_header_len] if len(self.prompt_header) > max_header_len else self.prompt_header
+            prompt_indicator = f" {c['prompt']}◇ {header_text}{c['reset']} "
+            prompt_visible_len = visible_len(header_text) + 4  # "◇ " + header + " "
+        else:
+            # Default header
+            prompt_indicator = f" {c['prompt']}◎ INPUT{c['reset']} "
+            prompt_visible_len = 9  # "◎ INPUT" visible length
+        
         left_border = BOX['h'] * 2
         right_border_len = content_width - prompt_visible_len - 2
         right_border = BOX['h'] * max(0, right_border_len)
@@ -418,6 +430,64 @@ class InputBox:
             writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         else:
             writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+        
+        write(ANSI.RESTORE_CURSOR)
+    
+    def shrink_height(self, new_height: int) -> None:
+        """Shrink the input box to a new height (re-renders the entire box).
+        
+        Used when lines are deleted via backspace to dynamically reduce box size.
+        Minimum height is 1.
+        """
+        new_height = max(1, new_height)  # Minimum 1 line
+        
+        if new_height >= self.height:
+            return
+        
+        c = THEME
+        content_width = self.width - 2
+        old_height = self.height
+        self.height = new_height
+        
+        # Save cursor position
+        write(ANSI.SAVE_CURSOR)
+        
+        # Move to first input line (from current cursor position)
+        if self.cursor_row > 0:
+            write(ANSI.move_up(self.cursor_row))
+        
+        # Re-render remaining input lines
+        for i in range(new_height):
+            write(ANSI.move_to_column(1))
+            write(ANSI.CLEAR_LINE)
+            if self.show_line_numbers:
+                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_content_width = content_width - 6
+            else:
+                line_num = f" {c['border']}›{c['reset']} "
+                line_content_width = content_width - 3
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+        
+        # Draw new bottom border at new position
+        write(ANSI.move_to_column(1))
+        write(ANSI.CLEAR_LINE)
+        if self.show_status:
+            mode_text = f" {self._mode} "
+            pos_text = f" Ln 1, Col 1 "
+            mode_len = len(mode_text)
+            pos_len = len(pos_text)
+            left_border = BOX['h'] * 2
+            right_border_len = content_width - mode_len - pos_len - 4
+            mid_border = BOX['h'] * max(1, right_border_len)
+            right_border = BOX['h'] * 2
+            writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+        else:
+            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+        
+        # Clear the lines that are no longer part of the box (old border + extra lines)
+        for _ in range(old_height - new_height):
+            write(ANSI.CLEAR_LINE)
+            write(ANSI.move_down(1))
         
         write(ANSI.RESTORE_CURSOR)
     

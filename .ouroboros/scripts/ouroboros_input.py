@@ -715,9 +715,13 @@ def detect_and_format_input(text: str) -> tuple:
 # INPUT FUNCTIONS
 # =============================================================================
 
-def get_interactive_input_advanced(show_ui: bool = True) -> str:
+def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = "") -> str:
     """
     Get input using real-time character-by-character reading.
+    
+    Args:
+        show_ui: Whether to show the UI decorations
+        prompt_header: Custom header text to show in input box (e.g., question)
     
     Key bindings:
         Enter           - Insert new line (default multi-line mode)
@@ -745,7 +749,8 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
     buffer = TextBuffer()
     history = get_history()
     # InputBox: start with 1 line, dynamically expands as content grows
-    box = InputBox(height=1, show_line_numbers=True, show_status=True, full_width=True)
+    box = InputBox(height=1, show_line_numbers=True, show_status=True, 
+                   full_width=True, prompt_header=prompt_header)
     box.set_mode("INPUT")  # Simple mode name
     
     if show_ui:
@@ -978,14 +983,21 @@ def get_interactive_input_advanced(show_ui: bool = True) -> str:
                 
                 # Backspace
                 if kb.is_backspace(key):
-                    old_row = buffer.cursor_row
+                    old_line_count = buffer.line_count
                     if buffer.backspace():
+                        # Shrink box if line count decreased
+                        if buffer.line_count < old_line_count and buffer.line_count < box.height:
+                            box.shrink_height(max(1, buffer.line_count))
                         refresh_display()
                     continue
                 
                 # Delete
                 if kb.is_delete(key):
+                    old_line_count = buffer.line_count
                     if buffer.delete():
+                        # Shrink box if line count decreased
+                        if buffer.line_count < old_line_count and buffer.line_count < box.height:
+                            box.shrink_height(max(1, buffer.line_count))
                         refresh_display()
                     continue
                 
@@ -1246,9 +1258,8 @@ def get_selection_input(options: list, title: str = "Select an option:",
                     writeln()  # Clear line
                     
                     if is_custom:
-                        # Show enhanced custom input box
-                        writeln(f"\n{THEME['prompt']}Custom input:{THEME['reset']}")
-                        return get_interactive_input_advanced(show_ui=True)
+                        # Show enhanced custom input box with header
+                        return get_interactive_input_advanced(show_ui=True, prompt_header="Custom input")
                     else:
                         return value
                 
@@ -1286,6 +1297,48 @@ def print_header_box(header: str) -> None:
     writeln()
 
 
+def parse_menu_options(header: str) -> tuple:
+    """Parse numbered options from header text for interactive selection.
+    
+    Returns:
+        Tuple of (title, options_list) if menu detected, (None, None) otherwise.
+    
+    Example:
+        "Select action:\n1. Create feature\n2. Fix bug" 
+        -> ("Select action:", ["Create feature", "Fix bug"])
+    """
+    import re
+    
+    lines = header.split('\\n')  # Note: escaped newline from command line
+    
+    if len(lines) < 2:
+        return (None, None)
+    
+    title = None
+    options = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        
+        # Try to match numbered option patterns:
+        # "1. Option", "1) Option", "[1] Option", "1: Option"
+        match = re.match(r'^\s*[\[\(]?(\d+)[\.\)\]:\s]\s*(.+)$', line)
+        
+        if match:
+            options.append(match.group(2).strip())
+        elif not options:
+            # First non-option line before options = title
+            title = line
+    
+    # Only return if we found at least 2 options
+    if len(options) >= 2:
+        return (title or "Select an option:", options)
+    
+    return (None, None)
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -1316,17 +1369,30 @@ def main():
         for key in THEME:
             THEME[key] = ''
     
-    # Type B: Header/Menu
+    # Type B: Header/Menu - try to detect numbered options for arrow-key selection
     if args.header:
-        print_header_box(args.header)
-        if args.prompt:
-            content = get_simple_input(args.prompt)
+        # Try to parse menu options from header
+        title, parsed_options = parse_menu_options(args.header)
+        
+        if parsed_options and MODULES_AVAILABLE:
+            # Menu detected - use arrow-key selection
+            content = get_selection_input(
+                options=parsed_options,
+                title=title,
+                allow_custom=True  # Allow custom input as fallback
+            )
         else:
-            content = get_simple_input()
+            # Not a menu - show header box and get simple input
+            print_header_box(args.header)
+            if args.prompt:
+                content = get_simple_input(args.prompt)
+            else:
+                content = get_simple_input()
+        
         format_output(args.var, content)
         return
     
-    # Selection menu mode
+    # Selection menu mode (explicit --options)
     if args.options and MODULES_AVAILABLE:
         content = get_selection_input(
             options=args.options,
@@ -1341,9 +1407,8 @@ def main():
         if args.no_ui:
             content = get_simple_input(args.prompt)
         else:
-            # Show prompt as header, then use enhanced input
-            writeln(f"\n{THEME['prompt']}  {args.prompt}{THEME['reset']}")
-            content = get_interactive_input_advanced(show_ui=True)
+            # Show prompt in input box header (integrated UI)
+            content = get_interactive_input_advanced(show_ui=True, prompt_header=args.prompt)
         format_output(args.var, content)
         return
     
