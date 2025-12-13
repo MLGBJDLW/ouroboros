@@ -1323,7 +1323,11 @@ def parse_menu_options(header: str, prompt: str = "") -> tuple:
         title = header.replace('\\n', ' ').strip() if header else "Confirm"
         return (title, ["Yes", "No"])
     
-    lines = header.split('\\n')  # Note: escaped newline from command line
+    # Support both actual newlines and escaped \n from command line
+    if '\\n' in header:
+        lines = header.split('\\n')
+    else:
+        lines = header.split('\n')
     
     if len(lines) < 2:
         return (None, None)
