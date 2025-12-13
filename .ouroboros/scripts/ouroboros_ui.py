@@ -294,11 +294,19 @@ class InputBox:
         self._box_start_row = 1  # Terminal row where box starts (1-based)
     
     def render_initial(self) -> None:
-        """Render the initial input box frame."""
+        """Render the initial input box frame.
+        
+        Pre-reserves space for expansion to prevent terminal scrolling.
+        """
         c = THEME
         
         # Calculate content width (inside borders)
         content_width = self.width - 2  # Account for left and right borders
+        
+        # Pre-reserve space: render with max height to prevent scroll on expansion
+        # This way, when we expand, we just redraw existing lines instead of adding new ones
+        reserved_height = min(5, max(1, self.rows - 15))  # Reserve up to 5 lines
+        self._reserved_height = reserved_height
         
         # Top border with prompt indicator or custom header
         if self.prompt_header:
@@ -318,10 +326,14 @@ class InputBox:
         right_border = BOX['h'] * max(0, right_border_len)
         writeln(f"{c['border']}{BOX['tl']}{left_border}{c['reset']}{prompt_indicator}{c['border']}{right_border}{BOX['tr']}{c['reset']}")
         
-        # Empty input lines (pre-reserve space)
-        for i in range(self.height):
+        # Pre-reserve input lines (render reserved_height lines, but only show self.height as active)
+        for i in range(reserved_height):
             if self.show_line_numbers:
-                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                if i < self.height:
+                    line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                else:
+                    # Reserved but inactive lines - show dimmed
+                    line_num = f"{c['dim']}   {c['reset']} {c['border']}│{c['reset']} "
                 line_content_width = content_width - 6  # 3 digits + space + │ + space = 6 chars
             else:
                 line_num = f" {c['border']}›{c['reset']} "
@@ -347,9 +359,9 @@ class InputBox:
             # Simple bottom border
             writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
         
-        # Move cursor back to first input line
+        # Move cursor back to first input line (use reserved_height for positioning)
         status_lines = 0  # Status is now in bottom border, no extra lines
-        write(ANSI.move_up(self.height + status_lines + 1))
+        write(ANSI.move_up(reserved_height + status_lines + 1))
         # col_offset: number of chars before text area
         # With line numbers: │ + 3digits + space + │ + space = 1+3+1+1+1 = 7
         # Without line numbers: │ + space + › + space = 1+1+1+1 = 4... wait let me recount
@@ -367,25 +379,22 @@ class InputBox:
             self._update_status_bar()
     
     def expand_height(self, new_height: int) -> None:
-        """Expand the input box to a new height (re-renders the entire box).
+        """Expand the input box to a new height (re-renders within reserved space).
         
-        SAFE EXPANSION: Uses newline insertion without ANSI cursor movement
-        to prevent terminal scrolling that would push WelcomeBox off screen.
+        SAFE EXPANSION: Uses pre-reserved space to prevent terminal scrolling.
+        Lines are redrawn in-place without adding new lines to the terminal.
         
         Strategy:
-        1. Calculate available space (terminal height - WelcomeBox - margins)
-        2. Limit expansion to max_height (default 10 lines)
-        3. Use print() with newlines instead of ANSI move_down
-        4. Only expand if we have room without causing scroll
+        1. Limit to reserved height (set during render_initial)
+        2. Redraw lines in-place using cursor movement
+        3. No new lines added = no terminal scroll
         """
         if new_height <= self.height:
             return
         
-        # Calculate safe max height
-        # Terminal rows - WelcomeBox (7 lines) - margins (2) - status bar (1) = available
-        safe_max_height = max(1, self.rows - 10)
-        max_allowed_height = min(10, safe_max_height)  # Hard limit: 10 lines
-        new_height = min(new_height, max_allowed_height)
+        # Limit to reserved height (no scrolling beyond this)
+        reserved = getattr(self, '_reserved_height', 5)
+        new_height = min(new_height, reserved)
         
         if new_height <= self.height:
             return
