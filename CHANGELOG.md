@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2025-12-13
+
+### 🐛 Bug Fixes & Test Suite
+
+#### Fixed
+- **[y/n] Confirmation Prompts** — Now display interactive arrow-key menu instead of simple text input
+  - `parse_menu_options()` detects `[y/n]` format in prompt
+  - Auto-generates "Yes (是)" / "No (否)" options
+  - Maps selection back to `y`/`n` for compatibility
+- **Windows Arrow Key Navigation** — Fixed arrow keys not working in enhanced mode menus
+  - Added support for `Keys.WIN_UP`, `Keys.WIN_DOWN`, `Keys.WIN_LEFT`, `Keys.WIN_RIGHT`
+  - Applied to both `get_selection_input()` and `get_interactive_input_advanced()`
+  - Cross-platform safe (Linux/Mac ignore Windows-specific key codes)
+- **InputBox Scrolling** — Fixed WelcomeBox being pushed off screen when pressing Enter
+  - InputBox now starts at 1 line, dynamically expands up to 10 lines max
+  - Beyond 10 lines, uses internal scrolling via `scroll_offset`
+  - Re-enabled `shrink_height()` for when lines are deleted
+
+#### Added
+- **Comprehensive Test Suite** — 200+ automated test cases in `.ouroboros/scripts/test/`
+  - `test_ui.py` — UI components (visible_len, strip_ansi, pad_text, THEME, BOX)
+  - `test_keybuffer.py` — Keyboard input (Keys constants, normalization, platform detection)
+  - `test_textbuffer.py` — Text buffer operations (cursor, insert, delete, scrolling)
+  - `test_input_types.py` — Menu detection (numbered menus, [y/n] prompts, y/n mapping)
+  - `test_edge_cases.py` — Boundary conditions (Unicode, long text, 50+ options, empty inputs)
+  - `test_keys.py` — Interactive keyboard diagnostics
+  - `run_all_tests.py` — Test runner with `--quick` flag
+- **CI/CD Test Integration** — Tests now run on GitHub Actions
+  - Matrix: Windows/Linux/Mac × Python 3.8/3.11
+  - Validates script imports and runs full test suite
+
+#### Changed
+- **Agent Prompts** — Updated `ouroboros-implement.agent.md` with execution mode documentation
+  - Added Task-by-Task, Phase-by-Phase, Auto-Run All mode descriptions
+  - Added CRITICAL warning about using `run_command` tool for menus
+- **README Updates** — Added test documentation section
+
+---
+
 ## [3.0.0] - 2025-12-12
 
 ### 🎨 Enhanced CCL Input System & CI/CD
