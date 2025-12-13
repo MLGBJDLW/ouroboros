@@ -70,6 +70,25 @@ class ANSI:
     SAVE_CURSOR = '\x1b[s'
     RESTORE_CURSOR = '\x1b[u'
     
+    # Line insertion/deletion (for scroll-free expansion)
+    @staticmethod
+    def insert_lines(n: int = 1) -> str:
+        """Insert n blank lines at cursor, pushing content down."""
+        return f'\x1b[{n}L' if n > 0 else ''
+    
+    @staticmethod
+    def delete_lines(n: int = 1) -> str:
+        """Delete n lines at cursor, pulling content up."""
+        return f'\x1b[{n}M' if n > 0 else ''
+    
+    # Scroll region
+    @staticmethod
+    def set_scroll_region(top: int, bottom: int) -> str:
+        """Set scrolling region (1-based rows)."""
+        return f'\x1b[{top};{bottom}r'
+    
+    RESET_SCROLL_REGION = '\x1b[r'
+    
     # Colors
     RESET = '\x1b[0m'
     BOLD = '\x1b[1m'
@@ -367,24 +386,22 @@ class InputBox:
             self._update_status_bar()
     
     def expand_height(self, new_height: int) -> None:
-        """Expand the input box to a new height (re-renders the entire box).
+        """Expand the input box to a new height.
         
-        SAFE EXPANSION: Uses newline insertion without ANSI cursor movement
-        to prevent terminal scrolling that would push WelcomeBox off screen.
+        Uses ANSI Insert Line (IL) to add lines without terminal scrolling.
+        This pushes the bottom border down instead of scrolling the screen.
         
         Strategy:
-        1. Calculate available space (terminal height - WelcomeBox - margins)
-        2. Limit expansion to max_height (default 10 lines)
-        3. Use print() with newlines instead of ANSI move_down
-        4. Only expand if we have room without causing scroll
+        1. Move cursor to bottom border position
+        2. Insert new lines (pushes border down, not screen up)
+        3. Render new input lines in the inserted space
+        4. Redraw bottom border at new position
         """
         if new_height <= self.height:
             return
         
-        # Calculate safe max height
-        # Terminal rows - WelcomeBox (7 lines) - margins (2) - status bar (1) = available
-        safe_max_height = max(1, self.rows - 10)
-        max_allowed_height = min(10, safe_max_height)  # Hard limit: 10 lines
+        # Limit to max height (after which internal scrolling kicks in)
+        max_allowed_height = min(10, max(1, self.rows - 10))
         new_height = min(new_height, max_allowed_height)
         
         if new_height <= self.height:
@@ -393,113 +410,39 @@ class InputBox:
         c = THEME
         content_width = self.width - 2
         old_height = self.height
+        lines_to_add = new_height - old_height
         self.height = new_height
         
         # Hide cursor during redraw
         write(ANSI.HIDE_CURSOR)
-        
-        # Save current cursor position
         write(ANSI.SAVE_CURSOR)
         
-        # Move to first input line (from current cursor position)
-        if self.cursor_row > 0:
-            write(ANSI.move_up(self.cursor_row))
+        # Move to bottom border line (from current cursor position)
+        # cursor is at cursor_row, bottom border is at old_height
+        lines_down = old_height - self.cursor_row
+        if lines_down > 0:
+            write(ANSI.move_down(lines_down))
         
-        # Re-render existing lines in-place (no vertical movement)
-        for i in range(old_height):
+        # Insert blank lines at bottom border position
+        # This pushes the border (and anything below) down without scrolling screen up
+        write(ANSI.insert_lines(lines_to_add))
+        
+        # Now render the new input lines in the inserted space
+        for i in range(lines_to_add):
             write(ANSI.move_to_column(1))
-            write(ANSI.CLEAR_LINE)
+            line_idx = old_height + i
             if self.show_line_numbers:
-                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_num = f"{c['dim']}{line_idx+1:3d}{c['reset']} {c['border']}│{c['reset']} "
                 line_content_width = content_width - 6
             else:
                 line_num = f" {c['border']}›{c['reset']} "
                 line_content_width = content_width - 3
             write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
-            if i < old_height - 1:
-                write('\n')  # Move to next line
+            if i < lines_to_add - 1:
+                write(ANSI.move_down(1))
         
-        # Add new lines (these will cause controlled scrolling)
-        for i in range(old_height, new_height):
-            write('\n')  # New line
-            write(ANSI.move_to_column(1))
-            if self.show_line_numbers:
-                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 6
-            else:
-                line_num = f" {c['border']}›{c['reset']} "
-                line_content_width = content_width - 3
-            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
-        
-        # Draw new bottom border
-        write('\n')
-        write(ANSI.move_to_column(1))
-        if self.show_status:
-            mode_text = f" {self._mode} "
-            pos_text = f" Ln 1, Col 1 "
-            mode_len = len(mode_text)
-            pos_len = len(pos_text)
-            left_border = BOX['h'] * 2
-            right_border_len = content_width - mode_len - pos_len - 4
-            mid_border = BOX['h'] * max(1, right_border_len)
-            right_border = BOX['h'] * 2
-            write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
-        else:
-            write(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
-        
-        # Move cursor back up to first input line
-        lines_to_move_up = new_height + 1  # All new lines + bottom border
-        write(ANSI.move_up(lines_to_move_up))
-        
-        # Reset cursor tracking
-        self.cursor_row = 0
-        self.cursor_col = 0
-        
-        # Position cursor at text start
-        col_offset = 7 if self.show_line_numbers else 3
-        write(ANSI.move_to_column(col_offset + 1))
-        
-        # Show cursor again
-        write(ANSI.SHOW_CURSOR)
-    
-    def shrink_height(self, new_height: int) -> None:
-        """Shrink the input box to a new height (re-renders the entire box).
-        
-        Used when lines are deleted via backspace to dynamically reduce box size.
-        Minimum height is 1.
-        """
-        new_height = max(1, new_height)  # Minimum 1 line
-        
-        if new_height >= self.height:
-            return
-        
-        c = THEME
-        content_width = self.width - 2
-        old_height = self.height
-        lines_removed = old_height - new_height
-        self.height = new_height
-        
-        # Hide cursor during redraw
-        write(ANSI.HIDE_CURSOR)
-        
-        # Move to first input line (from current cursor position)
-        if self.cursor_row > 0:
-            write(ANSI.move_up(self.cursor_row))
-        
-        # Re-render remaining input lines (empty - will be filled by refresh_display)
-        for i in range(new_height):
-            write(ANSI.move_to_column(1))
-            write(ANSI.CLEAR_LINE)
-            if self.show_line_numbers:
-                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
-                line_content_width = content_width - 6
-            else:
-                line_num = f" {c['border']}›{c['reset']} "
-                line_content_width = content_width - 3
-            write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
-            write(ANSI.move_down(1))
-        
-        # Draw new bottom border at new position
+        # Move to and redraw bottom border
+        write(ANSI.move_down(1))
         write(ANSI.move_to_column(1))
         write(ANSI.CLEAR_LINE)
         if self.show_status:
@@ -514,28 +457,42 @@ class InputBox:
             write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
         else:
             write(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
-        write(ANSI.move_down(1))
         
-        # Clear the lines that are no longer part of the box (old lines + old border)
-        for _ in range(lines_removed):
-            write(ANSI.move_to_column(1))
-            write(ANSI.CLEAR_LINE)
-            write(ANSI.move_down(1))
+        # Restore cursor position
+        write(ANSI.RESTORE_CURSOR)
+        write(ANSI.SHOW_CURSOR)
+    
+    def shrink_height(self, new_height: int) -> None:
+        """Shrink the input box by deleting lines.
         
-        # Move cursor back to first input line, column 1
-        # Total lines we moved down: new_height (input lines) + 1 (border) + lines_removed (cleared)
-        total_down = new_height + 1 + lines_removed
-        write(ANSI.move_up(total_down))
+        Uses ANSI Delete Line (DL) to remove lines without leaving gaps.
+        This pulls the bottom border up cleanly.
+        """
+        new_height = max(1, new_height)
         
-        # Reset cursor tracking to row 0
-        self.cursor_row = 0
-        self.cursor_col = 0
+        if new_height >= self.height:
+            return
         
-        # Position cursor at text start
-        col_offset = 7 if self.show_line_numbers else 3
-        write(ANSI.move_to_column(col_offset + 1))
+        c = THEME
+        content_width = self.width - 2
+        lines_to_remove = self.height - new_height
+        self.height = new_height
         
-        # Show cursor again
+        write(ANSI.HIDE_CURSOR)
+        write(ANSI.SAVE_CURSOR)
+        
+        # Move to the first line that will be deleted (new_height position)
+        lines_down = new_height - self.cursor_row
+        if lines_down > 0:
+            write(ANSI.move_down(lines_down))
+        elif lines_down < 0:
+            write(ANSI.move_up(-lines_down))
+        
+        # Delete the extra lines (pulls bottom border up)
+        write(ANSI.delete_lines(lines_to_remove))
+        
+        # Restore cursor
+        write(ANSI.RESTORE_CURSOR)
         write(ANSI.SHOW_CURSOR)
     
     def _update_status_bar(self) -> None:

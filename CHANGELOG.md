@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.3] - 2025-12-13
+
+### Added
+- **AGENTS.md** — Comprehensive development guidelines for AI assistants working on Ouroboros
+  - Hub-and-Spoke architecture constraints with strict delegation rules
+  - Complete CCL Five Output Types reference (Type A-E)
+  - `runSubagent()` mandatory usage with format examples
+  - Action-Commitment rule with correct/wrong examples
+  - Forbidden patterns and phrases enforcement
+  - Development guidelines for modifying/adding agents
+  - Key protocols reference table
+
+### Changed
+- **Toggle Script** — Updated `ouroboros_toggle.py` to scan root directory
+  - Now includes `AGENTS.md` when switching between Default/Enhanced CCL modes
+  - Added `Path(".")` to `SEARCH_DIRS` for root-level markdown files
+
+### Documentation
+- AGENTS.md serves as steering rules for Copilot and other AI tools
+- Ensures consistent architecture enforcement across all AI interactions
+- Provides clear examples of correct delegation patterns
+
+---
+
 ## [3.0.1] - 2025-12-13
 
 ### Fixed

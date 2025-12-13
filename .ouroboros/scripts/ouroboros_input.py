@@ -715,13 +715,14 @@ def detect_and_format_input(text: str) -> tuple:
 # INPUT FUNCTIONS
 # =============================================================================
 
-def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = "") -> str:
+def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = "", skip_welcome: bool = False) -> str:
     """
     Get input using real-time character-by-character reading.
     
     Args:
         show_ui: Whether to show the UI decorations
         prompt_header: Custom header text to show in input box (e.g., question)
+        skip_welcome: Skip the WelcomeBox (use when caller already displayed it)
     
     Key bindings:
         Enter           - Insert new line (default multi-line mode)
@@ -743,7 +744,7 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
     if not MODULES_AVAILABLE or get_config().get('use_fallback_input', False):
         return get_fallback_input(show_ui)
     
-    if show_ui:
+    if show_ui and not skip_welcome:
         WelcomeBox.render()
     
     buffer = TextBuffer()
@@ -1323,7 +1324,11 @@ def parse_menu_options(header: str, prompt: str = "") -> tuple:
         title = header.replace('\\n', ' ').strip() if header else "Confirm"
         return (title, ["Yes", "No"])
     
-    lines = header.split('\\n')  # Note: escaped newline from command line
+    # Support both actual newlines and escaped \n from command line
+    if '\\n' in header:
+        lines = header.split('\\n')
+    else:
+        lines = header.split('\n')
     
     if len(lines) < 2:
         return (None, None)
@@ -1402,12 +1407,22 @@ def main():
                 elif content.lower().startswith('no'):
                     content = 'n'
         else:
-            # Not a menu - show header box and get simple input
-            print_header_box(args.header)
-            if args.prompt:
-                content = get_simple_input(args.prompt)
+            # Not a menu - show header as welcome message, then use InputBox UI
+            if MODULES_AVAILABLE:
+                # Display header as info box, then show interactive input (skip internal welcome)
+                WelcomeBox.render(args.header)
+                content = get_interactive_input_advanced(
+                    show_ui=True, 
+                    prompt_header=args.prompt if args.prompt else "[Ouroboros] > ",
+                    skip_welcome=True  # Already displayed header above
+                )
             else:
-                content = get_simple_input()
+                # Fallback: show header box and get simple input
+                print_header_box(args.header)
+                if args.prompt:
+                    content = get_simple_input(args.prompt)
+                else:
+                    content = get_simple_input()
         
         format_output(args.var, content)
         return

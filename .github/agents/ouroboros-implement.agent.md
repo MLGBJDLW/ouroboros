@@ -21,7 +21,21 @@ handoffs:
 
 ---
 
-## � TOOL LOCKDOWN (IMPLEMENT-SPECIFIC)
+## 📁 SPEC LOCATION (MANDATORY)
+
+> [!IMPORTANT]
+> **ON INVOKE, IMMEDIATELY scan `.ouroboros/specs/` for active specs.**
+
+| What to Find | Location |
+|--------------|----------|
+| Active Specs | `.ouroboros/specs/[feature-name]/tasks.md` |
+| Exclude | `.ouroboros/specs/templates/`, `.ouroboros/specs/archived/` |
+
+**RULE**: Scan specs → Show menu if multiple → Read tasks.md → Execute in order.
+
+---
+
+## 🔧 TOOL LOCKDOWN (IMPLEMENT-SPECIFIC)
 
 | Tool | Permission | Purpose |
 |------|------------|---------|
