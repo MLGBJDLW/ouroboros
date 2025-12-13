@@ -35,6 +35,7 @@ SEARCH_DIRS = [
     Path(".github/agents"),
     Path(".github/prompts"),
     Path(".github"),
+    Path("."),  # Root directory for AGENTS.md
 ]
 
 # File patterns to include
