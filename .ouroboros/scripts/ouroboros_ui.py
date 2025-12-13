@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """
-Terminal UI utilities for Ouroboros input system.
-Handles ANSI escape codes, box drawing, and cursor control.
+ouroboros_ui.py - Terminal UI Components for Ouroboros CCL System
+
+Provides beautiful terminal UI using only Python standard library:
+- ANSI escape codes for colors and cursor control
+- Unicode box drawing characters
+- Mystic Purple theme
+- ASCII art logo
+
+Dependencies: Python 3.6+ standard library only
 """
 
 import sys
@@ -59,8 +66,10 @@ class ANSI:
     RESET = '\x1b[0m'
     BOLD = '\x1b[1m'
     DIM = '\x1b[2m'
+    ITALIC = '\x1b[3m'
+    UNDERLINE = '\x1b[4m'
     
-    # Foreground colors
+    # Foreground colors (bright)
     FG_BLACK = '\x1b[30m'
     FG_RED = '\x1b[91m'
     FG_GREEN = '\x1b[92m'
@@ -69,21 +78,38 @@ class ANSI:
     FG_MAGENTA = '\x1b[95m'
     FG_CYAN = '\x1b[96m'
     FG_WHITE = '\x1b[97m'
+    
+    # Background colors
+    BG_BLACK = '\x1b[40m'
+    BG_RED = '\x1b[41m'
+    BG_GREEN = '\x1b[42m'
+    BG_YELLOW = '\x1b[43m'
+    BG_BLUE = '\x1b[44m'
+    BG_MAGENTA = '\x1b[45m'
+    BG_CYAN = '\x1b[46m'
+    BG_WHITE = '\x1b[47m'
 
+
+# =============================================================================
+# THEME & STYLING
+# =============================================================================
 
 # Mystic Purple Theme
 THEME = {
     'border': ANSI.FG_MAGENTA,
+    'border_dim': ANSI.DIM + ANSI.FG_MAGENTA,
     'prompt': ANSI.FG_CYAN,
     'success': ANSI.FG_GREEN,
     'warning': ANSI.FG_YELLOW,
     'error': ANSI.FG_RED,
     'info': ANSI.FG_BLUE,
+    'accent': ANSI.FG_MAGENTA + ANSI.BOLD,
     'dim': ANSI.DIM,
+    'bold': ANSI.BOLD,
     'reset': ANSI.RESET,
 }
 
-# Box drawing characters
+# Box drawing characters (rounded corners)
 BOX = {
     'tl': '╭',  # Top left
     'tr': '╮',  # Top right
@@ -93,7 +119,42 @@ BOX = {
     'v': '│',   # Vertical
     'lj': '├',  # Left junction
     'rj': '┤',  # Right junction
+    'tj': '┬',  # Top junction
+    'bj': '┴',  # Bottom junction
+    'x': '┼',   # Cross
+    'hd': '═',  # Horizontal double
+    'vd': '║',  # Vertical double
 }
+
+# ASCII fallback box characters
+BOX_ASCII = {
+    'tl': '+', 'tr': '+', 'bl': '+', 'br': '+',
+    'h': '-', 'v': '|', 'lj': '+', 'rj': '+',
+    'tj': '+', 'bj': '+', 'x': '+', 'hd': '=', 'vd': '|',
+}
+
+# =============================================================================
+# LOGO - Ouroboros Snake ASCII Art
+# =============================================================================
+
+# Small inline logo (for headers)
+LOGO_SMALL = "◎"  # Circle with dot - represents the ouroboros
+
+# Medium logo - stylized snake eating its tail
+LOGO_MEDIUM = [
+    "  ╭──◯──╮  ",
+    " ◜      ◝ ",
+    " │  ♾️   │ ",
+    " ◟      ◞ ",
+    "  ╰──◯──╯  ",
+]
+
+# Compact text logo
+LOGO_TEXT = "⟲ OUROBOROS ⟳"
+
+# Minimal snake icon for prompts
+SNAKE_ICON = "◎"
+INFINITY_ICON = "∞"
 
 # =============================================================================
 # TEXT UTILITIES
@@ -153,38 +214,210 @@ class InputBox:
     """
     A pre-reserved input box that updates in place.
     Uses ANSI escape codes to move cursor and redraw.
+    
+    Features:
+    - Auto-stretch to terminal width
+    - Optional line numbers
+    - Scroll indicator when content exceeds viewport
+    - Status bar showing mode and position
+    - Dynamic height (starts at 1, can expand)
     """
     
-    def __init__(self, height: int = 3, show_line_numbers: bool = True):
-        self.height = height  # Fixed height for input area
+    def __init__(self, height: int = 1, show_line_numbers: bool = False, 
+                 show_status: bool = True, full_width: bool = True):
         self.show_line_numbers = show_line_numbers
+        self.show_status = show_status
+        self.full_width = full_width
+        
+        # Get terminal size
         self.cols, self.rows = get_terminal_size()
-        self.width = self.cols - 4  # Leave margin
+        
+        # Width: stretch to terminal width
+        if full_width:
+            self.width = self.cols  # Full width
+        else:
+            self.width = min(self.cols - 4, 80)
+        
+        # Height: use provided (default 1 for single line)
+        self.height = max(1, height)
+        
         self.lines = ['']  # Current input lines
         self.cursor_row = 0
         self.cursor_col = 0
+        self.total_lines = 1
+        self.scroll_offset = 0
         self._rendered = False
+        self._mode = "INPUT"  # INPUT, PASTE
     
     def render_initial(self) -> None:
         """Render the initial input box frame."""
         c = THEME
         
-        # Top border
-        writeln(f"{c['border']}{BOX['tl']}{BOX['h'] * self.width}{BOX['tr']}{c['reset']}")
+        # Calculate content width (inside borders)
+        content_width = self.width - 2  # Account for left and right borders
+        
+        # Top border with prompt indicator
+        prompt_indicator = f" {c['prompt']}◎ INPUT{c['reset']} "
+        prompt_visible_len = 9  # "◎ INPUT" visible length
+        left_border = BOX['h'] * 2
+        right_border_len = content_width - prompt_visible_len - 2
+        right_border = BOX['h'] * max(0, right_border_len)
+        writeln(f"{c['border']}{BOX['tl']}{left_border}{c['reset']}{prompt_indicator}{c['border']}{right_border}{BOX['tr']}{c['reset']}")
         
         # Empty input lines (pre-reserve space)
         for i in range(self.height):
-            line_num = f"{c['warning']}{i+1:2d}{c['reset']} " if self.show_line_numbers else ""
-            writeln(f"{c['border']}{BOX['v']}{c['reset']} {line_num}{' ' * (self.width - 5)}{c['border']}{BOX['v']}{c['reset']}")
+            if self.show_line_numbers:
+                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_content_width = content_width - 7  # 3 digits + space + │ + space
+            else:
+                line_num = f" {c['border']}›{c['reset']} "
+                line_content_width = content_width - 3  # space + › + space
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
         
-        # Bottom border
-        writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * self.width}{BOX['br']}{c['reset']}")
+        # Bottom border with embedded status (single line)
+        if self.show_status:
+            # Embed status in bottom border: ╰── MODE: SINGLE ─────── Ln 1, Col 1 ──╯
+            mode_text = f" {self._mode} "
+            pos_text = f" Ln 1, Col 1 "
+            mode_len = len(mode_text)
+            pos_len = len(pos_text)
+            
+            # Calculate border segments
+            left_border = BOX['h'] * 2
+            right_border_len = content_width - mode_len - pos_len - 4
+            mid_border = BOX['h'] * max(1, right_border_len)
+            right_border = BOX['h'] * 2
+            
+            writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+        else:
+            # Simple bottom border
+            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
         
         # Move cursor back to first input line
-        write(ANSI.move_up(self.height + 1))
-        write(ANSI.move_to_column(6 if self.show_line_numbers else 4))
+        status_lines = 0  # Status is now in bottom border, no extra lines
+        write(ANSI.move_up(self.height + status_lines + 1))
+        # col_offset: border(1) + prompt(" › " = 3) = 4, or border(1) + line_num("123 │ " = 7) = 8
+        col_offset = 8 if self.show_line_numbers else 4
+        write(ANSI.move_to_column(col_offset + 1))  # +1 because ANSI columns are 1-based
         
         self._rendered = True
+    
+    def set_mode(self, mode: str) -> None:
+        """Update the mode indicator (INPUT, PASTE)."""
+        self._mode = mode
+        if self._rendered and self.show_status:
+            self._update_status_bar()
+    
+    def expand_height(self, new_height: int) -> None:
+        """Expand the input box to a new height (re-renders the entire box)."""
+        if new_height <= self.height:
+            return
+        
+        # Calculate max height based on terminal
+        max_height = max(1, self.rows - 12)  # Leave room for welcome box and margins
+        new_height = min(new_height, max_height)
+        
+        if new_height <= self.height:
+            return
+        
+        c = THEME
+        content_width = self.width - 2
+        old_height = self.height
+        self.height = new_height
+        
+        # Save cursor position
+        write(ANSI.SAVE_CURSOR)
+        
+        # Move to first input line (from current cursor position)
+        if self.cursor_row > 0:
+            write(ANSI.move_up(self.cursor_row))
+        
+        # Re-render ALL existing lines (in case show_line_numbers changed)
+        for i in range(old_height):
+            write(ANSI.move_to_column(1))
+            write(ANSI.CLEAR_LINE)
+            if self.show_line_numbers:
+                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_content_width = content_width - 7
+            else:
+                line_num = f" {c['border']}›{c['reset']} "
+                line_content_width = content_width - 3
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+        
+        # Clear old bottom border
+        write(ANSI.move_to_column(1))
+        write(ANSI.CLEAR_LINE)
+        
+        # Add new input lines
+        for i in range(old_height, new_height):
+            write(ANSI.move_to_column(1))
+            if self.show_line_numbers:
+                line_num = f"{c['dim']}{i+1:3d}{c['reset']} {c['border']}│{c['reset']} "
+                line_content_width = content_width - 7
+            else:
+                line_num = f" {c['border']}›{c['reset']} "
+                line_content_width = content_width - 3
+            writeln(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{' ' * line_content_width}{c['border']}{BOX['v']}{c['reset']}")
+        
+        # Re-draw bottom border with embedded status
+        if self.show_status:
+            mode_text = f" {self._mode} "
+            pos_text = f" Ln 1, Col 1 "
+            mode_len = len(mode_text)
+            pos_len = len(pos_text)
+            left_border = BOX['h'] * 2
+            right_border_len = content_width - mode_len - pos_len - 4
+            mid_border = BOX['h'] * max(1, right_border_len)
+            right_border = BOX['h'] * 2
+            writeln(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['info']}{mode_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+        else:
+            writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * content_width}{BOX['br']}{c['reset']}")
+        
+        write(ANSI.RESTORE_CURSOR)
+    
+    def _update_status_bar(self) -> None:
+        """Update the status bar embedded in bottom border."""
+        if not self.show_status:
+            return
+        
+        c = THEME
+        content_width = self.width - 2
+        
+        # Save cursor, move to bottom border line, update, restore
+        write(ANSI.SAVE_CURSOR)
+        
+        # Move to bottom border (status is embedded there now)
+        lines_down = self.height - self.cursor_row
+        write(ANSI.move_down(lines_down))
+        write(ANSI.move_to_column(1))
+        write(ANSI.CLEAR_LINE)
+        
+        # Simple hint text
+        hint_text = " Ctrl+D=submit "
+        
+        # Position indicator
+        line_num = self.scroll_offset + self.cursor_row + 1
+        col_num = self.cursor_col + 1
+        pos_text = f" Ln {line_num}, Col {col_num} "
+        
+        # Scroll indicator if needed
+        scroll_text = ""
+        if self.total_lines > self.height:
+            scroll_text = f" [{self.scroll_offset + 1}-{min(self.scroll_offset + self.height, self.total_lines)}/{self.total_lines}] "
+        
+        # Calculate border segments
+        hint_len = len(hint_text)
+        pos_len = len(pos_text)
+        scroll_len = len(scroll_text)
+        left_border = BOX['h'] * 2
+        right_border_len = content_width - hint_len - pos_len - scroll_len - 4
+        mid_border = BOX['h'] * max(1, right_border_len)
+        right_border = BOX['h'] * 2
+        
+        # Render: ╰── hint ─────── [scroll] ─── Ln X, Col Y ──╯
+        write(f"{c['border']}{BOX['bl']}{left_border}{c['reset']}{c['dim']}{hint_text}{c['reset']}{c['border']}{mid_border}{c['reset']}{c['dim']}{scroll_text}{pos_text}{c['reset']}{c['border']}{right_border}{BOX['br']}{c['reset']}")
+        
+        write(ANSI.RESTORE_CURSOR)
     
     def update_line(self, line_index: int, text: str) -> None:
         """Update a specific line in the input box."""
@@ -192,10 +425,13 @@ class InputBox:
             return
         
         c = THEME
+        content_width = self.width - 2  # Inside borders
         
-        # Calculate how far to move
-        current_line = self.cursor_row
-        move_amount = line_index - current_line
+        # Hide cursor during update to prevent flicker
+        write(ANSI.HIDE_CURSOR)
+        
+        # Calculate how far to move from current position
+        move_amount = line_index - self.cursor_row
         
         if move_amount > 0:
             write(ANSI.move_down(move_amount))
@@ -206,20 +442,50 @@ class InputBox:
         write(ANSI.move_to_column(1))
         write(ANSI.CLEAR_LINE)
         
-        # Rewrite the line
-        line_num = f"{c['warning']}{line_index+1:2d}{c['reset']} " if self.show_line_numbers else ""
-        content = text[:self.width - 6]  # Truncate if too long
-        padded = pad_text(content, self.width - 6)
+        # Calculate line content width
+        if self.show_line_numbers:
+            actual_line_num = self.scroll_offset + line_index + 1
+            line_num = f"{c['dim']}{actual_line_num:3d}{c['reset']} {c['border']}│{c['reset']} "
+            line_content_width = content_width - 7  # 3 digits + space + │ + space
+        else:
+            line_num = f" {c['border']}›{c['reset']} "
+            line_content_width = content_width - 3  # space + › + space
         
-        write(f"{c['border']}{BOX['v']}{c['reset']} {line_num}{padded} {c['border']}{BOX['v']}{c['reset']}")
+        # Truncate if too long, show indicator
+        if visible_len(text) > line_content_width:
+            # Truncate text to fit
+            truncated = text[:line_content_width - 1]
+            content = truncated + f"{c['dim']}…{c['reset']}"
+            content = pad_text(content, line_content_width)
+        else:
+            content = pad_text(text, line_content_width)
         
-        # Update tracked position
+        write(f"{c['border']}{BOX['v']}{c['reset']}{line_num}{content}{c['border']}{BOX['v']}{c['reset']}")
+        
+        # Update tracked row position (cursor is now at end of this line)
         self.cursor_row = line_index
+        
+        # Show cursor again
+        write(ANSI.SHOW_CURSOR)
     
-    def set_cursor(self, row: int, col: int) -> None:
-        """Move cursor to specific position in input area."""
-        # Adjust for line numbers
-        col_offset = 6 if self.show_line_numbers else 4
+    def set_cursor(self, row: int, col: int, text_before_cursor: str = '', 
+                   update_status: bool = True) -> None:
+        """Move cursor to specific position in input area.
+        
+        Args:
+            row: Row index (0-based)
+            col: Character index (0-based, not display width)
+            text_before_cursor: Text before cursor for calculating display width
+            update_status: Whether to update status bar (set False during rapid input)
+        """
+        # Calculate column offset:
+        # Border (│) = 1 char
+        # With line numbers: "123 │ " = 3 digits + space + │ + space = 7 chars, total = 1 + 7 = 8
+        # Without line numbers: " › " = space + › + space = 3 chars, total = 1 + 3 = 4
+        col_offset = 8 if self.show_line_numbers else 4
+        
+        # Track if position actually changed
+        old_row, old_col = self.cursor_row, self.cursor_col
         
         # Move vertically if needed
         if row != self.cursor_row:
@@ -229,25 +495,45 @@ class InputBox:
                 write(ANSI.move_up(self.cursor_row - row))
             self.cursor_row = row
         
-        # Move horizontally
-        write(ANSI.move_to_column(col_offset + col))
+        # Calculate display width of text before cursor
+        # This handles CJK characters that take 2 columns
+        if text_before_cursor:
+            display_col = visible_len(text_before_cursor)
+        else:
+            display_col = col  # Fallback to character count
+        
+        # Move horizontally (ANSI columns are 1-based)
+        write(ANSI.move_to_column(col_offset + display_col + 1))
         self.cursor_col = col
+        
+        # Only update status bar if position changed and update_status is True
+        if update_status and self.show_status and (row != old_row or col != old_col):
+            self._update_status_bar()
+    
+    def set_scroll_info(self, total_lines: int, scroll_offset: int) -> None:
+        """Update scroll information for status bar."""
+        self.total_lines = total_lines
+        self.scroll_offset = scroll_offset
+        if self.show_status:
+            self._update_status_bar()
     
     def finish(self) -> None:
         """Move cursor below the box after input is complete."""
-        lines_below = self.height - self.cursor_row
-        write(ANSI.move_down(lines_below + 1))
+        # Status is now embedded in bottom border, so no extra lines
+        # Just need to move past remaining input lines + bottom border (1 line)
+        lines_below = self.height - self.cursor_row + 1
+        write(ANSI.move_down(lines_below))
         write(ANSI.move_to_column(1))
 
 
 class WelcomeBox:
-    """The welcome/status box shown above input."""
+    """The welcome/status box shown above input - compact with all shortcuts."""
     
     @staticmethod
-    def render() -> None:
-        """Render the welcome box."""
+    def render(compact: bool = False) -> None:
+        """Render compact welcome box with all shortcuts visible at once."""
         cols, _ = get_terminal_size()
-        width = cols - 4
+        width = min(cols - 4, 66)
         c = THEME
         
         def box_line(content: str) -> None:
@@ -255,44 +541,79 @@ class WelcomeBox:
             writeln(f"{c['border']}{BOX['v']}{c['reset']}{padded}{c['border']}{BOX['v']}{c['reset']}")
         
         writeln()
-        writeln(f"{c['border']}{BOX['tl']}{BOX['h'] * width}{BOX['tr']}{c['reset']}")
-        box_line(f"  [*] Ouroboros - Awaiting Command")
-        writeln(f"{c['border']}{BOX['lj']}{BOX['h'] * width}{BOX['rj']}{c['reset']}")
-        box_line(f"  {c['info']}[?] Shortcuts:{c['reset']}")
-        box_line(f"      Paste: auto-detected as multi-line")
-        box_line(f"      Multi-line: {c['warning']}<<<{c['reset']} to start, {c['warning']}>>>{c['reset']} to end")
-        box_line(f"      Submit: {c['success']}Enter{c['reset']} | Cancel: {c['error']}Ctrl+C{c['reset']}")
+        
+        # Top border with title
+        title = f" {c['accent']}◎ OUROBOROS{c['reset']} "
+        title_len = 13  # visible length
+        left_border = BOX['h'] * 2
+        right_border = BOX['h'] * (width - title_len - 2)
+        writeln(f"{c['border']}{BOX['tl']}{left_border}{c['reset']}{title}{c['border']}{right_border}{BOX['tr']}{c['reset']}")
+        
+        # All shortcuts in aligned two-column layout
+        # Column 1: 28 chars | Column 2: rest
+        box_line(f"  {c['warning']}Enter{c['reset']}       New line       │ {c['success']}Ctrl+D{c['reset']}      Submit")
+        box_line(f"  {c['warning']}↑/↓{c['reset']}         Move cursor    │ {c['warning']}←→{c['reset']}          Navigate")
+        box_line(f"  {c['warning']}Home/End{c['reset']}    Line start/end │ {c['warning']}Ctrl+U{c['reset']}      Clear line")
+        box_line(f"  {c['error']}Ctrl+C{c['reset']}      Cancel         │ {c['warning']}>>>{c['reset']}         End & submit")
+        
+        # Bottom border
         writeln(f"{c['border']}{BOX['bl']}{BOX['h'] * width}{BOX['br']}{c['reset']}")
         writeln()
 
 
 class OutputBox:
-    """Box for displaying output to Copilot."""
+    """Box for displaying output/task results - auto-sizes to terminal and content."""
     
     @staticmethod
-    def render(marker: str, content: str) -> None:
-        """Render output box to stdout (for Copilot)."""
-        cols, _ = get_terminal_size()
-        width = min(cols - 4, 60)
-        sep = BOX['h'] * width
+    def render(marker: str, content: str, full_width: bool = True) -> None:
+        """Render output box to stdout (for Copilot).
+        
+        Args:
+            marker: Label for the output (e.g., "TASK")
+            content: Content to display
+            full_width: If True, stretch to terminal width
+        """
+        cols, rows = get_terminal_size()
+        c = THEME
+        
+        # Calculate width
+        if full_width:
+            width = cols - 2  # Full width minus margins
+        else:
+            width = min(cols - 4, 80)
+        
+        content_width = width - 2  # Inside borders
+        sep = BOX['h'] * content_width
+        
+        # Split content into lines
+        lines = content.split('\n')
         
         # Header
-        print(f"{BOX['tl']}{sep}{BOX['tr']}")
-        header = f" [>] {marker.upper()}"
-        padded_header = header.ljust(width)
-        print(f"{BOX['v']}{padded_header}{BOX['v']}")
-        print(f"{BOX['lj']}{sep}{BOX['rj']}")
+        print(f"{c['border']}{BOX['tl']}{sep}{BOX['tr']}{c['reset']}")
+        header = f" {c['prompt']}[>] {marker.upper()}{c['reset']}"
+        header_padded = pad_text(header, content_width)
+        print(f"{c['border']}{BOX['v']}{c['reset']}{header_padded}{c['border']}{BOX['v']}{c['reset']}")
+        print(f"{c['border']}{BOX['lj']}{sep}{BOX['rj']}{c['reset']}")
         
-        # Content with side borders
-        for line in content.split('\n'):
-            # Truncate or pad each line
-            if len(line) > width:
-                line = line[:width - 3] + "..."
-            padded_line = line.ljust(width)
-            print(f"{BOX['v']}{padded_line}{BOX['v']}")
+        # Content with side borders (handle CJK width)
+        for line in lines:
+            line_width = visible_len(line)
+            if line_width > content_width:
+                # Truncate accounting for display width
+                truncated = ''
+                current_width = 0
+                for ch in line:
+                    ch_width = char_width(ch)
+                    if current_width + ch_width > content_width - 3:
+                        break
+                    truncated += ch
+                    current_width += ch_width
+                line = truncated + f"{c['dim']}...{c['reset']}"
+            padded_line = pad_text(line, content_width)
+            print(f"{c['border']}{BOX['v']}{c['reset']}{padded_line}{c['border']}{BOX['v']}{c['reset']}")
         
         # Footer
-        print(f"{BOX['bl']}{sep}{BOX['br']}")
+        print(f"{c['border']}{BOX['bl']}{sep}{BOX['br']}{c['reset']}")
 
 
 class SelectMenu:

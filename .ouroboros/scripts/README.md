@@ -1,211 +1,220 @@
 # Ouroboros Enhanced CCL Scripts
 
-> **Version**: 1.1.0 | **Requires**: Python 3.6+
+> **Version**: 2.0.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
 
-This directory contains the Enhanced Continuous Command Loop (CCL) input system.
+```
+    ╭───◯───╮
+   ◜  ◉━━◉  ◝
+   │   ∞   │    OUROBOROS
+   ◟  ◉━━◉  ◞    Continuous Command Loop
+    ╰───◯───╯
+```
+
+Enhanced terminal input system for the Ouroboros CCL.
+
+### ⚡ Quick Reference
+
+| Action | Shortcut |
+|--------|----------|
+| **History** | `↑` / `↓` (when on first line) |
+| **New Line** | `Enter` or `Ctrl+L` or `Ctrl+J` |
+| **Submit** | `Ctrl+D` (force) or `>>>` to end |
+| **Cancel** | `Ctrl+C` |
+| **Multi-line** | Default mode, just type! |
 
 ---
 
-## Quick Start
+## ✨ Features
 
-**Option 1: Double-Click (Recommended)**
+| Feature | Description |
+|---------|-------------|
+| **Command History** | `↑`/`↓` to browse previous commands |
+| **Mystic Purple Theme** | Beautiful terminal UI with colors |
+| **Real-time Input** | Character-by-character input with live updates |
+| **Multi-line Support** | `<<<` / `>>>` blocks or Ctrl+J for newlines |
+| **Full-width InputBox** | Auto-stretches to terminal width |
+| **Scroll Support** | Viewport scrolling for long input |
+| **Status Bar** | Shows mode and cursor position |
+| **Selection Menu** | Arrow key navigation with custom input option |
+| **Cross-platform** | Windows (msvcrt) / Unix (termios) |
+| **Zero Dependencies** | Python stdlib only, no pip install |
+| **Auto-generated Config** | Config and history files created automatically |
 
-- **Windows**: Double-click `.ouroboros/scripts/toggle.bat`
-- **Mac/Linux**: Double-click `.ouroboros/scripts/toggle.sh` (run `chmod +x toggle.sh` first)
+---
+
+## 🚀 Quick Start
+
+**Option 1: Double-Click**
+- **Windows**: `toggle.bat`
+- **Mac/Linux**: `toggle.sh` (run `chmod +x toggle.sh` first)
 
 **Option 2: Command Line**
-
 ```bash
-# Interactive menu
-python .ouroboros/scripts/ouroboros_toggle.py
-
-# Direct commands
 python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
-python .ouroboros/scripts/ouroboros_toggle.py --mode default
-python .ouroboros/scripts/ouroboros_toggle.py --status
 ```
 
 ---
 
-## Files
+## ⌨️ Key Bindings
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Browse command history (first line) / Navigate (multi-line) |
+| `←` / `→` | Move cursor left/right |
+| `Enter` | Insert new line |
+| `Ctrl+L` / `Ctrl+J` | Insert new line (alternative) |
+| `Ctrl+D` | Force submit (always works) |
+| `<<<` ... `>>>` | Legacy multi-line block (still works) |
+| `>>>` | Submit and exit |
+| `Ctrl+C` | Cancel |
+| `Ctrl+U` | Clear current line |
+| `Ctrl+K` | Delete to end of line |
+| `Home` / `End` | Line start/end |
+| `Delete` | Delete at cursor |
+
+> **Note**: True `Shift+Enter` detection is impossible in most terminals.
+> Use `Ctrl+J` or just `Enter` to insert new lines.
+
+---
+
+## 📁 Files
 
 | File | Purpose |
 |------|---------|
-| `ouroboros_input.py` | Enhanced input handler with UI |
+| `ouroboros_input.py` | Main input handler (v2.0) with history support |
+| `ouroboros_keybuffer.py` | Cross-platform keyboard input |
+| `ouroboros_ui.py` | UI components (boxes, menus, theme) |
 | `ouroboros_toggle.py` | Mode switcher (default ↔ enhanced) |
-| `ouroboros.config.json` | Cached environment settings |
-| `ouroboros.history` | Command history storage |
+| `ouroboros.config.json` | Configuration (auto-generated) |
+| `ouroboros.history` | Command history (auto-generated) |
+| `toggle.bat` / `toggle.sh` | Quick launch scripts |
 
 ---
 
-## How It Works
+## 🎨 UI Components
 
-### Architecture
+### WelcomeBox
+Shows the Ouroboros logo and keyboard shortcuts.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  User types in terminal                                     │
-│         ↓                                                   │
-│  ouroboros_input.py                                         │
-│  ├── Display UI → stderr (user sees beautiful prompt)       │
-│  ├── Get input from user                                    │
-│  ├── Detect: paste / multi-line / file path                 │
-│  ├── Compress display for large pastes                      │
-│  └── Output formatted → stdout (Copilot reads clean text)   │
-│         ↓                                                   │
-│  Copilot receives clean markers:                            │
-│  === TASK START ===                                         │
-│  user's actual content                                      │
-│  === TASK END ===                                           │
-└─────────────────────────────────────────────────────────────┘
-```
+### InputBox
+- Auto-stretches to full terminal width
+- Line numbers with syntax highlighting
+- Scroll indicator when content exceeds viewport
+- Status bar showing mode and cursor position
+- Truncation indicator for long lines
+- Dynamic height based on terminal size
 
-### Output Separation (Key Principle)
+### SelectMenu
+- Arrow key navigation
+- Number quick-select (1-9)
+- Custom input option
+- Home/End for quick navigation
 
-| Stream | Content | Reader |
-|--------|---------|--------|
-| `stderr` | UI decorations, colors, boxes | User only |
-| `stdout` | Clean formatted markers | Copilot |
-
-This ensures Copilot never sees UI decorations.
+### OutputBox
+- Clean formatted output for AI consumption
+- Separates UI (stderr) from content (stdout)
 
 ---
 
-## Features
-
-### ✅ Advantages
-
-| Feature | Benefit |
-|---------|---------|
-| **Mystic Purple Theme** | Beautiful, branded terminal UI |
-| **Display Compression** | Large pastes show summary preview |
-| **Auto Multi-line Detection** | No need to type `<<<` manually |
-| **File Detection** | Recognizes dragged images/files |
-| **Command History** | Recalls previous commands (↑/↓ on Linux/Mac) |
-| **Config Caching** | Fast startup after first run |
-| **Zero Dependencies** | Python stdlib only, no pip install |
-| **Cross-platform** | Windows, Linux, macOS |
-
-### ⚠️ Limitations
-
-| Limitation | Reason | Workaround |
-|------------|--------|------------|
-| No Shift+Enter for manual newlines | Python `input()` can't detect key modifiers | Auto-detected for pastes; use `<<<` for manual |
-| No ↑/↓ on Windows | No readline built-in | History saved to file |
-| No Tab completion | Out of scope | Type full commands |
-| Terminal-dependent | Some old terminals lack ANSI/Unicode | Fallback to ASCII |
-
----
-
-## Input Types Supported
-
-| Type | Usage | Output Marker |
-|------|-------|---------------|
-| **A (CCL)** | Default mode | `=== TASK START ===` |
-| **B (Menu)** | `--var choice` | `=== CHOICE START ===` |
-| **C (Feature)** | `--var feature` | `=== FEATURE START ===` |
-| **D (Confirm)** | `--var confirm --no-ui` | `=== CONFIRM START ===` |
-| **E (Question)** | `--var question` | `=== QUESTION START ===` |
-
----
-
-## Usage Examples
+## 🔧 Usage Examples
 
 ### Type A: Standard CCL Input
 ```bash
 python .ouroboros/scripts/ouroboros_input.py
 ```
 
-### Type B: Menu Selection
+### Type B: Selection Menu
 ```bash
 python .ouroboros/scripts/ouroboros_input.py \
-  --header "[1] Option A\n[2] Option B" \
-  --prompt "Choice (1-2):" \
-  --var choice
+  --options "Option A" "Option B" "Option C" \
+  --prompt "Choose one:"
 ```
 
-### Type D: Confirmation
+### Type C: Simple Prompt
 ```bash
 python .ouroboros/scripts/ouroboros_input.py \
-  --prompt "[y/n]:" \
-  --var confirm \
-  --no-ui
+  --prompt "Enter feature name:" \
+  --var feature
 ```
 
 ### All Arguments
-```bash
-python .ouroboros/scripts/ouroboros_input.py --help
-
-Options:
-  --prompt TEXT    Custom prompt text
-  --header TEXT    Header/menu to display before prompt
-  --var NAME       Variable name for output markers (default: task)
-  --no-ui          Disable fancy border/box
-  --no-color       Disable ANSI colors
-  --ascii          Use ASCII instead of Unicode
-  --reset-config   Force re-detect environment
+```
+--var NAME       Variable name for output markers (default: task)
+--prompt TEXT    Custom prompt text
+--header TEXT    Header/menu to display
+--options LIST   Options for selection menu
+--no-custom      Disable custom input in selection
+--no-ui          Disable fancy UI
+--no-color       Disable ANSI colors
+--ascii          Use ASCII instead of Unicode
 ```
 
 ---
 
-## Toggle Script
+## 🏗️ Architecture
 
-Switch between default (`python -c`) and enhanced modes.
-
-```bash
-# Show current mode
-python .ouroboros/scripts/ouroboros_toggle.py --status
-
-# Preview changes without applying
-python .ouroboros/scripts/ouroboros_toggle.py --dry-run
-
-# Switch to enhanced mode
-python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
-
-# Switch back to default
-python .ouroboros/scripts/ouroboros_toggle.py --mode default
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User types in terminal                                     │
+│         ↓                                                   │
+│  ouroboros_keybuffer.py                                     │
+│  ├── Platform detection (Windows/Unix)                      │
+│  ├── Raw keyboard input (msvcrt/termios)                    │
+│  └── Key normalization (arrows, modifiers)                  │
+│         ↓                                                   │
+│  ouroboros_input.py                                         │
+│  ├── ConfigManager (auto-generated config)                  │
+│  ├── HistoryManager (command history with ↑/↓)              │
+│  ├── TextBuffer (multi-line editing)                        │
+│  ├── Mode management (INPUT/PASTE)                           │
+│  └── Input validation                                       │
+│         ↓                                                   │
+│  ouroboros_ui.py                                            │
+│  ├── ANSI escape codes                                      │
+│  ├── Box drawing (InputBox, WelcomeBox, etc.)               │
+│  └── Theme (Mystic Purple)                                  │
+│         ↓                                                   │
+│  Output separation:                                         │
+│  ├── stderr → UI decorations (user sees)                    │
+│  └── stdout → Clean content (AI reads)                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Backup**: Before modifying files, a backup is created in `.ouroboros/scripts/backups/`.
+---
+
+## 📦 Dependencies
+
+**None!** Uses only Python standard library:
+
+| Module | Platform | Purpose |
+|--------|----------|---------|
+| `sys`, `os` | All | System interaction |
+| `json` | All | Config file handling |
+| `time` | All | Timing for paste detection |
+| `argparse` | All | CLI argument parsing |
+| `shutil` | All | Terminal size detection |
+| `unicodedata` | All | Character width calculation |
+| `re` | All | ANSI code stripping |
+| `msvcrt` | Windows | Raw keyboard input |
+| `tty`, `termios`, `select` | Unix | Raw keyboard input |
 
 ---
 
-## Requirements
-
-- **Python 3.6+** (standard library only)
-- **No pip install needed**
-- Works on: Windows 10+, Linux, macOS
-
----
-
-## Configuration
-
-Auto-generated on first run: `ouroboros.config.json`
-
-```json
-{
-  "platform": "windows",
-  "ansi_colors": true,
-  "unicode_box": true,
-  "theme": "mystic_purple",
-  "auto_multiline": true,
-  "compress_threshold": 10
-}
-```
-
-Reset with: `python ouroboros_input.py --reset-config`
-
----
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Colors not showing | Add `--no-color` or update terminal |
-| Boxes look broken | Add `--ascii` for ASCII fallback |
-| History not working on Windows | Normal - Windows lacks readline |
-| Script not found | Run from repo root |
+| Colors not showing | Use `--no-color` or update terminal |
+| Boxes look broken | Use `--ascii` for ASCII fallback |
+| Ctrl+J not working | Some terminals intercept it; use `<<<`/`>>>` |
+| Cursor position wrong | Terminal may not support ANSI; try different terminal |
 
 ---
 
-*♾️ Enhanced input for the Ouroboros system*
+## 📜 License
+
+Part of the Ouroboros project. MIT License.
+
+---
+
+*◎ Enhanced input for the Ouroboros CCL system*
