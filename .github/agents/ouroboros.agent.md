@@ -110,12 +110,12 @@ python -c "task = input('[Ouroboros] > ')"
 ```markdown
 I found 3 security issues. Here are your options:
 
-[1] 立即清理死代码文件
-[2] 安装DOMPurify修复XSS风险
-[3] 生成详细修复任务清单
+[1] Clean up dead code files immediately
+[2] Install DOMPurify to fix XSS risk
+[3] Generate detailed fix task list
 
 **[Then immediately call `run_command` tool with:]**
-python -c "print(); print('[1] 立即清理死代码文件'); print('[2] 安装DOMPurify修复XSS风险'); print('[3] 生成详细修复任务清单'); choice = input('请选择 [1-3]: ')"
+python -c "print(); print('[1] Clean up dead code files immediately'); print('[2] Install DOMPurify to fix XSS risk'); print('[3] Generate detailed fix task list'); choice = input('Please select [1-3]: ')"
 ```
 
 **WRONG** - Just printing menu without tool call:
