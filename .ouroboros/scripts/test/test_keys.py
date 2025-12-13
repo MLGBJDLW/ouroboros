@@ -50,32 +50,34 @@ with KeyBuffer() as kb:
             
             # Check against all known arrow key formats
             if key == Keys.UP:
-                print("  ✅ Matches Keys.UP (ANSI)")
+                print("  OK Matches Keys.UP (ANSI)")
             elif key == Keys.WIN_UP:
-                print("  ✅ Matches Keys.WIN_UP (Windows)")
+                print("  OK Matches Keys.WIN_UP (Windows)")
             elif key == Keys.UP_ALT:
-                print("  ✅ Matches Keys.UP_ALT (Alternate)")
+                print("  OK Matches Keys.UP_ALT (Alternate)")
             elif key == Keys.DOWN:
-                print("  ✅ Matches Keys.DOWN (ANSI)")
+                print("  OK Matches Keys.DOWN (ANSI)")
             elif key == Keys.WIN_DOWN:
-                print("  ✅ Matches Keys.WIN_DOWN (Windows)")
+                print("  OK Matches Keys.WIN_DOWN (Windows)")
             elif key == Keys.DOWN_ALT:
-                print("  ✅ Matches Keys.DOWN_ALT (Alternate)")
+                print("  OK Matches Keys.DOWN_ALT (Alternate)")
             elif key == Keys.LEFT:
-                print("  ✅ Matches Keys.LEFT (ANSI)")
+                print("  OK Matches Keys.LEFT (ANSI)")
             elif key == Keys.WIN_LEFT:
-                print("  ✅ Matches Keys.WIN_LEFT (Windows)")
+                print("  OK Matches Keys.WIN_LEFT (Windows)")
             elif key == Keys.RIGHT:
-                print("  ✅ Matches Keys.RIGHT (ANSI)")
+                print("  OK Matches Keys.RIGHT (ANSI)")
             elif key == Keys.WIN_RIGHT:
-                print("  ✅ Matches Keys.WIN_RIGHT (Windows)")
+                print("  OK Matches Keys.WIN_RIGHT (Windows)")
             elif kb.is_enter(key):
-                print("  ✅ Detected as ENTER")
+                print("  OK Detected as ENTER")
             elif kb.is_printable(key):
                 print(f"  📝 Printable character: '{key}'")
             else:
-                print(f"  ❓ Unknown key")
+                print(f"  ? Unknown key")
                 
         except KeyboardInterrupt:
             print("\nInterrupted")
             break
+
+

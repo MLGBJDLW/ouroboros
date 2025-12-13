@@ -29,57 +29,57 @@ def test_basic_operations():
     # Test 1: Initial state
     buf = TextBuffer()
     if buf.text == '' and buf.line_count == 1 and buf.cursor_row == 0 and buf.cursor_col == 0:
-        print("✅ PASS: Initial state is empty")
+        print("PASS: Initial state is empty")
         passed += 1
     else:
-        print("❌ FAIL: Initial state incorrect")
+        print("FAIL: Initial state incorrect")
         failed += 1
     
     # Test 2: Insert characters
     buf.insert_char('H')
     buf.insert_char('i')
     if buf.text == 'Hi' and buf.cursor_col == 2:
-        print("✅ PASS: Insert characters")
+        print("PASS: Insert characters")
         passed += 1
     else:
-        print(f"❌ FAIL: Insert characters - got {repr(buf.text)}")
+        print(f"FAIL: Insert characters - got {repr(buf.text)}")
         failed += 1
     
     # Test 3: Newline
     buf.newline()
     buf.insert_char('!')
     if buf.text == 'Hi\n!' and buf.line_count == 2 and buf.cursor_row == 1:
-        print("✅ PASS: Newline creates new line")
+        print("PASS: Newline creates new line")
         passed += 1
     else:
-        print(f"❌ FAIL: Newline - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Newline - got {repr(buf.text)}, lines={buf.line_count}")
         failed += 1
     
     # Test 4: Backspace
     buf.backspace()
     if buf.text == 'Hi\n' and buf.cursor_col == 0:
-        print("✅ PASS: Backspace deletes character")
+        print("PASS: Backspace deletes character")
         passed += 1
     else:
-        print(f"❌ FAIL: Backspace - got {repr(buf.text)}")
+        print(f"FAIL: Backspace - got {repr(buf.text)}")
         failed += 1
     
     # Test 5: Backspace at line start (merge lines)
     buf.backspace()
     if buf.text == 'Hi' and buf.line_count == 1 and buf.cursor_col == 2:
-        print("✅ PASS: Backspace merges lines")
+        print("PASS: Backspace merges lines")
         passed += 1
     else:
-        print(f"❌ FAIL: Backspace merge - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Backspace merge - got {repr(buf.text)}, lines={buf.line_count}")
         failed += 1
     
     # Test 6: Clear
     buf.clear()
     if buf.text == '' and buf.line_count == 1:
-        print("✅ PASS: Clear resets buffer")
+        print("PASS: Clear resets buffer")
         passed += 1
     else:
-        print("❌ FAIL: Clear")
+        print("FAIL: Clear")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -103,29 +103,29 @@ def test_cursor_movement():
     buf.cursor_col = 3  # At 'l' in World
     buf.move_left()
     if buf.cursor_col == 2:
-        print("✅ PASS: move_left decrements column")
+        print("PASS: move_left decrements column")
         passed += 1
     else:
-        print(f"❌ FAIL: move_left - col={buf.cursor_col}")
+        print(f"FAIL: move_left - col={buf.cursor_col}")
         failed += 1
     
     # Test move_left at line start (wrap to previous line)
     buf.cursor_col = 0
     buf.move_left()
     if buf.cursor_row == 0 and buf.cursor_col == 5:  # End of "Hello"
-        print("✅ PASS: move_left wraps to previous line")
+        print("PASS: move_left wraps to previous line")
         passed += 1
     else:
-        print(f"❌ FAIL: move_left wrap - row={buf.cursor_row}, col={buf.cursor_col}")
+        print(f"FAIL: move_left wrap - row={buf.cursor_row}, col={buf.cursor_col}")
         failed += 1
     
     # Test move_right
     buf.move_right()
     if buf.cursor_row == 1 and buf.cursor_col == 0:  # Start of "World"
-        print("✅ PASS: move_right wraps to next line")
+        print("PASS: move_right wraps to next line")
         passed += 1
     else:
-        print(f"❌ FAIL: move_right wrap - row={buf.cursor_row}, col={buf.cursor_col}")
+        print(f"FAIL: move_right wrap - row={buf.cursor_row}, col={buf.cursor_col}")
         failed += 1
     
     # Test move_up
@@ -133,38 +133,38 @@ def test_cursor_movement():
     buf.cursor_col = 2
     buf.move_up()
     if buf.cursor_row == 0 and buf.cursor_col == 2:
-        print("✅ PASS: move_up")
+        print("PASS: move_up")
         passed += 1
     else:
-        print(f"❌ FAIL: move_up - row={buf.cursor_row}")
+        print(f"FAIL: move_up - row={buf.cursor_row}")
         failed += 1
     
     # Test move_down
     buf.move_down()
     if buf.cursor_row == 1:
-        print("✅ PASS: move_down")
+        print("PASS: move_down")
         passed += 1
     else:
-        print(f"❌ FAIL: move_down - row={buf.cursor_row}")
+        print(f"FAIL: move_down - row={buf.cursor_row}")
         failed += 1
     
     # Test home
     buf.cursor_col = 3
     buf.home()
     if buf.cursor_col == 0:
-        print("✅ PASS: home")
+        print("PASS: home")
         passed += 1
     else:
-        print(f"❌ FAIL: home - col={buf.cursor_col}")
+        print(f"FAIL: home - col={buf.cursor_col}")
         failed += 1
     
     # Test end
     buf.end()
     if buf.cursor_col == 5:  # "World" has 5 chars
-        print("✅ PASS: end")
+        print("PASS: end")
         passed += 1
     else:
-        print(f"❌ FAIL: end - col={buf.cursor_col}")
+        print(f"FAIL: end - col={buf.cursor_col}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -184,40 +184,40 @@ def test_insert_text():
     buf = TextBuffer()
     buf.insert_text("Hello World")
     if buf.text == "Hello World" and buf.line_count == 1:
-        print("✅ PASS: Single line insert")
+        print("PASS: Single line insert")
         passed += 1
     else:
-        print(f"❌ FAIL: Single line - got {repr(buf.text)}")
+        print(f"FAIL: Single line - got {repr(buf.text)}")
         failed += 1
     
     # Test multi-line insert
     buf.clear()
     buf.insert_text("Line1\nLine2\nLine3")
     if buf.text == "Line1\nLine2\nLine3" and buf.line_count == 3:
-        print("✅ PASS: Multi-line insert")
+        print("PASS: Multi-line insert")
         passed += 1
     else:
-        print(f"❌ FAIL: Multi-line - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Multi-line - got {repr(buf.text)}, lines={buf.line_count}")
         failed += 1
     
     # Test Chinese text
     buf.clear()
     buf.insert_text("你好世界")
     if buf.text == "你好世界":
-        print("✅ PASS: Chinese text insert")
+        print("PASS: Chinese text insert")
         passed += 1
     else:
-        print(f"❌ FAIL: Chinese - got {repr(buf.text)}")
+        print(f"FAIL: Chinese - got {repr(buf.text)}")
         failed += 1
     
     # Test mixed content
     buf.clear()
     buf.insert_text("Hello 你好 🔧")
     if buf.text == "Hello 你好 🔧":
-        print("✅ PASS: Mixed content insert")
+        print("PASS: Mixed content insert")
         passed += 1
     else:
-        print(f"❌ FAIL: Mixed - got {repr(buf.text)}")
+        print(f"FAIL: Mixed - got {repr(buf.text)}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -240,10 +240,10 @@ def test_delete_operation():
     # Delete at cursor
     buf.delete()
     if buf.text == "Helo":
-        print("✅ PASS: Delete at cursor")
+        print("PASS: Delete at cursor")
         passed += 1
     else:
-        print(f"❌ FAIL: Delete - got {repr(buf.text)}")
+        print(f"FAIL: Delete - got {repr(buf.text)}")
         failed += 1
     
     # Delete at end of line (merge with next)
@@ -253,10 +253,10 @@ def test_delete_operation():
     buf.cursor_col = 2  # End of "Hi"
     buf.delete()
     if buf.text == "HiWorld" and buf.line_count == 1:
-        print("✅ PASS: Delete merges lines")
+        print("PASS: Delete merges lines")
         passed += 1
     else:
-        print(f"❌ FAIL: Delete merge - got {repr(buf.text)}, lines={buf.line_count}")
+        print(f"FAIL: Delete merge - got {repr(buf.text)}, lines={buf.line_count}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -284,29 +284,29 @@ def test_viewport_scrolling():
     buf.scroll_offset = 0
     visible = buf.get_visible_lines(5)
     if len(visible) == 5 and visible[0] == "Line 0":
-        print("✅ PASS: get_visible_lines returns correct count")
+        print("PASS: get_visible_lines returns correct count")
         passed += 1
     else:
-        print(f"❌ FAIL: get_visible_lines - got {len(visible)} lines")
+        print(f"FAIL: get_visible_lines - got {len(visible)} lines")
         failed += 1
     
     # Test scroll adjustment when cursor moves down
     buf.cursor_row = 10
     visible = buf.get_visible_lines(5)
     if buf.scroll_offset > 0:
-        print("✅ PASS: Scroll offset adjusts for cursor")
+        print("PASS: Scroll offset adjusts for cursor")
         passed += 1
     else:
-        print(f"❌ FAIL: Scroll offset - got {buf.scroll_offset}")
+        print(f"FAIL: Scroll offset - got {buf.scroll_offset}")
         failed += 1
     
     # Test visible cursor row
     visible_row = buf.get_visible_cursor_row()
     if 0 <= visible_row < 5:
-        print("✅ PASS: Visible cursor row within viewport")
+        print("PASS: Visible cursor row within viewport")
         passed += 1
     else:
-        print(f"❌ FAIL: Visible cursor row - got {visible_row}")
+        print(f"FAIL: Visible cursor row - got {visible_row}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -318,7 +318,7 @@ def test_viewport_scrolling():
 # =============================================================================
 
 if __name__ == '__main__':
-    print("\n🧪 Ouroboros TextBuffer Test Suite\n")
+    print("\n Ouroboros TextBuffer Test Suite\n")
     
     all_passed = True
     
@@ -330,8 +330,10 @@ if __name__ == '__main__':
     
     print("\n" + "=" * 70)
     if all_passed:
-        print("🎉 ALL TESTS PASSED!")
+        print(" ALL TESTS PASSED!")
     else:
-        print("❌ SOME TESTS FAILED!")
+        print("X SOME TESTS FAILED!")
         sys.exit(1)
     print("=" * 70)
+
+

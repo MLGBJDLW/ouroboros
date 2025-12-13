@@ -46,7 +46,7 @@ def test_visible_len():
         result = visible_len(text)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         print(f"  Input: {repr(text)} -> Length: {result}")
         
@@ -81,7 +81,7 @@ def test_strip_ansi():
         result = strip_ansi(text)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         print(f"  Input: {repr(text)} -> Output: {repr(result)}")
         
@@ -117,7 +117,7 @@ def test_pad_text():
         result_len = visible_len(result)
         success = (result_len == expected_len)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         print(f"  Input: {repr(text)}, width={width}")
         print(f"  Output: {repr(result)}, visible_len={result_len}")
@@ -147,10 +147,10 @@ def test_terminal_size():
     print(f"Terminal size: {cols} columns x {rows} rows")
     
     if valid_cols and valid_rows:
-        print("✅ PASS: Valid terminal dimensions")
+        print("PASS: Valid terminal dimensions")
         return True
     else:
-        print("❌ FAIL: Invalid terminal dimensions")
+        print("FAIL: Invalid terminal dimensions")
         return False
 
 
@@ -167,10 +167,10 @@ def test_theme_colors():
     
     for key in required_keys:
         if key in THEME:
-            print(f"✅ PASS: THEME['{key}'] exists")
+            print(f"PASS: THEME['{key}'] exists")
             passed += 1
         else:
-            print(f"❌ FAIL: THEME['{key}'] missing")
+            print(f"FAIL: THEME['{key}'] missing")
             failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -190,10 +190,10 @@ def test_box_characters():
     
     for key in required_keys:
         if key in BOX:
-            print(f"✅ PASS: BOX['{key}'] = {repr(BOX[key])}")
+            print(f"PASS: BOX['{key}'] = {repr(BOX[key])}")
             passed += 1
         else:
-            print(f"❌ FAIL: BOX['{key}'] missing")
+            print(f"FAIL: BOX['{key}'] missing")
             failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -205,7 +205,7 @@ def test_box_characters():
 # =============================================================================
 
 if __name__ == '__main__':
-    print("\n🧪 Ouroboros UI Test Suite\n")
+    print("\n Ouroboros UI Test Suite\n")
     
     all_passed = True
     
@@ -218,8 +218,10 @@ if __name__ == '__main__':
     
     print("\n" + "=" * 70)
     if all_passed:
-        print("🎉 ALL TESTS PASSED!")
+        print(" ALL TESTS PASSED!")
     else:
-        print("❌ SOME TESTS FAILED!")
+        print("X SOME TESTS FAILED!")
         sys.exit(1)
     print("=" * 70)
+
+

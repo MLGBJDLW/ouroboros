@@ -32,10 +32,10 @@ def test_inputbox_height_limits():
     # Test 1: Initial height
     box = InputBox(height=1)
     if box.height == 1:
-        print("✅ PASS: Initial height = 1")
+        print("PASS: Initial height = 1")
         passed += 1
     else:
-        print(f"❌ FAIL: Initial height = {box.height}, expected 1")
+        print(f"FAIL: Initial height = {box.height}, expected 1")
         failed += 1
     
     # Test 2: Expand to max (10 lines)
@@ -43,20 +43,20 @@ def test_inputbox_height_limits():
     for i in range(15):
         box.expand_height(min(i + 1, 10))  # Request up to 10
     if box.height <= 10:
-        print(f"✅ PASS: Height capped at max ({box.height} <= 10)")
+        print(f"PASS: Height capped at max ({box.height} <= 10)")
         passed += 1
     else:
-        print(f"❌ FAIL: Height = {box.height}, expected <= 10 (max)")
+        print(f"FAIL: Height = {box.height}, expected <= 10 (max)")
         failed += 1
     
     # Test 3: Shrink to minimum (1 line)
     box = InputBox(height=5)
     box.shrink_height(0)
     if box.height >= 1:
-        print("✅ PASS: Height doesn't go below 1")
+        print("PASS: Height doesn't go below 1")
         passed += 1
     else:
-        print(f"❌ FAIL: Height = {box.height}, should be >= 1")
+        print(f"FAIL: Height = {box.height}, should be >= 1")
         failed += 1
     
     # Test 4: Expand height increases
@@ -64,10 +64,10 @@ def test_inputbox_height_limits():
     initial = box.height
     box.expand_height(5)
     if box.height >= initial:
-        print("✅ PASS: Expand height increases or stays same")
+        print("PASS: Expand height increases or stays same")
         passed += 1
     else:
-        print(f"❌ FAIL: Height decreased from {initial} to {box.height}")
+        print(f"FAIL: Height decreased from {initial} to {box.height}")
         failed += 1
     
     # Test 5: Shrink height decreases
@@ -75,10 +75,10 @@ def test_inputbox_height_limits():
     initial = box.height
     box.shrink_height(3)
     if box.height <= initial:
-        print("✅ PASS: Shrink height decreases or stays same")
+        print("PASS: Shrink height decreases or stays same")
         passed += 1
     else:
-        print(f"❌ FAIL: Height increased from {initial} to {box.height}")
+        print(f"FAIL: Height increased from {initial} to {box.height}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -98,30 +98,30 @@ def test_textbuffer_edge_cases():
     buf = TextBuffer()
     result = buf.backspace()  # Backspace on empty
     if not result and buf.text == '':
-        print("✅ PASS: Backspace on empty buffer")
+        print("PASS: Backspace on empty buffer")
         passed += 1
     else:
-        print("❌ FAIL: Backspace on empty buffer")
+        print("FAIL: Backspace on empty buffer")
         failed += 1
     
     # Test 2: Delete on empty
     buf = TextBuffer()
     result = buf.delete()
     if not result and buf.text == '':
-        print("✅ PASS: Delete on empty buffer")
+        print("PASS: Delete on empty buffer")
         passed += 1
     else:
-        print("❌ FAIL: Delete on empty buffer")
+        print("FAIL: Delete on empty buffer")
         failed += 1
     
     # Test 3: Move left at start
     buf = TextBuffer()
     result = buf.move_left()
     if not result and buf.cursor_col == 0:
-        print("✅ PASS: Move left at buffer start")
+        print("PASS: Move left at buffer start")
         passed += 1
     else:
-        print("❌ FAIL: Move left at buffer start")
+        print("FAIL: Move left at buffer start")
         failed += 1
     
     # Test 4: Move up at first line
@@ -129,10 +129,10 @@ def test_textbuffer_edge_cases():
     buf.insert_text("test")
     result = buf.move_up()
     if not result and buf.cursor_row == 0:
-        print("✅ PASS: Move up at first line")
+        print("PASS: Move up at first line")
         passed += 1
     else:
-        print("❌ FAIL: Move up at first line")
+        print("FAIL: Move up at first line")
         failed += 1
     
     # Test 5: Very long single line
@@ -140,10 +140,10 @@ def test_textbuffer_edge_cases():
     long_text = "x" * 1000
     buf.insert_text(long_text)
     if len(buf.text) == 1000 and buf.cursor_col == 1000:
-        print("✅ PASS: Very long single line (1000 chars)")
+        print("PASS: Very long single line (1000 chars)")
         passed += 1
     else:
-        print(f"❌ FAIL: Long line - len={len(buf.text)}, col={buf.cursor_col}")
+        print(f"FAIL: Long line - len={len(buf.text)}, col={buf.cursor_col}")
         failed += 1
     
     # Test 6: Many lines
@@ -152,30 +152,30 @@ def test_textbuffer_edge_cases():
         buf.insert_text(f"Line {i}")
         buf.newline()
     if buf.line_count == 101:  # 100 lines + 1 empty at end
-        print("✅ PASS: Many lines (100+)")
+        print("PASS: Many lines (100+)")
         passed += 1
     else:
-        print(f"❌ FAIL: Many lines - count={buf.line_count}")
+        print(f"FAIL: Many lines - count={buf.line_count}")
         failed += 1
     
     # Test 7: Unicode edge cases
     buf = TextBuffer()
-    buf.insert_text("🔧🎉💻")  # Emoji
-    if buf.text == "🔧🎉💻":
-        print("✅ PASS: Emoji insertion")
+    buf.insert_text("🔧💻")  # Emoji
+    if buf.text == "🔧💻":
+        print("PASS: Emoji insertion")
         passed += 1
     else:
-        print(f"❌ FAIL: Emoji - got {repr(buf.text)}")
+        print(f"FAIL: Emoji - got {repr(buf.text)}")
         failed += 1
     
     # Test 8: Mixed newlines (should normalize)
     buf = TextBuffer()
     buf.insert_text("a\nb\nc")
     if buf.line_count == 3:
-        print("✅ PASS: Newline handling")
+        print("PASS: Newline handling")
         passed += 1
     else:
-        print(f"❌ FAIL: Newlines - lines={buf.line_count}")
+        print(f"FAIL: Newlines - lines={buf.line_count}")
         failed += 1
     
     # Test 9: Cursor position after clear
@@ -185,10 +185,10 @@ def test_textbuffer_edge_cases():
     buf.cursor_col = 3
     buf.clear()
     if buf.cursor_row == 0 and buf.cursor_col == 0:
-        print("✅ PASS: Cursor reset after clear")
+        print("PASS: Cursor reset after clear")
         passed += 1
     else:
-        print(f"❌ FAIL: Cursor after clear - row={buf.cursor_row}, col={buf.cursor_col}")
+        print(f"FAIL: Cursor after clear - row={buf.cursor_row}, col={buf.cursor_col}")
         failed += 1
     
     # Test 10: Insert in middle of text
@@ -197,10 +197,10 @@ def test_textbuffer_edge_cases():
     buf.cursor_col = 5  # After "Hello"
     buf.insert_char('!')
     if buf.text == "Hello! World":
-        print("✅ PASS: Insert in middle of text")
+        print("PASS: Insert in middle of text")
         passed += 1
     else:
-        print(f"❌ FAIL: Insert middle - got {repr(buf.text)}")
+        print(f"FAIL: Insert middle - got {repr(buf.text)}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -235,7 +235,7 @@ def test_menu_parsing_edge_cases():
         # Special characters in options
         ("Title\\n1. Option with (parentheses)\\n2. Option [brackets]", "", True, "Special chars in options"),
         ("Title\\n1. 中文选项\\n2. 日本語オプション", "", True, "Non-ASCII options"),
-        ("Title\\n1. 🔧 Emoji option\\n2. 🎉 Another", "", True, "Emoji in options"),
+        ("Title\\n1. 🔧 Emoji option\\n2.  Another", "", True, "Emoji in options"),
         
         # Mixed formats (should still work)
         ("Title\\n1. First\\n[2] Second\\n3) Third", "", True, "Mixed number formats"),
@@ -262,7 +262,7 @@ def test_menu_parsing_edge_cases():
         detected = options is not None
         
         success = (detected == should_detect)
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         
         print(f"{status}: {description}")
         if not success:
@@ -319,7 +319,7 @@ def test_visible_len_edge_cases():
         result = visible_len(text)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         
         if not success:
@@ -347,10 +347,10 @@ def test_viewport_scrolling_edge_cases():
     buf.insert_text("Line1\nLine2")
     visible = buf.get_visible_lines(10)
     if len(visible) == 2:
-        print("✅ PASS: Viewport larger than content")
+        print("PASS: Viewport larger than content")
         passed += 1
     else:
-        print(f"❌ FAIL: Expected 2 lines, got {len(visible)}")
+        print(f"FAIL: Expected 2 lines, got {len(visible)}")
         failed += 1
     
     # Test 2: Viewport of 1 line
@@ -359,10 +359,10 @@ def test_viewport_scrolling_edge_cases():
     buf.cursor_row = 1
     visible = buf.get_visible_lines(1)
     if len(visible) == 1 and visible[0] == "Line2":
-        print("✅ PASS: Viewport of 1 line follows cursor")
+        print("PASS: Viewport of 1 line follows cursor")
         passed += 1
     else:
-        print(f"❌ FAIL: 1-line viewport - got {visible}")
+        print(f"FAIL: 1-line viewport - got {visible}")
         failed += 1
     
     # Test 3: Cursor at very end
@@ -374,10 +374,10 @@ def test_viewport_scrolling_edge_cases():
     visible = buf.get_visible_lines(5)
     visible_row = buf.get_visible_cursor_row()
     if 0 <= visible_row < 5:
-        print("✅ PASS: Cursor at end stays in viewport")
+        print("PASS: Cursor at end stays in viewport")
         passed += 1
     else:
-        print(f"❌ FAIL: Visible row = {visible_row}")
+        print(f"FAIL: Visible row = {visible_row}")
         failed += 1
     
     # Test 4: Rapid cursor movement
@@ -396,20 +396,20 @@ def test_viewport_scrolling_edge_cases():
     visible_row = buf.get_visible_cursor_row()
     
     if 0 <= visible_row < 5:
-        print("✅ PASS: Rapid cursor movement handled")
+        print("PASS: Rapid cursor movement handled")
         passed += 1
     else:
-        print(f"❌ FAIL: After rapid movement, visible_row = {visible_row}")
+        print(f"FAIL: After rapid movement, visible_row = {visible_row}")
         failed += 1
     
     # Test 5: Empty buffer viewport
     buf = TextBuffer()
     visible = buf.get_visible_lines(5)
     if len(visible) == 1 and visible[0] == '':
-        print("✅ PASS: Empty buffer viewport")
+        print("PASS: Empty buffer viewport")
         passed += 1
     else:
-        print(f"❌ FAIL: Empty viewport - got {visible}")
+        print(f"FAIL: Empty viewport - got {visible}")
         failed += 1
     
     print(f"\nResults: {passed} passed, {failed} failed")
@@ -458,7 +458,7 @@ def test_special_key_sequences():
         result = kb._normalize_key(input_key)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         
         if not success:
@@ -520,7 +520,7 @@ def test_yn_response_edge_cases():
         result = map_yn(content)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         
         if not success:
@@ -538,7 +538,7 @@ def test_yn_response_edge_cases():
 # =============================================================================
 
 if __name__ == '__main__':
-    print("\n🧪 Ouroboros Edge Case Test Suite\n")
+    print("\n Ouroboros Edge Case Test Suite\n")
     
     all_passed = True
     
@@ -552,8 +552,10 @@ if __name__ == '__main__':
     
     print("\n" + "=" * 70)
     if all_passed:
-        print("🎉 ALL EDGE CASE TESTS PASSED!")
+        print(" ALL EDGE CASE TESTS PASSED!")
     else:
-        print("❌ SOME TESTS FAILED!")
+        print("X SOME TESTS FAILED!")
         sys.exit(1)
     print("=" * 70)
+
+

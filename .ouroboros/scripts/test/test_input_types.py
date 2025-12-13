@@ -119,7 +119,7 @@ def test_parse_menu_options():
         
         success = (title == expected_title and options == expected_options)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"\n{status}: {description}")
         print(f"  Header: {repr(header[:50])}...")
         print(f"  Prompt: {repr(prompt)}")
@@ -168,7 +168,7 @@ def test_yn_mapping():
             result = content
         
         success = (result == expected)
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         print(f"  Input: {repr(content)} -> Output: {repr(result)}")
         
@@ -238,7 +238,7 @@ def test_command_line_formats():
 # =============================================================================
 
 if __name__ == '__main__':
-    print("\n🧪 Ouroboros Input Test Suite\n")
+    print("\n Ouroboros Input Test Suite\n")
     
     all_passed = True
     
@@ -249,8 +249,10 @@ if __name__ == '__main__':
     
     print("\n" + "=" * 70)
     if all_passed:
-        print("🎉 ALL TESTS PASSED!")
+        print(" ALL TESTS PASSED!")
     else:
-        print("❌ SOME TESTS FAILED!")
+        print("X SOME TESTS FAILED!")
         sys.exit(1)
     print("=" * 70)
+
+

@@ -60,7 +60,7 @@ def test_keys_constants():
         actual = getattr(Keys, name, None)
         success = (actual == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: Keys.{name} = {repr(actual)}")
         
         if not success:
@@ -103,7 +103,7 @@ def test_is_printable():
         result = is_printable(char)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         print(f"  is_printable({repr(char)}) = {result}")
         
@@ -147,7 +147,7 @@ def test_keybuffer_methods():
         result = func(*args)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description} = {result}")
         
         if not success:
@@ -189,7 +189,7 @@ def test_key_normalization():
         result = kb._normalize_key(input_key)
         success = (result == expected)
         
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status}: {description}")
         print(f"  {repr(input_key)} -> {repr(result)}")
         
@@ -218,7 +218,7 @@ def test_platform_detection():
         expected = 'UnixKeyBuffer'
     
     success = (impl_name == expected)
-    status = "✅ PASS" if success else "❌ FAIL"
+    status = "PASS" if success else "FAIL"
     
     print(f"{status}: Platform implementation")
     print(f"  Platform: {sys.platform}")
@@ -235,7 +235,7 @@ def test_platform_detection():
 # =============================================================================
 
 if __name__ == '__main__':
-    print("\n🧪 Ouroboros KeyBuffer Test Suite\n")
+    print("\n Ouroboros KeyBuffer Test Suite\n")
     
     all_passed = True
     
@@ -247,8 +247,10 @@ if __name__ == '__main__':
     
     print("\n" + "=" * 70)
     if all_passed:
-        print("🎉 ALL TESTS PASSED!")
+        print(" ALL TESTS PASSED!")
     else:
-        print("❌ SOME TESTS FAILED!")
+        print("X SOME TESTS FAILED!")
         sys.exit(1)
     print("=" * 70)
+
+

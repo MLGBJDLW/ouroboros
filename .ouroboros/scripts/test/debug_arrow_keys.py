@@ -46,9 +46,9 @@ with KeyBuffer() as kb:
             
             # Check matches
             if normalized_key == Keys.UP:
-                print("  -> Matches Keys.UP ✓")
+                print("  -> Matches Keys.UP OK")
             elif normalized_key == Keys.DOWN:
-                print("  -> Matches Keys.DOWN ✓")
+                print("  -> Matches Keys.DOWN OK")
             elif raw_key == Keys.WIN_UP:
                 print("  -> Raw matches Keys.WIN_UP (should normalize!)")
             elif raw_key == Keys.WIN_DOWN:
@@ -62,3 +62,5 @@ with KeyBuffer() as kb:
         except KeyboardInterrupt:
             print("\nInterrupted")
             break
+
+
