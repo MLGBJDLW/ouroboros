@@ -140,8 +140,9 @@ runSubagent(
    - history: 2 files > 7 days (will archive)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-```bash
-python -c "print('\\n[1] Archive specific spec\\n[2] Archive all\\n[3] Cleanup only'); choice = input('Choice (1-3): ')"
+**Execute via `run_command` tool (Type B: Menu):**
+```python
+python -c "print(); print('[1] Archive specific spec'); print('[2] Archive all'); print('[3] Cleanup only'); choice = input('Choice [1-3]: ')"
 ```
 
 **If NO completed specs:**
@@ -157,8 +158,9 @@ Would you like to run cleanup instead?
    - Archive old history files (> 7 days)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-```bash
-python -c "confirm = input('Run cleanup? [y/n]: ')"
+**Execute via `run_command` tool (Type D: Confirm):**
+```python
+python -c "print(); print('[y] Yes - run cleanup'); print('[n] No - cancel'); confirm = input('Confirm [y/n]: ')"
 ```
 
 ---
