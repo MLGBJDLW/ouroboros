@@ -112,7 +112,7 @@ Critical requirements:
 
 Your training data does NOT include recent CVEs. Always verify.
 
-------
+---
 
 ## 📊 OWASP Top 10 (2021) Checklist
 

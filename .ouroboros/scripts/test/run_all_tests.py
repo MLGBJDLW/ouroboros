@@ -33,7 +33,7 @@ def run_test(filename: str, description: str) -> bool:
     filepath = os.path.join(SCRIPT_DIR, filename)
     
     if not os.path.exists(filepath):
-        print(f"⚠️  SKIP: {filename} not found")
+        print(f"SKIP: {filename} not found")
         return True
     
     print(f"\n{'=' * 70}")
@@ -57,7 +57,7 @@ def main():
     args = parser.parse_args()
     
     print("\n" + "=" * 70)
-    print("🧪 OUROBOROS TEST RUNNER")
+    print("OUROBOROS TEST RUNNER")
     print("=" * 70)
     
     all_passed = True
@@ -78,7 +78,7 @@ def main():
         print("Interactive tests (require manual input)")
         print("=" * 70)
         for filename, description in INTERACTIVE_TESTS:
-            print(f"\n⚠️  SKIP: {description}")
+            print(f"\nSKIP: {description}")
             print(f"   Run manually: python {filename}")
     
     # Summary
@@ -90,10 +90,10 @@ def main():
     print("=" * 70)
     
     if all_passed:
-        print("🎉 ALL AUTOMATED TESTS PASSED!")
+        print("ALL AUTOMATED TESTS PASSED!")
         return 0
     else:
-        print("❌ SOME TESTS FAILED!")
+        print("SOME TESTS FAILED!")
         return 1
 
 
