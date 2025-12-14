@@ -239,17 +239,28 @@ def writeln(text: str = '') -> None:
 
 def format_display_text(text: str) -> str:
     """
-    Convert internal file path markers to display format.
+    Convert internal markers to display format.
     
-    Internal format: «/full/path/file.ext»
-    Display format:  [ file.ext ]
+    Internal formats:
+    - «/full/path/file.ext» -> [ file.ext ]
+    - ‹PASTE:N›content‹/PASTE› -> [ Pasted N Lines ]
     
-    This allows the buffer to store full paths for AI, while
-    displaying only filenames for better readability.
+    This allows the buffer to store full paths/content for AI, while
+    displaying only compact badges for better readability.
     """
     import re
     import os
     
+    # First handle paste markers: ‹PASTE:N›content‹/PASTE› -> [ Pasted N Lines ]
+    def replace_paste(match):
+        line_count = int(match.group(1))
+        if line_count == 1:
+            return "[ Pasted 1 Line ]"
+        return f"[ Pasted {line_count} Lines ]"
+    
+    text = re.sub(r'‹PASTE:(\d+)›.*?‹/PASTE›', replace_paste, text, flags=re.DOTALL)
+    
+    # Then handle file path markers: «path» -> [ filename ]
     def replace_path(match):
         path = match.group(1)
         filename = os.path.basename(path)
@@ -260,7 +271,6 @@ def format_display_text(text: str) -> str:
         return f"[ {filename} ]"
     
     # Pattern to find «content» markers
-    # Use regex to find «...» and extract the path
     pattern = r'«([^»]+)»'
     return re.sub(pattern, replace_path, text)
 

@@ -40,12 +40,14 @@ try:
         write, writeln, get_terminal_size, visible_len, pad_text, strip_ansi
     )
     from ouroboros_paste import PasteCollector
+    from ouroboros_clipboard import read_clipboard, has_clipboard_support
     from ouroboros_screen import StateMachine, InputState, InputEvent
     from ouroboros_config import ConfigManager, HistoryManager, get_config, get_history
     from ouroboros_filepath import (
         is_file_path, format_file_display, format_file_badge, process_pasted_content,
         convert_unmarked_file_paths, detect_file_path, get_file_extension,
         format_file_reference, format_paste_summary, detect_and_format_input,
+        extract_all_special_content,
         FILE_EXTENSIONS, ALL_EXTENSIONS, IMAGE_EXTENSIONS, DOC_EXTENSIONS, CODE_EXTENSIONS
     )
     from ouroboros_commands import (
@@ -152,9 +154,12 @@ if not MODULES_AVAILABLE:
     def get_history(): return HistoryManager()
     def is_file_path(t): return False
     def format_file_display(p): return f"[ {os.path.basename(p)} ]"
-    def process_pasted_content(c): return (c, c, False)
+    def process_pasted_content(c): return (c, c, False, 'text')  # display, actual, is_special, paste_type
     def convert_unmarked_file_paths(t): return t
+    def extract_all_special_content(t): return t  # No markers in fallback mode
     def prepend_slash_command_instruction(c): return c
+    def read_clipboard(): return ""  # No clipboard support in fallback mode
+    def has_clipboard_support(): return False
 
 
 # =============================================================================
@@ -247,20 +252,78 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
             box.clear_dropdown(dropdown_lines)
             dropdown_lines = 0
     
-    def render_line_with_badges(line: str) -> str:
-        """Convert «path» markers to [ filename ] badges for display."""
+    def find_badge_at_cursor(line: str, col: int) -> tuple:
+        """
+        Find if cursor is inside or adjacent to a badge.
+        
+        Returns: (badge_start, badge_end, badge_type) or (None, None, None)
+        badge_type: 'file' for «...» or 'paste' for ‹PASTE:N›...‹/PASTE›
+        """
         import re
-        # Find all «path» patterns and replace with badges
-        def replace_badge(match):
+        
+        # Check for file path badge: «...»
+        for match in re.finditer(r'«[^»]+»', line):
+            if match.start() <= col <= match.end():
+                return (match.start(), match.end(), 'file')
+        
+        # Check for paste badge: ‹PASTE:N›...‹/PASTE›
+        for match in re.finditer(r'‹PASTE:\d+›.*?‹/PASTE›', line):
+            if match.start() <= col <= match.end():
+                return (match.start(), match.end(), 'paste')
+        
+        return (None, None, None)
+    
+    def skip_badge_left(line: str, col: int) -> int:
+        """Move cursor left, skipping past any badge we enter."""
+        if col <= 0:
+            return 0
+        new_col = col - 1
+        start, end, _ = find_badge_at_cursor(line, new_col)
+        if start is not None:
+            # We entered a badge, skip to its start
+            return start
+        return new_col
+    
+    def skip_badge_right(line: str, col: int) -> int:
+        """Move cursor right, skipping past any badge we enter."""
+        if col >= len(line):
+            return len(line)
+        new_col = col + 1
+        start, end, _ = find_badge_at_cursor(line, new_col)
+        if end is not None and new_col > start:
+            # We entered a badge, skip to its end
+            return end
+        return new_col
+    
+    def render_line_with_badges(line: str) -> str:
+        """Convert «path» and ‹PASTE:N›...‹/PASTE› markers to badges for display."""
+        import re
+        
+        # First handle paste markers: ‹PASTE:N›content‹/PASTE› -> [ Pasted N Lines ]
+        def replace_paste_badge(match):
+            line_count = int(match.group(1))
+            if line_count == 1:
+                return f"{THEME['accent']}[ Pasted 1 Line ]{THEME['reset']}"
+            return f"{THEME['accent']}[ Pasted {line_count} Lines ]{THEME['reset']}"
+        
+        # Replace paste markers (note: content between markers is consumed)
+        line = re.sub(r'‹PASTE:(\d+)›.*?‹/PASTE›', replace_paste_badge, line, flags=re.DOTALL)
+        
+        # Then handle file path markers: «path» -> [ filename ]
+        def replace_file_badge(match):
             path = match.group(1)
             return f"{THEME['accent']}[ {os.path.basename(path)} ]{THEME['reset']}"
-        return re.sub(r'«([^»]+)»', replace_badge, line)
+        
+        return re.sub(r'«([^»]+)»', replace_file_badge, line)
     
     def calculate_display_cursor_col(line: str, cursor_col: int) -> tuple:
         """
         Calculate the display column position accounting for badge rendering.
         
-        The buffer stores «/full/path/file.ext» but displays [ file.ext ].
+        The buffer stores:
+        - «/full/path/file.ext» -> displays as [ file.ext ]
+        - ‹PASTE:N›content‹/PASTE› -> displays as [ Pasted N Lines ]
+        
         We need to calculate where the cursor should be in the displayed text.
         
         Returns:
@@ -268,8 +331,27 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
         """
         import re
         
-        # Find all badge markers and their positions
-        badge_pattern = re.compile(r'«([^»]+)»')
+        # Find all markers (both file path and paste markers)
+        # We'll process them in order of appearance
+        markers = []
+        
+        # Find file path markers: «path»
+        for match in re.finditer(r'«([^»]+)»', line):
+            path = match.group(1)
+            badge_text = f"[ {os.path.basename(path)} ]"
+            markers.append((match.start(), match.end(), badge_text))
+        
+        # Find paste markers: ‹PASTE:N›content‹/PASTE›
+        for match in re.finditer(r'‹PASTE:(\d+)›.*?‹/PASTE›', line, flags=re.DOTALL):
+            line_count = int(match.group(1))
+            if line_count == 1:
+                badge_text = "[ Pasted 1 Line ]"
+            else:
+                badge_text = f"[ Pasted {line_count} Lines ]"
+            markers.append((match.start(), match.end(), badge_text))
+        
+        # Sort markers by start position
+        markers.sort(key=lambda x: x[0])
         
         # Build the display text and track cursor position
         display_parts = []
@@ -277,12 +359,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
         cursor_display_col = 0
         found_cursor = False
         
-        for match in badge_pattern.finditer(line):
-            start, end = match.span()
-            path = match.group(1)
-            badge_text = f"[ {os.path.basename(path)} ]"
-            
-            # Add text before this badge
+        for start, end, badge_text in markers:
+            # Add text before this marker
             if start > last_end:
                 segment = line[last_end:start]
                 display_parts.append(segment)
@@ -291,16 +369,16 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     cursor_display_col = len(''.join(display_parts[:-1])) + (cursor_col - last_end)
                     found_cursor = True
             
-            # Check if cursor is inside the badge marker
+            # Check if cursor is inside the marker
             if not found_cursor and cursor_col <= end:
-                # Cursor is at or inside badge - put it at end of badge
+                # Cursor is at or inside marker - put it at end of badge
                 cursor_display_col = len(''.join(display_parts)) + len(badge_text)
                 found_cursor = True
             
             display_parts.append(badge_text)
             last_end = end
         
-        # Add remaining text after last badge
+        # Add remaining text after last marker
         if last_end < len(line):
             segment = line[last_end:]
             display_parts.append(segment)
@@ -456,40 +534,96 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                 # When collecting a path, use short timeout to detect end of input
                 read_timeout = path_wait_timeout if path_collecting else None
                 
-                # Read input with paste detection if available
-                if paste_collector:
-                    key, is_paste = paste_collector.read(kb.getch, timeout=read_timeout)
-                    if is_paste:
-                        # Transition to paste mode
-                        if state_machine:
-                            state_machine.transition(InputEvent.PASTE_START)
+                # === Windows Paste Detection via Event Count ===
+                # When paste happens, Windows Terminal puts ALL characters in buffer at once
+                # Check event count BEFORE reading - if high, collect all as paste
+                PASTE_EVENT_THRESHOLD = 10  # If 10+ events waiting, it's likely a paste
+                PASTE_COLLECT_DELAY = 0.05  # 50ms delay between collection checks
+                is_paste = False
+                key = ''
+                
+                # Try to use Windows event count detection
+                if hasattr(kb, '_impl') and hasattr(kb._impl, 'get_pending_event_count'):
+                    event_count = kb._impl.get_pending_event_count()
+                    if event_count >= PASTE_EVENT_THRESHOLD:
+                        # High event count - collect all as paste with buffering
+                        paste_parts = []
                         
-                        # Process pasted content - detect file paths
-                        display_text, actual_text, is_file = process_pasted_content(key)
+                        # Keep collecting until no more events arrive
+                        while True:
+                            # Collect pending content
+                            chunk = kb._impl.read_all_pending()
+                            if chunk:
+                                paste_parts.append(chunk)
+                            
+                            # Wait briefly for more events
+                            _time.sleep(PASTE_COLLECT_DELAY)
+                            
+                            # Check if more events arrived
+                            more_events = kb._impl.get_pending_event_count()
+                            if more_events < PASTE_EVENT_THRESHOLD:
+                                # No more bulk events - collect any remaining
+                                final_chunk = kb._impl.read_all_pending()
+                                if final_chunk:
+                                    paste_parts.append(final_chunk)
+                                break
                         
-                        if is_file:
-                            # For file paths: store with special format
-                            # Format: «/full/path/file.ext» 
-                            # UI will render this as [ filename.ext ]
-                            # AI receives the full path when text is extracted
-                            formatted = f"«{actual_text.strip()}»"
-                            buffer.insert_text(formatted)
-                        else:
-                            # Regular paste - insert as-is
-                            buffer.insert_text(display_text)
-                        
-                        # Expand box up to 10 lines, then use internal scrolling
-                        if buffer.line_count > box.height and box.height < 10:
-                            box.expand_height(min(buffer.line_count, 10))
-                        
-                        # Transition out of paste mode
-                        if state_machine:
-                            state_machine.transition(InputEvent.PASTE_END)
-                        
-                        refresh_display()
-                        continue
-                else:
-                    key = kb.getch(timeout=read_timeout)
+                        paste_content = ''.join(paste_parts)
+                        if paste_content and len(paste_content) >= 5:  # At least some content
+                            key = paste_content
+                            is_paste = True
+                
+                # If not detected as paste via event count, use normal read
+                if not is_paste:
+                    # Read input with paste detection if available
+                    if paste_collector:
+                        key, is_paste = paste_collector.read(kb.getch, timeout=read_timeout)
+                    else:
+                        key = kb.getch() if not read_timeout else kb.getch(timeout=read_timeout)
+                
+                if is_paste:
+                    # Transition to paste mode
+                    if state_machine:
+                        state_machine.transition(InputEvent.PASTE_START)
+                    
+                    # Returns: (display_text, actual_text, is_special, paste_type)
+                    # paste_type: 'file', 'multifile', 'paste', or 'text'
+                    display_text, actual_text, is_special, paste_type = process_pasted_content(key)
+                    
+                    if paste_type == 'file':
+                        # Single file path: store with «path» format
+                        # UI will render this as [ filename.ext ]
+                        formatted = f"«{actual_text.strip()}»"
+                        buffer.insert_text(formatted)
+                    elif paste_type == 'multifile':
+                        # Multiple file paths: store each with «path» format
+                        for line in actual_text.strip().split('\n'):
+                            if line.strip():
+                                formatted = f"«{line.strip()}»"
+                                buffer.insert_text(formatted)
+                                buffer.newline()
+                        # Remove trailing newline
+                        buffer.backspace()
+                    elif paste_type == 'paste':
+                        # Large paste (5+ lines): store with marker format
+                        # Format: ‹PASTE:N›content‹/PASTE›
+                        # UI will render this as [ Pasted N Lines ]
+                        # actual_text already contains the marker
+                        buffer.insert_text(actual_text)
+                    else:
+                        # Regular text - insert as-is
+                        buffer.insert_text(display_text)
+                    
+                    # Expand box up to 10 lines, then use internal scrolling
+                    if buffer.line_count > box.height and box.height < 10:
+                        box.expand_height(min(buffer.line_count, 10))
+                    
+                    # Transition out of paste mode
+                    if state_machine:
+                        state_machine.transition(InputEvent.PASTE_END)
+                    
+                    refresh_display()
+                    continue
                 
                 # Track time for path collection
                 current_time = _time.time()
@@ -539,6 +673,7 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                 
                 # Handle Enter variants
                 if kb.is_enter(key):
+                    last_char_time = current_time
                     text = buffer.text.strip()
                     
                     # Ctrl+Enter - Force submit
@@ -546,6 +681,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         if text:
                             # Convert any unmarked file paths before submitting
                             text = convert_unmarked_file_paths(text)
+                            # Extract actual content from markers (file paths, paste content)
+                            text = extract_all_special_content(text)
                             history.add(text)
                             if dropdown_lines > 0:
                                 box.clear_dropdown(dropdown_lines)
@@ -560,6 +697,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         if final_text:
                             # Convert any unmarked file paths before submitting
                             final_text = convert_unmarked_file_paths(final_text)
+                            # Extract actual content from markers (file paths, paste content)
+                            final_text = extract_all_special_content(final_text)
                             history.add(final_text)
                         if dropdown_lines > 0:
                             box.clear_dropdown(dropdown_lines)
@@ -581,6 +720,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     if text:
                         # Convert any unmarked file paths before submitting
                         text = convert_unmarked_file_paths(text)
+                        # Extract actual content from markers (file paths, paste content)
+                        text = extract_all_special_content(text)
                         history.add(text)
                         if dropdown_lines > 0:
                             box.clear_dropdown(dropdown_lines)
@@ -589,45 +730,151 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         return text
                     continue
                 
+                # Ctrl+V - Paste from clipboard
+                # This is the most reliable way to detect paste - directly read clipboard
+                if key == Keys.CTRL_V:
+                    clipboard_content = read_clipboard()
+                    if clipboard_content:
+                        # Process clipboard content like a paste
+                        display_text, actual_text, is_special, paste_type = process_pasted_content(clipboard_content)
+                        
+                        if paste_type == 'file':
+                            # Single file path: store with «path» format
+                            formatted = f"«{actual_text.strip()}»"
+                            buffer.insert_text(formatted)
+                        elif paste_type == 'multifile':
+                            # Multiple file paths: store each with «path» format
+                            for line in actual_text.strip().split('\n'):
+                                if line.strip():
+                                    formatted = f"«{line.strip()}»"
+                                    buffer.insert_text(formatted)
+                                    buffer.newline()
+                            buffer.backspace()
+                        elif paste_type == 'paste':
+                            # Large paste (5+ lines): store with marker format
+                            buffer.insert_text(actual_text)
+                        else:
+                            # Regular text - insert as-is
+                            buffer.insert_text(clipboard_content)
+                        
+                        # Expand box if needed
+                        if buffer.line_count > box.height and box.height < 10:
+                            box.expand_height(min(buffer.line_count, 10))
+                        refresh_display()
+                    continue
+                
                 # Backspace
                 if kb.is_backspace(key):
                     old_line_count = buffer.line_count
-                    if buffer.backspace():
-                        # Shrink box if line count decreased (but keep minimum 1 line)
-                        if buffer.line_count < old_line_count and buffer.line_count < box.height:
-                            box.shrink_height(max(1, buffer.line_count))
-                        # Update slash command state
-                        current_line = buffer.lines[buffer.cursor_row]
-                        line_stripped = current_line.strip()
-                        # Check if still in command context
-                        is_command_context = (
-                            buffer.line_count == 1 and
-                            buffer.cursor_row == 0 and
-                            line_stripped.startswith('/') and
-                            ' ' not in line_stripped
-                        )
-                        if is_command_context:
-                            slash_handler.update(line_stripped)
-                            if slash_handler.matches:
-                                box.set_mode(f"Tab: complete | {len(slash_handler.matches)} matches")
-                            else:
-                                box.set_mode("No matching commands")
-                            update_slash_dropdown()
-                        elif slash_handler.active:
+                    
+                    # Check if cursor is immediately after a badge and delete atomically
+                    line = buffer.lines[buffer.cursor_row]
+                    col = buffer.cursor_col
+                    badge_deleted = False
+                    
+                    if col > 0:
+                        # Check for file path badge: «path»
+                        if col >= 1 and line[col-1:col] == '»':
+                            # Find matching «
+                            start = line.rfind('«', 0, col)
+                            if start >= 0:
+                                # Delete the entire badge «...»
+                                buffer.lines[buffer.cursor_row] = line[:start] + line[col:]
+                                buffer.cursor_col = start
+                                badge_deleted = True
+                        
+                        # Check for paste badge: ‹PASTE:N›...‹/PASTE›
+                        if not badge_deleted and col >= 8 and line[col-8:col] == '‹/PASTE›':
+                            # Find matching ‹PASTE:
+                            import re
+                            paste_start = None
+                            # Look backwards for ‹PASTE:N›
+                            for i in range(col-9, -1, -1):
+                                if line[i:].startswith('‹PASTE:'):
+                                    # Find the end of the opening tag
+                                    match = re.match(r'‹PASTE:\d+›', line[i:])
+                                    if match:
+                                        paste_start = i
+                                        break
+                            if paste_start is not None:
+                                # Delete the entire paste marker
+                                buffer.lines[buffer.cursor_row] = line[:paste_start] + line[col:]
+                                buffer.cursor_col = paste_start
+                                badge_deleted = True
+                    
+                    # If no badge was deleted, do normal backspace
+                    if not badge_deleted:
+                        buffer.backspace()
+                    
+                    # Shrink box if line count decreased (but keep minimum 1 line)
+                    if buffer.line_count < old_line_count and buffer.line_count < box.height:
+                        box.shrink_height(max(1, buffer.line_count))
+                    
+                    # Update slash command state
+                    current_line = buffer.lines[buffer.cursor_row]
+                    line_stripped = current_line.strip()
+                    
+                    # Check if still in command context
+                    is_command_context = (
+                        buffer.line_count == 1 and
+                        buffer.cursor_row == 0 and
+                        line_stripped.startswith('/') and
+                        ' ' not in line_stripped
+                    )
+                    
+                    if is_command_context:
+                        slash_handler.update(line_stripped)
+                        if slash_handler.matches:
+                            box.set_mode(f"Tab: complete | {len(slash_handler.matches)} matches")
+                        else:
+                            box.set_mode("No matching commands")
+                        update_slash_dropdown()
+                    else:
+                        # Not in command context - cancel slash handler and reset mode
+                        if slash_handler.active:
                             slash_handler.cancel()
-                            box.set_mode("INPUT")
-                            update_slash_dropdown()  # This will clear the dropdown
-                        refresh_display()
+                        box.set_mode("INPUT")
+                        update_slash_dropdown()  # This will clear the dropdown
+                    
+                    refresh_display()
                     continue
                 
                 # Delete
                 if kb.is_delete(key):
                     old_line_count = buffer.line_count
-                    if buffer.delete():
-                        # Shrink box if line count decreased (but keep minimum 1 line)
-                        if buffer.line_count < old_line_count and buffer.line_count < box.height:
-                            box.shrink_height(max(1, buffer.line_count))
-                        refresh_display()
+                    line = buffer.lines[buffer.cursor_row]
+                    col = buffer.cursor_col
+                    badge_deleted = False
+                    
+                    # Check if cursor is immediately before a badge and delete atomically
+                    if col < len(line):
+                        # Check for file path badge: «path»
+                        if line[col:col+1] == '«':
+                            # Find matching »
+                            end = line.find('»', col)
+                            if end >= 0:
+                                # Delete the entire badge «...»
+                                buffer.lines[buffer.cursor_row] = line[:col] + line[end+1:]
+                                badge_deleted = True
+                        
+                        # Check for paste badge: ‹PASTE:N›...‹/PASTE›
+                        if not badge_deleted and line[col:].startswith('‹PASTE:'):
+                            import re
+                            match = re.search(r'‹PASTE:\d+›.*?‹/PASTE›', line[col:])
+                            if match:
+                                # Delete the entire paste marker
+                                end = col + match.end()
+                                buffer.lines[buffer.cursor_row] = line[:col] + line[end:]
+                                badge_deleted = True
+                    
+                    # If no badge was deleted, do normal delete
+                    if not badge_deleted:
+                        buffer.delete()
+                    
+                    # Shrink box if line count decreased (but keep minimum 1 line)
+                    if buffer.line_count < old_line_count and buffer.line_count < box.height:
+                        box.shrink_height(max(1, buffer.line_count))
+                    refresh_display()
                     continue
                 
                 # Arrow keys - Up/Down for slash command selection or history
@@ -684,16 +931,37 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         refresh_display()
                     continue
                 if key in (Keys.LEFT, Keys.LEFT_ALT, Keys.WIN_LEFT):
-                    if buffer.move_left():
+                    line = buffer.lines[buffer.cursor_row]
+                    new_col = skip_badge_left(line, buffer.cursor_col)
+                    if new_col != buffer.cursor_col:
+                        buffer.cursor_col = new_col
                         visible_row = buffer.get_visible_cursor_row()
-                        text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
+                        text_before = line[:buffer.cursor_col]
                         box.set_cursor(visible_row, buffer.cursor_col, text_before)
+                    elif buffer.cursor_col == 0 and buffer.cursor_row > 0:
+                        # Move to end of previous line
+                        buffer.cursor_row -= 1
+                        buffer.cursor_col = len(buffer.lines[buffer.cursor_row])
+                        visible_row = buffer.get_visible_cursor_row()
+                        text_before = buffer.lines[buffer.cursor_row]
+                        box.set_cursor(visible_row, buffer.cursor_col, text_before)
+                        refresh_display()
                     continue
                 if key in (Keys.RIGHT, Keys.RIGHT_ALT, Keys.WIN_RIGHT):
-                    if buffer.move_right():
+                    line = buffer.lines[buffer.cursor_row]
+                    new_col = skip_badge_right(line, buffer.cursor_col)
+                    if new_col != buffer.cursor_col:
+                        buffer.cursor_col = new_col
                         visible_row = buffer.get_visible_cursor_row()
-                        text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
+                        text_before = line[:buffer.cursor_col]
                         box.set_cursor(visible_row, buffer.cursor_col, text_before)
+                    elif buffer.cursor_col >= len(line) and buffer.cursor_row < buffer.line_count - 1:
+                        # Move to start of next line
+                        buffer.cursor_row += 1
+                        buffer.cursor_col = 0
+                        visible_row = buffer.get_visible_cursor_row()
+                        box.set_cursor(visible_row, 0, "")
+                        refresh_display()
                     continue
                 
                 # Ctrl+Left - Jump to previous word

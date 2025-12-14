@@ -11,16 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Anti-Recursion Protocol** — Level-based agent hierarchy (L0 → L1 → L2) preventing infinite delegation loops
 - **Slash Command Autocomplete** — Type `/` in Enhanced CCL for orchestrator mode switching (Tab to complete)
 - **File Badge Rendering** — Drag & drop files display as `[ filename.ext ]` in UI (full path sent to AI)
+- **Folder Badge Rendering** — Drag & drop folders display as `[ foldername ]` in UI
 - **Project Structure Check** — Agents now detect `.ouroboros/specs/` on invoke
 - **docs/LIMITATIONS.md** — Documents known platform constraints
+- **Ctrl+V Clipboard Paste** — Reliable paste detection by reading clipboard directly
+  - Large pastes (5+ lines) show as `[ Pasted N Lines ]` badge
+  - Full content preserved and sent to AI on submit
+  - Cross-platform: Windows (ctypes), macOS (pbpaste), Linux (xclip/xsel/wl-paste)
+- **Atomic Badge Deletion** — Backspace/Delete removes entire badge at once (file paths and paste badges)
+- **Arrow Key Badge Navigation** — Cursor automatically skips past badge internals when navigating
+- **`ouroboros_clipboard.py`** — New module for cross-platform clipboard reading
 
 ### Fixed
 - **Arrow Keys in VS Code Terminal** — Fixed escape sequence handling in `PasteCollector.read()` that was breaking arrow key navigation on Windows
 - **Modular Code Structure** — Split `ouroboros_input.py` (~2000 lines) into 9 focused modules
+- **Slash Command Status Clearing** — Status bar now clears correctly after backspacing away slash commands
 
 ### Changed
 - All 16 agent files now include Level markers (`> **LEVEL X** — ...`)
-- `is_file_path()` now excludes `/ouroboros*` patterns from file detection
+- `is_file_path()` now detects both files and folders (directories without extensions)
 - Scripts README completely rewritten with detailed documentation
 - Root README Enhanced CCL section simplified (details moved to scripts/README.md)
 - Debug scripts consolidated into `test/test_keyboard.py`

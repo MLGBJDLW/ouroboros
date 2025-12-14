@@ -72,7 +72,7 @@ FILE_PATH_PATTERNS = [
 
 def is_file_path(text: str) -> bool:
     """
-    Check if the given text looks like a file path.
+    Check if the given text looks like a file or folder path.
     Handles both Windows and Unix paths.
     """
     text = text.strip().strip('"').strip("'")  # Remove quotes often added by terminals
@@ -86,7 +86,20 @@ def is_file_path(text: str) -> bool:
 
     # Windows absolute path
     if len(text) >= 3 and text[1] == ':' and text[2] in ('\\', '/'):
-        return True
+        # If path exists, it's valid (file or folder)
+        if os.path.exists(text):
+            return True
+        # Check for known extension
+        ext = os.path.splitext(text)[1].lower()
+        if ext in ALL_EXTENSIONS:
+            return True
+        # Path ends with separator - definitely a folder
+        if text.endswith('\\') or text.endswith('/'):
+            return True
+        # Has multiple path components - likely valid
+        if text.count('\\') >= 1 or text.count('/') >= 1:
+            return True
+        return False
 
     # Windows UNC path
     if text.startswith('\\\\'):
@@ -97,6 +110,9 @@ def is_file_path(text: str) -> bool:
         # Exclude slash commands (they start with /ouroboros)
         if text.startswith('/ouroboros'):
             return False
+        # If path exists, it's valid
+        if os.path.exists(text):
+            return True
         # Must have at least one more path component to be a real path
         # e.g., /home/user not just /
         if len(text) > 1 and '/' in text[1:]:
@@ -111,6 +127,10 @@ def is_file_path(text: str) -> bool:
     if text.startswith('~'):
         return True
 
+    # Relative path starting with ./ or ../
+    if text.startswith('./') or text.startswith('../') or text.startswith('.\\') or text.startswith('..\\'):
+        return True
+
     # Relative path with known extension
     ext = os.path.splitext(text)[1].lower()
     if ext in ALL_EXTENSIONS:
@@ -121,6 +141,10 @@ def is_file_path(text: str) -> bool:
         ext = os.path.splitext(text)[1].lower()
         if ext:
             return True
+
+    # Check if path exists on disk (covers folders without extensions)
+    if os.path.exists(text):
+        return True
 
     return False
 
@@ -207,37 +231,151 @@ def format_file_reference(path: str) -> str:
 # PASTE CONTENT PROCESSING
 # =============================================================================
 
-def process_pasted_content(content: str) -> tuple:
+def process_pasted_content(content: str, multiline_threshold: int = 5) -> tuple:
     """
-    Process pasted content to detect file paths.
+    Process pasted content to detect file paths or large pastes.
 
     Returns:
-        Tuple of (display_text, actual_text, is_file_path)
-        - display_text: What to show in the UI
-        - actual_text: What to store in the buffer (for AI)
-        - is_file_path: Whether this is a file path
+        Tuple of (display_text, actual_text, is_special, paste_type)
+        - display_text: What to show in the UI (badge or content)
+        - actual_text: What to store in the buffer (marker format for AI extraction)
+        - is_special: Whether this needs special handling (file path or large paste)
+        - paste_type: 'file', 'multifile', 'paste', or 'text'
     """
     content = content.strip()
+    lines = content.split('\n')
+    line_count = len(lines)
 
     # Check if it's a single file path (not multi-line)
     if '\n' not in content and is_file_path(content):
         display = format_file_display(content)
         # Store the actual path for AI, but display nicely
-        return (display, content, True)
+        return (display, content, True, 'file')
 
     # Check for multiple file paths (one per line)
-    lines = content.split('\n')
-    if len(lines) > 1 and all(is_file_path(line.strip()) for line in lines if line.strip()):
+    if line_count > 1 and all(is_file_path(line.strip()) for line in lines if line.strip()):
         # Multiple files - format each one
         display_lines = []
         for line in lines:
             if line.strip():
                 display_lines.append(format_file_display(line.strip()))
         display = '\n'.join(display_lines)
-        return (display, content, True)
+        return (display, content, True, 'multifile')
 
-    # Not a file path, return as-is
-    return (content, content, False)
+    # Check for large multi-line paste (code, text, etc.)
+    # Threshold: 5+ lines OR 10+ characters for single line that looks like code
+    is_large_paste = line_count >= multiline_threshold
+    
+    # Also treat long single lines (like pasted code snippets) as paste
+    if not is_large_paste and line_count == 1 and len(content) > 100:
+        # Long single line - could be minified code or long text
+        is_large_paste = True
+    
+    if is_large_paste:
+        # Large paste - create marker for storage, badge for display
+        # Format: ‹PASTE:line_count›content‹/PASTE›
+        marker = create_paste_marker(content)
+        badge = format_paste_badge(line_count)
+        return (badge, marker, True, 'paste')
+
+    # Not a file path or large paste, return as-is
+    return (content, content, False, 'text')
+
+
+def format_paste_badge(line_count: int, char_count: int = 0) -> str:
+    """Format a paste badge for display.
+    
+    Args:
+        line_count: Number of lines in the paste
+        char_count: Optional character count for additional info
+    
+    Returns:
+        Badge string like "[ Pasted 5 Lines ]" or "[ Pasted 1 Line (150 chars) ]"
+    """
+    if line_count == 1:
+        if char_count > 0:
+            return f"[ Pasted 1 Line ({char_count} chars) ]"
+        return "[ Pasted 1 Line ]"
+    return f"[ Pasted {line_count} Lines ]"
+
+
+def create_paste_marker(content: str) -> str:
+    """
+    Create a paste marker for internal storage.
+    
+    Format: ‹PASTE:line_count›encoded_content‹/PASTE›
+    
+    Newlines are encoded as ⏎ so the marker stays on a single buffer line.
+    This allows the UI to display a badge while preserving
+    the full content for submission to AI.
+    """
+    lines = content.split('\n')
+    line_count = len(lines)
+    # Encode newlines so marker stays on one line for display purposes
+    # Use a special character that won't appear in normal text
+    encoded = content.replace('\n', '⏎')
+    return f"‹PASTE:{line_count}›{encoded}‹/PASTE›"
+
+
+def parse_paste_marker(text: str) -> tuple:
+    """
+    Parse a paste marker to extract line count and content.
+    
+    Returns:
+        Tuple of (line_count, content) or (0, text) if not a paste marker
+    """
+    import re
+    match = re.match(r'‹PASTE:(\d+)›(.*)‹/PASTE›', text, re.DOTALL)
+    if match:
+        # Decode newlines (⏎ back to \n)
+        content = match.group(2).replace('⏎', '\n')
+        return (int(match.group(1)), content)
+    return (0, text)
+
+
+def is_paste_marker(text: str) -> bool:
+    """Check if text is a paste marker."""
+    return text.startswith('‹PASTE:') and text.endswith('‹/PASTE›')
+
+
+def extract_paste_content(text: str) -> str:
+    """
+    Extract actual content from text, expanding any paste markers.
+    
+    This is used when submitting to AI - paste markers are replaced
+    with their full content, preserving the original formatting.
+    """
+    import re
+    # Replace all paste markers with their decoded content
+    # Pattern: ‹PASTE:N›encoded_content‹/PASTE›
+    def decode_and_extract(match):
+        return match.group(1).replace('⏎', '\n')
+    return re.sub(r'‹PASTE:\d+›(.*?)‹/PASTE›', decode_and_extract, text, flags=re.DOTALL)
+
+
+def extract_all_special_content(text: str) -> str:
+    """
+    Extract all special content from text for submission to AI.
+    
+    This handles:
+    1. File path markers: «/path/to/file» -> /path/to/file
+    2. Paste markers: ‹PASTE:N›encoded_content‹/PASTE› -> decoded content
+    
+    The result is clean text suitable for AI consumption.
+    """
+    import re
+    
+    result = text
+    
+    # Extract file paths: «path» -> path
+    result = re.sub(r'«([^»]+)»', r'\1', result)
+    
+    # Extract paste content and decode newlines: ‹PASTE:N›content‹/PASTE› -> content
+    def decode_and_extract(match):
+        return match.group(1).replace('⏎', '\n')
+    result = re.sub(r'‹PASTE:\d+›(.*?)‹/PASTE›', decode_and_extract, result, flags=re.DOTALL)
+    
+    return result
 
 
 def convert_unmarked_file_paths(text: str) -> str:

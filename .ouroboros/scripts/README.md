@@ -1,6 +1,6 @@
 # Ouroboros Enhanced CCL Scripts
 
-> **Version**: 2.1.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
+> **Version**: 2.2.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
 
 ```
     ╭───◯───╮
@@ -43,8 +43,9 @@ python ouroboros_input.py                    # Run directly
 ### Editing
 | Key | Action |
 |-----|--------|
-| `Backspace` | Delete character before cursor |
-| `Delete` | Delete character at cursor |
+| `Backspace` | Delete character before cursor (or entire badge) |
+| `Delete` | Delete character at cursor (or entire badge) |
+| `Ctrl+V` | Paste from clipboard (auto-detects large pastes) |
 | `Ctrl+U` | Clear current line |
 | `Ctrl+K` | Delete from cursor to end of line |
 
@@ -92,17 +93,31 @@ Features:
 - Arrow key navigation
 - Tab completion with auto-space
 
-### File Drag & Drop
-Drag files into the terminal:
-- Display: `[ filename.ext ]` (compact badge)
+### File & Folder Drag & Drop
+Drag files or folders into the terminal:
+- Display: `[ filename.ext ]` or `[ foldername ]` (compact badge)
 - Storage: Full path sent to AI
 - Supports Windows paths (`C:\...`) and Unix paths (`/...`)
+- Folders are detected automatically (no extension required)
 
-### Bracketed Paste Mode
-Reliable paste detection using terminal protocol:
-- IME-friendly (works with Chinese/Japanese input)
-- No timing-based detection conflicts
-- Automatic multi-line handling
+### Clipboard Paste (Ctrl+V)
+Reliable paste detection by reading clipboard directly:
+- Press `Ctrl+V` to paste from clipboard
+- Large pastes (5+ lines) show as `[ Pasted N Lines ]` badge
+- Full content preserved and sent to AI on submit
+- Cross-platform: Windows (ctypes), macOS (pbpaste), Linux (xclip/xsel)
+
+### Atomic Badge Deletion
+File path and paste badges can be deleted atomically:
+- `Backspace` after a badge deletes the entire badge at once
+- `Delete` before a badge deletes the entire badge at once
+- No need to delete character by character
+
+### Arrow Key Badge Navigation
+Cursor automatically skips past badge internals:
+- `←` before badge end jumps to badge start
+- `→` after badge start jumps to badge end
+- Cursor never gets "stuck" inside badge markers
 
 ### Dynamic Input Box
 - Starts as 1 line
@@ -126,7 +141,8 @@ Reliable paste detection using terminal protocol:
 | `ouroboros_paste.py` | ~450 | Bracketed Paste Mode for reliable paste detection |
 | `ouroboros_buffer.py` | ~180 | Multi-line text buffer with cursor management |
 | `ouroboros_commands.py` | ~130 | Slash command handler and autocomplete |
-| `ouroboros_filepath.py` | ~270 | File path detection and badge formatting |
+| `ouroboros_filepath.py` | ~450 | File path detection, paste markers, badge formatting |
+| `ouroboros_clipboard.py` | ~170 | Cross-platform clipboard reading (Win/Mac/Linux) |
 | `ouroboros_config.py` | ~160 | Config and history management |
 | `ouroboros_screen.py` | ~100 | State machine for input modes |
 | `ouroboros_toggle.py` | ~200 | Mode switcher (default ↔ enhanced) |

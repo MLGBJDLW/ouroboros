@@ -268,6 +268,87 @@ class WindowsKeyBuffer:
             except Exception:
                 pass
     
+    def get_pending_event_count(self) -> int:
+        """Get the number of events waiting in the console input buffer."""
+        if not self._use_readconsole or self._handle is None:
+            return 0
+        try:
+            import ctypes
+            from ctypes import wintypes
+            kernel32 = ctypes.windll.kernel32
+            num_events = wintypes.DWORD()
+            if kernel32.GetNumberOfConsoleInputEvents(self._handle, ctypes.byref(num_events)):
+                return num_events.value
+        except Exception:
+            pass
+        return 0
+    
+    def read_all_pending(self) -> str:
+        """
+        Read all pending characters from console input.
+        Used when paste is detected (many events waiting at once).
+        Returns concatenated printable characters.
+        """
+        if not self._use_readconsole or self._handle is None:
+            return ""
+        
+        try:
+            import ctypes
+            from ctypes import wintypes
+            kernel32 = ctypes.windll.kernel32
+            
+            # Define structures
+            class KEY_EVENT_RECORD(ctypes.Structure):
+                _fields_ = [
+                    ("bKeyDown", wintypes.BOOL),
+                    ("wRepeatCount", wintypes.WORD),
+                    ("wVirtualKeyCode", wintypes.WORD),
+                    ("wVirtualScanCode", wintypes.WORD),
+                    ("uChar", wintypes.WCHAR),
+                    ("dwControlKeyState", wintypes.DWORD),
+                ]
+            
+            class INPUT_RECORD(ctypes.Structure):
+                _fields_ = [
+                    ("EventType", wintypes.WORD),
+                    ("Event", KEY_EVENT_RECORD),
+                ]
+            
+            chars = []
+            max_reads = 50000  # Safety limit
+            
+            for _ in range(max_reads):
+                # Check if more events
+                num_events = wintypes.DWORD()
+                if not kernel32.GetNumberOfConsoleInputEvents(self._handle, ctypes.byref(num_events)):
+                    break
+                if num_events.value == 0:
+                    break
+                
+                # Read one event
+                record = INPUT_RECORD()
+                num_read = wintypes.DWORD()
+                if not kernel32.ReadConsoleInputW(self._handle, ctypes.byref(record), 1, ctypes.byref(num_read)):
+                    break
+                if num_read.value == 0:
+                    break
+                
+                # Only process key down events
+                if record.EventType == 0x0001 and record.Event.bKeyDown:
+                    char = record.Event.uChar
+                    if char:
+                        code = ord(char)
+                        # Include printable chars and newlines
+                        if code >= 32 or code == 10 or code == 13:
+                            if code == 13:
+                                chars.append('\n')
+                            else:
+                                chars.append(char)
+            
+            return ''.join(chars)
+        except Exception:
+            return ""
+    
     def _read_ansi_sequence_from_console_vt(self, kernel32, INPUT_RECORD, KEY_EVENT_RECORD,
                                             timeout: Optional[float], start_time: float) -> str:
         """
@@ -524,6 +605,14 @@ class WindowsKeyBuffer:
                                 return Keys.PAGE_UP
                             elif vk == 0x22:  # VK_PAGE_DOWN
                                 return Keys.PAGE_DOWN
+                            
+                            # Generic Ctrl+Letter handler via VK codes
+                            # VK_A = 0x41 through VK_Z = 0x5A
+                            # This catches ALL Ctrl+letter combinations, even if Terminal intercepts char version
+                            elif ctrl_pressed and 0x41 <= vk <= 0x5A:
+                                # Convert VK code to control character (Ctrl+A = 0x01, Ctrl+Z = 0x1A)
+                                ctrl_char = chr(vk - 0x40)
+                                return ctrl_char
                             
                             # Regular character (not null/empty)
                             # Note: For special keys like arrows, char is '\x00'
