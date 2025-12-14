@@ -1237,7 +1237,7 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     continue
                 
                 # Escape - Cancel slash command mode
-                if key == Keys.ESC:
+                if key == Keys.ESCAPE:
                     if slash_handler.active:
                         slash_handler.cancel()
                     continue

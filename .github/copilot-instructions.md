@@ -67,12 +67,12 @@ python -c "task = input('[Ouroboros] > ')"
 
 | Type | When | Format |
 |------|------|--------|
-| TASK | Next task | `task = input('[Ouroboros] > ')` |
-| MENU | Options | `print('[1]...'); choice = input('Select: ')` |
-| CONFIRM | Yes/No | `print('[y/n]'); confirm = input('Confirm: ')` |
-| QUESTION | Clarify | `question = input('Question? ')` |
+| TASK | Next task | `python -c "task = input('[Ouroboros] > ')"` |
+| MENU | Options | `python -c "print('[1]...'); choice = input('Select: ')"` |
+| CONFIRM | Yes/No | `python -c "print(); print('[y] Yes'); print('[n] No'); confirm = input('[y/n]: ')"` |
+| QUESTION | Clarify | `python -c "question = input('Question? ')"` |
 
-**RULE:** Use `run_command` tool, NOT just print text.
+**RULE:** Use `run_command` tool with **Python** format. NO PowerShell/Bash.
 
 ---
 
