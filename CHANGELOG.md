@@ -42,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Arrow Keys in VS Code Terminal** — Fixed escape sequence handling in `PasteCollector.read()` that was breaking arrow key navigation on Windows
 - **Slash Command Status Clearing** — Status bar now clears correctly after backspacing away slash commands
+- **Cursor Flickering** — Fixed cursor jumping to wrong positions during render by using save/restore cursor pattern
+- **Incremental Line Update** — Added `update_current_line()` for single-character input to reduce full redraws
+- **Windows Path Drag-Drop** — Implemented path collection mode with timeout for detecting dragged file paths
 
 ---
 
