@@ -14,10 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Project Structure Check** — Agents now detect `.ouroboros/specs/` on invoke
 - **docs/LIMITATIONS.md** — Documents known platform constraints
 
+### Fixed
+- **Arrow Keys in VS Code Terminal** — Fixed escape sequence handling in `PasteCollector.read()` that was breaking arrow key navigation on Windows
+- **Modular Code Structure** — Split `ouroboros_input.py` (~2000 lines) into 9 focused modules
+
 ### Changed
 - All 16 agent files now include Level markers (`> **LEVEL X** — ...`)
 - `is_file_path()` now excludes `/ouroboros*` patterns from file detection
-- Scripts README updated with new features and key bindings
+- Scripts README completely rewritten with detailed documentation
+- Root README Enhanced CCL section simplified (details moved to scripts/README.md)
+- Debug scripts consolidated into `test/test_keyboard.py`
 
 ---
 

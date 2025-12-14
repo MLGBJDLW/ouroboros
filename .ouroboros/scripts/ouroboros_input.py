@@ -25,17 +25,14 @@ Dependencies: Python 3.6+ standard library only (msvcrt/tty/termios)
 import sys
 import os
 import argparse
-import json
+import re
 
 # Add script directory to path for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
-# Config and history file paths
-CONFIG_FILE = os.path.join(SCRIPT_DIR, 'ouroboros.config.json')
-HISTORY_FILE = os.path.join(SCRIPT_DIR, 'ouroboros.history')
-
+# Import modular components
 try:
     from ouroboros_keybuffer import KeyBuffer, Keys, is_pipe_input
     from ouroboros_ui import (
@@ -44,512 +41,27 @@ try:
     )
     from ouroboros_paste import PasteCollector
     from ouroboros_screen import StateMachine, InputState, InputEvent
+    from ouroboros_config import ConfigManager, HistoryManager, get_config, get_history
+    from ouroboros_filepath import (
+        is_file_path, format_file_display, format_file_badge, process_pasted_content,
+        convert_unmarked_file_paths, detect_file_path, get_file_extension,
+        format_file_reference, format_paste_summary, detect_and_format_input,
+        FILE_EXTENSIONS, ALL_EXTENSIONS, IMAGE_EXTENSIONS, DOC_EXTENSIONS, CODE_EXTENSIONS
+    )
+    from ouroboros_commands import (
+        SlashCommandHandler, SLASH_COMMANDS, prepend_slash_command_instruction
+    )
+    from ouroboros_buffer import TextBuffer
     MODULES_AVAILABLE = True
     PASTE_AVAILABLE = True
     SCREEN_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    # Fallback - some modules may not be available
     MODULES_AVAILABLE = False
     PASTE_AVAILABLE = False
     SCREEN_AVAILABLE = False
 
 VERSION = "2.0.0"
-
-# =============================================================================
-# CONFIG MANAGER
-# =============================================================================
-
-DEFAULT_CONFIG = {
-    "platform": "windows" if sys.platform == 'win32' else "unix",
-    "ansi_colors": True,
-    "unicode_box": True,
-    "theme": "mystic_purple",
-    "auto_multiline": True,
-    "compress_threshold": 10,
-    "history_max_entries": 1000,
-    "use_fallback_input": False,  # Set to True if IME input doesn't work
-}
-
-
-class ConfigManager:
-    """Manages configuration with file persistence."""
-
-    def __init__(self, config_file: str = CONFIG_FILE):
-        self.config_file = config_file
-        self.config = dict(DEFAULT_CONFIG)
-        self._load()
-
-    def _load(self) -> None:
-        """Load config from file, create with defaults if not exists."""
-        try:
-            if os.path.exists(self.config_file):
-                with open(self.config_file, 'r', encoding='utf-8') as f:
-                    loaded = json.load(f)
-                    self.config.update(loaded)
-            else:
-                # Create default config file
-                self._save()
-        except (IOError, OSError, json.JSONDecodeError):
-            pass
-
-    def _save(self) -> None:
-        """Save config to file."""
-        try:
-            with open(self.config_file, 'w', encoding='utf-8') as f:
-                json.dump(self.config, f, indent=2)
-        except (IOError, OSError):
-            pass
-
-    def get(self, key: str, default=None):
-        """Get config value."""
-        return self.config.get(key, default)
-
-    def set(self, key: str, value) -> None:
-        """Set config value and save."""
-        self.config[key] = value
-        self._save()
-
-
-# Global config instance
-_config = None
-
-
-def get_config() -> ConfigManager:
-    """Get or create global config manager."""
-    global _config
-    if _config is None:
-        _config = ConfigManager()
-    return _config
-
-
-# =============================================================================
-# HISTORY MANAGER
-# =============================================================================
-
-class HistoryManager:
-    """Manages command history with file persistence."""
-
-    def __init__(self, history_file: str = HISTORY_FILE, max_entries: int = None):
-        self.history_file = history_file
-        # Use config value if not specified
-        if max_entries is None:
-            max_entries = get_config().get('history_max_entries', 1000)
-        self.max_entries = max_entries
-        self.entries = []
-        self.position = 0  # Current position in history (0 = newest)
-        self._temp_current = ''  # Temp storage for current input when browsing
-        self._load()
-    
-    def _load(self) -> None:
-        """Load history from file."""
-        try:
-            if os.path.exists(self.history_file):
-                with open(self.history_file, 'r', encoding='utf-8') as f:
-                    lines = f.read().strip().split('\n')
-                    self.entries = [line for line in lines if line.strip()]
-        except (IOError, OSError):
-            self.entries = []
-        self.position = len(self.entries)  # Start at end (newest)
-    
-    def _save(self) -> None:
-        """Save history to file."""
-        try:
-            # Keep only max_entries
-            entries_to_save = self.entries[-self.max_entries:]
-            with open(self.history_file, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(entries_to_save) + '\n')
-        except (IOError, OSError):
-            pass
-    
-    def add(self, entry: str) -> None:
-        """Add entry to history (avoid duplicates of last entry)."""
-        entry = entry.strip()
-        if not entry:
-            return
-        # Avoid duplicate of last entry
-        if self.entries and self.entries[-1] == entry:
-            return
-        self.entries.append(entry)
-        self._save()
-        self.reset_position()
-    
-    def reset_position(self) -> None:
-        """Reset position to end of history."""
-        self.position = len(self.entries)
-        self._temp_current = ''
-    
-    def go_back(self, current_input: str = '') -> str:
-        """Go back in history (older). Returns the history entry or current input."""
-        if not self.entries:
-            return current_input
-        
-        # Save current input when starting to browse
-        if self.position == len(self.entries):
-            self._temp_current = current_input
-        
-        if self.position > 0:
-            self.position -= 1
-            return self.entries[self.position]
-        
-        return self.entries[0] if self.entries else current_input
-    
-    def go_forward(self) -> str:
-        """Go forward in history (newer). Returns the history entry or temp current."""
-        if self.position < len(self.entries) - 1:
-            self.position += 1
-            return self.entries[self.position]
-        elif self.position == len(self.entries) - 1:
-            self.position = len(self.entries)
-            return self._temp_current
-        return self._temp_current
-    
-    def search(self, prefix: str) -> list:
-        """Search history entries starting with prefix."""
-        if not prefix:
-            return self.entries[-10:]  # Return last 10
-        return [e for e in self.entries if e.startswith(prefix)][-10:]
-    
-    @property
-    def at_end(self) -> bool:
-        """Check if at end of history (newest position)."""
-        return self.position >= len(self.entries)
-    
-    @property
-    def at_start(self) -> bool:
-        """Check if at start of history (oldest position)."""
-        return self.position <= 0
-
-
-# Global history instance
-_history = None
-
-def get_history() -> HistoryManager:
-    """Get or create global history manager."""
-    global _history
-    if _history is None:
-        _history = HistoryManager()
-    return _history
-
-
-# =============================================================================
-# FILE PATH DETECTION AND FORMATTING
-# =============================================================================
-
-# Common file extensions for different categories
-FILE_EXTENSIONS = {
-    # Code files
-    'code': {'.py', '.js', '.ts', '.tsx', '.jsx', '.java', '.c', '.cpp', '.h', '.hpp',
-             '.cs', '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.scala', '.lua',
-             '.pl', '.r', '.m', '.mm', '.sh', '.bash', '.zsh', '.ps1', '.bat', '.cmd'},
-    # Config/data files
-    'config': {'.json', '.yaml', '.yml', '.xml', '.toml', '.ini', '.cfg', '.conf',
-               '.env', '.properties', '.lock'},
-    # Documentation
-    'doc': {'.md', '.markdown', '.rst', '.txt', '.rtf', '.doc', '.docx', '.pdf',
-            '.tex', '.org', '.adoc'},
-    # Images
-    'image': {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico',
-              '.tiff', '.tif', '.psd', '.ai', '.eps'},
-    # Audio/Video
-    'media': {'.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma',
-              '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm'},
-    # Archives
-    'archive': {'.zip', '.tar', '.gz', '.bz2', '.7z', '.rar', '.xz'},
-    # Web
-    'web': {'.html', '.htm', '.css', '.scss', '.sass', '.less'},
-    # Data
-    'data': {'.csv', '.tsv', '.sql', '.db', '.sqlite', '.parquet', '.arrow'},
-}
-
-# Flatten all extensions for quick lookup
-ALL_EXTENSIONS = set()
-for exts in FILE_EXTENSIONS.values():
-    ALL_EXTENSIONS.update(exts)
-
-
-def is_file_path(text: str) -> bool:
-    """
-    Check if the given text looks like a file path.
-    Handles both Windows and Unix paths.
-    """
-    text = text.strip().strip('"').strip("'")  # Remove quotes often added by terminals
-    
-    if not text:
-        return False
-    
-    # Check for common path patterns
-    # Windows: C:\path\file.ext or \\server\share\file.ext
-    # Unix: /path/file.ext or ~/path/file.ext or ./path/file.ext
-    
-    # Windows absolute path
-    if len(text) >= 3 and text[1] == ':' and text[2] in ('\\', '/'):
-        return True
-    
-    # Windows UNC path
-    if text.startswith('\\\\'):
-        return True
-    
-    # Unix absolute path (but NOT slash commands like /ouroboros-spec)
-    if text.startswith('/'):
-        # Exclude slash commands (they start with /ouroboros)
-        if text.startswith('/ouroboros'):
-            return False
-        # Must have at least one more path component to be a real path
-        # e.g., /home/user not just /
-        if len(text) > 1 and '/' in text[1:]:
-            return True
-        # Single slash or /filename - only if it has a file extension
-        ext = os.path.splitext(text)[1].lower()
-        if ext in ALL_EXTENSIONS:
-            return True
-        return False
-    
-    # Home directory
-    if text.startswith('~'):
-        return True
-    
-    # Relative path with known extension
-    ext = os.path.splitext(text)[1].lower()
-    if ext in ALL_EXTENSIONS:
-        return True
-    
-    # Check if it looks like a path (contains path separators and an extension)
-    if ('/' in text or '\\' in text) and '.' in text:
-        ext = os.path.splitext(text)[1].lower()
-        if ext:
-            return True
-    
-    return False
-
-
-def format_file_display(path: str) -> str:
-    """
-    Format a file path for display as [ filename.ext ].
-    Returns the formatted display string.
-    """
-    path = path.strip().strip('"').strip("'")
-    
-    # Extract filename
-    filename = os.path.basename(path)
-    
-    if not filename:
-        # Maybe it's a directory, use the last component
-        parts = path.replace('\\', '/').rstrip('/').split('/')
-        filename = parts[-1] if parts else path
-    
-    return f"[ {filename} ]"
-
-
-def process_pasted_content(content: str) -> tuple:
-    """
-    Process pasted content to detect file paths.
-    
-    Returns:
-        Tuple of (display_text, actual_text, is_file_path)
-        - display_text: What to show in the UI
-        - actual_text: What to store in the buffer (for AI)
-        - is_file_path: Whether this is a file path
-    """
-    content = content.strip()
-    
-    # Check if it's a single file path (not multi-line)
-    if '\n' not in content and is_file_path(content):
-        display = format_file_display(content)
-        # Store the actual path for AI, but display nicely
-        return (display, content, True)
-    
-    # Check for multiple file paths (one per line)
-    lines = content.split('\n')
-    if len(lines) > 1 and all(is_file_path(line.strip()) for line in lines if line.strip()):
-        # Multiple files - format each one
-        display_lines = []
-        for line in lines:
-            if line.strip():
-                display_lines.append(format_file_display(line.strip()))
-        display = '\n'.join(display_lines)
-        return (display, content, True)
-    
-    # Not a file path, return as-is
-    return (content, content, False)
-
-
-def convert_unmarked_file_paths(text: str) -> str:
-    """
-    Convert any unmarked file paths in text to the «path» format.
-    
-    This is a safety net for file paths that weren't detected during input
-    (e.g., when Bracketed Paste Mode isn't supported and rapid input detection
-    didn't trigger).
-    
-    Only converts paths that:
-    1. Are not already marked with «»
-    2. Look like absolute file paths (Windows or Unix)
-    3. Are on their own line or surrounded by whitespace
-    
-    Args:
-        text: The input text to process
-        
-    Returns:
-        Text with file paths converted to «path» format
-    """
-    import re
-    
-    # Skip if text already contains markers (already processed)
-    if '«' in text:
-        return text
-    
-    # Pattern to match file paths:
-    # - Windows: C:\path\to\file.ext or "C:\path with spaces\file.ext"
-    # - Unix: /path/to/file or ~/path/to/file
-    # Must be at start of line or after whitespace, and end at line end or before whitespace
-    
-    # Windows absolute path pattern (with optional quotes)
-    win_pattern = r'(?:^|(?<=\s))("?[A-Za-z]:\\[^"\n]*"?)(?=\s|$)'
-    # Unix absolute path pattern
-    unix_pattern = r'(?:^|(?<=\s))((?:/|~/)[^\s\n]+)(?=\s|$)'
-    
-    result = text
-    
-    # Process Windows paths
-    for match in re.finditer(win_pattern, result, re.MULTILINE):
-        path = match.group(1).strip('"')
-        if is_file_path(path):
-            # Replace the match with marked version
-            result = result[:match.start(1)] + f'«{path}»' + result[match.end(1):]
-    
-    # Process Unix paths (only if no Windows paths were found to avoid double processing)
-    if '«' not in result:
-        for match in re.finditer(unix_pattern, result, re.MULTILINE):
-            path = match.group(1)
-            if is_file_path(path):
-                result = result[:match.start(1)] + f'«{path}»' + result[match.end(1):]
-    
-    return result
-
-
-# =============================================================================
-# SLASH COMMAND HANDLER
-# =============================================================================
-
-# Slash commands for orchestrator mode switching (5 main orchestrators)
-SLASH_COMMANDS = {
-    "/ouroboros":          {"desc": "Main Orchestrator", "file": "ouroboros.agent.md"},
-    "/ouroboros-init":     {"desc": "Project Init", "file": "ouroboros-init.agent.md"},
-    "/ouroboros-spec":     {"desc": "Spec Workflow", "file": "ouroboros-spec.agent.md"},
-    "/ouroboros-implement":{"desc": "Implementation", "file": "ouroboros-implement.agent.md"},
-    "/ouroboros-archive":  {"desc": "Archive Specs", "file": "ouroboros-archive.agent.md"},
-}
-
-
-class SlashCommandHandler:
-    """Handles slash command detection and autocomplete suggestions."""
-    
-    def __init__(self):
-        self.active = False
-        self.prefix = ""
-        self.matches = []
-        self.selected_index = 0
-    
-    def start(self, char: str = "/") -> bool:
-        """Start command mode if char is '/'. Returns True if started."""
-        if char == "/" and not self.active:
-            self.active = True
-            self.prefix = "/"
-            self.matches = list(SLASH_COMMANDS.keys())
-            self.selected_index = 0
-            return True
-        return False
-    
-    def update(self, prefix: str) -> list:
-        """Update matches based on current prefix."""
-        self.prefix = prefix
-        if prefix.startswith("/"):
-            self.matches = [cmd for cmd in SLASH_COMMANDS if cmd.startswith(prefix)]
-            if self.selected_index >= len(self.matches):
-                self.selected_index = max(0, len(self.matches) - 1)
-        else:
-            self.cancel()
-        return self.matches
-    
-    def move_up(self) -> int:
-        """Move selection up. Returns new index."""
-        if self.matches and self.selected_index > 0:
-            self.selected_index -= 1
-        return self.selected_index
-    
-    def move_down(self) -> int:
-        """Move selection down. Returns new index."""
-        if self.matches and self.selected_index < len(self.matches) - 1:
-            self.selected_index += 1
-        return self.selected_index
-    
-    def complete(self) -> str:
-        """Complete with selected command. Returns completed text."""
-        if self.matches and 0 <= self.selected_index < len(self.matches):
-            result = self.matches[self.selected_index]
-            self.cancel()
-            return result
-        return self.prefix
-    
-    def cancel(self) -> None:
-        """Cancel command mode."""
-        self.active = False
-        self.prefix = ""
-        self.matches = []
-        self.selected_index = 0
-    
-    def get_dropdown_lines(self, max_width: int = 60) -> list:
-        """Get formatted dropdown lines for display."""
-        lines = []
-        for i, cmd in enumerate(self.matches):
-            info = SLASH_COMMANDS.get(cmd, {})
-            desc = info.get("desc", "")
-            marker = ">" if i == self.selected_index else " "
-            line = f"{marker} {cmd:<25} — {desc}"
-            lines.append(line[:max_width])
-        return lines
-
-
-def format_file_badge(path: str) -> str:
-    """
-    Format a file path as a simple badge for display.
-    
-    Internal storage: «/full/path/file.ext»
-    Display format:   [ file.ext ]
-    """
-    # Extract filename
-    filename = os.path.basename(path.strip().strip('«»'))
-    if not filename:
-        filename = path.split('/')[-1] or path.split('\\')[-1] or path
-    
-    # Simple badge without icons (per user request)
-    return f"[ {filename} ]"
-
-
-def prepend_slash_command_instruction(content: str) -> str:
-    """
-    Prepend an instruction to follow the corresponding agent prompt 
-    when content starts with a valid slash command.
-    
-    Example:
-        Input:  "/ouroboros-spec create auth feature"
-        Output: "Follow the prompt '.github/agents/ouroboros-spec.agent.md'\n\n/ouroboros-spec create auth feature"
-    """
-    content_stripped = content.strip()
-    
-    # Check if content starts with a valid slash command
-    # Sort by length descending to match longer commands first (e.g., /ouroboros-spec before /ouroboros)
-    for cmd in sorted(SLASH_COMMANDS.keys(), key=len, reverse=True):
-        if content_stripped.startswith(cmd):
-            info = SLASH_COMMANDS[cmd]
-            agent_file = info.get("file", "")
-            if agent_file:
-                prompt_path = f".github/agents/{agent_file}"
-                prefix = f"Follow the prompt '{prompt_path}'\n\n"
-                return prefix + content
-    
-    # No slash command detected, return as-is
-    return content
-
 
 # =============================================================================
 # FALLBACK IMPLEMENTATIONS (if modules not available)
@@ -559,9 +71,7 @@ if not MODULES_AVAILABLE:
     # Minimal fallback - use standard input()
     def is_pipe_input():
         return not sys.stdin.isatty()
-    
-    class THEME:
-        pass
+
     THEME = {
         'border': '\033[95m',
         'prompt': '\033[96m',
@@ -569,282 +79,82 @@ if not MODULES_AVAILABLE:
         'warning': '\033[93m',
         'error': '\033[91m',
         'info': '\033[94m',
+        'accent': '\033[95m\033[1m',
+        'dim': '\033[2m',
         'reset': '\033[0m',
     }
-    
+
     def write(text):
         sys.stderr.write(text)
         sys.stderr.flush()
-    
+
     def writeln(text=''):
         write(text + '\n')
 
-# =============================================================================
-# TEXT BUFFER
-# =============================================================================
+    # Minimal fallback classes
+    class ConfigManager:
+        def __init__(self):
+            self.config = {"history_max_entries": 1000}
+        def get(self, key, default=None):
+            return self.config.get(key, default)
 
-class TextBuffer:
-    """Multi-line text buffer with cursor management."""
-    
-    def __init__(self):
-        self.lines = ['']
-        self.cursor_row = 0
-        self.cursor_col = 0
-        self.scroll_offset = 0  # For viewport scrolling
-    
-    @property
-    def text(self) -> str:
-        return '\n'.join(self.lines)
-    
-    @property
-    def line_count(self) -> int:
-        return len(self.lines)
-    
-    def insert_char(self, char: str) -> None:
-        line = self.lines[self.cursor_row]
-        self.lines[self.cursor_row] = line[:self.cursor_col] + char + line[self.cursor_col:]
-        self.cursor_col += 1
-    
-    def insert_text(self, text: str) -> None:
-        """Insert multi-character text (e.g., paste)."""
-        for char in text:
-            if char == '\n':
-                self.newline()
-            elif char != '\r':
-                self.insert_char(char)
-    
-    def insert_formatted_paste(self, text: str) -> None:
-        """Insert text with formatting preserved (for Ctrl+Shift+Enter paste)."""
-        # Normalize line endings
-        text = text.replace('\r\n', '\n').replace('\r', '\n')
-        # Strip trailing whitespace from each line but preserve structure
-        lines = [line.rstrip() for line in text.split('\n')]
-        # Remove empty lines at start/end
-        while lines and not lines[0]:
-            lines.pop(0)
-        while lines and not lines[-1]:
-            lines.pop()
-        # Insert
-        for i, line in enumerate(lines):
-            if i > 0:
-                self.newline()
-            for char in line:
-                self.insert_char(char)
-    
-    def newline(self) -> None:
-        line = self.lines[self.cursor_row]
-        self.lines[self.cursor_row] = line[:self.cursor_col]
-        self.lines.insert(self.cursor_row + 1, line[self.cursor_col:])
-        self.cursor_row += 1
-        self.cursor_col = 0
-    
-    def backspace(self) -> bool:
-        if self.cursor_col > 0:
-            line = self.lines[self.cursor_row]
-            self.lines[self.cursor_row] = line[:self.cursor_col-1] + line[self.cursor_col:]
-            self.cursor_col -= 1
-            return True
-        elif self.cursor_row > 0:
-            prev_line = self.lines[self.cursor_row - 1]
-            curr_line = self.lines[self.cursor_row]
-            self.lines[self.cursor_row - 1] = prev_line + curr_line
-            del self.lines[self.cursor_row]
-            self.cursor_row -= 1
-            self.cursor_col = len(prev_line)
-            return True
-        return False
-    
-    def delete(self) -> bool:
-        """Delete character at cursor (like Delete key)."""
-        line = self.lines[self.cursor_row]
-        if self.cursor_col < len(line):
-            self.lines[self.cursor_row] = line[:self.cursor_col] + line[self.cursor_col+1:]
-            return True
-        elif self.cursor_row < len(self.lines) - 1:
-            # Merge with next line
-            next_line = self.lines[self.cursor_row + 1]
-            self.lines[self.cursor_row] = line + next_line
-            del self.lines[self.cursor_row + 1]
-            return True
-        return False
-    
-    def move_left(self) -> bool:
-        if self.cursor_col > 0:
-            self.cursor_col -= 1
-            return True
-        elif self.cursor_row > 0:
-            self.cursor_row -= 1
-            self.cursor_col = len(self.lines[self.cursor_row])
-            return True
-        return False
-    
-    def move_right(self) -> bool:
-        line = self.lines[self.cursor_row]
-        if self.cursor_col < len(line):
-            self.cursor_col += 1
-            return True
-        elif self.cursor_row < len(self.lines) - 1:
-            self.cursor_row += 1
+    class HistoryManager:
+        def __init__(self):
+            self.entries = []
+            self.position = 0
+        def add(self, entry): pass
+        def go_back(self, current=''): return current
+        def go_forward(self): return ''
+        def reset_position(self): pass
+        @property
+        def at_end(self): return True
+
+    class SlashCommandHandler:
+        def __init__(self):
+            self.active = False
+            self.matches = []
+            self.selected_index = 0
+        def start(self, char): return False
+        def update(self, prefix): return []
+        def move_up(self): return 0
+        def move_down(self): return 0
+        def cancel(self): pass
+
+    class TextBuffer:
+        def __init__(self):
+            self.lines = ['']
+            self.cursor_row = 0
             self.cursor_col = 0
-            return True
-        return False
-    
-    def move_up(self) -> bool:
-        if self.cursor_row > 0:
-            self.cursor_row -= 1
-            self.cursor_col = min(self.cursor_col, len(self.lines[self.cursor_row]))
-            return True
-        return False
-    
-    def move_down(self) -> bool:
-        if self.cursor_row < len(self.lines) - 1:
-            self.cursor_row += 1
-            self.cursor_col = min(self.cursor_col, len(self.lines[self.cursor_row]))
-            return True
-        return False
-    
-    def home(self) -> None:
-        self.cursor_col = 0
-    
-    def end(self) -> None:
-        self.cursor_col = len(self.lines[self.cursor_row])
-    
-    def clear(self) -> None:
-        self.lines = ['']
-        self.cursor_row = 0
-        self.cursor_col = 0
-        self.scroll_offset = 0
-    
-    def clear_line(self) -> None:
-        """Clear current line."""
-        self.lines[self.cursor_row] = ''
-        self.cursor_col = 0
-    
-    def get_visible_lines(self, viewport_height: int) -> list:
-        """Get lines visible in viewport with scrolling."""
-        # Adjust scroll to keep cursor visible
-        if self.cursor_row < self.scroll_offset:
-            self.scroll_offset = self.cursor_row
-        elif self.cursor_row >= self.scroll_offset + viewport_height:
-            self.scroll_offset = self.cursor_row - viewport_height + 1
-        
-        # Return visible lines
-        start = self.scroll_offset
-        end = min(start + viewport_height, len(self.lines))
-        return self.lines[start:end]
-    
-    def get_visible_cursor_row(self) -> int:
-        """Get cursor row relative to viewport."""
-        return self.cursor_row - self.scroll_offset
+            self.scroll_offset = 0
+        @property
+        def text(self): return '\n'.join(self.lines)
+        @property
+        def line_count(self): return len(self.lines)
+        def insert_char(self, c): pass
+        def insert_text(self, t): pass
+        def newline(self): pass
+        def backspace(self): return False
+        def delete(self): return False
+        def move_left(self): return False
+        def move_right(self): return False
+        def move_up(self): return False
+        def move_down(self): return False
+        def home(self): pass
+        def end(self): pass
+        def clear(self): self.lines = ['']
+        def clear_line(self): pass
+        def get_visible_lines(self, h): return self.lines[:h]
+        def get_visible_cursor_row(self): return 0
 
+    SLASH_COMMANDS = {}
 
-# =============================================================================
-# CONTENT DETECTION
-# =============================================================================
-
-import re
-
-# File path patterns
-FILE_PATH_PATTERNS = [
-    # Windows paths: C:\path\to\file.ext or "C:\path with spaces\file.ext"
-    re.compile(r'^[A-Za-z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*$'),
-    # Unix paths: /path/to/file or ~/path/to/file
-    re.compile(r'^(?:/|~/)(?:[^/\0]+/)*[^/\0]*$'),
-    # Relative paths: ./file or ../file
-    re.compile(r'^\.\.?/(?:[^/\0]+/)*[^/\0]*$'),
-]
-
-# Image extensions
-IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.ico', '.tiff', '.tif'}
-
-# Document extensions
-DOC_EXTENSIONS = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.md', '.rtf'}
-
-# Code extensions
-CODE_EXTENSIONS = {'.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.c', '.cpp', '.h', '.hpp',
-                   '.cs', '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.scala', '.sh', '.bash',
-                   '.html', '.css', '.scss', '.sass', '.less', '.json', '.xml', '.yaml', '.yml',
-                   '.sql', '.r', '.m', '.lua', '.pl', '.pm'}
-
-
-def detect_file_path(text: str) -> str:
-    """Detect if text is a file path. Returns the path or empty string."""
-    text = text.strip().strip('"').strip("'")
-    for pattern in FILE_PATH_PATTERNS:
-        if pattern.match(text):
-            return text
-    return ''
-
-
-def get_file_extension(path: str) -> str:
-    """Get lowercase file extension from path."""
-    if '.' in path:
-        return '.' + path.rsplit('.', 1)[-1].lower()
-    return ''
-
-
-def format_file_reference(path: str) -> str:
-    """Format a file path as a reference string."""
-    ext = get_file_extension(path)
-    filename = path.replace('\\', '/').rsplit('/', 1)[-1] if '/' in path or '\\' in path else path
-    
-    if ext in IMAGE_EXTENSIONS:
-        # For images, try to get dimensions (placeholder - would need PIL)
-        return f"[image: {filename}]"
-    elif ext in DOC_EXTENSIONS:
-        return f"[doc: {filename}]"
-    elif ext in CODE_EXTENSIONS:
-        return f"[code: {filename}]"
-    else:
-        return f"[file: {filename}]"
-
-
-def format_paste_summary(text: str) -> str:
-    """Format a multi-line paste as a summary."""
-    lines = text.split('\n')
-    line_count = len(lines)
-    
-    if line_count == 1:
-        return text
-    
-    # Check if it looks like code
-    code_indicators = ['{', '}', 'def ', 'function ', 'class ', 'import ', 'from ', '#include']
-    is_code = any(indicator in text for indicator in code_indicators)
-    
-    if is_code:
-        return f"[code: {line_count} lines]"
-    else:
-        return f"[text: {line_count} lines]"
-
-
-def detect_and_format_input(text: str) -> tuple:
-    """
-    Detect input type and format appropriately.
-    Returns (formatted_display, actual_content, input_type)
-    
-    input_type: 'text', 'file', 'image', 'doc', 'code', 'multiline'
-    """
-    text = text.strip()
-    
-    # Check for file path
-    file_path = detect_file_path(text)
-    if file_path:
-        ext = get_file_extension(file_path)
-        if ext in IMAGE_EXTENSIONS:
-            return (format_file_reference(file_path), file_path, 'image')
-        elif ext in DOC_EXTENSIONS:
-            return (format_file_reference(file_path), file_path, 'doc')
-        elif ext in CODE_EXTENSIONS:
-            return (format_file_reference(file_path), file_path, 'code')
-        else:
-            return (format_file_reference(file_path), file_path, 'file')
-    
-    # Check for multi-line content
-    if '\n' in text:
-        line_count = len(text.split('\n'))
-        return (format_paste_summary(text), text, 'multiline')
-    
-    return (text, text, 'text')
+    def get_config(): return ConfigManager()
+    def get_history(): return HistoryManager()
+    def is_file_path(t): return False
+    def format_file_display(p): return f"[ {os.path.basename(p)} ]"
+    def process_pasted_content(c): return (c, c, False)
+    def convert_unmarked_file_paths(t): return t
+    def prepend_slash_command_instruction(c): return c
 
 
 # =============================================================================
@@ -916,23 +226,111 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
     
     # Slash command handler for autocomplete
     slash_handler = SlashCommandHandler()
+    dropdown_lines = 0  # Track dropdown lines for cleanup
     
     # Sync cursor position after render_initial
     if show_ui:
         box.set_cursor(0, 0, '')
+    
+    def update_slash_dropdown():
+        """Update the slash command dropdown display."""
+        nonlocal dropdown_lines
+        if slash_handler.active and slash_handler.matches:
+            # Build items with descriptions
+            items = []
+            for cmd in slash_handler.matches:
+                info = SLASH_COMMANDS.get(cmd, {})
+                desc = info.get("desc", "")
+                items.append((cmd, desc))
+            dropdown_lines = box.render_dropdown(items, slash_handler.selected_index, max_items=5)
+        elif dropdown_lines > 0:
+            box.clear_dropdown(dropdown_lines)
+            dropdown_lines = 0
+    
+    def render_line_with_badges(line: str) -> str:
+        """Convert «path» markers to [ filename ] badges for display."""
+        import re
+        # Find all «path» patterns and replace with badges
+        def replace_badge(match):
+            path = match.group(1)
+            return f"{THEME['accent']}[ {os.path.basename(path)} ]{THEME['reset']}"
+        return re.sub(r'«([^»]+)»', replace_badge, line)
+    
+    def calculate_display_cursor_col(line: str, cursor_col: int) -> tuple:
+        """
+        Calculate the display column position accounting for badge rendering.
+        
+        The buffer stores «/full/path/file.ext» but displays [ file.ext ].
+        We need to calculate where the cursor should be in the displayed text.
+        
+        Returns:
+            (display_col, display_text_before_cursor)
+        """
+        import re
+        
+        # Find all badge markers and their positions
+        badge_pattern = re.compile(r'«([^»]+)»')
+        
+        # Build the display text and track cursor position
+        display_parts = []
+        last_end = 0
+        cursor_display_col = 0
+        found_cursor = False
+        
+        for match in badge_pattern.finditer(line):
+            start, end = match.span()
+            path = match.group(1)
+            badge_text = f"[ {os.path.basename(path)} ]"
+            
+            # Add text before this badge
+            if start > last_end:
+                segment = line[last_end:start]
+                display_parts.append(segment)
+                if not found_cursor and cursor_col <= start:
+                    # Cursor is in this segment
+                    cursor_display_col = len(''.join(display_parts[:-1])) + (cursor_col - last_end)
+                    found_cursor = True
+            
+            # Check if cursor is inside the badge marker
+            if not found_cursor and cursor_col <= end:
+                # Cursor is at or inside badge - put it at end of badge
+                cursor_display_col = len(''.join(display_parts)) + len(badge_text)
+                found_cursor = True
+            
+            display_parts.append(badge_text)
+            last_end = end
+        
+        # Add remaining text after last badge
+        if last_end < len(line):
+            segment = line[last_end:]
+            display_parts.append(segment)
+            if not found_cursor:
+                cursor_display_col = len(''.join(display_parts[:-1])) + (cursor_col - last_end)
+                found_cursor = True
+        
+        if not found_cursor:
+            cursor_display_col = len(''.join(display_parts))
+        
+        display_text = ''.join(display_parts)
+        text_before = display_text[:cursor_display_col]
+        
+        return cursor_display_col, text_before
     
     def refresh_display():
         """Refresh the entire input box display."""
         visible_lines = buffer.get_visible_lines(box.height)
         for i in range(box.height):
             line_text = visible_lines[i] if i < len(visible_lines) else ''
-            box.update_line(i, line_text)
+            # Render file badges for display
+            display_text = render_line_with_badges(line_text)
+            box.update_line(i, display_text)
         visible_row = buffer.get_visible_cursor_row()
         box.set_scroll_info(buffer.line_count, buffer.scroll_offset)
-        # Pass text before cursor for correct CJK width calculation
+        
+        # Calculate cursor position accounting for badge rendering
         current_line = buffer.lines[buffer.cursor_row]
-        text_before = current_line[:buffer.cursor_col]
-        box.set_cursor(visible_row, buffer.cursor_col, text_before)
+        display_col, text_before = calculate_display_cursor_col(current_line, buffer.cursor_col)
+        box.set_cursor(visible_row, display_col, text_before)
     
     def show_status(msg: str):
         """Show a status message in the first line."""
@@ -945,89 +343,122 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
             paste_collector = PasteCollector()
             paste_collector.enable()
         
-        # Rapid input detection for drag-drop (fallback when Bracketed Paste not supported)
-        # This works with all languages including Chinese paths like D:\文档\项目\file.txt
+        # Path detection for drag-drop (fallback when Bracketed Paste not supported)
+        # Uses pattern-based detection instead of timing
         import time as _time
-        rapid_input_buffer = []
-        # 10ms threshold: only catches actual drag-drop/paste (not fast typing)
-        # Drag-drop typically sends chars in < 5ms intervals
-        # Fast human typing is typically 50-150ms between chars
-        # This prevents false positives that cause typing lag
-        rapid_input_threshold = 0.010  # 10ms - only catches system paste/drag-drop
-        rapid_input_min_length = 4     # Minimum chars to consider as potential path
+        
+        # Path collection state
+        path_buffer = []           # Characters collected for potential path
+        path_collecting = False    # Are we collecting a potential path?
+        path_wait_timeout = 0.100  # 100ms - wait for path input to complete
         last_char_time = 0
-        rapid_input_start_time = 0     # Track when rapid input started
         
         # Debug mode - set to True to see what's happening
-        DEBUG_RAPID_INPUT = False
+        DEBUG_PATH_DETECT = False
         
         def debug_log(msg: str):
             """Log debug message if debug mode is enabled."""
-            if DEBUG_RAPID_INPUT:
+            if DEBUG_PATH_DETECT:
                 write(f"\n{THEME['dim']}[DEBUG] {msg}{THEME['reset']}\n")
         
-        def process_rapid_input():
-            """Process accumulated rapid input as potential file path."""
-            nonlocal rapid_input_buffer, rapid_input_start_time
-            if not rapid_input_buffer:
+        def is_path_start(char: str, prev_char: str) -> bool:
+            r"""
+            Check if this character could be the start of a file path.
+            
+            Detects:
+            - Windows: C:\ D:\ etc (letter + colon, next char should be \)
+            - Unix: / at start of input or after space
+            - Home: ~ at start of input or after space
+            """
+            # Check for drive letter pattern: previous was letter, current is ':'
+            if char == ':' and prev_char and prev_char.isalpha():
+                return True
+            return False
+        
+        def is_path_trigger(char: str, buffer_text: str) -> bool:
+            """
+            Check if current char triggers path collection mode.
+            
+            Called when we see ':' after a letter (potential Windows path).
+            """
+            # Windows path: X: where X is a letter
+            if char == ':':
+                # Check if previous char in buffer is a drive letter
+                if buffer_text and buffer_text[-1:].isalpha():
+                    # Could be start of Windows path like C: or D:
+                    return True
+            return False
+        
+        def looks_like_path_start_at_cursor() -> bool:
+            """
+            Check if the text at cursor position looks like start of a path.
+            Checks the current line content.
+            """
+            if buffer.cursor_col < 1:
+                return False
+            line = buffer.lines[buffer.cursor_row]
+            # Get the last few characters before cursor
+            start = max(0, buffer.cursor_col - 2)
+            recent = line[start:buffer.cursor_col]
+            # Check for X: pattern (Windows drive)
+            if len(recent) >= 2 and recent[-1] == ':' and recent[-2].isalpha():
+                return True
+            return False
+        
+        def process_path_buffer(include_prefix: str = ""):
+            """
+            Process accumulated path buffer as potential file path.
+            
+            Args:
+                include_prefix: Characters already in the main buffer that are part of the path
+                               (e.g., "C" when we detected ":" and started collecting)
+            """
+            nonlocal path_buffer, path_collecting
+            
+            if not path_buffer and not include_prefix:
+                path_collecting = False
                 return False
             
-            content = ''.join(rapid_input_buffer)
-            rapid_input_buffer = []
-            rapid_input_start_time = 0
+            # Combine prefix (already in buffer) with collected chars
+            collected = ''.join(path_buffer)
+            full_content = include_prefix + collected
+            path_buffer = []
+            path_collecting = False
             
-            debug_log(f"Processing rapid input: '{content[:50]}...' (len={len(content)})")
+            debug_log(f"Processing path buffer: '{full_content[:50]}' (len={len(full_content)})")
             
-            # Safety check: if it's just repeated characters (key held down), treat as normal input
-            if len(content) >= 2 and len(set(content)) == 1:
-                debug_log("Detected key repeat, inserting as normal text")
-                # All same character - likely key repeat, insert one by one
-                for char in content:
-                    buffer.insert_char(char)
+            # Check if it's actually a file path
+            if is_file_path(full_content.strip()):
+                debug_log(f"Confirmed as file path!")
+                
+                # Remove the prefix from main buffer (it was already inserted)
+                if include_prefix:
+                    # Backspace to remove the prefix we already typed
+                    for _ in include_prefix:
+                        buffer.backspace()
+                
+                # Format as file path marker
+                formatted = f"«{full_content.strip()}»"
+                buffer.insert_text(formatted)
                 refresh_display()
                 return True
-            
-            # Only check for file path if content is long enough and looks like a path
-            # (contains path separators or starts with drive letter/slash)
-            looks_like_path = (
-                len(content) >= rapid_input_min_length and
-                (
-                    '\\' in content or 
-                    '/' in content or 
-                    (len(content) >= 3 and content[1] == ':') or  # Windows drive
-                    content.startswith('~')  # Unix home
-                )
-            )
-            
-            debug_log(f"Looks like path: {looks_like_path}")
-            
-            if looks_like_path:
-                # Check if it's actually a file path
-                display_text, actual_text, is_file = process_pasted_content(content)
-                
-                debug_log(f"is_file_path result: {is_file}")
-                
-                if is_file:
-                    # Format as file path marker
-                    formatted = f"«{actual_text.strip()}»"
-                    debug_log(f"Formatted as: {formatted}")
-                    buffer.insert_text(formatted)
-                    refresh_display()
-                    return True
-            
-            # Not a file path or too short, insert as regular text
-            buffer.insert_text(content)
-            # Expand box up to 10 lines, then use internal scrolling
-            if buffer.line_count > box.height and box.height < 10:
-                box.expand_height(min(buffer.line_count, 10))
-            refresh_display()
-            return True
+            else:
+                debug_log(f"Not a file path, inserting as text")
+                # Not a file path - just insert the collected characters normally
+                # (prefix is already in buffer, just add the rest)
+                buffer.insert_text(collected)
+                refresh_display()
+                return True
         
         try:
             while True:
+                # Determine read timeout based on state
+                # When collecting a path, use short timeout to detect end of input
+                read_timeout = path_wait_timeout if path_collecting else None
+                
                 # Read input with paste detection if available
                 if paste_collector:
-                    key, is_paste = paste_collector.read(kb.getch)
+                    key, is_paste = paste_collector.read(kb.getch, timeout=read_timeout)
                     if is_paste:
                         # Transition to paste mode
                         if state_machine:
@@ -1058,21 +489,52 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         refresh_display()
                         continue
                 else:
-                    key = kb.getch()
+                    key = kb.getch(timeout=read_timeout)
                 
-                # Track time for rapid input detection
+                # Track time for path collection
                 current_time = _time.time()
                 
-                # Process any pending rapid input buffer on non-printable keys
-                if rapid_input_buffer and not kb.is_printable(key):
-                    process_rapid_input()
+                # If we're collecting a path and got a non-printable key, process the buffer
+                if path_collecting and path_buffer and not kb.is_printable(key):
+                    # Get the prefix (drive letter) that's already in the main buffer
+                    line = buffer.lines[buffer.cursor_row]
+                    prefix = ""
+                    if buffer.cursor_col >= 1 and line[buffer.cursor_col-1:buffer.cursor_col] == ':':
+                        if buffer.cursor_col >= 2:
+                            prefix = line[buffer.cursor_col-2:buffer.cursor_col]  # e.g., "C:"
+                    process_path_buffer(prefix)
                 
                 if not key:
+                    # Check for path collection timeout
+                    if path_collecting and path_buffer:
+                        time_since_last = current_time - last_char_time
+                        if time_since_last > path_wait_timeout:
+                            line = buffer.lines[buffer.cursor_row]
+                            prefix = ""
+                            if buffer.cursor_col >= 2:
+                                # Check if we have "X:" pattern before cursor
+                                potential_prefix = line[max(0, buffer.cursor_col-2):buffer.cursor_col]
+                                if len(potential_prefix) == 2 and potential_prefix[1] == ':' and potential_prefix[0].isalpha():
+                                    prefix = potential_prefix
+                            process_path_buffer(prefix)
                     continue
                 
                 # Ctrl+C - Cancel
                 if key == Keys.CTRL_C:
-                    writeln(f"\n{THEME['error']}[x] Cancelled{THEME['reset']}")
+                    if show_ui:
+                        box.finish()
+                    # Fancy goodbye animation
+                    import time as _time
+                    goodbye_frames = [
+                        f"{THEME['dim']}♾️  Goodbye...{THEME['reset']}",
+                        f"{THEME['accent']}♾️  See you soon~{THEME['reset']}",
+                        f"{THEME['border']}🐍 The serpent rests...{THEME['reset']}",
+                    ]
+                    for frame in goodbye_frames:
+                        write(f"\r{' ' * 40}\r{frame}")
+                        sys.stderr.flush()
+                        _time.sleep(0.15)
+                    writeln("")
                     sys.exit(130)
                 
                 # Handle Enter variants
@@ -1085,6 +547,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                             # Convert any unmarked file paths before submitting
                             text = convert_unmarked_file_paths(text)
                             history.add(text)
+                            if dropdown_lines > 0:
+                                box.clear_dropdown(dropdown_lines)
                             if show_ui:
                                 box.finish()
                             return text
@@ -1097,6 +561,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                             # Convert any unmarked file paths before submitting
                             final_text = convert_unmarked_file_paths(final_text)
                             history.add(final_text)
+                        if dropdown_lines > 0:
+                            box.clear_dropdown(dropdown_lines)
                         if show_ui:
                             box.finish()
                         return final_text
@@ -1116,6 +582,8 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         # Convert any unmarked file paths before submitting
                         text = convert_unmarked_file_paths(text)
                         history.add(text)
+                        if dropdown_lines > 0:
+                            box.clear_dropdown(dropdown_lines)
                         if show_ui:
                             box.finish()
                         return text
@@ -1130,14 +598,25 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                             box.shrink_height(max(1, buffer.line_count))
                         # Update slash command state
                         current_line = buffer.lines[buffer.cursor_row]
-                        if slash_handler.active:
-                            if current_line.startswith('/'):
-                                slash_handler.update(current_line.strip())
-                                if slash_handler.matches:
-                                    box.set_mode(f"Tab: complete | {len(slash_handler.matches)} matches")
+                        line_stripped = current_line.strip()
+                        # Check if still in command context
+                        is_command_context = (
+                            buffer.line_count == 1 and
+                            buffer.cursor_row == 0 and
+                            line_stripped.startswith('/') and
+                            ' ' not in line_stripped
+                        )
+                        if is_command_context:
+                            slash_handler.update(line_stripped)
+                            if slash_handler.matches:
+                                box.set_mode(f"Tab: complete | {len(slash_handler.matches)} matches")
                             else:
-                                slash_handler.cancel()
-                                box.set_mode("INPUT")
+                                box.set_mode("No matching commands")
+                            update_slash_dropdown()
+                        elif slash_handler.active:
+                            slash_handler.cancel()
+                            box.set_mode("INPUT")
+                            update_slash_dropdown()  # This will clear the dropdown
                         refresh_display()
                     continue
                 
@@ -1151,8 +630,17 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         refresh_display()
                     continue
                 
-                # Arrow keys - Up for history when on first line
+                # Arrow keys - Up/Down for slash command selection or history
                 if key in (Keys.UP, Keys.UP_ALT, Keys.WIN_UP):
+                    # If slash command mode is active, navigate suggestions
+                    if slash_handler.active and slash_handler.matches:
+                        slash_handler.move_up()
+                        # Show selected command in status and update dropdown
+                        selected = slash_handler.matches[slash_handler.selected_index]
+                        hint = f"↑↓: select | Tab: {selected}"
+                        box.set_mode(hint)
+                        update_slash_dropdown()
+                        continue
                     # On first line (row 0): browse history
                     if buffer.cursor_row == 0 and not buffer.move_up():
                         # Can't move up - we're at top, browse history
@@ -1168,6 +656,15 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         refresh_display()
                     continue
                 if key in (Keys.DOWN, Keys.DOWN_ALT, Keys.WIN_DOWN):
+                    # If slash command mode is active, navigate suggestions
+                    if slash_handler.active and slash_handler.matches:
+                        slash_handler.move_down()
+                        # Show selected command in status and update dropdown
+                        selected = slash_handler.matches[slash_handler.selected_index]
+                        hint = f"↑↓: select | Tab: {selected}"
+                        box.set_mode(hint)
+                        update_slash_dropdown()
+                        continue
                     # On last line: browse history forward (if browsing)
                     if buffer.cursor_row == buffer.line_count - 1 and not buffer.move_down():
                         # Can't move down - we're at bottom
@@ -1197,6 +694,39 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         visible_row = buffer.get_visible_cursor_row()
                         text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
                         box.set_cursor(visible_row, buffer.cursor_col, text_before)
+                    continue
+                
+                # Ctrl+Left - Jump to previous word
+                if key in (Keys.CTRL_LEFT, Keys.WIN_CTRL_LEFT):
+                    line = buffer.lines[buffer.cursor_row]
+                    col = buffer.cursor_col
+                    # Skip spaces going left
+                    while col > 0 and (col > len(line) or line[col-1] in ' \t'):
+                        col -= 1
+                    # Skip word characters going left
+                    while col > 0 and col <= len(line) and line[col-1] not in ' \t':
+                        col -= 1
+                    buffer.cursor_col = col
+                    visible_row = buffer.get_visible_cursor_row()
+                    text_before = line[:col]
+                    box.set_cursor(visible_row, col, text_before)
+                    continue
+                
+                # Ctrl+Right - Jump to next word
+                if key in (Keys.CTRL_RIGHT, Keys.WIN_CTRL_RIGHT):
+                    line = buffer.lines[buffer.cursor_row]
+                    col = buffer.cursor_col
+                    line_len = len(line)
+                    # Skip word characters going right
+                    while col < line_len and line[col] not in ' \t':
+                        col += 1
+                    # Skip spaces going right
+                    while col < line_len and line[col] in ' \t':
+                        col += 1
+                    buffer.cursor_col = col
+                    visible_row = buffer.get_visible_cursor_row()
+                    text_before = line[:col]
+                    box.set_cursor(visible_row, col, text_before)
                     continue
                 
                 # Home/End (support ANSI, alternate, Windows, and Ctrl shortcuts)
@@ -1229,10 +759,13 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                 if key == '\t':
                     if slash_handler.active and slash_handler.matches:
                         # Complete with selected command
-                        completed = slash_handler.complete()
+                        selected_cmd = slash_handler.matches[slash_handler.selected_index]
                         # Clear current line and insert completed command
                         buffer.clear_line()
-                        buffer.insert_text(completed)
+                        buffer.insert_text(selected_cmd + " ")  # Add space after command
+                        slash_handler.cancel()
+                        box.set_mode("INPUT")
+                        update_slash_dropdown()  # Clear dropdown
                         refresh_display()
                     continue
                 
@@ -1240,33 +773,55 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                 if key == Keys.ESCAPE:
                     if slash_handler.active:
                         slash_handler.cancel()
+                        box.set_mode("INPUT")
+                        update_slash_dropdown()  # Clear dropdown
                     continue
                 
                 # Printable characters (including CJK from IME)
                 if kb.is_printable(key):
-                    # Rapid input detection for drag-drop (works with all languages)
-                    # Key insight: IME input has gaps (user selecting characters)
-                    # while drag-drop sends everything at once (< 100ms between chars)
                     time_since_last = current_time - last_char_time
                     
-                    # 100ms threshold: fast enough to catch drag-drop
-                    # but slow enough to not interfere with fast typing
-                    is_rapid = time_since_last < rapid_input_threshold and last_char_time > 0
+                    debug_log(f"Char '{key}' collecting={path_collecting} buffer={path_buffer}")
                     
-                    debug_log(f"Char '{key}' time_since_last={time_since_last:.3f}s is_rapid={is_rapid} buffer_len={len(rapid_input_buffer)}")
+                    # === Path Collection Mode ===
+                    if path_collecting:
+                        # We're collecting characters for a potential path
+                        # Check if this char ends the path (space, newline, etc.)
+                        if key in (' ', '\t'):
+                            # Path ended - process it
+                            line = buffer.lines[buffer.cursor_row]
+                            prefix = ""
+                            if buffer.cursor_col >= 2:
+                                potential_prefix = line[max(0, buffer.cursor_col-2):buffer.cursor_col]
+                                if len(potential_prefix) == 2 and potential_prefix[1] == ':' and potential_prefix[0].isalpha():
+                                    prefix = potential_prefix
+                            process_path_buffer(prefix)
+                            # Insert the space/tab normally
+                            buffer.insert_char(key)
+                            last_char_time = current_time
+                            refresh_display()
+                            continue
+                        else:
+                            # Continue collecting path characters
+                            path_buffer.append(key)
+                            last_char_time = current_time
+                            # Don't render yet - wait for path to complete
+                            continue
                     
-                    if is_rapid:
-                        # Rapid input detected - accumulate in buffer for path detection
-                        if not rapid_input_buffer:
-                            rapid_input_start_time = current_time
-                        rapid_input_buffer.append(key)
-                        last_char_time = current_time
-                        continue  # With 10ms threshold, this only triggers for drag-drop
-                    elif rapid_input_buffer:
-                        # Gap detected after rapid input - process buffer first
-                        # DON'T add current char to buffer - it's the start of new input
-                        process_rapid_input()
-                        # Fall through to handle current char normally
+                    # === Check for Path Start Pattern ===
+                    # Detect Windows path: when we see '\' after "X:" pattern
+                    if key == '\\':
+                        # Check if we just typed "X:" (drive letter + colon)
+                        line = buffer.lines[buffer.cursor_row]
+                        if buffer.cursor_col >= 2:
+                            recent = line[buffer.cursor_col-2:buffer.cursor_col]
+                            if len(recent) == 2 and recent[1] == ':' and recent[0].isalpha():
+                                # This is "C:\" pattern - start collecting!
+                                debug_log(f"Detected Windows path start: {recent}\\")
+                                path_collecting = True
+                                path_buffer = [key]  # Start with the backslash
+                                last_char_time = current_time
+                                continue  # Don't render yet
                     
                     # Update last char time
                     last_char_time = current_time
@@ -1278,32 +833,66 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     # Insert character one by one
                     buffer.insert_char(key)
                     
-                    # Slash command detection: check if current line starts with /
+                    # Slash command detection: only when input is single line starting with /
+                    # and no space (command not yet completed)
                     current_line = buffer.lines[buffer.cursor_row]
-                    if current_line.startswith('/'):
+                    line_stripped = current_line.strip()
+                    is_command_context = (
+                        buffer.line_count == 1 and  # Only one line
+                        buffer.cursor_row == 0 and  # On first line
+                        line_stripped.startswith('/') and  # Starts with /
+                        ' ' not in line_stripped  # No space (still typing command)
+                    )
+                    
+                    if is_command_context:
                         # Activate or update slash handler
                         if not slash_handler.active:
                             slash_handler.start('/')
-                        slash_handler.update(current_line.strip())
-                        # Show hint in status bar if matches exist
-                        if slash_handler.matches:
-                            hint = f"Tab: complete | {len(slash_handler.matches)} matches"
-                            box.set_mode(hint)
+                        slash_handler.update(line_stripped)
+                        # Update status bar with match count
+                        match_count = len(slash_handler.matches)
+                        if match_count > 0:
+                            hint = f"Tab: complete | {match_count} matches"
+                        else:
+                            hint = "No matching commands"
+                        box.set_mode(hint)
+                        update_slash_dropdown()
                     elif slash_handler.active:
-                        # Line no longer starts with /, cancel
+                        # No longer in command context, cancel
                         slash_handler.cancel()
                         box.set_mode("INPUT")
+                        update_slash_dropdown()  # Clear dropdown
                     
                     visible_row = buffer.get_visible_cursor_row()
                     if visible_row < box.height:
-                        box.update_line(visible_row, buffer.lines[buffer.cursor_row])
-                        # Skip status bar update during typing to avoid cursor flicker
-                        text_before = buffer.lines[buffer.cursor_row][:buffer.cursor_col]
-                        box.set_cursor(visible_row, buffer.cursor_col, text_before, update_status=False)
+                        # Render with badge formatting
+                        display_text = render_line_with_badges(buffer.lines[buffer.cursor_row])
+                        box.update_line(visible_row, display_text)
+                        # Calculate cursor position accounting for badges
+                        display_col, text_before = calculate_display_cursor_col(
+                            buffer.lines[buffer.cursor_row], buffer.cursor_col
+                        )
+                        box.set_cursor(visible_row, display_col, text_before, update_status=False)
         except KeyboardInterrupt:
-            writeln(f"\n{THEME['error']}[x] Cancelled{THEME['reset']}")
+            if show_ui:
+                box.finish()
+            # Fancy goodbye animation
+            import time as _time
+            goodbye_frames = [
+                f"{THEME['dim']}♾️  Goodbye...{THEME['reset']}",
+                f"{THEME['accent']}♾️  See you soon~{THEME['reset']}",
+                f"{THEME['border']}🐍 The serpent rests...{THEME['reset']}",
+            ]
+            for frame in goodbye_frames:
+                write(f"\r{' ' * 40}\r{frame}")
+                sys.stderr.flush()
+                _time.sleep(0.15)
+            writeln("")
             sys.exit(130)
         finally:
+            # Clean up dropdown if visible
+            if dropdown_lines > 0:
+                box.clear_dropdown(dropdown_lines)
             # Disable Bracketed Paste Mode on exit
             if paste_collector:
                 paste_collector.disable()

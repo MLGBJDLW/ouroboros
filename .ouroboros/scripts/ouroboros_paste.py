@@ -410,36 +410,39 @@ class PasteCollector:
         if not char:
             return ('', False)
         
-        # Feed to parser
-        result = self._parser.feed(char)
+        # IMPORTANT: getch_func already handles escape sequences for arrow keys etc.
+        # It returns complete sequences like '\x1b[A' for arrow keys.
+        # We only need to check if this is the START of a paste sequence.
         
-        if result == 'paste-start':
-            # Start collecting paste content
-            return self._collect_paste(getch_func)
-        
-        elif result == 'char':
-            # Regular character(s)
-            pending = self._parser.pending_chars
-            if len(pending) > 1:
-                # Multiple chars from buffer flush, queue the rest
-                self._pending_keys.extend(list(pending[1:]))
-                return (pending[0], False)
-            elif len(pending) == 1:
-                return (pending, False)
+        # Check if this is ESC - could be start of paste sequence OR arrow key
+        if char == '\x1b':
+            # This is a single ESC - getch didn't find a complete sequence
+            # Feed to parser to check for paste sequence
+            result = self._parser.feed(char)
+            if result == 'buffering':
+                return self._continue_parsing(getch_func)
+            elif result == 'paste-start':
+                return self._collect_paste(getch_func)
             else:
-                # Empty - shouldn't happen, but handle gracefully
-                return ('', False)
+                pending = self._parser.pending_chars
+                return (pending, False) if pending else ('\x1b', False)
         
-        elif result == 'buffering':
-            # Parser is waiting for more characters to complete sequence
-            # We need to read more to know if it's a paste sequence
-            return self._continue_parsing(getch_func)
+        # Check if this is a complete escape sequence (arrow key, etc.)
+        # getch_func returns these as multi-char strings like '\x1b[A'
+        if len(char) > 1 and char.startswith('\x1b'):
+            # This is a complete escape sequence from getch (arrow key, etc.)
+            # Check if it's a paste start sequence
+            if char == '\x1b[200~':
+                return self._collect_paste(getch_func)
+            elif char == '\x1b[201~':
+                # Unexpected paste end - ignore and read next
+                return self.read(getch_func, timeout)
+            else:
+                # Regular escape sequence (arrow key, etc.) - return as-is
+                return (char, False)
         
-        elif result == 'paste-end':
-            # Unexpected paste end without start - ignore
-            return self.read(getch_func, timeout)
-        
-        return ('', False)
+        # Regular single character
+        return (char, False)
     
     def _continue_parsing(self, getch_func) -> tuple:
         """Continue parsing when buffering for escape sequence."""

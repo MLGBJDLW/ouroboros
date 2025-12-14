@@ -515,8 +515,11 @@ class InputBox:
         output.append(ANSI.move_to_column(1))
         output.append(ANSI.CLEAR_LINE)
         
-        # Simple hint text
-        hint_text = " Ctrl+D=submit "
+        # Use mode text if set, otherwise default hint
+        if self._mode and self._mode != "INPUT":
+            hint_text = f" {self._mode} "
+        else:
+            hint_text = " Ctrl+D=submit "
         
         # Position indicator
         line_num = self.scroll_offset + self.cursor_row + 1
@@ -674,6 +677,100 @@ class InputBox:
         lines_below = self.height - self.cursor_row + 1
         write(ANSI.move_down(lines_below))
         write(ANSI.move_to_column(1))
+    
+    def render_dropdown(self, items: list, selected_index: int = 0, max_items: int = 5) -> int:
+        """
+        Render a dropdown menu below the input box.
+        
+        Args:
+            items: List of (command, description) tuples or strings
+            selected_index: Currently selected item index
+            max_items: Maximum items to show
+            
+        Returns:
+            Number of lines rendered (for cleanup)
+        """
+        if not items:
+            return 0
+        
+        c = THEME
+        
+        # Limit items shown
+        visible_items = items[:max_items]
+        dropdown_width = min(self.width - 4, 50)
+        
+        output = []
+        output.append(ANSI.SAVE_CURSOR)
+        output.append(ANSI.HIDE_CURSOR)
+        
+        # Move below the input box (past remaining lines + bottom border)
+        lines_down = self.height - self.cursor_row + 1
+        output.append(ANSI.move_down(lines_down))
+        output.append(ANSI.move_to_column(3))  # Indent slightly
+        
+        # Render dropdown items
+        for i, item in enumerate(visible_items):
+            output.append(ANSI.CLEAR_LINE)
+            
+            # Handle tuple (command, desc) or string
+            if isinstance(item, tuple):
+                cmd, desc = item[0], item[1] if len(item) > 1 else ""
+            else:
+                cmd, desc = str(item), ""
+            
+            # Selection marker
+            if i == selected_index:
+                marker = f"{c['accent']}>{c['reset']}"
+                cmd_style = c['accent']
+            else:
+                marker = " "
+                cmd_style = c['prompt']
+            
+            # Format: > /command     — description
+            if desc:
+                line = f"{marker} {cmd_style}{cmd:<20}{c['reset']} {c['dim']}— {desc}{c['reset']}"
+            else:
+                line = f"{marker} {cmd_style}{cmd}{c['reset']}"
+            
+            output.append(line)
+            if i < len(visible_items) - 1:
+                output.append(ANSI.move_down(1))
+                output.append(ANSI.move_to_column(3))
+        
+        # Show "more" indicator if truncated
+        if len(items) > max_items:
+            output.append(ANSI.move_down(1))
+            output.append(ANSI.move_to_column(3))
+            output.append(ANSI.CLEAR_LINE)
+            output.append(f"{c['dim']}  ... and {len(items) - max_items} more{c['reset']}")
+        
+        output.append(ANSI.RESTORE_CURSOR)
+        output.append(ANSI.SHOW_CURSOR)
+        
+        write(''.join(output))
+        return len(visible_items) + (1 if len(items) > max_items else 0)
+    
+    def clear_dropdown(self, num_lines: int) -> None:
+        """Clear the dropdown area below the input box."""
+        if num_lines <= 0:
+            return
+        
+        output = []
+        output.append(ANSI.SAVE_CURSOR)
+        
+        # Move below the input box
+        lines_down = self.height - self.cursor_row + 1
+        output.append(ANSI.move_down(lines_down))
+        
+        # Clear each line
+        for i in range(num_lines):
+            output.append(ANSI.move_to_column(1))
+            output.append(ANSI.CLEAR_LINE)
+            if i < num_lines - 1:
+                output.append(ANSI.move_down(1))
+        
+        output.append(ANSI.RESTORE_CURSOR)
+        write(''.join(output))
 
 
 class WelcomeBox:

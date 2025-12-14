@@ -234,16 +234,28 @@ class WindowsKeyBuffer:
             self._old_mode = wintypes.DWORD()
             kernel32.GetConsoleMode(self._handle, ctypes.byref(self._old_mode))
             
-            # Set mode for character input with IME support
-            # ENABLE_PROCESSED_INPUT = 0x0001 (handle Ctrl+C)
-            # ENABLE_ECHO_INPUT = 0x0004 (we don't want this)
-            # ENABLE_LINE_INPUT = 0x0002 (we don't want this)
-            ENABLE_PROCESSED_INPUT = 0x0001
-            kernel32.SetConsoleMode(self._handle, ENABLE_PROCESSED_INPUT)
+            # Console mode flags
+            ENABLE_PROCESSED_INPUT = 0x0001      # Handle Ctrl+C
+            ENABLE_LINE_INPUT = 0x0002           # We don't want this
+            ENABLE_ECHO_INPUT = 0x0004           # We don't want this
+            ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200  # VT mode - sends ANSI sequences
+            
+            # Check if VT Input mode was enabled (VS Code Terminal often enables this)
+            self._vt_input_mode = bool(self._old_mode.value & ENABLE_VIRTUAL_TERMINAL_INPUT)
+            
+            # Set mode: keep VT input if it was enabled (for compatibility),
+            # but disable line input and echo
+            new_mode = ENABLE_PROCESSED_INPUT
+            if self._vt_input_mode:
+                # Keep VT input mode - we'll handle ANSI sequences
+                new_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT
+            
+            kernel32.SetConsoleMode(self._handle, new_mode)
             
             self._use_readconsole = True
         except Exception:
             self._use_readconsole = False
+            self._vt_input_mode = False
         return self
     
     def __exit__(self, *args):
@@ -255,6 +267,121 @@ class WindowsKeyBuffer:
                 kernel32.SetConsoleMode(self._handle, self._old_mode)
             except Exception:
                 pass
+    
+    def _read_ansi_sequence_from_console_vt(self, kernel32, INPUT_RECORD, KEY_EVENT_RECORD,
+                                            timeout: Optional[float], start_time: float) -> str:
+        """
+        Read an ANSI escape sequence from console input in VT Input mode.
+        Called when ESC character is received, reads the rest of the sequence
+        by reading subsequent KEY_EVENT records.
+        
+        Args:
+            kernel32: The kernel32 DLL handle
+            INPUT_RECORD: The INPUT_RECORD ctypes structure class
+            KEY_EVENT_RECORD: The KEY_EVENT_RECORD ctypes structure class
+            timeout: Optional timeout
+            start_time: When the read operation started
+        
+        Returns the appropriate Keys constant or the raw sequence.
+        """
+        import ctypes
+        from ctypes import wintypes
+        
+        # We already got ESC, now read the rest
+        seq = '\x1b'
+        
+        # Helper to read next char with short timeout
+        def read_next_char(max_wait: float = 0.1) -> str:
+            wait_start = time.time()
+            while (time.time() - wait_start) < max_wait:
+                num_events = wintypes.DWORD()
+                if kernel32.GetNumberOfConsoleInputEvents(self._handle, ctypes.byref(num_events)):
+                    if num_events.value > 0:
+                        record = INPUT_RECORD()
+                        num_read = wintypes.DWORD()
+                        if kernel32.ReadConsoleInputW(self._handle, ctypes.byref(record), 1, ctypes.byref(num_read)):
+                            if num_read.value > 0 and record.EventType == 0x0001 and record.Event.bKeyDown:
+                                char = record.Event.uChar
+                                if char and char != '\x00':
+                                    return char
+                time.sleep(0.001)  # Very short sleep for fast sequence reading
+            return ''
+        
+        # Read second character
+        char2 = read_next_char()
+        if not char2:
+            return seq  # Just ESC
+        
+        seq += char2
+        
+        if char2 == '[':
+            # CSI sequence
+            char3 = read_next_char()
+            if not char3:
+                return seq
+            seq += char3
+            
+            # Arrow keys: ESC [ A/B/C/D
+            if char3 == 'A':
+                return Keys.UP
+            elif char3 == 'B':
+                return Keys.DOWN
+            elif char3 == 'C':
+                return Keys.RIGHT
+            elif char3 == 'D':
+                return Keys.LEFT
+            elif char3 == 'H':
+                return Keys.HOME
+            elif char3 == 'F':
+                return Keys.END
+            elif char3.isdigit():
+                # Extended sequence like ESC[1;5A or ESC[3~
+                while True:
+                    next_c = read_next_char()
+                    if not next_c:
+                        break
+                    seq += next_c
+                    if next_c.isalpha() or next_c == '~':
+                        break
+                
+                # Parse the sequence (extract the part after '[')
+                params = seq[2:]  # Remove ESC[
+                if params == '3~':
+                    return Keys.DELETE
+                elif params == '1~':
+                    return Keys.HOME
+                elif params == '4~':
+                    return Keys.END
+                elif params == '5~':
+                    return Keys.PAGE_UP
+                elif params == '6~':
+                    return Keys.PAGE_DOWN
+                elif params.startswith('1;5'):
+                    # Ctrl+Arrow
+                    if params.endswith('A'):
+                        return Keys.CTRL_UP
+                    elif params.endswith('B'):
+                        return Keys.CTRL_DOWN
+                    elif params.endswith('C'):
+                        return Keys.CTRL_RIGHT
+                    elif params.endswith('D'):
+                        return Keys.CTRL_LEFT
+        
+        elif char2 == 'O':
+            # SS3 sequence (alternate arrow keys)
+            char3 = read_next_char()
+            if char3:
+                seq += char3
+                if char3 == 'A':
+                    return Keys.UP
+                elif char3 == 'B':
+                    return Keys.DOWN
+                elif char3 == 'C':
+                    return Keys.RIGHT
+                elif char3 == 'D':
+                    return Keys.LEFT
+        
+        return seq  # Return raw if unknown
     
     def _read_console_char(self, timeout: Optional[float] = None) -> str:
         """
@@ -374,33 +501,17 @@ class WindowsKeyBuffer:
                                 else:
                                     return '\r'
                             
-                            # Handle other keys with Ctrl
-                            # Note: For special keys, char is '\x00' (not empty string)
-                            if ctrl_pressed and (not char or char == '\x00'):
-                                # Ctrl+Arrow keys
-                                if vk == 0x26:  # VK_UP
-                                    return Keys.CTRL_UP
-                                elif vk == 0x28:  # VK_DOWN
-                                    return Keys.CTRL_DOWN
-                                elif vk == 0x25:  # VK_LEFT
-                                    return Keys.CTRL_LEFT
-                                elif vk == 0x27:  # VK_RIGHT
-                                    return Keys.CTRL_RIGHT
-                            
-                            # Regular character (not null/empty)
-                            # Note: For special keys like arrows, char is '\x00'
-                            if char and char != '\x00':
-                                return char
-                            
-                            # Handle special keys via virtual key code
+                            # Handle special keys via virtual key code FIRST
+                            # (before checking char, as VT mode may send ANSI chars)
+                            # Only use VK codes if they're actual arrow/nav keys (not 0)
                             if vk == 0x26:  # VK_UP
-                                return Keys.UP
+                                return Keys.CTRL_UP if ctrl_pressed else Keys.UP
                             elif vk == 0x28:  # VK_DOWN
-                                return Keys.DOWN
+                                return Keys.CTRL_DOWN if ctrl_pressed else Keys.DOWN
                             elif vk == 0x25:  # VK_LEFT
-                                return Keys.LEFT
+                                return Keys.CTRL_LEFT if ctrl_pressed else Keys.LEFT
                             elif vk == 0x27:  # VK_RIGHT
-                                return Keys.RIGHT
+                                return Keys.CTRL_RIGHT if ctrl_pressed else Keys.RIGHT
                             elif vk == 0x24:  # VK_HOME
                                 return Keys.HOME
                             elif vk == 0x23:  # VK_END
@@ -413,6 +524,18 @@ class WindowsKeyBuffer:
                                 return Keys.PAGE_UP
                             elif vk == 0x22:  # VK_PAGE_DOWN
                                 return Keys.PAGE_DOWN
+                            
+                            # Regular character (not null/empty)
+                            # Note: For special keys like arrows, char is '\x00'
+                            if char and char != '\x00':
+                                # Handle ESC character - might be start of ANSI sequence
+                                # In VT Input mode, arrow keys send ESC [ A/B/C/D
+                                if char == '\x1b':
+                                    return self._read_ansi_sequence_from_console_vt(
+                                        kernel32, INPUT_RECORD, KEY_EVENT_RECORD,
+                                        timeout, start_time
+                                    )
+                                return char
                 
                 # Check timeout
                 if timeout is not None and (time.time() - start_time) >= timeout:
@@ -456,10 +579,13 @@ class WindowsKeyBuffer:
                         return Keys.CTRL_C
                     
                     return char
+                # Empty char with timeout means timeout occurred, return empty
+                if timeout is not None:
+                    return ''
             except Exception:
                 pass
         
-        # Fallback to msvcrt
+        # Fallback to msvcrt (only if ReadConsoleW not available or failed)
         start_time = time.time()
         
         # Wait for input with optional timeout
@@ -517,6 +643,80 @@ class WindowsKeyBuffer:
         if char == '\x16':  # Ctrl+V
             # Check if Shift is held (we can't directly, but check timing)
             return char
+        
+        # Handle ANSI escape sequences (some terminals send these instead of VK codes)
+        if char == '\x1b':
+            # Read the rest of the escape sequence
+            time.sleep(0.01)  # Brief wait for sequence
+            if msvcrt.kbhit():
+                char2 = msvcrt.getwch()
+                if char2 == '[':
+                    # CSI sequence
+                    time.sleep(0.01)
+                    if msvcrt.kbhit():
+                        char3 = msvcrt.getwch()
+                        # Arrow keys: ESC [ A/B/C/D
+                        if char3 == 'A':
+                            return Keys.UP
+                        elif char3 == 'B':
+                            return Keys.DOWN
+                        elif char3 == 'C':
+                            return Keys.RIGHT
+                        elif char3 == 'D':
+                            return Keys.LEFT
+                        elif char3 == 'H':
+                            return Keys.HOME
+                        elif char3 == 'F':
+                            return Keys.END
+                        elif char3.isdigit():
+                            # Could be ESC[1;5A (Ctrl+Arrow) or ESC[3~ (Delete)
+                            seq = char3
+                            while msvcrt.kbhit():
+                                next_c = msvcrt.getwch()
+                                seq += next_c
+                                if next_c.isalpha() or next_c == '~':
+                                    break
+                            # Parse the sequence
+                            if seq == '3~':
+                                return Keys.DELETE
+                            elif seq == '1~':
+                                return Keys.HOME
+                            elif seq == '4~':
+                                return Keys.END
+                            elif seq == '5~':
+                                return Keys.PAGE_UP
+                            elif seq == '6~':
+                                return Keys.PAGE_DOWN
+                            elif seq.startswith('1;5'):
+                                # Ctrl+Arrow
+                                if seq.endswith('A'):
+                                    return Keys.CTRL_UP
+                                elif seq.endswith('B'):
+                                    return Keys.CTRL_DOWN
+                                elif seq.endswith('C'):
+                                    return Keys.CTRL_RIGHT
+                                elif seq.endswith('D'):
+                                    return Keys.CTRL_LEFT
+                            return '\x1b[' + seq  # Return raw if unknown
+                        return '\x1b[' + char3  # Return raw if unknown
+                    return '\x1b['  # Incomplete sequence
+                elif char2 == 'O':
+                    # SS3 sequence (alternate arrow keys)
+                    time.sleep(0.01)
+                    if msvcrt.kbhit():
+                        char3 = msvcrt.getwch()
+                        if char3 == 'A':
+                            return Keys.UP
+                        elif char3 == 'B':
+                            return Keys.DOWN
+                        elif char3 == 'C':
+                            return Keys.RIGHT
+                        elif char3 == 'D':
+                            return Keys.LEFT
+                        return '\x1bO' + char3
+                    return '\x1bO'
+                return '\x1b' + char2  # Return raw if unknown
+            return '\x1b'  # Just Escape key
         
         # For CJK and other Unicode characters from IME, return as-is
         # getwch() already handles Unicode correctly
