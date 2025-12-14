@@ -78,6 +78,9 @@ class InputBox:
         
         # Mode
         self._mode = 'INPUT'
+        
+        # Track if initial render has been done
+        self._rendered = False
     
     @property
     def height(self) -> int:
@@ -418,6 +421,9 @@ class InputBox:
         # Refresh window first (renders content)
         self._window.refresh()
         
+        # Mark as rendered
+        self._rendered = True
+        
         # Then position cursor (must be after refresh in ANSI mode)
         self._position_cursor()
         
@@ -451,6 +457,75 @@ class InputBox:
         win_col = min(win_col, max_col)
         
         self._window.set_cursor(win_row, win_col)
+    
+    def update_current_line(self) -> None:
+        """
+        Update only the current line (incremental update).
+        
+        This is more efficient than full render for single character input.
+        Uses batch rendering pattern from original ouroboros_ui.py.
+        """
+        if self._window is None or not self._rendered:
+            return
+        
+        import sys
+        
+        # Calculate visible row
+        visible_row = self.buffer.cursor_row - self.buffer.scroll_offset
+        if visible_row < 0 or visible_row >= self._height:
+            return
+        
+        # Get attributes
+        dim_attr = self.theme.get_attr('dim') if self.theme else ''
+        
+        # Build output batch
+        output = []
+        output.append('\x1b[?25l')  # Hide cursor
+        output.append('\x1b[s')     # Save cursor
+        
+        # Calculate window position
+        win_row = visible_row + 1  # +1 for top border
+        terminal_row = self._y + win_row + 1
+        terminal_col = self._x + 2  # +1 for border, +1 for 1-based
+        
+        # Move to line start
+        output.append(f'\x1b[{terminal_row};{terminal_col}H')
+        
+        # Get line content
+        line = self.buffer.lines[self.buffer.cursor_row]
+        content_width = self._get_content_width()
+        
+        # Line number
+        x = 0
+        if self.show_line_numbers:
+            line_num = self.buffer.scroll_offset + visible_row + 1
+            line_num_str = self._render_line_number(line_num)
+            if dim_attr:
+                output.append(dim_attr)
+            output.append(line_num_str)
+            if dim_attr:
+                output.append('\x1b[0m')
+            x += self.LINE_NUMBER_WIDTH
+        
+        # Line content with badge rendering
+        display_content = self._render_line_content(line, content_width)
+        output.append(display_content)
+        
+        # Pad remaining space
+        remaining = content_width - visible_len(display_content)
+        if remaining > 0:
+            output.append(' ' * remaining)
+        
+        # Restore cursor and show
+        output.append('\x1b[u')     # Restore cursor
+        output.append('\x1b[?25h')  # Show cursor
+        
+        # Flush all at once
+        sys.stderr.write(''.join(output))
+        sys.stderr.flush()
+        
+        # Position cursor at correct location
+        self._position_cursor()
     
     def expand(self) -> bool:
         """

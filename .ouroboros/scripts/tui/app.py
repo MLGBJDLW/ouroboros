@@ -700,7 +700,12 @@ class TUIApp:
             # Default hint
             self.input_box.status_bar.set_hint('Ctrl+D: submit')
         
-        self._render()
+        # Use incremental update for single character input (reduces flicker)
+        # Only do full render if slash command dropdown needs to be shown
+        if self.slash_handler and self.slash_handler.active:
+            self._render()
+        else:
+            self.input_box.update_current_line()
     
     def _handle_enter(self) -> None:
         """Handle Enter key press."""
