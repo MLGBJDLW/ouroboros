@@ -457,15 +457,23 @@ class TUIApp:
     
     def _main_loop(self) -> None:
         """Main input processing loop."""
+        PATH_COLLECT_TIMEOUT = 0.1  # 100ms timeout for path collection
+        
         while self._running:
             # Check for resize
             if self.screen and self.screen.check_resize():
                 self._handle_resize()
             
-            # Read input
+            # Check for path collection timeout
+            if self._collecting_path and self._path_buffer:
+                if time.time() - self._path_collect_start > PATH_COLLECT_TIMEOUT:
+                    self._process_path_buffer()
+            
+            # Read input with shorter timeout when collecting path
+            read_timeout = 0.05 if self._collecting_path else 0.1
             key, is_paste = self.paste_detector.read(
                 self.keybuffer.getch,
-                timeout=0.1
+                timeout=read_timeout
             )
             
             if not key:
@@ -473,6 +481,9 @@ class TUIApp:
             
             # Handle paste content
             if is_paste:
+                # If collecting path, process it first
+                if self._collecting_path:
+                    self._process_path_buffer()
                 self._handle_paste(key)
                 continue
             
@@ -665,9 +676,48 @@ class TUIApp:
         return False
     
     def _handle_printable(self, key: str) -> None:
-        """Handle printable character input."""
+        """Handle printable character input with Windows path detection."""
         if not self.input_box:
             return
+        
+        # Lazy import utils for path detection
+        create_file_marker, _, is_file_path, is_windows_path_pattern = _lazy_import_utils()
+        
+        # === Windows Path Collection Mode ===
+        # When we detect "X:\" pattern (drive letter + colon + backslash),
+        # we start collecting characters until we see a space or timeout.
+        # This handles drag-and-drop file paths on Windows.
+        
+        if self._collecting_path:
+            # Continue collecting path characters
+            if key in (' ', '\t', '\n', '\r'):
+                # Path ended - process it
+                self._process_path_buffer()
+                # Insert the space/tab normally
+                self.input_box.buffer.insert_char(key)
+                self.input_box.update_current_line()
+                return
+            else:
+                # Continue collecting
+                self._path_buffer += key
+                # Show collecting indicator
+                self.input_box.status_bar.set_hint('Collecting path...')
+                return
+        
+        # === Check for Windows Path Start Pattern ===
+        # Detect "X:\" pattern: when we see '\' after "X:" in buffer
+        if key == '\\':
+            line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
+            col = self.input_box.buffer.cursor_col
+            if col >= 2:
+                recent = line[col-2:col]
+                if len(recent) == 2 and recent[1] == ':' and recent[0].isalpha():
+                    # This is "C:\" pattern - start collecting!
+                    self._collecting_path = True
+                    self._path_buffer = key  # Start with backslash
+                    self._path_collect_start = time.time()
+                    self.input_box.status_bar.set_hint('Collecting path...')
+                    return
         
         # Check for >>> submit marker
         text = self.input_box.buffer.text
@@ -706,6 +756,47 @@ class TUIApp:
             self._render()
         else:
             self.input_box.update_current_line()
+    
+    def _process_path_buffer(self) -> None:
+        """Process accumulated path buffer as file path badge."""
+        if not self._path_buffer:
+            self._collecting_path = False
+            return
+        
+        # Lazy import utils
+        create_file_marker, _, is_file_path, _ = _lazy_import_utils()
+        
+        # Get the drive letter prefix from buffer (e.g., "C:")
+        line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
+        col = self.input_box.buffer.cursor_col
+        prefix = ""
+        if col >= 2:
+            potential_prefix = line[col-2:col]
+            if len(potential_prefix) == 2 and potential_prefix[1] == ':' and potential_prefix[0].isalpha():
+                prefix = potential_prefix
+        
+        # Full path = prefix + collected buffer
+        full_path = prefix + self._path_buffer
+        
+        # Check if it's a valid file path
+        if is_file_path(full_path.strip()):
+            # Remove the prefix from buffer (backspace twice for "C:")
+            if prefix:
+                self.input_box.buffer.backspace()
+                self.input_box.buffer.backspace()
+            
+            # Insert as file marker badge
+            marker = create_file_marker(full_path.strip())
+            self.input_box.buffer.insert_text(marker)
+        else:
+            # Not a valid path - insert as regular text
+            self.input_box.buffer.insert_text(self._path_buffer)
+        
+        # Reset state
+        self._collecting_path = False
+        self._path_buffer = ''
+        self.input_box.status_bar.set_hint('Ctrl+D: submit')
+        self._render()
     
     def _handle_enter(self) -> None:
         """Handle Enter key press."""
