@@ -40,6 +40,7 @@ jobs:
             "LICENSE"
             ".github/copilot-instructions.md"
             ".ouroboros/README.md"
+            ".ouroboros/scripts/ouroboros_input.py"
           )
           
           # Required directories
@@ -48,25 +49,30 @@ jobs:
             ".github/prompts"
             ".ouroboros/templates"
             ".ouroboros/specs"
+            ".ouroboros/scripts/tui"
+            ".ouroboros/scripts/components"
+            ".ouroboros/scripts/input"
+            ".ouroboros/scripts/data"
+            ".ouroboros/scripts/utils"
           )
           
           missing=0
           
           for file in "${required_files[@]}"; do
             if [ ! -f "$file" ]; then
-              echo "MISSING: $file"
+              echo "❌ MISSING: $file"
               missing=$((missing + 1))
             else
-              echo "FOUND: $file"
+              echo "✓ FOUND: $file"
             fi
           done
           
           for dir in "${required_dirs[@]}"; do
             if [ ! -d "$dir" ]; then
-              echo "MISSING: $dir"
+              echo "❌ MISSING: $dir"
               missing=$((missing + 1))
             else
-              echo "FOUND: $dir"
+              echo "✓ FOUND: $dir"
             fi
           done
           
@@ -77,7 +83,7 @@ jobs:
           fi
           
           echo ""
-          echo "SUCCESS: All required files and directories present!"
+          echo "✅ SUCCESS: All required files and directories present!"
 
       - name: Count agents
         run: |
@@ -86,9 +92,9 @@ jobs:
           echo "Found $agent_count agent files"
           
           if [ "$agent_count" -lt 10 ]; then
-            echo "WARNING: Expected at least 10 agents, found $agent_count"
+            echo "⚠️ WARNING: Expected at least 10 agents, found $agent_count"
           else
-            echo "SUCCESS: Agent count looks good!"
+            echo "✅ SUCCESS: Agent count looks good!"
           fi
 
   check-links:
@@ -111,7 +117,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.11']
+        python-version: ['3.8', '3.11', '3.12']
+      fail-fast: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,12 +128,55 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run tests
-        run: python .ouroboros/scripts/test/run_all_tests.py --quick
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest hypothesis
 
       - name: Test script imports
+        working-directory: .ouroboros/scripts
         run: |
-          cd .ouroboros/scripts
-          python -c "from ouroboros_input import parse_menu_options; print('ouroboros_input imports OK')"
-          python -c "from ouroboros_ui import visible_len, THEME, BOX; print('ouroboros_ui imports OK')"
-          python -c "from ouroboros_keybuffer import KeyBuffer, Keys; print('ouroboros_keybuffer imports OK')"
+          echo "Testing module imports..."
+          python -c "from ouroboros_input import main; print('✓ ouroboros_input imports OK')"
+          python -c "from tui import TUIApp, run_tui; print('✓ tui imports OK')"
+          python -c "from components import InputBox, WelcomeBox; print('✓ components imports OK')"
+          python -c "from input import KeyBuffer, Keys; print('✓ input imports OK')"
+          python -c "from data import TextBuffer, HistoryManager; print('✓ data imports OK')"
+          python -c "from utils import visible_len, create_file_marker; print('✓ utils imports OK')"
+
+      - name: Test startup time
+        working-directory: .ouroboros/scripts
+        run: |
+          echo "Testing startup time (target: <200ms)..."
+          python -c "
+          import time
+          start = time.time()
+          from tui import TUIApp, run_tui
+          elapsed = (time.time() - start) * 1000
+          print(f'Import time: {elapsed:.1f}ms')
+          if elapsed > 200:
+              print('⚠️ WARNING: Import time exceeds 200ms target')
+          else:
+              print('✓ Import time within target')
+          "
+
+      - name: Run property tests
+        working-directory: .ouroboros/scripts
+        run: |
+          echo "Running property-based tests..."
+          python -m pytest tests/property/ -v --tb=short
+
+  test-summary:
+    name: Test Summary
+    needs: [test-scripts]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.test-scripts.result }}" == "success" ]; then
+            echo "✅ All tests passed!"
+          else
+            echo "❌ Some tests failed"
+            exit 1
+          fi

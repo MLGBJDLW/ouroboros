@@ -20,19 +20,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cross-platform: Windows (ctypes), macOS (pbpaste), Linux (xclip/xsel/wl-paste)
 - **Atomic Badge Deletion** — Backspace/Delete removes entire badge at once (file paths and paste badges)
 - **Arrow Key Badge Navigation** — Cursor automatically skips past badge internals when navigating
-- **`ouroboros_clipboard.py`** — New module for cross-platform clipboard reading
-
-### Fixed
-- **Arrow Keys in VS Code Terminal** — Fixed escape sequence handling in `PasteCollector.read()` that was breaking arrow key navigation on Windows
-- **Modular Code Structure** — Split `ouroboros_input.py` (~2000 lines) into 9 focused modules
-- **Slash Command Status Clearing** — Status bar now clears correctly after backspacing away slash commands
+- **Property-Based Testing Framework** — `tests/pbt_framework.py` with Hypothesis-style generators
 
 ### Changed
+- **Complete Modular Rewrite** — Refactored `ouroboros_input.py` (~2000 lines) into clean package structure:
+  | Package | Modules | Purpose |
+  |---------|---------|---------|
+  | `components/` | `input_box`, `selection_menu`, `status_bar`, `welcome_box` | UI Components |
+  | `data/` | `buffer`, `config`, `history` | Data Management |
+  | `input/` | `clipboard`, `commands`, `keybuffer`, `keybuffer_win`, `keybuffer_unix`, `paste` | Input Handling |
+  | `tui/` | `app`, `fallback`, `output`, `screen`, `theme`, `window` | Terminal UI |
+  | `utils/` | `badge`, `filepath`, `text` | Utilities |
+  | `tests/` | `unit/`, `property/`, `pbt_framework` | Testing |
 - All 16 agent files now include Level markers (`> **LEVEL X** — ...`)
 - `is_file_path()` now detects both files and folders (directories without extensions)
 - Scripts README completely rewritten with detailed documentation
 - Root README Enhanced CCL section simplified (details moved to scripts/README.md)
-- Debug scripts consolidated into `test/test_keyboard.py`
+- Removed legacy single-file modules: `ouroboros_buffer.py`, `ouroboros_clipboard.py`, `ouroboros_commands.py`, `ouroboros_config.py`, `ouroboros_filepath.py`, `ouroboros_keybuffer.py`, `ouroboros_paste.py`, `ouroboros_screen.py`, `ouroboros_toggle.py`, `ouroboros_ui.py`
+- Removed old test scripts in favor of new `tests/` package structure
+
+### Fixed
+- **Arrow Keys in VS Code Terminal** — Fixed escape sequence handling in `PasteCollector.read()` that was breaking arrow key navigation on Windows
+- **Slash Command Status Clearing** — Status bar now clears correctly after backspacing away slash commands
 
 ---
 

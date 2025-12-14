@@ -1,6 +1,6 @@
-# Ouroboros Enhanced CCL Scripts
+# Ouroboros Enhanced CCL Scripts v3.0
 
-> **Version**: 2.2.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
+> **Version**: 3.0.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
 
 ```
     ╭───◯───╮
@@ -11,6 +11,7 @@
 ```
 
 Enhanced terminal input system for the Ouroboros Continuous Command Loop.
+Built with a proper TUI (Text User Interface) using Python's curses library.
 
 ---
 
@@ -22,9 +23,9 @@ Enhanced terminal input system for the Ouroboros Continuous Command Loop.
 
 **Command Line**:
 ```bash
-python ouroboros_toggle.py --mode enhanced   # Enable enhanced mode
-python ouroboros_toggle.py --mode default    # Disable enhanced mode
-python ouroboros_input.py                    # Run directly
+python ouroboros_input.py                    # Run TUI input
+python ouroboros_input.py --version          # Show version
+python ouroboros_input.py --help             # Show all options
 ```
 
 ---
@@ -38,7 +39,6 @@ python ouroboros_input.py                    # Run directly
 | `↑` / `↓` | History browse (line 1) / Move cursor (multi-line) |
 | `Ctrl+←` / `Ctrl+→` | Jump to previous/next word |
 | `Home` / `End` | Jump to line start/end |
-| `Ctrl+A` / `Ctrl+E` | Jump to line start/end (alternative) |
 
 ### Editing
 | Key | Action |
@@ -56,7 +56,8 @@ python ouroboros_input.py                    # Run directly
 | `Ctrl+J` | Insert new line (alternative) |
 | `Ctrl+D` | Force submit (always works) |
 | `>>>` | Submit and exit (type at end) |
-| `Ctrl+C` | Cancel and exit |
+| `Ctrl+C` | Cancel and exit (with animation) |
+| `Ctrl+R` | Reverse history search |
 
 ### Slash Commands
 | Key | Action |
@@ -70,11 +71,19 @@ python ouroboros_input.py                    # Run directly
 
 ## ✨ Features
 
-### Arrow Key Navigation
-Full cursor movement support in Windows VS Code Terminal, including:
-- Basic arrow keys (Up/Down/Left/Right)
-- Ctrl+Arrow for word jumping
-- Home/End for line navigation
+### Curses-Based TUI
+- **Flicker-free rendering** using double-buffered screen updates
+- **Graceful resize handling** with SIGWINCH (Unix) and polling (Windows)
+- **Alternate screen buffer** preserves terminal history
+- **ANSI fallback** when curses is unavailable
+
+### Mystic Purple Theme
+- Magenta borders (`\x1b[95m`)
+- Cyan prompts (`\x1b[96m`)
+- Green success indicators (`\x1b[92m`)
+- Yellow warnings (`\x1b[93m`)
+- Red errors (`\x1b[91m`)
+- Monochrome fallback for unsupported terminals
 
 ### Slash Command Autocomplete
 Type `/` to see available orchestrator commands:
@@ -92,60 +101,112 @@ Features:
 - Dropdown display with descriptions
 - Arrow key navigation
 - Tab completion with auto-space
+- Agent instruction auto-prepending
 
 ### File & Folder Drag & Drop
 Drag files or folders into the terminal:
 - Display: `[ filename.ext ]` or `[ foldername ]` (compact badge)
-- Storage: Full path sent to AI
+- Storage: Full path sent to AI via `«path»` markers
 - Supports Windows paths (`C:\...`) and Unix paths (`/...`)
-- Folders are detected automatically (no extension required)
+- Folders are detected automatically
 
 ### Clipboard Paste (Ctrl+V)
 Reliable paste detection by reading clipboard directly:
 - Press `Ctrl+V` to paste from clipboard
 - Large pastes (5+ lines) show as `[ Pasted N Lines ]` badge
-- Full content preserved and sent to AI on submit
+- Full content preserved via `‹PASTE:N›...‹/PASTE›` markers
 - Cross-platform: Windows (ctypes), macOS (pbpaste), Linux (xclip/xsel)
 
-### Atomic Badge Deletion
-File path and paste badges can be deleted atomically:
+### Atomic Badge Operations
+File path and paste badges can be manipulated atomically:
 - `Backspace` after a badge deletes the entire badge at once
 - `Delete` before a badge deletes the entire badge at once
-- No need to delete character by character
-
-### Arrow Key Badge Navigation
-Cursor automatically skips past badge internals:
-- `←` before badge end jumps to badge start
-- `→` after badge start jumps to badge end
-- Cursor never gets "stuck" inside badge markers
+- Cursor automatically skips past badge internals
 
 ### Dynamic Input Box
-- Starts as 1 line
-- Grows automatically as you type (up to 10 lines)
-- Internal scrolling for longer content
-- Line numbers and status bar
+- Starts as 1 line, grows automatically (up to 5 lines)
+- Virtual scrolling for longer content with `[start-end/total]` indicator
+- Line numbers with 3-digit display and separator
+- CJK character support (2-column width calculation)
 
 ### Command History
 - `↑`/`↓` to browse previous commands (when on first line)
+- `Ctrl+R` for reverse incremental search
 - Persistent across sessions (saved to `ouroboros.history`)
+- Max 1000 entries, avoids consecutive duplicates
+
+### Selection Menu
+For option selection prompts (`--options`):
+- Arrow key navigation (Up/Down)
+- Page Up/Down, Home/End support
+- Number quick-select (1-9)
+- Scroll indicators (`↑ N more above` / `↓ N more below`)
+- Custom input option
+- Yes/No detection from `[y/n]` pattern
 
 ---
 
-## 📁 Module Architecture
+## 📁 Module Architecture (v3.0)
 
-| Module | Lines | Purpose |
-|--------|-------|---------|
-| `ouroboros_input.py` | ~1200 | Main input handler, orchestrates all modules |
-| `ouroboros_keybuffer.py` | ~1270 | Cross-platform keyboard input |
-| `ouroboros_ui.py` | ~800 | UI components (InputBox, WelcomeBox, SelectMenu) |
-| `ouroboros_paste.py` | ~450 | Bracketed Paste Mode for reliable paste detection |
-| `ouroboros_buffer.py` | ~180 | Multi-line text buffer with cursor management |
-| `ouroboros_commands.py` | ~130 | Slash command handler and autocomplete |
-| `ouroboros_filepath.py` | ~450 | File path detection, paste markers, badge formatting |
-| `ouroboros_clipboard.py` | ~170 | Cross-platform clipboard reading (Win/Mac/Linux) |
-| `ouroboros_config.py` | ~160 | Config and history management |
-| `ouroboros_screen.py` | ~100 | State machine for input modes |
-| `ouroboros_toggle.py` | ~200 | Mode switcher (default ↔ enhanced) |
+The codebase has been refactored into a clean, modular structure:
+
+```
+.ouroboros/scripts/
+├── ouroboros_input.py          # Entry point & CLI (~400 lines)
+├── tui/                        # TUI layer
+│   ├── __init__.py             # Lazy exports
+│   ├── app.py                  # Main application loop
+│   ├── screen.py               # Screen manager (curses init)
+│   ├── window.py               # Window wrapper
+│   ├── theme.py                # Color/theme management
+│   ├── output.py               # Output formatting
+│   └── fallback.py             # ANSI fallback renderer
+├── components/                 # UI components
+│   ├── __init__.py             # Lazy exports
+│   ├── input_box.py            # Multi-line input box
+│   ├── welcome_box.py          # Welcome header
+│   ├── selection_menu.py       # Selection menu
+│   └── status_bar.py           # Status bar
+├── input/                      # Input handling
+│   ├── __init__.py             # Lazy exports
+│   ├── keybuffer.py            # Unified keyboard handler
+│   ├── keybuffer_win.py        # Windows-specific input
+│   ├── keybuffer_unix.py       # Unix-specific input
+│   ├── paste.py                # Paste detection
+│   ├── clipboard.py            # Clipboard access
+│   └── commands.py             # Slash command handler
+├── data/                       # Data layer
+│   ├── __init__.py             # Lazy exports
+│   ├── buffer.py               # TextBuffer
+│   ├── history.py              # HistoryManager
+│   └── config.py               # ConfigManager
+├── utils/                      # Utilities
+│   ├── __init__.py             # Lazy exports
+│   ├── text.py                 # Text utilities (width, strip)
+│   ├── badge.py                # Badge processing
+│   └── filepath.py             # File path detection
+└── tests/                      # Test suite
+    ├── pbt_framework.py        # Property-based testing framework
+    └── property/               # Property tests (10 properties)
+        ├── test_char_width.py
+        ├── test_file_marker.py
+        ├── test_paste_marker.py
+        ├── test_slash_filter.py
+        ├── test_output_purity.py
+        ├── test_enter_newline.py
+        ├── test_history_search.py
+        ├── test_menu_bounds.py
+        ├── test_box_height.py
+        └── test_agent_prepend.py
+```
+
+### Key Design Decisions
+
+1. **Lazy imports** - All packages use lazy loading for <200ms startup
+2. **Platform abstraction** - Separate Windows/Unix keyboard handlers
+3. **Component-based UI** - Each UI element is self-contained
+4. **Fallback support** - ANSI rendering when curses unavailable
+5. **Property-based testing** - 10 correctness properties verified
 
 ### Data Flow
 
@@ -153,65 +214,44 @@ Cursor automatically skips past badge internals:
 ┌─────────────────────────────────────────────────────────────┐
 │  User Input (keyboard/paste/drag-drop)                      │
 │         ↓                                                   │
-│  ouroboros_keybuffer.py                                     │
+│  input/keybuffer.py                                         │
 │  ├── Platform detection (Windows/Unix)                      │
-│  ├── ReadConsoleInputW (Windows) / termios (Unix)           │
+│  ├── ReadConsoleW (Windows) / termios (Unix)                │
 │  ├── VK code → ANSI sequence normalization                  │
 │  └── Special key detection (arrows, Ctrl+, etc.)            │
 │         ↓                                                   │
-│  ouroboros_paste.py                                         │
+│  input/paste.py                                             │
 │  ├── Bracketed Paste Mode detection                         │
 │  ├── ESC sequence filtering (paste vs arrow keys)           │
 │  └── Paste content collection                               │
 │         ↓                                                   │
-│  ouroboros_input.py                                         │
+│  tui/app.py                                                 │
 │  ├── Key routing (navigation, editing, commands)            │
 │  ├── Slash command handling                                 │
 │  ├── File path detection and formatting                     │
 │  └── History management                                     │
 │         ↓                                                   │
-│  ouroboros_buffer.py                                        │
+│  data/buffer.py                                             │
 │  ├── Text storage (multi-line)                              │
 │  ├── Cursor position tracking                               │
 │  └── Viewport scrolling                                     │
 │         ↓                                                   │
-│  ouroboros_ui.py                                            │
+│  components/*.py                                            │
 │  ├── InputBox rendering                                     │
-│  ├── Dropdown menu for commands                             │
-│  └── ANSI escape codes for styling                          │
+│  ├── WelcomeBox branding                                    │
+│  ├── SelectionMenu navigation                               │
+│  └── StatusBar indicators                                   │
+│         ↓                                                   │
+│  tui/output.py                                              │
+│  ├── Marker expansion (file paths, pastes)                  │
+│  ├── Agent instruction prepending                           │
+│  └── ANSI code stripping                                    │
 │         ↓                                                   │
 │  Output:                                                    │
 │  ├── stderr → UI decorations (user sees)                    │
 │  └── stdout → Clean content (AI reads)                      │
 └─────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## 🎨 UI Components
-
-### WelcomeBox
-Displays the Ouroboros logo and keyboard shortcuts on startup.
-
-### InputBox
-- Full terminal width
-- Line numbers with syntax highlighting
-- Status bar: mode indicator + cursor position
-- Scroll indicator for long content
-- Dynamic height (1-10 lines)
-
-### SelectMenu
-For option selection prompts:
-- Arrow key navigation
-- Number quick-select (1-9)
-- Custom input option
-- Home/End for quick navigation
-
-### Dropdown
-For slash command autocomplete:
-- Shows below input box
-- Highlights selected item
-- Displays command descriptions
 
 ---
 
@@ -231,6 +271,8 @@ python ouroboros_input.py [OPTIONS]
 | `--no-ui` | Disable fancy UI |
 | `--no-color` | Disable ANSI colors |
 | `--ascii` | Use ASCII instead of Unicode |
+| `--reset-config` | Reset configuration to defaults |
+| `--version` | Show version number |
 
 ### Examples
 
@@ -243,26 +285,40 @@ python ouroboros_input.py --options "Option A" "Option B" --prompt "Choose:"
 
 # Simple prompt
 python ouroboros_input.py --prompt "Feature name:" --var feature
+
+# Yes/No confirmation (auto-detected from [y/n])
+python ouroboros_input.py --header "Continue?" --prompt "[y/n]"
 ```
 
 ---
 
 ## 🧪 Testing
 
+The project uses property-based testing to verify correctness properties.
+
 ```bash
-cd test
-python test_keyboard.py      # Interactive keyboard diagnostic
-python run_all_tests.py      # Run all automated tests
+# Run all property tests
+cd .ouroboros/scripts
+python -m pytest tests/ -v
+
+# Run specific property test
+python -m pytest tests/property/test_file_marker.py -v
 ```
 
-| Test File | Coverage |
-|-----------|----------|
-| `test_keyboard.py` | Interactive keyboard input diagnostic |
-| `test_keybuffer.py` | Keyboard input (Windows/Unix key codes) |
-| `test_textbuffer.py` | Text buffer operations |
-| `test_ui.py` | UI components (ANSI, themes, boxes) |
-| `test_input_types.py` | Menu detection, prompts |
-| `test_edge_cases.py` | Boundary conditions, Unicode |
+### Correctness Properties
+
+| Property | Description | Requirements |
+|----------|-------------|--------------|
+| 1. Character Width | CJK chars = 2 columns, ASCII = 1 | 2.7 |
+| 2. File Marker Round-Trip | `create_file_marker` ↔ `expand_markers` | 6.1-6.6, 16.2 |
+| 3. Paste Marker Round-Trip | `create_paste_marker` ↔ `expand_markers` | 7.1-7.6, 16.3 |
+| 4. Slash Command Filtering | Fuzzy match with prefix priority | 8.1-8.6 |
+| 5. Output Content Purity | No ANSI codes in stdout | 10.1-10.4, 16.6 |
+| 6. Enter Key Newline | Line split + cursor move | 15.1-15.6 |
+| 7. History Search | Substring match, recency order | 19.1-19.5 |
+| 8. Selection Menu Bounds | 0 ≤ index < N always | 28.1-28.8 |
+| 9. Input Box Height | 1 ≤ height ≤ 5 | 25.1-25.5 |
+| 10. Agent Instruction | Correct prefix format | 32.1-32.6 |
 
 ---
 
@@ -270,12 +326,30 @@ python run_all_tests.py      # Run all automated tests
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| Arrow keys show `[A[B[C[D` | Escape sequence not parsed | Update `ouroboros_paste.py` |
+| Arrow keys show `[A[B[C[D` | Escape sequence not parsed | Check terminal VT mode |
 | Colors not showing | Terminal doesn't support ANSI | Use `--no-color` flag |
 | Boxes look broken | Terminal doesn't support Unicode | Use `--ascii` flag |
-| Ctrl+J not working | Terminal intercepts it | Use `Enter` or `<<<`/`>>>` |
 | Cursor position wrong | Terminal ANSI support issue | Try different terminal |
-| Paste not detected | Bracketed Paste not supported | Content still works, just no auto-detection |
+| Paste not detected | Bracketed Paste not supported | Use Ctrl+V instead |
+| IME input issues | ReadConsoleW not available | Set `use_fallback_input: true` in config |
+| Terminal too small | Window < 20x5 | Resize terminal window |
+
+### Configuration File
+
+Edit `ouroboros.config.json` to customize behavior:
+
+```json
+{
+  "platform": "windows",
+  "ansi_colors": true,
+  "unicode_box": true,
+  "theme": "mystic_purple",
+  "auto_multiline": true,
+  "compress_threshold": 10,
+  "history_max_entries": 1000,
+  "use_fallback_input": false
+}
+```
 
 ---
 
@@ -285,13 +359,17 @@ python run_all_tests.py      # Run all automated tests
 
 | Module | Platform | Purpose |
 |--------|----------|---------|
+| `curses` | Unix | TUI rendering |
+| `windows-curses` | Windows | TUI rendering (optional) |
 | `msvcrt` | Windows | Raw keyboard input |
-| `ctypes` | Windows | ReadConsoleInputW API |
+| `ctypes` | Windows | ReadConsoleW API, clipboard |
 | `tty`, `termios` | Unix | Raw keyboard input |
 | `select` | Unix | Non-blocking input |
 | `json` | All | Config file handling |
 | `shutil` | All | Terminal size detection |
 | `unicodedata` | All | Character width calculation |
+| `atexit` | All | Terminal state restoration |
+| `signal` | Unix | SIGWINCH resize handling |
 
 ---
 
@@ -301,4 +379,4 @@ Part of the Ouroboros project. MIT License.
 
 ---
 
-*◎ Enhanced input for the Ouroboros CCL system*
+*◎ Enhanced input for the Ouroboros CCL system - v3.0.0*
