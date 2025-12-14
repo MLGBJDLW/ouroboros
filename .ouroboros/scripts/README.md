@@ -41,6 +41,7 @@ Enhanced terminal input system for the Ouroboros CCL.
 | **Auto-generated Config** | Config and history files created automatically |
 | **Bracketed Paste** | Reliable paste detection via terminal protocol (IME-friendly) |
 | **File Drag & Drop** | Dropped files display as `[ filename.ext ]` (full path to AI) |
+| **Slash Commands** | Type `/` for orchestrator mode autocomplete (`Tab` to complete) |
 
 ---
 
@@ -73,6 +74,8 @@ python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
 | `Ctrl+K` | Delete to end of line |
 | `Home` / `End` | Line start/end |
 | `Delete` | Delete at cursor |
+| `Tab` | Complete slash command (when `/` prefix active) |
+| `Escape` | Cancel slash command mode |
 
 > **Note**: True `Shift+Enter` detection is impossible in most terminals.
 > Use `Ctrl+J` or just `Enter` to insert new lines.

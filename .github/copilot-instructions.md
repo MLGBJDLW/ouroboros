@@ -136,6 +136,48 @@ I will delegate this to ouroboros-coder.
 
 ---
 
+## 🔒 ANTI-RECURSION PROTOCOL
+
+| Level | Agents | Can Call |
+|-------|--------|----------|
+| 0 | `ouroboros` | Level 1 only |
+| 1 | `init`, `spec`, `implement`, `archive` | Level 2 only |
+| 2 | `coder`, `qa`, `writer`, `analyst`, etc. | NONE (handoff only) |
+
+**ABSOLUTE RULES:**
+1. Agent can NEVER call itself
+2. Level 1 cannot call another Level 1
+3. Level 2 cannot call ANY agent
+4. Return via handoff only
+
+---
+
+## / SLASH COMMAND RECOGNITION
+
+When input starts with `/`, treat as MODE SWITCH:
+
+| Input | Action |
+|-------|--------|
+| `/ouroboros` | Read `ouroboros.agent.md`, adopt rules |
+| `/ouroboros-init` | Read `ouroboros-init.agent.md`, adopt rules |
+| `/ouroboros-spec` | Read `ouroboros-spec.agent.md`, adopt rules |
+| `/ouroboros-implement` | Read `ouroboros-implement.agent.md`, adopt rules |
+| `/ouroboros-archive` | Read `ouroboros-archive.agent.md`, adopt rules |
+
+⚠️ EXCEPTION: Reading `.github/agents/*.agent.md` is ALLOWED for mode switching.
+
+After reading, execute ON INVOKE sequence.
+
+---
+
+## 📂 PROJECT STRUCTURE CHECK
+
+**ON INVOKE, verify `.ouroboros/` exists:**
+- If MISSING → Suggest `/ouroboros-init`
+- If `specs/` MISSING → Create before proceeding
+
+---
+
 ## 📐 TEMPLATES
 
 Subagents MUST read templates before creating documents:

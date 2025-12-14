@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4] - 2025-12-14
+
+### Added
+- **Anti-Recursion Protocol** — Level-based agent hierarchy (L0 → L1 → L2) preventing infinite delegation loops
+- **Slash Command Autocomplete** — Type `/` in Enhanced CCL for orchestrator mode switching (Tab to complete)
+- **File Badge Rendering** — Drag & drop files display as `[ filename.ext ]` in UI (full path sent to AI)
+- **Project Structure Check** — Agents now detect `.ouroboros/specs/` on invoke
+- **docs/LIMITATIONS.md** — Documents known platform constraints
+
+### Changed
+- All 16 agent files now include Level markers (`> **LEVEL X** — ...`)
+- `is_file_path()` now excludes `/ouroboros*` patterns from file detection
+- Scripts README updated with new features and key bindings
+
+---
+
 ## [3.0.3] - 2025-12-13
 
 ### Added

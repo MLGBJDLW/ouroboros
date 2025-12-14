@@ -288,9 +288,20 @@ def is_file_path(text: str) -> bool:
     if text.startswith('\\\\'):
         return True
     
-    # Unix absolute path
+    # Unix absolute path (but NOT slash commands like /ouroboros-spec)
     if text.startswith('/'):
-        return True
+        # Exclude slash commands (they start with /ouroboros)
+        if text.startswith('/ouroboros'):
+            return False
+        # Must have at least one more path component to be a real path
+        # e.g., /home/user not just /
+        if len(text) > 1 and '/' in text[1:]:
+            return True
+        # Single slash or /filename - only if it has a file extension
+        ext = os.path.splitext(text)[1].lower()
+        if ext in ALL_EXTENSIONS:
+            return True
+        return False
     
     # Home directory
     if text.startswith('~'):
@@ -413,6 +424,131 @@ def convert_unmarked_file_paths(text: str) -> str:
                 result = result[:match.start(1)] + f'«{path}»' + result[match.end(1):]
     
     return result
+
+
+# =============================================================================
+# SLASH COMMAND HANDLER
+# =============================================================================
+
+# Slash commands for orchestrator mode switching (5 main orchestrators)
+SLASH_COMMANDS = {
+    "/ouroboros":          {"desc": "Main Orchestrator", "file": "ouroboros.agent.md"},
+    "/ouroboros-init":     {"desc": "Project Init", "file": "ouroboros-init.agent.md"},
+    "/ouroboros-spec":     {"desc": "Spec Workflow", "file": "ouroboros-spec.agent.md"},
+    "/ouroboros-implement":{"desc": "Implementation", "file": "ouroboros-implement.agent.md"},
+    "/ouroboros-archive":  {"desc": "Archive Specs", "file": "ouroboros-archive.agent.md"},
+}
+
+
+class SlashCommandHandler:
+    """Handles slash command detection and autocomplete suggestions."""
+    
+    def __init__(self):
+        self.active = False
+        self.prefix = ""
+        self.matches = []
+        self.selected_index = 0
+    
+    def start(self, char: str = "/") -> bool:
+        """Start command mode if char is '/'. Returns True if started."""
+        if char == "/" and not self.active:
+            self.active = True
+            self.prefix = "/"
+            self.matches = list(SLASH_COMMANDS.keys())
+            self.selected_index = 0
+            return True
+        return False
+    
+    def update(self, prefix: str) -> list:
+        """Update matches based on current prefix."""
+        self.prefix = prefix
+        if prefix.startswith("/"):
+            self.matches = [cmd for cmd in SLASH_COMMANDS if cmd.startswith(prefix)]
+            if self.selected_index >= len(self.matches):
+                self.selected_index = max(0, len(self.matches) - 1)
+        else:
+            self.cancel()
+        return self.matches
+    
+    def move_up(self) -> int:
+        """Move selection up. Returns new index."""
+        if self.matches and self.selected_index > 0:
+            self.selected_index -= 1
+        return self.selected_index
+    
+    def move_down(self) -> int:
+        """Move selection down. Returns new index."""
+        if self.matches and self.selected_index < len(self.matches) - 1:
+            self.selected_index += 1
+        return self.selected_index
+    
+    def complete(self) -> str:
+        """Complete with selected command. Returns completed text."""
+        if self.matches and 0 <= self.selected_index < len(self.matches):
+            result = self.matches[self.selected_index]
+            self.cancel()
+            return result
+        return self.prefix
+    
+    def cancel(self) -> None:
+        """Cancel command mode."""
+        self.active = False
+        self.prefix = ""
+        self.matches = []
+        self.selected_index = 0
+    
+    def get_dropdown_lines(self, max_width: int = 60) -> list:
+        """Get formatted dropdown lines for display."""
+        lines = []
+        for i, cmd in enumerate(self.matches):
+            info = SLASH_COMMANDS.get(cmd, {})
+            desc = info.get("desc", "")
+            marker = ">" if i == self.selected_index else " "
+            line = f"{marker} {cmd:<25} — {desc}"
+            lines.append(line[:max_width])
+        return lines
+
+
+def format_file_badge(path: str) -> str:
+    """
+    Format a file path as a simple badge for display.
+    
+    Internal storage: «/full/path/file.ext»
+    Display format:   [ file.ext ]
+    """
+    # Extract filename
+    filename = os.path.basename(path.strip().strip('«»'))
+    if not filename:
+        filename = path.split('/')[-1] or path.split('\\')[-1] or path
+    
+    # Simple badge without icons (per user request)
+    return f"[ {filename} ]"
+
+
+def prepend_slash_command_instruction(content: str) -> str:
+    """
+    Prepend an instruction to follow the corresponding agent prompt 
+    when content starts with a valid slash command.
+    
+    Example:
+        Input:  "/ouroboros-spec create auth feature"
+        Output: "Follow the prompt '.github/agents/ouroboros-spec.agent.md'\n\n/ouroboros-spec create auth feature"
+    """
+    content_stripped = content.strip()
+    
+    # Check if content starts with a valid slash command
+    # Sort by length descending to match longer commands first (e.g., /ouroboros-spec before /ouroboros)
+    for cmd in sorted(SLASH_COMMANDS.keys(), key=len, reverse=True):
+        if content_stripped.startswith(cmd):
+            info = SLASH_COMMANDS[cmd]
+            agent_file = info.get("file", "")
+            if agent_file:
+                prompt_path = f".github/agents/{agent_file}"
+                prefix = f"Follow the prompt '{prompt_path}'\n\n"
+                return prefix + content
+    
+    # No slash command detected, return as-is
+    return content
 
 
 # =============================================================================
@@ -778,6 +914,9 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
     
     history_browsing = False  # Track if we're browsing history (fallback)
     
+    # Slash command handler for autocomplete
+    slash_handler = SlashCommandHandler()
+    
     # Sync cursor position after render_initial
     if show_ui:
         box.set_cursor(0, 0, '')
@@ -989,6 +1128,16 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                         # Shrink box if line count decreased (but keep minimum 1 line)
                         if buffer.line_count < old_line_count and buffer.line_count < box.height:
                             box.shrink_height(max(1, buffer.line_count))
+                        # Update slash command state
+                        current_line = buffer.lines[buffer.cursor_row]
+                        if slash_handler.active:
+                            if current_line.startswith('/'):
+                                slash_handler.update(current_line.strip())
+                                if slash_handler.matches:
+                                    box.set_mode(f"Tab: complete | {len(slash_handler.matches)} matches")
+                            else:
+                                slash_handler.cancel()
+                                box.set_mode("INPUT")
                         refresh_display()
                     continue
                 
@@ -1076,6 +1225,23 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     refresh_display()
                     continue
                 
+                # Tab - Slash command completion
+                if key == '\t':
+                    if slash_handler.active and slash_handler.matches:
+                        # Complete with selected command
+                        completed = slash_handler.complete()
+                        # Clear current line and insert completed command
+                        buffer.clear_line()
+                        buffer.insert_text(completed)
+                        refresh_display()
+                    continue
+                
+                # Escape - Cancel slash command mode
+                if key == Keys.ESC:
+                    if slash_handler.active:
+                        slash_handler.cancel()
+                    continue
+                
                 # Printable characters (including CJK from IME)
                 if kb.is_printable(key):
                     # Rapid input detection for drag-drop (works with all languages)
@@ -1111,6 +1277,23 @@ def get_interactive_input_advanced(show_ui: bool = True, prompt_header: str = ""
                     
                     # Insert character one by one
                     buffer.insert_char(key)
+                    
+                    # Slash command detection: check if current line starts with /
+                    current_line = buffer.lines[buffer.cursor_row]
+                    if current_line.startswith('/'):
+                        # Activate or update slash handler
+                        if not slash_handler.active:
+                            slash_handler.start('/')
+                        slash_handler.update(current_line.strip())
+                        # Show hint in status bar if matches exist
+                        if slash_handler.matches:
+                            hint = f"Tab: complete | {len(slash_handler.matches)} matches"
+                            box.set_mode(hint)
+                    elif slash_handler.active:
+                        # Line no longer starts with /, cancel
+                        slash_handler.cancel()
+                        box.set_mode("INPUT")
+                    
                     visible_row = buffer.get_visible_cursor_row()
                     if visible_row < box.height:
                         box.update_line(visible_row, buffer.lines[buffer.cursor_row])
@@ -1280,6 +1463,9 @@ def get_selection_input(options: list, title: str = "Select an option:",
 
 def format_output(marker: str, content: str) -> None:
     """Output formatted content to stdout for Copilot."""
+    # Auto-prepend slash command instruction if applicable
+    content = prepend_slash_command_instruction(content)
+    
     if MODULES_AVAILABLE:
         OutputBox.render(marker, content)
     else:

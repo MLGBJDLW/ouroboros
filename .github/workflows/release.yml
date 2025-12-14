@@ -129,6 +129,9 @@ jobs:
           # Remove test files (users don't need them)
           rm -rf release-package/.ouroboros/scripts/test
           
+          # Remove docs folder (internal documentation)
+          rm -rf release-package/docs
+          
           # Keep template directories but remove content
           mkdir -p release-package/.ouroboros/history
           mkdir -p release-package/.ouroboros/subagent-docs

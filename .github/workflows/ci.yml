@@ -20,6 +20,7 @@ jobs:
           globs: |
             **/*.md
             !**/node_modules/**
+            !docs/**
 
   check-structure:
     name: Check Project Structure
