@@ -339,6 +339,8 @@ your-project/
 Ouroboros was inspired by:
 
 - **[TaskSync](https://github.com/4regab/TaskSync)** — The original concept of persistent AI sessions and the "never say goodbye" protocol. Many of Ouroboros's core ideas evolved from TaskSync's pioneering work.
+- **[Roo Code](https://github.com/RooCodeInc/Roo-Code)** — Early pioneer of agent teams architecture, demonstrating multi-agent orchestration patterns in AI-assisted development.
+- **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Structured specification-driven development approach that influenced our `/ouroboros-spec` workflow.
 
 ---
 
