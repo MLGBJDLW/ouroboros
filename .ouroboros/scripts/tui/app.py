@@ -365,9 +365,6 @@ class TUIApp:
             self._render_too_small_message(cols, rows)
             return
         
-        # Hide cursor at start of render to prevent flickering
-        self.screen.hide_cursor()
-        
         # Only clear screen on initial render or resize to prevent flickering
         if full_redraw:
             self.screen.clear()

@@ -240,11 +240,25 @@ class Window:
                 self._dirty = False
     
     def _render_ansi(self) -> None:
-        """Render buffer to terminal using ANSI codes."""
+        """Render buffer to terminal using ANSI codes.
+        
+        Uses batch rendering pattern from original ouroboros_ui.py:
+        1. Hide cursor during render
+        2. Save cursor position
+        3. Render all content (overwriting with spaces, no clear line)
+        4. Restore cursor position
+        5. Show cursor
+        
+        This prevents cursor flickering to wrong positions during render.
+        Note: We don't use CLEAR_LINE (\x1b[2K) because it clears the entire
+        terminal line, not just our window area. Instead, we overwrite with
+        spaces which is handled by the buffer content.
+        """
         output = []
         
-        # Cursor should already be hidden by screen.hide_cursor()
-        # Don't hide again to avoid flicker
+        # Hide cursor and save position
+        output.append('\x1b[?25l')
+        output.append('\x1b[s')  # Save cursor
         
         for row in range(self._height):
             # Move to row position (1-based)
@@ -252,7 +266,7 @@ class Window:
             terminal_col = self._x + 1
             output.append(f'\x1b[{terminal_row};{terminal_col}H')
             
-            # Build line content (no clear line - we overwrite with spaces)
+            # Build line content (buffer already contains spaces for empty areas)
             current_style = ''
             for col in range(self._width):
                 style = self._styles[row][col]
@@ -272,9 +286,11 @@ class Window:
             if current_style:
                 output.append('\x1b[0m')
         
-        # Keep cursor hidden - set_cursor() will position and show it
+        # Restore cursor position and show cursor
+        output.append('\x1b[u')  # Restore cursor
+        output.append('\x1b[?25h')  # Show cursor
         
-        # Flush all output at once
+        # Flush all output at once (batch rendering reduces flicker)
         sys.stderr.write(''.join(output))
         sys.stderr.flush()
     
@@ -373,18 +389,29 @@ class Window:
             self._dirty = True
     
     def set_cursor(self, y: int, x: int) -> None:
-        """Position cursor within window and show it."""
+        """Position cursor within window and show it.
+        
+        Uses batch rendering pattern from original ouroboros_ui.py:
+        - Direct absolute positioning with move_to()
+        - Show cursor after positioning
+        """
         if self.win is not None and _curses_available:
             try:
                 self.win.move(y, x)
             except curses.error:
                 pass
         else:
-            # ANSI mode - move cursor and show it
+            # ANSI mode - use absolute positioning
+            # Terminal coordinates are 1-based
             terminal_row = self._y + y + 1
             terminal_col = self._x + x + 1
-            # Move cursor and show it
-            sys.stderr.write(f'\x1b[{terminal_row};{terminal_col}H\x1b[?25h')
+            
+            # Build output as batch (reduces flicker)
+            output = []
+            output.append(f'\x1b[{terminal_row};{terminal_col}H')  # Move to position
+            output.append('\x1b[?25h')  # Show cursor
+            
+            sys.stderr.write(''.join(output))
             sys.stderr.flush()
     
     def get_cursor(self) -> tuple:
