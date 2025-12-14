@@ -94,28 +94,86 @@ jobs:
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "📦 Releasing version: $VERSION (draft=$IS_DRAFT, prerelease=$IS_PRERELEASE)"
 
-      - name: Extract changelog for this version
+      - name: Generate release notes
         id: changelog
         run: |
           VERSION=${{ steps.version.outputs.version }}
           
-          # Escape special regex characters in version for awk
+          # =============================================
+          # 1. Try to extract from CHANGELOG.md first
+          # =============================================
           ESCAPED_VERSION=$(echo "$VERSION" | sed 's/[][\\.*^$()+?{}|]/\\&/g')
           
-          # Extract changelog section for this version
           awk -v ver="## \\[${ESCAPED_VERSION}\\]" '
             $0 ~ ver { found=1; next }
             /^## \[/ && found { exit }
             found { print }
-          ' CHANGELOG.md > release_notes.md
+          ' CHANGELOG.md > changelog_section.md
           
-          # If changelog section is empty or not found, create default message
-          if [ ! -s release_notes.md ]; then
-            echo "Release v$VERSION" > release_notes.md
+          # =============================================
+          # 2. Auto-generate from commits (since last tag)
+          # =============================================
+          PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | sed -n '2p')
+          
+          if [ -z "$PREV_TAG" ]; then
+            # No previous tag, get all commits
+            COMMIT_RANGE="HEAD"
+          else
+            COMMIT_RANGE="${PREV_TAG}..HEAD"
+          fi
+          
+          echo "## What's Changed" > auto_notes.md
+          echo "" >> auto_notes.md
+          
+          # Group commits by type (conventional commits)
+          git log $COMMIT_RANGE --pretty=format:"%s|%h" --no-merges | while IFS='|' read -r msg hash; do
+            # Extract type from conventional commit format
+            if [[ "$msg" =~ ^feat ]]; then
+              echo "* 🚀 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^fix ]]; then
+              echo "* 🐛 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^refactor ]]; then
+              echo "* ♻️ $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^docs ]]; then
+              echo "* 📝 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^test ]]; then
+              echo "* ✅ $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^ci ]]; then
+              echo "* 👷 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^chore ]]; then
+              echo "* 🔧 $msg (\`$hash\`)" >> auto_notes.md
+            else
+              echo "* $msg (\`$hash\`)" >> auto_notes.md
+            fi
+          done
+          
+          # =============================================
+          # 3. Build final release notes
+          # =============================================
+          
+          # Start with auto-generated commit summary
+          cat auto_notes.md > release_notes.md
+          
+          # If CHANGELOG has content for this version, add it as detailed section
+          if [ -s changelog_section.md ]; then
             echo "" >> release_notes.md
-            echo "**Commit:** [\`${GITHUB_SHA::7}\`](https://github.com/${{ github.repository }}/commit/${GITHUB_SHA})" >> release_notes.md
+            echo "---" >> release_notes.md
             echo "" >> release_notes.md
-            echo "See [CHANGELOG.md](CHANGELOG.md) for full details." >> release_notes.md
+            echo "## Detailed Changes" >> release_notes.md
+            echo "" >> release_notes.md
+            cat changelog_section.md >> release_notes.md
+          fi
+          
+          # Always add link to full CHANGELOG
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "📖 **Full Changelog:** [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)" >> release_notes.md
+          
+          # Add compare link if we have a previous tag
+          if [ -n "$PREV_TAG" ]; then
+            echo "" >> release_notes.md
+            echo "🔗 **Compare:** [\`${PREV_TAG}...v${VERSION}\`](https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${VERSION})" >> release_notes.md
           fi
           
           echo "📝 Release notes:"
