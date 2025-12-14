@@ -136,7 +136,7 @@ class Window:
         self.write(self._height - 1, 1, chars['h'] * (self._width - 2), attr)
         self.write(self._height - 1, self._width - 1, chars['br'], attr)
     
-    def write(self, y: int, x: int, text: str, attr: int = 0) -> int:
+    def write(self, y: int, x: int, text: str, attr = 0) -> int:
         """
         Write text at position with optional attributes.
         
@@ -144,7 +144,7 @@ class Window:
             y: Row position (0-based, relative to window)
             x: Column position (0-based, relative to window)
             text: Text to write
-            attr: Curses attribute (or ANSI style code)
+            attr: Curses attribute (int) or ANSI style code (str)
             
         Returns:
             Number of characters written
@@ -161,6 +161,10 @@ class Window:
                     return 0
                 text = text[:max_len]
                 
+                # Convert string attr to int if needed
+                if isinstance(attr, str):
+                    attr = 0
+                
                 self.win.addstr(y, x, text, attr)
                 return len(text)
             except curses.error:
@@ -169,7 +173,12 @@ class Window:
         else:
             # ANSI mode - write to buffer
             written = 0
-            style = self._attr_to_ansi(attr)
+            
+            # Handle attr as either ANSI string or curses int
+            if isinstance(attr, str):
+                style = attr
+            else:
+                style = self._attr_to_ansi(attr)
             
             for i, char in enumerate(text):
                 col = x + i
@@ -234,8 +243,8 @@ class Window:
         """Render buffer to terminal using ANSI codes."""
         output = []
         
-        # Hide cursor during render
-        output.append('\x1b[?25l')
+        # Cursor should already be hidden by screen.hide_cursor()
+        # Don't hide again to avoid flicker
         
         for row in range(self._height):
             # Move to row position (1-based)
@@ -243,7 +252,7 @@ class Window:
             terminal_col = self._x + 1
             output.append(f'\x1b[{terminal_row};{terminal_col}H')
             
-            # Build line content
+            # Build line content (no clear line - we overwrite with spaces)
             current_style = ''
             for col in range(self._width):
                 style = self._styles[row][col]
@@ -263,12 +272,27 @@ class Window:
             if current_style:
                 output.append('\x1b[0m')
         
-        # Show cursor
-        output.append('\x1b[?25h')
+        # Keep cursor hidden - set_cursor() will position and show it
         
         # Flush all output at once
         sys.stderr.write(''.join(output))
         sys.stderr.flush()
+    
+    # Color pair to ANSI color mapping (Mystic Purple Theme)
+    # Maps curses color pair IDs to ANSI bright color codes
+    PAIR_TO_ANSI = {
+        1: '95',   # PAIR_BORDER -> Bright Magenta
+        2: '96',   # PAIR_PROMPT -> Bright Cyan
+        3: '92',   # PAIR_SUCCESS -> Bright Green
+        4: '93',   # PAIR_WARNING -> Bright Yellow
+        5: '91',   # PAIR_ERROR -> Bright Red
+        6: '95',   # PAIR_ACCENT -> Bright Magenta
+        7: '90',   # PAIR_DIM -> Bright Black (Gray)
+        8: '0',    # PAIR_TEXT -> Default
+        9: '94',   # PAIR_INFO -> Bright Blue
+        10: '95',  # PAIR_TITLE -> Bright Magenta
+        11: '96',  # PAIR_SYMBOL -> Bright Cyan
+    }
     
     def _attr_to_ansi(self, attr: int) -> str:
         """
@@ -286,7 +310,7 @@ class Window:
         if not _curses_available or attr == 0:
             return ''
         
-        # Extract color pair
+        # Extract color pair number
         pair = (attr & curses.A_COLOR) >> 8 if hasattr(curses, 'A_COLOR') else 0
         
         # Build ANSI code based on attributes
@@ -301,11 +325,9 @@ class Window:
         if attr & curses.A_REVERSE:
             codes.append('7')
         
-        # Map color pairs to ANSI colors (simplified)
-        # This will be enhanced by ThemeManager
-        if pair > 0:
-            # Use 256-color mode for better compatibility
-            codes.append(f'38;5;{pair}')
+        # Map color pair to ANSI color code
+        if pair > 0 and pair in self.PAIR_TO_ANSI:
+            codes.append(self.PAIR_TO_ANSI[pair])
         
         if codes:
             return f'\x1b[{";".join(codes)}m'
@@ -351,17 +373,18 @@ class Window:
             self._dirty = True
     
     def set_cursor(self, y: int, x: int) -> None:
-        """Position cursor within window."""
+        """Position cursor within window and show it."""
         if self.win is not None and _curses_available:
             try:
                 self.win.move(y, x)
             except curses.error:
                 pass
         else:
-            # ANSI mode - move cursor
+            # ANSI mode - move cursor and show it
             terminal_row = self._y + y + 1
             terminal_col = self._x + x + 1
-            sys.stderr.write(f'\x1b[{terminal_row};{terminal_col}H')
+            # Move cursor and show it
+            sys.stderr.write(f'\x1b[{terminal_row};{terminal_col}H\x1b[?25h')
             sys.stderr.flush()
     
     def get_cursor(self) -> tuple:

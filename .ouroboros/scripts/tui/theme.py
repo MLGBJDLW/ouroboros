@@ -47,18 +47,37 @@ class ThemeManager:
     PAIR_ACCENT = 6
     PAIR_DIM = 7
     PAIR_TEXT = 8
+    PAIR_INFO = 9
+    PAIR_TITLE = 10
+    PAIR_SYMBOL = 11
     
     # ANSI color codes (256-color mode)
+    # Mystic Purple Theme - Ouroboros Brand Colors
+    # 
+    # The Ouroboros (衔尾蛇) represents:
+    # - Eternal cycle, infinity, continuous loop
+    # - Wisdom, mystery, transformation
+    #
+    # Color Philosophy:
+    # - Purple/Magenta: Mystery, wisdom, the infinite loop
+    # - Cyan: Technology, clarity, the digital realm
+    # - Green: Success, life, growth
+    # - Yellow: Attention, guidance
+    # - Red: Warning, termination, breaking the cycle
+    #
     ANSI_COLORS = {
-        'border': '\x1b[95m',       # Bright magenta
-        'prompt': '\x1b[96m',       # Bright cyan
-        'success': '\x1b[92m',      # Bright green
-        'warning': '\x1b[93m',      # Bright yellow
-        'error': '\x1b[91m',        # Bright red
-        'accent': '\x1b[95m\x1b[1m',  # Bold bright magenta
-        'dim': '\x1b[90m',          # Bright black (gray)
-        'text': '\x1b[0m',          # Default
-        'reset': '\x1b[0m',         # Reset
+        'border': '\x1b[95m',         # Bright magenta - the serpent's body
+        'prompt': '\x1b[96m',         # Bright cyan - clarity
+        'success': '\x1b[92m',        # Bright green - completion
+        'warning': '\x1b[93m',        # Bright yellow - attention
+        'error': '\x1b[91m',          # Bright red - break the cycle
+        'accent': '\x1b[95m\x1b[1m',  # Bold bright magenta - emphasis
+        'info': '\x1b[94m',           # Bright blue - information
+        'dim': '\x1b[90m',            # Bright black (gray) - subtle
+        'text': '\x1b[0m',            # Default
+        'reset': '\x1b[0m',           # Reset
+        'title': '\x1b[95m\x1b[1m',   # Bold magenta - Ouroboros title
+        'symbol': '\x1b[96m',         # Cyan - ◎ symbol
     }
     
     # Curses color mappings (using standard colors)
@@ -69,8 +88,11 @@ class ThemeManager:
         'warning': (curses.COLOR_YELLOW, -1) if _curses_available else (3, -1),
         'error': (curses.COLOR_RED, -1) if _curses_available else (1, -1),
         'accent': (curses.COLOR_MAGENTA, -1) if _curses_available else (5, -1),
+        'info': (curses.COLOR_BLUE, -1) if _curses_available else (4, -1),
         'dim': (curses.COLOR_WHITE, -1) if _curses_available else (7, -1),
         'text': (-1, -1),
+        'title': (curses.COLOR_MAGENTA, -1) if _curses_available else (5, -1),
+        'symbol': (curses.COLOR_CYAN, -1) if _curses_available else (6, -1),
     }
     
     def __init__(self, screen: Optional['ScreenManager'] = None):
@@ -106,7 +128,7 @@ class ThemeManager:
                 self.colors_available = False
                 return False
             
-            # Initialize color pairs
+            # Initialize color pairs - Mystic Purple Theme
             curses.init_pair(self.PAIR_BORDER, curses.COLOR_MAGENTA, -1)
             curses.init_pair(self.PAIR_PROMPT, curses.COLOR_CYAN, -1)
             curses.init_pair(self.PAIR_SUCCESS, curses.COLOR_GREEN, -1)
@@ -115,6 +137,9 @@ class ThemeManager:
             curses.init_pair(self.PAIR_ACCENT, curses.COLOR_MAGENTA, -1)
             curses.init_pair(self.PAIR_DIM, curses.COLOR_WHITE, -1)
             curses.init_pair(self.PAIR_TEXT, -1, -1)
+            curses.init_pair(self.PAIR_INFO, curses.COLOR_BLUE, -1)
+            curses.init_pair(self.PAIR_TITLE, curses.COLOR_MAGENTA, -1)
+            curses.init_pair(self.PAIR_SYMBOL, curses.COLOR_CYAN, -1)
             
             self.colors_available = True
             return True
@@ -123,21 +148,30 @@ class ThemeManager:
             self.colors_available = False
             return False
     
-    def get_attr(self, name: str) -> int:
+    def get_attr(self, name: str):
         """
-        Get curses attribute for named style.
+        Get attribute for named style.
+        
+        In curses mode, returns curses attribute integer.
+        In ANSI mode, returns ANSI escape code string.
         
         Args:
             name: Style name ('border', 'prompt', 'success', etc.)
             
         Returns:
-            Curses attribute value (or 0 for monochrome)
+            Curses attribute value, ANSI string, or 0/'' for monochrome
         """
         # Check cache
         if name in self._attr_cache:
             return self._attr_cache[name]
         
-        if not _curses_available or not self.colors_available:
+        # ANSI mode - return ANSI escape codes directly
+        if not _curses_available:
+            ansi = self.ANSI_COLORS.get(name, '')
+            self._attr_cache[name] = ansi
+            return ansi
+        
+        if not self.colors_available:
             return 0
         
         attr = 0
@@ -154,10 +188,16 @@ class ThemeManager:
             attr = curses.color_pair(self.PAIR_ERROR)
         elif name == 'accent':
             attr = curses.color_pair(self.PAIR_ACCENT) | curses.A_BOLD
+        elif name == 'info':
+            attr = curses.color_pair(self.PAIR_INFO)
         elif name == 'dim':
             attr = curses.color_pair(self.PAIR_DIM) | curses.A_DIM
         elif name == 'text':
             attr = curses.color_pair(self.PAIR_TEXT)
+        elif name == 'title':
+            attr = curses.color_pair(self.PAIR_TITLE) | curses.A_BOLD
+        elif name == 'symbol':
+            attr = curses.color_pair(self.PAIR_SYMBOL)
         elif name == 'bold':
             attr = curses.A_BOLD
         elif name == 'underline':

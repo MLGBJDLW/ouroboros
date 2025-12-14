@@ -14,14 +14,9 @@ from typing import Optional, Tuple
 
 # Use absolute imports for compatibility when scripts dir is in sys.path
 # Requirements: 17.1-17.4 (lazy loading for fast startup)
-try:
-    # Try relative imports first (when used as package)
-    from .screen import ScreenManager
-    from .theme import ThemeManager
-except ImportError:
-    # Fall back to absolute imports
-    from tui.screen import ScreenManager
-    from tui.theme import ThemeManager
+from tui.screen import ScreenManager
+from tui.theme import ThemeManager
+from data.config import get_config
 
 
 # Keys constants - defined here to avoid import overhead
@@ -72,12 +67,8 @@ def _lazy_import_components():
     """Lazy import components for fast startup."""
     global _InputBox, _WelcomeBox
     if _InputBox is None:
-        try:
-            from components.input_box import InputBox as IB
-            from components.welcome_box import WelcomeBox as WB
-        except ImportError:
-            from ..components.input_box import InputBox as IB
-            from ..components.welcome_box import WelcomeBox as WB
+        from components.input_box import InputBox as IB
+        from components.welcome_box import WelcomeBox as WB
         _InputBox = IB
         _WelcomeBox = WB
     return _InputBox, _WelcomeBox
@@ -271,8 +262,8 @@ class TUIApp:
                 self._init_components()
                 self._running = True
                 
-                # Initial render
-                self._render()
+                # Initial render with full redraw
+                self._render(full_redraw=True)
                 
                 # Main input loop
                 self._main_loop()
@@ -299,6 +290,9 @@ class TUIApp:
         """Initialize all UI components using lazy imports."""
         global _read_clipboard
         
+        # Load configuration from ouroboros.config.json
+        self.config = get_config()
+        
         # Lazy import components
         InputBox, WelcomeBox = _lazy_import_components()
         KeyBuffer, _, PasteDetector, read_clipboard, SlashCommandHandler, _ = _lazy_import_input()
@@ -307,9 +301,9 @@ class TUIApp:
         # Store read_clipboard reference for use in handlers
         _read_clipboard = read_clipboard
         
-        # Theme
+        # Theme - respects config.ansi_colors setting
         self.theme = ThemeManager(self.screen)
-        if self.screen.is_curses:
+        if self.screen.is_curses and self.config.ansi_colors:
             self.theme.init_colors()
         
         # Welcome box
@@ -327,6 +321,9 @@ class TUIApp:
             show_line_numbers=self.show_line_numbers,
             prompt_header=self.prompt
         )
+        
+        # Set default status bar hint
+        self.input_box.status_bar.set_hint('Ctrl+D: submit')
         
         # Input handlers
         self.keybuffer = KeyBuffer()
@@ -348,9 +345,12 @@ class TUIApp:
         if self.paste_detector:
             self.paste_detector.disable()
     
-    def _render(self) -> None:
+    def _render(self, full_redraw: bool = False) -> None:
         """
         Render all components.
+        
+        Args:
+            full_redraw: If True, clear screen before rendering (only on init/resize)
         
         Requirements: 20.1 - Terminal too small handling
         """
@@ -365,6 +365,13 @@ class TUIApp:
             self._render_too_small_message(cols, rows)
             return
         
+        # Hide cursor at start of render to prevent flickering
+        self.screen.hide_cursor()
+        
+        # Only clear screen on initial render or resize to prevent flickering
+        if full_redraw:
+            self.screen.clear()
+        
         y = 0
         
         # Render welcome box
@@ -372,15 +379,19 @@ class TUIApp:
             y += self.welcome_box.render(y, cols)
             y += 1  # Gap
         
-        # Render input box
+        # Store input box start position
+        self._input_box_y = y
+        
+        # Render input box (this also positions cursor)
         if self.input_box:
             self.input_box.render(y, cols)
         
         # Render slash command dropdown if active
         if self.slash_handler and self.slash_handler.active:
             self._render_slash_dropdown(y)
-        
-        self.screen.refresh()
+            # Re-position cursor after dropdown render
+            if self.input_box:
+                self.input_box._position_cursor()
     
     def _render_too_small_message(self, cols: int, rows: int) -> None:
         """
@@ -682,6 +693,15 @@ class TUIApp:
         if self.slash_handler and self.slash_handler.active:
             current_line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
             self.slash_handler.update(current_line)
+            # Update status bar with match count
+            match_count = len(self.slash_handler.matches) if self.slash_handler.matches else 0
+            if match_count > 0:
+                self.input_box.status_bar.set_hint(f'{match_count} matches | Tab: complete')
+            else:
+                self.input_box.status_bar.set_hint('No matches')
+        else:
+            # Default hint
+            self.input_box.status_bar.set_hint('Ctrl+D: submit')
         
         self._render()
     
@@ -717,8 +737,14 @@ class TUIApp:
             current_line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
             if not current_line.startswith('/'):
                 self.slash_handler.cancel()
+                self.input_box.status_bar.set_hint('Ctrl+D: submit')
             else:
                 self.slash_handler.update(current_line)
+                match_count = len(self.slash_handler.matches) if self.slash_handler.matches else 0
+                if match_count > 0:
+                    self.input_box.status_bar.set_hint(f'{match_count} matches | Tab: complete')
+                else:
+                    self.input_box.status_bar.set_hint('No matches')
         
         self._render()
     
@@ -766,8 +792,8 @@ class TUIApp:
             cols, rows = self.screen.resize()
             if self.input_box:
                 self.input_box.handle_resize(cols, rows)
-            self.screen.clear()
-            self._render()
+            # Full redraw on resize
+            self._render(full_redraw=True)
     
     def _history_back(self) -> None:
         """Navigate to previous history entry."""

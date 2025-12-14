@@ -190,31 +190,68 @@ class StatusBar:
     def render_to_window(self, window: 'Window', y: int, 
                          x_start: int = 1, x_end: int = None) -> None:
         """
-        Render status bar into a window at specified position.
+        Render status bar embedded in bottom border.
         
-        This is typically used to render into the bottom border of InputBox.
+        Format: ╰── Ctrl+D: submit ─────────────────── Ln X, Col Y ──╯
         
         Args:
             window: Window to render into
-            y: Row position
-            x_start: Starting column (default 1 to skip border)
-            x_end: Ending column (default window.width - 1)
+            y: Row position (bottom border row)
+            x_start: Starting column (after ╰)
+            x_end: Ending column (before ╯)
         """
         if x_end is None:
             x_end = window.width - 1
         
-        available_width = x_end - x_start
-        if available_width <= 0:
+        content_width = x_end - x_start
+        if content_width <= 0:
             return
         
-        text = self.render_text(available_width)
+        # Get attributes
+        border_attr = self.theme.get_attr('border') if self.theme else 0
+        success_attr = self.theme.get_attr('success') if self.theme else 0
+        dim_attr = self.theme.get_attr('dim') if self.theme else 0
         
-        # Get attribute for status bar
-        attr = 0
-        if self.theme:
-            attr = self.theme.get_attr('dim')
+        # Build status bar embedded in border
+        # Format: ── Hint ─────────────────── Ln X, Col Y ──
         
-        window.write(y, x_start, text, attr)
+        # Hint text (or mode if no hint)
+        hint_text = f' {self._hint_text} ' if self._hint_text else f' {self._mode} '
+        
+        # Position text
+        pos_text = f' Ln {self._cursor_row}, Col {self._cursor_col} '
+        
+        # Calculate border segments
+        left_border = '──'
+        right_border = '──'
+        
+        # Middle border fills remaining space
+        hint_len = len(hint_text)
+        pos_len = len(pos_text)
+        mid_len = content_width - len(left_border) - hint_len - pos_len - len(right_border)
+        mid_border = '─' * max(1, mid_len)
+        
+        # Write each segment with appropriate attributes
+        x = x_start
+        
+        # Left border segment
+        window.write(y, x, left_border, border_attr)
+        x += len(left_border)
+        
+        # Hint text (success color - green for submit hint)
+        window.write(y, x, hint_text, success_attr)
+        x += hint_len
+        
+        # Middle border
+        window.write(y, x, mid_border, border_attr)
+        x += len(mid_border)
+        
+        # Position text (dim)
+        window.write(y, x, pos_text, dim_attr)
+        x += pos_len
+        
+        # Right border segment
+        window.write(y, x, right_border, border_attr)
     
     def get_ansi_text(self, width: int) -> str:
         """

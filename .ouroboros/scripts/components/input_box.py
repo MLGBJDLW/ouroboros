@@ -14,13 +14,13 @@ if TYPE_CHECKING:
     from ..tui.theme import ThemeManager
     from ..tui.window import Window
 
-from ..data.buffer import TextBuffer
-from ..utils.badge import (
+from data.buffer import TextBuffer
+from utils.badge import (
     render_for_display, find_markers, get_marker_at_position,
     FILE_MARKER_START, FILE_MARKER_END
 )
-from ..utils.text import visible_len, char_width
-from .status_bar import StatusBar
+from utils.text import visible_len, char_width
+from components.status_bar import StatusBar
 
 
 class InputBox:
@@ -359,10 +359,18 @@ class InputBox:
         # Draw box
         self._window.draw_box('rounded', border_attr)
         
-        # Draw prompt header in top border if provided
+        # Draw prompt header in top border
+        # Format: ╭──◎ INPUT──────────────────╮ or ╭──◇ Custom Header──────╮
+        prompt_attr = self.theme.get_attr('prompt') if self.theme else 0
         if self.prompt_header:
-            header_x = 2
-            self._window.write(0, header_x, f' {self.prompt_header} ', accent_attr)
+            # Custom header with ◇ symbol
+            header_text = f' ◇ {self.prompt_header} '
+        else:
+            # Default header with ◎ symbol
+            header_text = ' ◎ INPUT '
+        
+        header_x = 3  # After ╭──
+        self._window.write(0, header_x, header_text, prompt_attr)
         
         # Update scroll
         self.update_scroll()
@@ -407,10 +415,12 @@ class InputBox:
         self._update_status_bar()
         self.status_bar.render_to_window(self._window, total_height - 1, 2, self._width - 2)
         
-        # Position cursor
+        # Refresh window first (renders content)
+        self._window.refresh()
+        
+        # Then position cursor (must be after refresh in ANSI mode)
         self._position_cursor()
         
-        self._window.refresh()
         return total_height
     
     def _position_cursor(self) -> None:

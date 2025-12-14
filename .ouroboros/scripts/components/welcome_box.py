@@ -2,7 +2,7 @@
 WelcomeBox component module.
 
 This module provides the header component showing branding
-and keyboard shortcuts.
+and keyboard shortcuts in a two-column layout with color coding.
 
 Requirements: 3.1-3.3
 """
@@ -20,39 +20,30 @@ class WelcomeBox:
     Welcome header component with branding and keyboard shortcuts.
     
     Displays:
-    - ◎ OUROBOROS title
-    - Keyboard shortcuts in a formatted layout
-    - Compact mode for narrow terminals
+    - ◎ OUROBOROS title (accent color)
+    - Keyboard shortcuts in two-column layout with │ separator
+    - Color-coded keys: Submit=green, Cancel=red, Others=yellow
     
     The component scales to fit terminal width (max 66 columns).
     """
     
-    # Branding
+    # Branding - The Eternal Serpent
     TITLE = '◎ OUROBOROS'
-    
-    # Keyboard shortcuts to display
-    SHORTCUTS = [
-        ('Enter', 'new line'),
-        ('Ctrl+D', 'submit'),
-        ('↑/↓', 'cursor'),
-        ('←/→', 'navigate'),
-        ('Home/End', 'line start/end'),
-        ('Ctrl+U', 'clear line'),
-        ('Ctrl+C', 'cancel'),
-        ('>>>', 'end & submit'),
-    ]
-    
-    # Compact shortcuts (for narrow terminals)
-    SHORTCUTS_COMPACT = [
-        ('Enter', 'newline'),
-        ('Ctrl+D', 'submit'),
-        ('Ctrl+C', 'cancel'),
-    ]
+    SYMBOL = '◎'  # The ouroboros symbol - eternal cycle
     
     # Layout constants
     MAX_WIDTH = 66
     MIN_WIDTH = 30
     COMPACT_THRESHOLD = 50
+    
+    # Two-column shortcut layout (left_key, left_desc, right_key, right_desc)
+    # Special keys: 'submit' for green, 'cancel' for red, others yellow
+    SHORTCUT_ROWS = [
+        ('Enter', 'New line', 'normal', 'Ctrl+D', 'Submit', 'submit'),
+        ('↑/↓', 'Move cursor', 'normal', '←/→', 'Navigate', 'normal'),
+        ('Home/End', 'Line start/end', 'normal', 'Ctrl+U', 'Clear line', 'normal'),
+        ('Ctrl+C', 'Cancel', 'cancel', '>>>', 'End & submit', 'normal'),
+    ]
     
     def __init__(self, screen: Optional['ScreenManager'] = None,
                  theme: Optional['ThemeManager'] = None,
@@ -78,42 +69,6 @@ class WelcomeBox:
         """Check if compact mode should be used."""
         return width < self.COMPACT_THRESHOLD
     
-    def _format_shortcuts(self, width: int) -> list:
-        """
-        Format shortcuts to fit within width.
-        
-        Args:
-            width: Available width
-            
-        Returns:
-            List of formatted shortcut lines
-        """
-        shortcuts = self.SHORTCUTS_COMPACT if self._is_compact(width) else self.SHORTCUTS
-        
-        # Calculate how many shortcuts per line
-        inner_width = width - 4  # Account for borders and padding
-        
-        lines = []
-        current_line = []
-        current_len = 0
-        
-        for key, desc in shortcuts:
-            item = f'{key}: {desc}'
-            item_len = len(item) + 3  # Add separator space
-            
-            if current_len + item_len > inner_width and current_line:
-                lines.append('  '.join(current_line))
-                current_line = [item]
-                current_len = len(item)
-            else:
-                current_line.append(item)
-                current_len += item_len
-        
-        if current_line:
-            lines.append('  '.join(current_line))
-        
-        return lines
-    
     def get_height(self, width: int) -> int:
         """
         Calculate required height for the welcome box.
@@ -125,12 +80,25 @@ class WelcomeBox:
             Required height in rows
         """
         if self.custom_header:
-            # Title + custom header + borders
-            return 4
+            return 4  # Title + custom header + borders
         
-        shortcut_lines = self._format_shortcuts(width)
-        # Title line + shortcut lines + top/bottom borders
-        return 2 + len(shortcut_lines)
+        if self._is_compact(width):
+            return 4  # Compact: title + 2 shortcut lines + border
+        
+        # Full: title + 4 shortcut rows + border
+        return 2 + len(self.SHORTCUT_ROWS)
+    
+    def _get_key_attr(self, key_type: str) -> int:
+        """Get attribute for key based on type."""
+        if not self.theme:
+            return 0
+        
+        if key_type == 'submit':
+            return self.theme.get_attr('success')
+        elif key_type == 'cancel':
+            return self.theme.get_attr('error')
+        else:
+            return self.theme.get_attr('warning')
     
     def render(self, y: int = 0, width: int = None) -> int:
         """
@@ -160,35 +128,96 @@ class WelcomeBox:
         # Create window
         self._window = self.screen.create_window(box_height, box_width, y, x)
         
-        # Get border attribute
-        border_attr = 0
-        accent_attr = 0
-        if self.theme:
-            border_attr = self.theme.get_attr('border')
-            accent_attr = self.theme.get_attr('accent')
+        # Get attributes - Mystic Purple Theme
+        border_attr = self.theme.get_attr('border') if self.theme else 0
+        accent_attr = self.theme.get_attr('accent') if self.theme else 0
+        symbol_attr = self.theme.get_attr('symbol') if self.theme else 0
         
-        # Draw box
+        # Draw box with mystic purple border
         self._window.draw_box('rounded', border_attr)
         
-        # Draw title centered
+        # Draw title centered in top border
+        # Symbol ◎ in cyan, OUROBOROS in bold magenta
         title_x = (box_width - len(self.TITLE)) // 2
-        self._window.write(0, title_x, self.TITLE, accent_attr)
+        self._window.write(0, title_x, self.SYMBOL, symbol_attr)
+        self._window.write(0, title_x + 2, 'OUROBOROS', accent_attr)
         
         # Draw content
         if self.custom_header:
             # Custom header text
             header_x = (box_width - len(self.custom_header) - 2) // 2
             self._window.write(1, max(1, header_x), self.custom_header, 0)
+        elif self._is_compact(box_width):
+            # Compact mode: simple layout
+            self._render_compact_shortcuts(box_width)
         else:
-            # Keyboard shortcuts
-            shortcut_lines = self._format_shortcuts(box_width)
-            for i, line in enumerate(shortcut_lines):
-                # Center each line
-                line_x = (box_width - len(line)) // 2
-                self._window.write(1 + i, max(1, line_x), line, 0)
+            # Full two-column layout
+            self._render_full_shortcuts(box_width)
         
         self._window.refresh()
         return box_height
+    
+    def _render_compact_shortcuts(self, width: int) -> None:
+        """Render compact shortcut layout."""
+        if not self._window:
+            return
+        
+        # Simple centered lines
+        lines = [
+            "Enter: newline  Ctrl+D: submit",
+            "Ctrl+C: cancel  >>>: end & submit"
+        ]
+        
+        for i, line in enumerate(lines):
+            line_x = (width - len(line)) // 2
+            self._window.write(1 + i, max(1, line_x), line, 0)
+    
+    def _render_full_shortcuts(self, width: int) -> None:
+        """Render full two-column shortcut layout with colors."""
+        if not self._window:
+            return
+        
+        # Column layout: "  Key       Desc       │ Key       Desc"
+        # Left column: ~28 chars, separator │, right column: rest
+        inner_width = width - 2  # Inside borders
+        left_col_width = 28
+        
+        for row_idx, (l_key, l_desc, l_type, r_key, r_desc, r_type) in enumerate(self.SHORTCUT_ROWS):
+            row = 1 + row_idx
+            
+            # Get attributes for keys
+            l_key_attr = self._get_key_attr(l_type)
+            r_key_attr = self._get_key_attr(r_type)
+            
+            # Build left column: "  Key       Desc       "
+            # Key is colored, desc is normal
+            left_key_padded = f"{l_key:<11}"
+            left_desc_padded = f"{l_desc:<14}"
+            
+            # Build right column: " Key       Desc"
+            right_key_padded = f"{r_key:<11}"
+            right_desc_padded = r_desc
+            
+            # Write left column
+            x = 1
+            self._window.write(row, x, "  ", 0)
+            x += 2
+            self._window.write(row, x, left_key_padded, l_key_attr)
+            x += len(left_key_padded)
+            self._window.write(row, x, left_desc_padded, 0)
+            x += len(left_desc_padded)
+            
+            # Write separator
+            border_attr = self.theme.get_attr('border') if self.theme else 0
+            self._window.write(row, x, "│", border_attr)
+            x += 1
+            
+            # Write right column
+            self._window.write(row, x, " ", 0)
+            x += 1
+            self._window.write(row, x, right_key_padded, r_key_attr)
+            x += len(right_key_padded)
+            self._window.write(row, x, right_desc_padded, 0)
     
     def render_compact(self, y: int = 0, width: int = None) -> int:
         """
@@ -214,75 +243,15 @@ class WelcomeBox:
         
         # Single line: title only
         if box_width < self.MIN_WIDTH:
-            # Just title, no box
             x = (width - len(self.TITLE)) // 2
             self._window = self.screen.create_window(1, len(self.TITLE) + 2, y, max(0, x))
             
-            accent_attr = 0
-            if self.theme:
-                accent_attr = self.theme.get_attr('accent')
-            
+            accent_attr = self.theme.get_attr('accent') if self.theme else 0
             self._window.write(0, 1, self.TITLE, accent_attr)
             self._window.refresh()
             return 1
         
-        # Compact box with minimal shortcuts
         return self.render(y, box_width)
-    
-    def render_to_window(self, window: 'Window', y: int = 0) -> int:
-        """
-        Render welcome box into an existing window.
-        
-        Args:
-            window: Window to render into
-            y: Starting row within window
-            
-        Returns:
-            Number of rows used
-        """
-        width = window.width
-        box_width = self._get_width(width)
-        
-        # Get attributes
-        border_attr = 0
-        accent_attr = 0
-        if self.theme:
-            border_attr = self.theme.get_attr('border')
-            accent_attr = self.theme.get_attr('accent')
-        
-        # Calculate centering offset
-        x_offset = (width - box_width) // 2
-        
-        # Draw top border
-        chars = window.BOX_CHARS['rounded']
-        top_line = chars['tl'] + chars['h'] * (box_width - 2) + chars['tr']
-        window.write(y, x_offset, top_line, border_attr)
-        
-        # Draw title in top border
-        title_x = x_offset + (box_width - len(self.TITLE)) // 2
-        window.write(y, title_x, self.TITLE, accent_attr)
-        
-        # Draw content lines
-        if self.custom_header:
-            content_lines = [self.custom_header]
-        else:
-            content_lines = self._format_shortcuts(box_width)
-        
-        for i, line in enumerate(content_lines):
-            row = y + 1 + i
-            # Draw side borders
-            window.write(row, x_offset, chars['v'], border_attr)
-            window.write(row, x_offset + box_width - 1, chars['v'], border_attr)
-            # Draw content centered
-            line_x = x_offset + (box_width - len(line)) // 2
-            window.write(row, line_x, line, 0)
-        
-        # Draw bottom border
-        bottom_row = y + 1 + len(content_lines)
-        bottom_line = chars['bl'] + chars['h'] * (box_width - 2) + chars['br']
-        window.write(bottom_row, x_offset, bottom_line, border_attr)
-        
-        return 2 + len(content_lines)
     
     def clear(self) -> None:
         """Clear the welcome box."""
