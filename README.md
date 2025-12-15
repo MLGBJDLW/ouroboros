@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Copilot Compatible](https://img.shields.io/badge/GitHub%20Copilot-Compatible-blue)](https://github.com/features/copilot)
-[![Version: 3.1.2](https://img.shields.io/badge/Version-3.1.2-green)](https://github.com/MLGBJDLW/ouroboros)
+[![GitHub Release](https://img.shields.io/github/v/release/MLGBJDLW/ouroboros?label=Version&color=green)](https://github.com/MLGBJDLW/ouroboros/releases)
 [![CI](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml/badge.svg)](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml)
 
 ---
