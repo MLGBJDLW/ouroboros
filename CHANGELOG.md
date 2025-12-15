@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2025-12-15
+
+### Added
+- **Skills Discovery (Optional)** — Level 2 worker agents can now optionally check for skill files in `.claude/skills/` (Claude) or `.cursor/skills/` (Cursor) on task start
+  - Skills are loaded on-demand if the directory exists
+  - Missing skills directories are gracefully ignored
+  - Orchestrators (Level 0 & 1) delegate to Level 2, not use skills directly
+
+---
+
 ## [3.1.0] - 2025-12-15
 
 ### Added
