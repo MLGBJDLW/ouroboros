@@ -1,6 +1,6 @@
-# Ouroboros Enhanced CCL Scripts v3.0
+# Ouroboros Enhanced CCL Scripts v3.1
 
-> **Version**: 3.0.0 | **Requires**: Python 3.6+ | **Dependencies**: None (stdlib only)
+> **Version**: 3.1.0 | **Requires**: Python 3.9+ | **Dependencies**: None (stdlib only)
 
 ```
     ╭───◯───╮
@@ -379,4 +379,4 @@ Part of the Ouroboros project. MIT License.
 
 ---
 
-*◎ Enhanced input for the Ouroboros CCL system - v3.0.0*
+*◎ Enhanced input for the Ouroboros CCL system - v3.1.0*
