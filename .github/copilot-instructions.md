@@ -141,7 +141,7 @@ I will delegate this to ouroboros-coder.
 2. Use `handoff` to return to orchestrator (Level 1 or Level 0)
 3. NEVER use forbidden phrases
 4. NEVER assume session is ending
-5. **NEVER execute CCL (`python -c "task = input()"`)** - this is orchestrator-only
+5. **NEVER execute CCL (`python -c "task = input('[Ouroboros] > ')"`)** - this is orchestrator-only
 
 **Level 1 Orchestrators MUST:**
 1. Output `[WORKFLOW COMPLETE]` marker

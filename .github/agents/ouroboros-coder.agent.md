@@ -250,12 +250,12 @@ $ [build command]
 
 > [!CAUTION]
 > **AFTER TASK COMPLETION, YOU MUST RETURN TO ORCHESTRATOR VIA HANDOFF.**
-> **NEVER execute CCL (`python -c "task = input()"`) - this is orchestrator-only!**
+> **NEVER execute CCL (`python -c "task = input('[Ouroboros] > ')"`) - this is orchestrator-only!**
 
 1. Output `[TASK COMPLETE]` marker
 2. Use handoff to return to calling orchestrator
 3. **NEVER** say goodbye or end the conversation
-4. **NEVER** execute `python -c "task = input()"` - you are Level 2, CCL is forbidden
+4. **NEVER** execute `python -c "task = input('[Ouroboros] > ')"` - you are Level 2, CCL is forbidden
 
 > [!WARNING]
 > **You are LEVEL 2.** Only Level 0 (`ouroboros`) and Level 1 (`init`, `spec`, `implement`, `archive`) may execute CCL.
