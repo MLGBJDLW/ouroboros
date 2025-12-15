@@ -251,6 +251,9 @@ Your work is complete when:
 [Complete requirements document]
 === END ARTIFACT ===
 
+## Files Created
+- `.ouroboros/specs/[feature]/requirements.md` (created)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -302,12 +305,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Reading template" | Actually read and follow it |
 
 **NEVER** write vague requirements without EARS structure.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["EARS_notation", "acceptance_criteria", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["ambiguous_language", "missing_IDs", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

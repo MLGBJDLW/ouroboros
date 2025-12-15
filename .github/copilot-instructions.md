@@ -205,6 +205,26 @@ Subagents MUST read templates before creating documents:
 
 ---
 
+## 🛠️ SKILLS (LEVEL 2 ONLY - OPTIONAL)
+
+**Level 2 workers MAY check for skills ON TASK START:**
+
+| Directory | Platform |
+|-----------|----------|
+| `.claude/skills/` | Claude (VS Code) |
+| `.cursor/skills/` | Cursor |
+
+**If skills directory exists:**
+1. List available skill files (e.g., `coding.md`, `testing.md`)
+2. Load skills relevant to current task
+3. Apply skill instructions alongside agent rules
+
+> [!NOTE]
+> Skills are optional enhancements. Missing directories = proceed normally.
+> Level 0 & 1 orchestrators do NOT use skills - they delegate to Level 2.
+
+---
+
 ## 📤 SUBAGENT-DOCS
 
 Long outputs (>500 lines) → Save to `.ouroboros/subagent-docs/[agent]-[task]-YYYY-MM-DD.md`

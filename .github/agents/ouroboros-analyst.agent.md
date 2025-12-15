@@ -207,6 +207,10 @@ When analyzing code:
 - [Insight 1 with evidence]
 - [Insight 2 with evidence]
 
+## Files Analyzed
+- `path/to/file1.ts` (entry point)
+- `path/to/file2.ts` (dependency)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

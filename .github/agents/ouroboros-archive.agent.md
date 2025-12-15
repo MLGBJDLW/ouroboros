@@ -274,12 +274,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Checking completion" | Delegate to analyst |
 
 **NEVER** describe archiving without actual delegation.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["delegate_file_operations", "execute_CCL", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["direct_file_writes", "goodbye_phrases", "session_termination", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

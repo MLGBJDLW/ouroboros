@@ -205,6 +205,9 @@ TASK-1.1 → TASK-1.3 → TASK-2.1 → TASK-3.2
 [Complete task document]
 === END ARTIFACT ===
 
+## Files Created
+- `.ouroboros/specs/[feature]/tasks.md` (created)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -256,12 +259,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Mapping dependencies" | Show dependency chain |
 
 **NEVER** create tasks without referencing requirements/design.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["atomic_tasks", "file_paths", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["vague_tasks", "missing_dependencies", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```
