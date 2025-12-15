@@ -13,6 +13,8 @@ from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from .screen import ScreenManager
 
+from utils.text import char_width, visible_len
+
 # Try to import curses
 try:
     import curses
@@ -179,15 +181,64 @@ class Window:
                 style = attr
             else:
                 style = self._attr_to_ansi(attr)
-            
-            for i, char in enumerate(text):
-                col = x + i
+
+            def clear_overlapping_cells(row: int, col: int) -> None:
+                """Clear any wide-character overlap at a specific cell."""
+                if not (0 <= row < self._height and 0 <= col < self._width):
+                    return
+
+                existing = self._buffer[row][col]
+
+                # Continuation cell from a wide character (second column)
+                if existing == "":
+                    # Clear the leading cell so the wide character no longer occupies this column
+                    lead_col = col - 1
+                    if lead_col >= 0 and char_width(self._buffer[row][lead_col]) == 2:
+                        self._buffer[row][lead_col] = " "
+                        self._styles[row][lead_col] = ""
+                    self._buffer[row][col] = " "
+                    self._styles[row][col] = ""
+                    return
+
+                # Leading cell of a wide character - clear its continuation
+                if char_width(existing) == 2:
+                    cont_col = col + 1
+                    if cont_col < self._width and self._buffer[row][cont_col] == "":
+                        self._buffer[row][cont_col] = " "
+                        self._styles[row][cont_col] = ""
+
+            col = x
+            for char in text:
+                w = char_width(char)
+                if w <= 0:
+                    continue
+
                 if col >= self._width:
                     break
-                if col >= 0:
+
+                # If we're writing off-screen to the left, advance until visible
+                if col < 0:
+                    col += w
+                    continue
+
+                # Ensure we don't leave broken wide characters behind
+                clear_overlapping_cells(y, col)
+
+                if w == 2:
+                    if col + 1 >= self._width:
+                        break
+                    clear_overlapping_cells(y, col + 1)
                     self._buffer[y][col] = char
                     self._styles[y][col] = style
-                    written += 1
+                    # Mark the second cell as a continuation (rendered as empty)
+                    self._buffer[y][col + 1] = ""
+                    self._styles[y][col + 1] = style
+                else:
+                    self._buffer[y][col] = char
+                    self._styles[y][col] = style
+
+                written += 1
+                col += w
             
             self._dirty = True
             return written
@@ -205,10 +256,11 @@ class Window:
         """
         self.write(y, 0, text, attr)
         
-        if pad and len(text) < self._width:
+        text_width = visible_len(text)
+        if pad and text_width < self._width:
             # Fill remaining space
-            padding = ' ' * (self._width - len(text))
-            self.write(y, len(text), padding, 0)
+            padding = ' ' * (self._width - text_width)
+            self.write(y, text_width, padding, 0)
     
     def clear(self) -> None:
         """Clear window contents."""
@@ -372,6 +424,19 @@ class Window:
                 for col in range(min(len(old_buffer[row]), width)):
                     self._buffer[row][col] = old_buffer[row][col]
                     self._styles[row][col] = old_styles[row][col]
+
+            # Repair any broken wide-character markers after resize
+            for row in range(self._height):
+                for col in range(self._width):
+                    cell = self._buffer[row][col]
+                    if cell == "":
+                        if col == 0 or char_width(self._buffer[row][col - 1]) != 2:
+                            self._buffer[row][col] = " "
+                            self._styles[row][col] = ""
+                    elif char_width(cell) == 2 and col + 1 >= self._width:
+                        # Wide character can't fit at the edge
+                        self._buffer[row][col] = " "
+                        self._styles[row][col] = ""
             
             self._dirty = True
     

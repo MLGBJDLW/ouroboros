@@ -10,6 +10,8 @@ Requirements: 28.1-28.8, 29.1-29.4
 import re
 from typing import Optional, List, Tuple, TYPE_CHECKING
 
+from utils.text import char_width, visible_len, pad_text
+
 if TYPE_CHECKING:
     from ..tui.screen import ScreenManager
     from ..tui.theme import ThemeManager
@@ -36,6 +38,7 @@ class SelectionMenu:
     MIN_WIDTH = 30
     MAX_VISIBLE = 10  # Maximum visible options before scrolling
     CUSTOM_INPUT_TEXT = '[Custom input...]'
+    PREFERRED_WIDTH_RATIO = 0.7  # Target width relative to terminal (when possible)
     
     def __init__(self, screen: Optional['ScreenManager'] = None,
                  theme: Optional['ThemeManager'] = None,
@@ -314,16 +317,107 @@ class SelectionMenu:
             below = f'↓ {remaining} more below'
         
         return (above, below)
-    
-    def _calculate_width(self) -> int:
-        """Calculate required width based on options."""
-        max_option_len = max((len(opt) for opt in self._options), default=10)
-        title_len = len(self.title) if self.title else 0
-        
-        # Add space for selection indicator and padding
-        width = max(max_option_len + 6, title_len + 4, self.MIN_WIDTH)
-        
-        return width
+
+    def _calculate_width(self, max_width: int) -> int:
+        """Calculate a reasonable width for the menu in terminal columns."""
+        if max_width <= 0:
+            return self.MIN_WIDTH
+
+        max_option_w = max((visible_len(opt) for opt in self._options), default=10)
+        title_w = visible_len(self.title) if self.title else 0
+
+        # Space for borders + indicator/prefix + inner padding
+        natural = max(max_option_w + 6, title_w + 4, self.MIN_WIDTH)
+
+        preferred = max(self.MIN_WIDTH, int(max_width * self.PREFERRED_WIDTH_RATIO))
+        return min(max_width, max(natural, preferred))
+
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        """Normalize menu text for single-line wrapping logic."""
+        if not text:
+            return ""
+        return text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+
+    @staticmethod
+    def _wrap_text(text: str, width: int) -> List[str]:
+        """
+        Wrap text to a target display width (CJK-aware).
+
+        This wraps by display columns (not codepoints) so wide characters
+        do not break alignment in ANSI fallback mode.
+        """
+        text = SelectionMenu._normalize_text(text)
+        if width <= 0:
+            return [""]
+        if not text:
+            return [""]
+
+        lines: List[str] = []
+        current: List[str] = []
+        current_w = 0
+
+        for ch in text:
+            w = char_width(ch)
+            if w <= 0:
+                continue
+
+            if current_w + w > width:
+                if current:
+                    lines.append("".join(current).rstrip())
+                current = [ch]
+                current_w = w
+                continue
+
+            current.append(ch)
+            current_w += w
+
+        if current or not lines:
+            lines.append("".join(current).rstrip())
+
+        return lines
+
+    def _compute_visible_layout(
+        self,
+        wrapped_options: List[List[str]],
+        start_index: int,
+        max_option_lines: int,
+    ) -> List[Tuple[int, List[str], bool]]:
+        """Compute which options (and which wrapped lines) are visible."""
+        if not self._options:
+            return []
+
+        max_option_lines = max(1, max_option_lines)
+        layout: List[Tuple[int, List[str], bool]] = []
+        remaining = max_option_lines
+
+        for idx in range(start_index, len(self._options)):
+            if len(layout) >= self.MAX_VISIBLE:
+                break
+
+            lines = wrapped_options[idx] if idx < len(wrapped_options) else [""]
+            lines = lines if lines else [""]
+
+            if len(layout) == 0 and len(lines) > remaining:
+                # Ensure at least one option is visible, even if truncated.
+                layout.append((idx, lines[:remaining], True))
+                remaining = 0
+                break
+
+            if len(lines) > remaining:
+                break
+
+            layout.append((idx, lines, False))
+            remaining -= len(lines)
+            if remaining <= 0:
+                break
+
+        if not layout:
+            # Always show something if options exist.
+            idx = min(max(0, start_index), len(self._options) - 1)
+            layout.append((idx, wrapped_options[idx][:1] if wrapped_options else [""], True))
+
+        return layout
 
     def render(self, y: int = 0, width: int = None) -> int:
         """
@@ -343,28 +437,81 @@ class SelectionMenu:
         if width is None:
             cols, _ = self.screen.get_size()
             width = cols
-        
-        self._width = min(self._calculate_width(), width)
-        self._visible_count = min(self.MAX_VISIBLE, len(self._options))
+
+        cols, rows = self.screen.get_size()
+        width = min(width, cols)
+
+        # Leave a small margin so the border doesn't touch the terminal edge.
+        max_menu_width = max(10, width - 4)
+        max_menu_width = min(max_menu_width, width)
+        self._width = self._calculate_width(max_menu_width)
+        inner_width = max(1, self._width - 2)  # inside borders
+
+        # Option layout: "▸ " + "1. " then text
+        prefix_width = visible_len("▸ 1. ")
+        text_width = max(1, inner_width - prefix_width)
+        wrapped_options = [self._wrap_text(opt, text_width) for opt in self._options]
+
+        # Compute max available height on screen for this menu.
+        max_total_height = max(0, rows - y)
+
+        def build_layout_for_scroll(scroll_offset: int) -> Tuple[List[Tuple[int, List[str], bool]], bool]:
+            has_title = bool(self.title)
+            reserved = 2  # borders
+            reserved += 1 if has_title else 0
+            reserved += 1 if scroll_offset > 0 else 0  # above indicator
+
+            # First pass: decide visible options without reserving below indicator.
+            option_lines_budget = max_total_height - reserved
+            layout = self._compute_visible_layout(wrapped_options, scroll_offset, option_lines_budget)
+            below_needed = (scroll_offset + len(layout)) < len(self._options)
+
+            # Second pass: if below indicator is needed, reserve one line and recompute.
+            if below_needed:
+                option_lines_budget = max_total_height - reserved - 1
+                layout = self._compute_visible_layout(wrapped_options, scroll_offset, option_lines_budget)
+                below_needed = (scroll_offset + len(layout)) < len(self._options)
+
+            return layout, below_needed
+
+        # Initial layout based on current scroll offset
+        layout, _ = build_layout_for_scroll(self._scroll_offset)
+        self._visible_count = max(1, len(layout))
+
+        # Ensure selection stays within visible option range, then recompute layout if needed.
+        prev_offset = self._scroll_offset
+        self._ensure_visible()
+        if self._scroll_offset != prev_offset:
+            layout, _ = build_layout_for_scroll(self._scroll_offset)
+            self._visible_count = max(1, len(layout))
         
         # Calculate total height
-        # Title (if present) + options + scroll indicators + borders
         has_title = bool(self.title)
         above_indicator, below_indicator = self._get_scroll_indicators()
-        
-        content_height = self._visible_count
+
+        option_line_count = sum(len(lines) for _, lines, _ in layout)
+        content_height = option_line_count
         if has_title:
             content_height += 1
         if above_indicator:
             content_height += 1
         if below_indicator:
             content_height += 1
-        
-        total_height = content_height + 2  # Add borders
+
+        total_height = min(max_total_height, content_height + 2)  # Add borders, cap to screen
         
         # Center horizontally
         x = (width - self._width) // 2
-        
+
+        # Clear previous window if the new menu is smaller (prevents border ghosting)
+        if self._window is not None:
+            try:
+                if self._window.height > total_height or self._window.width > self._width:
+                    self._window.clear()
+                    self._window.refresh()
+            except Exception:
+                pass
+
         # Create window
         self._window = self.screen.create_window(total_height, self._width, y, x)
         
@@ -387,20 +534,17 @@ class SelectionMenu:
         
         # Draw title if present
         if has_title:
-            title_x = (self._width - len(self.title)) // 2
-            self._window.write(row, max(1, title_x), self.title, accent_attr)
+            title_line = pad_text(self.title, inner_width, align='center', fill_char=' ', truncate=True)
+            self._window.write(row, 1, title_line, accent_attr)
             row += 1
         
         # Draw above scroll indicator
         if above_indicator:
-            self._window.write(row, 2, above_indicator, dim_attr)
+            self._window.write(row, 1, pad_text(above_indicator, inner_width, align='left', truncate=True), dim_attr)
             row += 1
         
         # Draw visible options
-        visible_options = self._options[self._scroll_offset:self._scroll_offset + self._visible_count]
-        
-        for i, option in enumerate(visible_options):
-            actual_index = self._scroll_offset + i
+        for actual_index, wrapped_lines, is_truncated in layout:
             is_selected = actual_index == self._selected_index
             
             # Format option with number prefix (1-9)
@@ -416,18 +560,28 @@ class SelectionMenu:
             else:
                 indicator = '  '
                 attr = 0
-            
-            # Truncate option if needed
-            max_text_len = self._width - 4 - len(prefix) - len(indicator)
-            display_text = option[:max_text_len] if len(option) > max_text_len else option
-            
-            line = f'{indicator}{prefix}{display_text}'
-            self._window.write(row, 1, line, attr)
-            row += 1
+
+            first_prefix = f'{indicator}{prefix}'
+            cont_prefix = ' ' * visible_len(first_prefix)
+
+            for line_idx, text_line in enumerate(wrapped_lines):
+                if row >= total_height - 1:
+                    break
+
+                render_prefix = first_prefix if line_idx == 0 else cont_prefix
+                render_line = f'{render_prefix}{text_line}'
+
+                if is_truncated and line_idx == len(wrapped_lines) - 1 and visible_len(text_line) >= 1:
+                    # Indicate truncation if we had to cut off wrapped lines.
+                    render_line = f'{render_prefix}{text_line[:-1]}…'
+
+                self._window.write(row, 1, pad_text(render_line, inner_width, align='left', fill_char=' ', truncate=True), attr)
+                row += 1
         
         # Draw below scroll indicator
         if below_indicator:
-            self._window.write(row, 2, below_indicator, dim_attr)
+            if row < total_height - 1:
+                self._window.write(row, 1, pad_text(below_indicator, inner_width, align='left', truncate=True), dim_attr)
             row += 1
         
         self._window.refresh()
@@ -448,7 +602,13 @@ class SelectionMenu:
             return 0
         
         width = window.width
-        self._visible_count = min(self.MAX_VISIBLE, len(self._options))
+        inner_width = max(1, width - 2)
+
+        prefix_width = visible_len("▸ 1. ")
+        text_width = max(1, inner_width - prefix_width)
+        wrapped_options = [self._wrap_text(opt, text_width) for opt in self._options]
+
+        max_total_height = max(0, window.height - y)
         
         # Get attributes
         border_attr = 0
@@ -463,23 +623,34 @@ class SelectionMenu:
         
         row = y
         
+        # Compute a layout first (so indicators are based on the correct visible_count).
+        reserved = 0
+        reserved += 1 if self.title else 0
+        reserved += 1 if self._scroll_offset > 0 else 0  # above indicator
+
+        option_budget = max_total_height - reserved
+        layout = self._compute_visible_layout(wrapped_options, self._scroll_offset, option_budget)
+        self._visible_count = max(1, len(layout))
+
+        # If there are more options below, reserve one line and recompute.
+        if (self._scroll_offset + self._visible_count) < len(self._options):
+            option_budget = max_total_height - reserved - 1
+            layout = self._compute_visible_layout(wrapped_options, self._scroll_offset, option_budget)
+            self._visible_count = max(1, len(layout))
+
+        above_indicator, below_indicator = self._get_scroll_indicators()
+
         # Draw title if present
-        if self.title:
-            title_x = (width - len(self.title)) // 2
-            window.write(row, max(1, title_x), self.title, accent_attr)
+        if self.title and row < y + max_total_height:
+            window.write(row, 1, pad_text(self.title, inner_width, align='center', fill_char=' ', truncate=True), accent_attr)
             row += 1
         
         # Draw above scroll indicator
-        above_indicator, below_indicator = self._get_scroll_indicators()
-        if above_indicator:
-            window.write(row, 2, above_indicator, dim_attr)
+        if above_indicator and row < y + max_total_height:
+            window.write(row, 1, pad_text(above_indicator, inner_width, align='left', truncate=True), dim_attr)
             row += 1
-        
-        # Draw visible options
-        visible_options = self._options[self._scroll_offset:self._scroll_offset + self._visible_count]
-        
-        for i, option in enumerate(visible_options):
-            actual_index = self._scroll_offset + i
+
+        for actual_index, wrapped_lines, is_truncated in layout:
             is_selected = actual_index == self._selected_index
             
             # Format option
@@ -494,17 +665,27 @@ class SelectionMenu:
             else:
                 indicator = '  '
                 attr = 0
-            
-            max_text_len = width - 4 - len(prefix) - len(indicator)
-            display_text = option[:max_text_len] if len(option) > max_text_len else option
-            
-            line = f'{indicator}{prefix}{display_text}'
-            window.write(row, 1, line, attr)
-            row += 1
+
+            first_prefix = f'{indicator}{prefix}'
+            cont_prefix = ' ' * visible_len(first_prefix)
+
+            for line_idx, text_line in enumerate(wrapped_lines):
+                if row >= y + max_total_height:
+                    break
+
+                render_prefix = first_prefix if line_idx == 0 else cont_prefix
+                render_line = f'{render_prefix}{text_line}'
+
+                if is_truncated and line_idx == len(wrapped_lines) - 1 and visible_len(text_line) >= 1:
+                    render_line = f'{render_prefix}{text_line[:-1]}…'
+
+                window.write(row, 1, pad_text(render_line, inner_width, align='left', fill_char=' ', truncate=True), attr)
+                row += 1
         
         # Draw below scroll indicator
         if below_indicator:
-            window.write(row, 2, below_indicator, dim_attr)
+            if row < y + max_total_height:
+                window.write(row, 1, pad_text(below_indicator, inner_width, align='left', truncate=True), dim_attr)
             row += 1
         
         return row - y
