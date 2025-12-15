@@ -11,6 +11,8 @@ tools: ['agent', 'memory', 'todo', 'execute', 'read', 'vscode', 'search']
 > All subagents return control here via handoff.
 > **Inherit ALL rules from `copilot-instructions.md`.**
 
+> **LEVEL 0** — Can only call Level 1. Must handoff to return.
+
 ---
 
 ## 🎭 IDENTITY & ROLE

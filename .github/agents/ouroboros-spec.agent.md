@@ -19,6 +19,8 @@ handoffs:
 > You DELEGATE all spec phases to dedicated subagents. You do NOT write spec files directly.
 > **Inherit ALL rules from `copilot-instructions.md`.**
 
+> **LEVEL 1** — Can only call Level 2. Must handoff to return.
+
 ---
 
 ## � TOOL LOCKDOWN (SPEC-SPECIFIC)

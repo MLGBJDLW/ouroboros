@@ -1,10 +1,10 @@
-# ♾️ Project Ouroboros v3.0.3
+# ♾️ Project Ouroboros v3.0.4
 
 > **Save Money on GitHub Copilot** — A persistent context system that reduces redundant conversations and maximizes your Copilot subscription value.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Copilot Compatible](https://img.shields.io/badge/GitHub%20Copilot-Compatible-blue)](https://github.com/features/copilot)
-[![Version: 3.0.3](https://img.shields.io/badge/Version-3.0.3-green)](https://github.com/MLGBJDLW/ouroboros)
+[![Version: 3.0.4](https://img.shields.io/badge/Version-3.0.4-green)](https://github.com/MLGBJDLW/ouroboros)
 [![CI](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml/badge.svg)](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml)
 
 ---
@@ -26,7 +26,7 @@ Ouroboros solves this:
 
 ## 🚀 Quick Start (3 Steps!)
 
-> **Requirement**: Python 3.6+ must be installed on your system. The Continuous Command Loop uses `python -c` for terminal interaction.
+> **Requirement**: Python 3.9+ must be installed on your system. The Continuous Command Loop uses `python -c` for terminal interaction.
 
 ### Step 1: Copy to Your Project
 
@@ -212,59 +212,49 @@ Once `/ouroboros` is active, the AI will:
 
 ## 🎨 Enhanced CCL Input (Optional)
 
-Upgrade your terminal input with the Enhanced CCL system — featuring visual UI, command history, and intelligent content detection.
+Upgrade your terminal input with visual UI, command history, and intelligent content detection.
 
-### Quick Toggle
+### How It Works
 
-**Double-Click**:
-- Windows: `.ouroboros/scripts/toggle.bat`
-- Mac/Linux: `.ouroboros/scripts/toggle.sh` (run `chmod +x toggle.sh` first)
+The toggle script automatically modifies `.github/copilot-instructions.md` to switch between:
+- **Default Mode**: Uses standard `python -c "task = input()"` 
+- **Enhanced Mode**: Uses `python .ouroboros/scripts/ouroboros_input.py` with full UI
 
-**Command Line**:
+### Quick Start
+
 ```bash
+# Windows: double-click
+.ouroboros/scripts/toggle.bat
+
+# Mac/Linux: 
+chmod +x .ouroboros/scripts/toggle.sh
+.ouroboros/scripts/toggle.sh
+
+# Command line options:
 python .ouroboros/scripts/ouroboros_toggle.py                # Interactive menu
-python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced
-python .ouroboros/scripts/ouroboros_toggle.py --mode default
+python .ouroboros/scripts/ouroboros_toggle.py --mode enhanced  # Enable
+python .ouroboros/scripts/ouroboros_toggle.py --mode default   # Disable
 ```
 
-### Features
+### Key Features
 
-| ✅ Advantage | Description |
-|-------------|-------------|
-| **Mystic Purple Theme** | Beautiful branded terminal UI |
-| **Display Compression** | Large pastes show compact preview |
-| **Auto Multi-line** | Automatically detects pasted content |
-| **File Detection** | Recognizes dragged image/video files |
-| **Command History** | Saves and recalls previous commands |
-| **Zero Dependencies** | Python standard library only |
+- **Arrow Key Navigation** — Full cursor movement in Windows VS Code Terminal
+- **Slash Command Autocomplete** — Type `/` for dropdown suggestions, Tab to complete
+- **File Drag & Drop** — Files display as `[ filename ]` badges
+- **Command History** — `↑`/`↓` to browse previous commands
+- **Multi-line Input** — Dynamic box height with scrolling
+- **Zero Dependencies** — Python standard library only
 
-### Limitations
+### Quick Reference
 
-| ⚠️ Limitation | Reason |
-|---------------|--------|
-| No Shift+Enter (manual) | Python `input()` can't detect keys; pastes auto-detected |
-| No ↑/↓ on Windows | Windows lacks readline (history saved to file) |
-| Terminal-dependent | Old terminals may lack ANSI/Unicode support |
+| Key | Action |
+|-----|--------|
+| `↑/↓` | History / Navigate |
+| `Ctrl+D` | Submit |
+| `Tab` | Complete command |
+| `Ctrl+C` | Cancel |
 
-> See [`.ouroboros/scripts/README.md`](.ouroboros/scripts/README.md) for full documentation.
-
-### Running Tests
-
-The Enhanced CCL system includes a comprehensive test suite with 200+ test cases:
-
-```bash
-cd .ouroboros/scripts/test
-python run_all_tests.py --quick   # Run all automated tests
-```
-
-| Test File | Coverage |
-|-----------|----------|
-| `test_ui.py` | UI components (visible_len, ANSI, themes) |
-| `test_keybuffer.py` | Keyboard input (Windows/Linux/Mac keys) |
-| `test_textbuffer.py` | Text buffer operations |
-| `test_input_types.py` | Menu detection, [y/n] prompts |
-| `test_edge_cases.py` | Boundary conditions, Unicode, stress tests |
-| `test_keys.py` | Interactive keyboard diagnostics |
+> 📖 **Full documentation**: [`.ouroboros/scripts/README.md`](.ouroboros/scripts/README.md)
 
 ## 📋 Spec-Driven Development
 
@@ -326,9 +316,13 @@ your-project/
 │   ├── subagent-docs/             ← 📄 Long output storage
 │   ├── specs/                     ← 📋 Feature specifications
 │   └── scripts/                   ← 🎨 Enhanced CCL (optional)
-│       ├── ouroboros_input.py     ← Enhanced input handler
-│       ├── ouroboros_toggle.py    ← Mode toggle script
-│       └── README.md              ← Scripts documentation
+│       ├── ouroboros_input.py     ← Main input handler
+│       ├── ouroboros_ui.py        ← UI components
+│       ├── ouroboros_keybuffer.py ← Keyboard input
+│       ├── ouroboros_buffer.py    ← Text buffer
+│       ├── ouroboros_commands.py  ← Slash commands
+│       ├── ouroboros_filepath.py  ← File path detection
+│       ├── ouroboros_confi
 └── ... your project files
 ```
 
@@ -339,6 +333,8 @@ your-project/
 Ouroboros was inspired by:
 
 - **[TaskSync](https://github.com/4regab/TaskSync)** — The original concept of persistent AI sessions and the "never say goodbye" protocol. Many of Ouroboros's core ideas evolved from TaskSync's pioneering work.
+- **[Roo Code](https://github.com/RooCodeInc/Roo-Code)** — Early pioneer of agent teams architecture, demonstrating multi-agent orchestration patterns in AI-assisted development.
+- **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Structured specification-driven development approach that influenced our `/ouroboros-spec` workflow.
 
 ---
 

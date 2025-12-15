@@ -17,6 +17,7 @@ import sys
 import os
 import re
 import argparse
+import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -338,6 +339,40 @@ def convert_to_default(content: str) -> tuple[str, int]:
 # BACKUP FUNCTIONS
 # =============================================================================
 
+def cleanup_old_backups(backup_dir: Path, keep_count: int = 5) -> int:
+    """
+    Clean up old backup folders, keeping only the most recent ones.
+    
+    Args:
+        backup_dir: Path to the backup directory
+        keep_count: Number of most recent backups to keep (default: 5)
+    
+    Returns:
+        Number of backup folders deleted
+    """
+    if not backup_dir.exists():
+        return 0
+    
+    # Get all backup folders (they should be named with timestamps)
+    backup_folders = [
+        d for d in backup_dir.iterdir() 
+        if d.is_dir() and re.match(r'\d{8}_\d{6}', d.name)
+    ]
+    
+    # Sort by name (timestamp format ensures chronological order)
+    backup_folders.sort(reverse=True)
+    
+    # Delete old backups beyond keep_count
+    deleted_count = 0
+    for old_backup in backup_folders[keep_count:]:
+        try:
+            shutil.rmtree(old_backup)
+            deleted_count += 1
+        except Exception as e:
+            print(f"  ⚠️  Could not delete old backup {old_backup.name}: {e}")
+    
+    return deleted_count
+
 def create_backup(repo_root: Path, files: list[Path]) -> Path:
     """Create backup of files before modification."""
     backup_dir = repo_root / BACKUP_DIR
@@ -353,6 +388,11 @@ def create_backup(repo_root: Path, files: list[Path]) -> Path:
             dest.write_text(file.read_text(encoding='utf-8'), encoding='utf-8')
         except IOError:
             continue
+    
+    # Clean up old backups after creating new one
+    deleted = cleanup_old_backups(backup_dir, keep_count=5)
+    if deleted > 0:
+        print(f"  🧹 Cleaned up {deleted} old backup(s)")
     
     return backup_path
 

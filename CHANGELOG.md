@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-12-15
+
+### Added
+- **Anti-Recursion Protocol** — Level-based agent hierarchy (L0 → L1 → L2) preventing infinite delegation loops
+- **Slash Command Autocomplete** — Type `/` in Enhanced CCL for orchestrator mode switching (Tab to complete)
+- **File Badge Rendering** — Drag & drop files display as `[ filename.ext ]` in UI (full path sent to AI)
+- **Folder Badge Rendering** — Drag & drop folders display as `[ foldername ]` in UI
+- **Project Structure Check** — Agents now detect `.ouroboros/specs/` on invoke
+- **docs/LIMITATIONS.md** — Documents known platform constraints
+- **Ctrl+V Clipboard Paste** — Reliable paste detection by reading clipboard directly
+  - Large pastes (5+ lines) show as `[ Pasted N Lines ]` badge
+  - Full content preserved and sent to AI on submit
+  - Cross-platform: Windows (ctypes), macOS (pbpaste), Linux (xclip/xsel/wl-paste)
+- **Atomic Badge Deletion** — Backspace/Delete removes entire badge at once (file paths and paste badges)
+- **Arrow Key Badge Navigation** — Cursor automatically skips past badge internals when navigating
+- **Property-Based Testing Framework** — `tests/pbt_framework.py` with Hypothesis-style generators
+
+### Changed
+- **Complete Modular Rewrite** — Refactored `ouroboros_input.py` (~2000 lines) into clean package structure:
+  | Package | Modules | Purpose |
+  |---------|---------|---------|
+  | `components/` | `input_box`, `selection_menu`, `status_bar`, `welcome_box` | UI Components |
+  | `data/` | `buffer`, `config`, `history` | Data Management |
+  | `input/` | `clipboard`, `commands`, `keybuffer`, `keybuffer_win`, `keybuffer_unix`, `paste` | Input Handling |
+  | `tui/` | `app`, `fallback`, `output`, `screen`, `theme`, `window` | Terminal UI |
+  | `utils/` | `badge`, `filepath`, `text` | Utilities |
+  | `tests/` | `unit/`, `property/`, `pbt_framework` | Testing |
+- All 16 agent files now include Level markers (`> **LEVEL X** — ...`)
+- `is_file_path()` now detects both files and folders (directories without extensions)
+- Scripts README completely rewritten with detailed documentation
+- Root README Enhanced CCL section simplified (details moved to scripts/README.md)
+- Removed legacy single-file modules: `ouroboros_buffer.py`, `ouroboros_clipboard.py`, `ouroboros_commands.py`, `ouroboros_config.py`, `ouroboros_filepath.py`, `ouroboros_keybuffer.py`, `ouroboros_paste.py`, `ouroboros_screen.py`, `ouroboros_toggle.py`, `ouroboros_ui.py`
+- Removed old test scripts in favor of new `tests/` package structure
+
+### Fixed
+- **Paste Badge Navigation** — Fixed cursor navigation for paste markers (`‹PASTE:N›...‹/PASTE›`), now correctly skips entire badge as atomic unit
+- **Paste Badge Backspace** — Backspace now correctly deletes entire paste badge when cursor is at badge end
+- **Cursor Position Calculation** — `_get_cursor_display_col()` now correctly calculates display position for both file markers (`«path»`) and paste markers
+- **Badge Detection Consistency** — All badge operations (move_left, move_right, backspace, delete) now handle both file and paste marker types
+- **Multiline Threshold** — Fixed `process_pasted_content()` default threshold from 2 to 5 lines (matching `PASTE_LINE_THRESHOLD`)
+- **Windows Paste Detection** — Added event count detection in `_main_loop()` to catch pastes before bracketed paste mode (threshold lowered to 5 events)
+- **Ctrl+V Paste Detection (Windows Terminal)** — Detect Ctrl+V even when the terminal intercepts it, read clipboard directly, and prevent duplicate injected characters
+- **Path Collection Display** — Characters are now displayed in buffer while collecting path, then converted to badge on timeout
+- **Path Badge Prefix** — Fixed drive letter prefix tracking (`D:`) to ensure full path is captured in badge
+- **Split Drive-Letter Paste** — Fixed cases where a path paste is split into `D` + `:\\...`, causing the drive letter to be dropped from the badge
+- **Arrow Keys in VS Code Terminal** — Fixed escape sequence handling in `PasteCollector.read()` that was breaking arrow key navigation on Windows
+- **Bracketed Paste Output Purity** — Bracketed paste enable/disable sequences now write to stderr, keeping stdout clean for AI consumption
+- **Slash Command Status Clearing** — Status bar now clears correctly after backspacing away slash commands
+- **Cursor Flickering** — Fixed cursor jumping to wrong positions during render by using save/restore cursor pattern
+- **Incremental Line Update** — Added `update_current_line()` for single-character input to reduce full redraws
+- **Windows Path Drag-Drop** — Pattern-based path detection (checks file extension/existence) instead of timeout-only
+- **Ctrl+V Paste Badge** — `_handle_paste()` now uses `process_pasted_content()` for immediate badge display
+- **Input Box Shrink Ghosting** — Removed stale bottom border/status lines when the input box shrinks in ANSI fallback mode
+- **Submit Feedback Missing** — Restored `OutputBox` class in `output.py` and added `render_transmitted()` to show "✓ Transmitted to Copilot" feedback on submit
+- **Submit Task Box** — After submit, render a visible `[>] TASK` box with a safe preview + transmission stats (stderr), while sending the full payload to Copilot via stdout
+
+---
+
 ## [3.0.3] - 2025-12-13
 
 ### Added

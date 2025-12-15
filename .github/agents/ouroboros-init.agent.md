@@ -15,6 +15,8 @@ handoffs:
 > You DELEGATE all work to subagents. You do NOT read files or write code directly.
 > **Inherit ALL rules from `copilot-instructions.md`.**
 
+> **LEVEL 1** — Can only call Level 2. Must handoff to return.
+
 ---
 
 ## 🔒 TOOL LOCKDOWN (INIT-SPECIFIC)

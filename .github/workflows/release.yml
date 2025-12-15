@@ -11,8 +11,31 @@ permissions:
   contents: write
 
 jobs:
+  # Run tests before release
+  test:
+    name: Pre-Release Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest hypothesis
+
+      - name: Run property tests
+        working-directory: .ouroboros/scripts
+        run: python -m pytest tests/property/ -v --tb=short
+
   release:
     name: Build and Release
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,13 +53,14 @@ jobs:
             IS_DRAFT=false
             RELEASE_NAME="♾️ Ouroboros v${VERSION}"
           else
-            # Push to main - auto-increment version starting from v3.0.0
+            # Push to main - auto-increment patch releases on the v3.1.x line.
+            # The first auto-release after this change starts at v3.1.0.
             # Get the latest version tag
             LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
             
             if [ -z "$LATEST_TAG" ]; then
-              # No tags exist, start from v3.0.0
-              VERSION="3.0.0"
+              # No tags exist, start from v3.1.0
+              VERSION="3.1.0"
             else
               # Parse current version and increment patch
               CURRENT=${LATEST_TAG#v}
@@ -44,11 +68,17 @@ jobs:
               MINOR=$(echo $CURRENT | cut -d. -f2)
               PATCH=$(echo $CURRENT | cut -d. -f3)
               
-              # Ensure we're at least v3.0.0
+              # Ensure we're on v3.1.x for auto releases.
+              # If the latest tag is below v3.1.0, jump to v3.1.0.
               if [ "$MAJOR" -lt 3 ]; then
-                VERSION="3.0.0"
+                VERSION="3.1.0"
+              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 1 ]; then
+                VERSION="3.1.0"
+              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -eq 1 ]; then
+                PATCH=$((PATCH + 1))
+                VERSION="3.1.${PATCH}"
               else
-                # Increment patch version
+                # Default behavior for other branches: increment patch version.
                 PATCH=$((PATCH + 1))
                 VERSION="${MAJOR}.${MINOR}.${PATCH}"
               fi
@@ -71,28 +101,86 @@ jobs:
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "📦 Releasing version: $VERSION (draft=$IS_DRAFT, prerelease=$IS_PRERELEASE)"
 
-      - name: Extract changelog for this version
+      - name: Generate release notes
         id: changelog
         run: |
           VERSION=${{ steps.version.outputs.version }}
           
-          # Escape special regex characters in version for awk
+          # =============================================
+          # 1. Try to extract from CHANGELOG.md first
+          # =============================================
           ESCAPED_VERSION=$(echo "$VERSION" | sed 's/[][\\.*^$()+?{}|]/\\&/g')
           
-          # Extract changelog section for this version
           awk -v ver="## \\[${ESCAPED_VERSION}\\]" '
             $0 ~ ver { found=1; next }
             /^## \[/ && found { exit }
             found { print }
-          ' CHANGELOG.md > release_notes.md
+          ' CHANGELOG.md > changelog_section.md
           
-          # If changelog section is empty or not found, create default message
-          if [ ! -s release_notes.md ]; then
-            echo "Release v$VERSION" > release_notes.md
+          # =============================================
+          # 2. Auto-generate from commits (since last tag)
+          # =============================================
+          PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | sed -n '2p')
+          
+          if [ -z "$PREV_TAG" ]; then
+            # No previous tag, get all commits
+            COMMIT_RANGE="HEAD"
+          else
+            COMMIT_RANGE="${PREV_TAG}..HEAD"
+          fi
+          
+          echo "## What's Changed" > auto_notes.md
+          echo "" >> auto_notes.md
+          
+          # Group commits by type (conventional commits)
+          git log $COMMIT_RANGE --pretty=format:"%s|%h" --no-merges | while IFS='|' read -r msg hash; do
+            # Extract type from conventional commit format
+            if [[ "$msg" =~ ^feat ]]; then
+              echo "* 🚀 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^fix ]]; then
+              echo "* 🐛 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^refactor ]]; then
+              echo "* ♻️ $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^docs ]]; then
+              echo "* 📝 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^test ]]; then
+              echo "* ✅ $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^ci ]]; then
+              echo "* 👷 $msg (\`$hash\`)" >> auto_notes.md
+            elif [[ "$msg" =~ ^chore ]]; then
+              echo "* 🔧 $msg (\`$hash\`)" >> auto_notes.md
+            else
+              echo "* $msg (\`$hash\`)" >> auto_notes.md
+            fi
+          done
+          
+          # =============================================
+          # 3. Build final release notes
+          # =============================================
+          
+          # Start with auto-generated commit summary
+          cat auto_notes.md > release_notes.md
+          
+          # If CHANGELOG has content for this version, add it as detailed section
+          if [ -s changelog_section.md ]; then
             echo "" >> release_notes.md
-            echo "**Commit:** [\`${GITHUB_SHA::7}\`](https://github.com/${{ github.repository }}/commit/${GITHUB_SHA})" >> release_notes.md
+            echo "---" >> release_notes.md
             echo "" >> release_notes.md
-            echo "See [CHANGELOG.md](CHANGELOG.md) for full details." >> release_notes.md
+            echo "## Detailed Changes" >> release_notes.md
+            echo "" >> release_notes.md
+            cat changelog_section.md >> release_notes.md
+          fi
+          
+          # Always add link to full CHANGELOG
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "📖 **Full Changelog:** [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)" >> release_notes.md
+          
+          # Add compare link if we have a previous tag
+          if [ -n "$PREV_TAG" ]; then
+            echo "" >> release_notes.md
+            echo "🔗 **Compare:** [\`${PREV_TAG}...v${VERSION}\`](https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${VERSION})" >> release_notes.md
           fi
           
           echo "📝 Release notes:"
@@ -102,17 +190,49 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           
+          echo "📦 Creating release package v${VERSION}..."
+          
           # Create a clean package directory
           mkdir -p release-package
           
-          # Copy core files (exclude git, temp files, etc.)
+          # =============================================
+          # COPY CORE FILES
+          # =============================================
+          
+          # GitHub configuration (agents, prompts, instructions)
           cp -r .github release-package/
+          
+          # Ouroboros system
           cp -r .ouroboros release-package/
+          
+          # Root documentation
           cp README.md release-package/
           cp CHANGELOG.md release-package/
           cp LICENSE release-package/
           
-          # Remove any generated/temp files from package
+          # =============================================
+          # REMOVE CI/CD FILES (repo-specific, not for users)
+          # =============================================
+          
+          rm -rf release-package/.github/workflows
+          rm -rf release-package/.github/scripts
+          rm -f release-package/.github/mlc_config.json
+          rm -f release-package/.github/CODEOWNERS
+          
+          # =============================================
+          # REMOVE TEST FILES (development only)
+          # =============================================
+          
+          rm -rf release-package/.ouroboros/scripts/tests
+          rm -rf release-package/.ouroboros/scripts/.pytest_cache
+          rm -rf release-package/.ouroboros/scripts/__pycache__
+          rm -rf release-package/.ouroboros/scripts/**/__pycache__
+          
+          # =============================================
+          # REMOVE GENERATED/RUNTIME FILES
+          # =============================================
+          
+          # User-specific history and config
           rm -rf release-package/.ouroboros/history/*
           rm -rf release-package/.ouroboros/subagent-docs/*
           rm -rf release-package/.ouroboros/specs/*/
@@ -120,26 +240,72 @@ jobs:
           rm -f release-package/.ouroboros/scripts/ouroboros.history
           rm -rf release-package/.ouroboros/scripts/backups
           
-          # Remove CI/CD files (these are for the repo, not for end users)
-          rm -rf release-package/.github/workflows
-          rm -rf release-package/.github/scripts
-          rm -f release-package/.github/mlc_config.json
-          rm -f release-package/.github/CODEOWNERS
+          # =============================================
+          # REMOVE DEVELOPMENT FILES
+          # =============================================
           
-          # Remove test files (users don't need them)
-          rm -rf release-package/.ouroboros/scripts/test
+          # Internal documentation
+          rm -rf release-package/docs
           
-          # Keep template directories but remove content
+          # Future improvements notes (internal)
+          rm -f release-package/.ouroboros/scripts/FUTURE_IMPROVEMENTS.md
+          
+          # Kiro specs (IDE-specific)
+          rm -rf release-package/.kiro
+          
+          # =============================================
+          # KEEP TEMPLATE DIRECTORIES WITH .gitkeep
+          # =============================================
+          
           mkdir -p release-package/.ouroboros/history
           mkdir -p release-package/.ouroboros/subagent-docs
           touch release-package/.ouroboros/history/.gitkeep
           touch release-package/.ouroboros/subagent-docs/.gitkeep
           
-          # Create zip
+          # =============================================
+          # VERIFY PACKAGE CONTENTS
+          # =============================================
+          
+          echo ""
+          echo "📋 Package contents:"
+          find release-package -type f | head -50
+          echo ""
+          
+          # Count files
+          FILE_COUNT=$(find release-package -type f | wc -l)
+          echo "Total files: $FILE_COUNT"
+          
+          # Verify no test files leaked
+          if find release-package -name "test_*.py" -o -name "*_test.py" | grep -q .; then
+            echo "❌ ERROR: Test files found in release package!"
+            find release-package -name "test_*.py" -o -name "*_test.py"
+            exit 1
+          fi
+          
+          # Verify no __pycache__ leaked
+          if find release-package -name "__pycache__" | grep -q .; then
+            echo "❌ ERROR: __pycache__ directories found in release package!"
+            find release-package -name "__pycache__"
+            exit 1
+          fi
+          
+          # Verify no .pytest_cache leaked
+          if find release-package -name ".pytest_cache" | grep -q .; then
+            echo "❌ ERROR: .pytest_cache directories found in release package!"
+            exit 1
+          fi
+          
+          echo "✅ Package verification passed!"
+          
+          # =============================================
+          # CREATE ZIP
+          # =============================================
+          
           cd release-package
           zip -r ../ouroboros-v${VERSION}.zip .
           cd ..
           
+          echo ""
           echo "📦 Package created: ouroboros-v${VERSION}.zip"
           ls -lh ouroboros-v${VERSION}.zip
 
