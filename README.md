@@ -26,7 +26,7 @@ Ouroboros solves this:
 
 ## 🚀 Quick Start (3 Steps!)
 
-> **Requirement**: Python 3.6+ must be installed on your system. The Continuous Command Loop uses `python -c` for terminal interaction.
+> **Requirement**: Python 3.9+ must be installed on your system. The Continuous Command Loop uses `python -c` for terminal interaction.
 
 ### Step 1: Copy to Your Project
 

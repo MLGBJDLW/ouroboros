@@ -117,7 +117,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.11', '3.12']
+        python-version: ['3.9', '3.11', '3.12']
       fail-fast: false
     steps:
       - name: Checkout
@@ -135,6 +135,8 @@ jobs:
 
       - name: Test script imports
         working-directory: .ouroboros/scripts
+        env:
+          PYTHONIOENCODING: utf-8
         run: |
           echo "Testing module imports..."
           python -c "from ouroboros_input import main; print('✓ ouroboros_input imports OK')"
@@ -146,6 +148,8 @@ jobs:
 
       - name: Test startup time
         working-directory: .ouroboros/scripts
+        env:
+          PYTHONIOENCODING: utf-8
         run: |
           echo "Testing startup time (target: <200ms)..."
           python -c "
