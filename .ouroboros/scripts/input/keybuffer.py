@@ -203,6 +203,31 @@ class KeyBuffer:
         """Check if currently receiving rapid input (paste mode)."""
         return self._impl.is_pasting
     
+    def get_pending_event_count(self) -> int:
+        """Get the number of events waiting in the console input buffer (Windows only)."""
+        if hasattr(self._impl, 'get_pending_event_count'):
+            return self._impl.get_pending_event_count()
+        return 0
+    
+    def read_all_pending(self) -> str:
+        """Read all pending characters from console input (Windows only)."""
+        if hasattr(self._impl, 'read_all_pending'):
+            return self._impl.read_all_pending()
+        return ""
+    
+    def is_ctrl_v_pressed(self) -> bool:
+        """Check if Ctrl+V is currently pressed (Windows only, uses GetAsyncKeyState)."""
+        if hasattr(self._impl, 'is_ctrl_v_pressed'):
+            return self._impl.is_ctrl_v_pressed()
+        return False
+    
+    def flush_console_input(self) -> None:
+        """Flush the console input buffer (Windows only, uses FlushConsoleInputBuffer)."""
+        if hasattr(self._impl, 'flush_console_input'):
+            self._impl.flush_console_input()
+
+
+    
     def _normalize_key(self, key: str) -> str:
         """Normalize platform-specific keys to common format."""
         if not key:

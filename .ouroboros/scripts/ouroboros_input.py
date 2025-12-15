@@ -448,11 +448,73 @@ def output_result(marker: str, content: str) -> None:
     """
     Output formatted content to stdout for AI consumption.
     
+    When TUI is available, the Task Box already shows the content visually,
+    so we suppress the visible stdout echo while still sending to stdout.
+    
     Requirements: 10.1-10.4
     """
     if TUI_AVAILABLE:
         # Use TUI output formatting
         formatted = format_output(content)
+        
+        # Print to stdout (so AI can read it), then immediately clear from screen
+        # Count how many lines we'll print
+        line_count = formatted.count('\n') + 1  # +1 for print's trailing newline
+        
+        # Print the content (AI reads this from stdout)
+        print(formatted)
+        
+        # Move cursor up and clear the lines we just printed
+        # This makes the output invisible on terminal but still in stdout
+        sys.stderr.write(f'\033[{line_count}A')  # Move cursor up
+        sys.stderr.write('\033[J')  # Clear from cursor to end of screen
+        sys.stderr.flush()
+
+        # Show a visible submission box on stderr (user feedback) while keeping
+        # stdout pristine for Copilot consumption.
+        try:
+            from tui.output import OutputBox, THEME as OUTPUT_THEME  # type: ignore
+
+            total_lines = formatted.count('\n') + (1 if formatted else 0)
+            total_chars = len(formatted)
+
+            # Build a preview for display (avoid dumping huge payloads to the terminal).
+            max_preview_lines = 20
+            max_preview_chars = 4000
+            preview_lines = formatted.splitlines()
+            truncated = False
+
+            if len(preview_lines) > max_preview_lines:
+                preview_lines = preview_lines[:max_preview_lines]
+                truncated = True
+
+            preview = '\n'.join(preview_lines)
+            if len(preview) > max_preview_chars:
+                preview = preview[:max_preview_chars]
+                truncated = True
+
+            header = (
+                f"{OUTPUT_THEME['success']}✓ "
+                f"Transmitted {total_lines} lines ({total_chars} chars) to Copilot"
+                f"{OUTPUT_THEME['reset']}"
+            )
+
+            display_parts = [header]
+            if preview:
+                display_parts.extend(['', preview])
+            if truncated:
+                display_parts.extend([
+                    '',
+                    f"{OUTPUT_THEME['dim']}... (preview truncated; full content sent to Copilot){OUTPUT_THEME['reset']}",
+                ])
+
+            # Add a blank line before the box to separate from previous output.
+            sys.stderr.write('\n')
+            sys.stderr.flush()
+
+            OutputBox.render(marker, '\n'.join(display_parts), full_width=True)
+        except Exception:
+            pass
     else:
         # Fallback: prepend instruction if slash command
         formatted = content
@@ -468,9 +530,9 @@ def output_result(marker: str, content: str) -> None:
             }
             if cmd in agent_map:
                 formatted = f"Follow the prompt '.github/agents/{agent_map[cmd]}'\n\n{content}"
-    
-    # Output to stdout
-    print(formatted)
+        
+        # Output to stdout (visible in fallback mode)
+        print(formatted)
 
 
 # =============================================================================

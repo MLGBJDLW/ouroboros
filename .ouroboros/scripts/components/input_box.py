@@ -150,6 +150,13 @@ class InputBox:
         """
         Calculate display column accounting for CJK characters and badges.
         
+        The buffer stores markers like:
+        - «/full/path/file.ext» -> displays as [ file.ext ]
+        - ‹PASTE:N›content‹/PASTE› -> displays as [ Pasted N Lines ]
+        
+        We need to calculate where the cursor should be in the displayed text,
+        accounting for the difference in length between markers and badges.
+        
         Args:
             line: Raw line content
             cursor_col: Cursor column in raw text
@@ -157,28 +164,126 @@ class InputBox:
         Returns:
             Display column position
         """
-        # Get the text before cursor
-        text_before = line[:cursor_col]
+        import re
+        import os
         
-        # Convert to display format
-        display_before = render_for_display(text_before)
+        # Find all markers (both file path and paste markers)
+        markers = find_markers(line)
         
-        # Calculate visible width
-        return visible_len(display_before)
+        if not markers:
+            # No markers - simple case, just calculate visible width
+            text_before = line[:cursor_col]
+            return visible_len(text_before)
+        
+        # Build the display text and track cursor position
+        display_col = 0
+        last_end = 0
+        
+        for start, end, marker_type in markers:
+            # Add text before this marker
+            if start > last_end:
+                segment = line[last_end:min(start, cursor_col)]
+                if cursor_col <= start:
+                    # Cursor is before this marker
+                    display_col += visible_len(segment)
+                    return display_col
+                else:
+                    # Cursor is at or after this marker
+                    display_col += visible_len(line[last_end:start])
+            
+            # Check if cursor is inside the marker
+            if cursor_col <= end:
+                # Cursor is at or inside marker - calculate badge width
+                marker_text = line[start:end]
+                if marker_type == 'file':
+                    # File marker: «path» -> [ filename ]
+                    path = marker_text[1:-1]  # Remove « and »
+                    filename = os.path.basename(path) or path.split('/')[-1] or path
+                    badge_text = f"[ {filename} ]"
+                elif marker_type == 'paste':
+                    # Paste marker: ‹PASTE:N›content‹/PASTE› -> [ Pasted N Lines ]
+                    match = re.match(r'‹PASTE:(\d+)›', marker_text)
+                    if match:
+                        line_count = int(match.group(1))
+                        if line_count == 1:
+                            badge_text = "[ Pasted 1 Line ]"
+                        else:
+                            badge_text = f"[ Pasted {line_count} Lines ]"
+                    else:
+                        badge_text = "[ Pasted ]"
+                else:
+                    badge_text = marker_text
+                
+                # Cursor at or inside badge - put it at end of badge
+                display_col += visible_len(badge_text)
+                return display_col
+            
+            # Cursor is after this marker - add badge width
+            marker_text = line[start:end]
+            if marker_type == 'file':
+                path = marker_text[1:-1]
+                filename = os.path.basename(path) or path.split('/')[-1] or path
+                badge_text = f"[ {filename} ]"
+            elif marker_type == 'paste':
+                match = re.match(r'‹PASTE:(\d+)›', marker_text)
+                if match:
+                    line_count = int(match.group(1))
+                    if line_count == 1:
+                        badge_text = "[ Pasted 1 Line ]"
+                    else:
+                        badge_text = f"[ Pasted {line_count} Lines ]"
+                else:
+                    badge_text = "[ Pasted ]"
+            else:
+                badge_text = marker_text
+            
+            display_col += visible_len(badge_text)
+            last_end = end
+        
+        # Add remaining text after last marker
+        if last_end < len(line):
+            if cursor_col > last_end:
+                segment = line[last_end:cursor_col]
+                display_col += visible_len(segment)
+            # else cursor is before last_end, already handled
+        
+        return display_col
     
     def _find_badge_at_cursor(self) -> Optional[tuple]:
         """
         Find badge at current cursor position.
         
+        Detects both file markers («path») and paste markers (‹PASTE:N›...‹/PASTE›).
+        
         Returns:
             Tuple of (start, end, marker_type) or None
+            marker_type: 'file' or 'paste'
         """
         line = self.buffer.lines[self.buffer.cursor_row]
         return get_marker_at_position(line, self.buffer.cursor_col)
     
+    def _find_badge_at_position(self, line: str, col: int) -> Optional[tuple]:
+        """
+        Find badge at a specific position in a line.
+        
+        This is a helper for cursor navigation that checks if a position
+        is inside any badge (file or paste marker).
+        
+        Args:
+            line: The line text to check
+            col: Column position to check
+            
+        Returns:
+            Tuple of (start, end, marker_type) or None
+        """
+        return get_marker_at_position(line, col)
+    
     def skip_badge_left(self) -> bool:
         """
         Skip to badge start if cursor is inside a badge.
+        
+        Handles both file markers («path») and paste markers (‹PASTE:N›...‹/PASTE›).
+        When cursor moves into a badge, it jumps to the badge's start position.
         
         Returns:
             True if cursor was moved
@@ -187,7 +292,7 @@ class InputBox:
         marker = get_marker_at_position(line, self.buffer.cursor_col)
         
         if marker:
-            start, end, _ = marker
+            start, end, marker_type = marker
             if self.buffer.cursor_col > start:
                 self.buffer.cursor_col = start
                 return True
@@ -198,6 +303,9 @@ class InputBox:
         """
         Skip to badge end if cursor is inside a badge.
         
+        Handles both file markers («path») and paste markers (‹PASTE:N›...‹/PASTE›).
+        When cursor moves into a badge, it jumps to the badge's end position.
+        
         Returns:
             True if cursor was moved
         """
@@ -205,7 +313,7 @@ class InputBox:
         marker = get_marker_at_position(line, self.buffer.cursor_col)
         
         if marker:
-            start, end, _ = marker
+            start, end, marker_type = marker
             if self.buffer.cursor_col < end:
                 self.buffer.cursor_col = end
                 return True
@@ -214,7 +322,9 @@ class InputBox:
     
     def delete_badge_at_cursor(self) -> bool:
         """
-        Delete entire badge if cursor is at badge start.
+        Delete entire badge if cursor is at or inside a badge.
+        
+        Handles both file markers («path») and paste markers (‹PASTE:N›...‹/PASTE›).
         
         Returns:
             True if badge was deleted
@@ -223,8 +333,8 @@ class InputBox:
         marker = get_marker_at_position(line, self.buffer.cursor_col)
         
         if marker:
-            start, end, _ = marker
-            # Delete the entire marker
+            start, end, marker_type = marker
+            # Delete the entire marker (both file and paste)
             self.buffer.lines[self.buffer.cursor_row] = line[:start] + line[end:]
             self.buffer.cursor_col = start
             return True
@@ -232,17 +342,32 @@ class InputBox:
         return False
     
     def move_left(self) -> bool:
-        """Move cursor left, skipping badges as atomic units."""
-        # Check if we're at the start of a badge
+        """
+        Move cursor left, skipping badges as atomic units.
+        
+        Handles both file markers («path») and paste markers (‹PASTE:N›...‹/PASTE›).
+        When moving left into a badge, cursor jumps to badge start.
+        """
         line = self.buffer.lines[self.buffer.cursor_row]
         
-        # First try normal move
         if self.buffer.cursor_col > 0:
-            self.buffer.cursor_col -= 1
-            # If we landed inside a badge, skip to its start
-            self.skip_badge_left()
+            # Move one position left
+            new_col = self.buffer.cursor_col - 1
+            
+            # Check if we landed inside a badge
+            marker = get_marker_at_position(line, new_col)
+            if marker:
+                start, end, marker_type = marker
+                # If we're inside the badge (not at start), skip to start
+                if new_col > start:
+                    self.buffer.cursor_col = start
+                else:
+                    self.buffer.cursor_col = new_col
+            else:
+                self.buffer.cursor_col = new_col
             return True
         elif self.buffer.cursor_row > 0:
+            # Move to end of previous line
             self.buffer.cursor_row -= 1
             self.buffer.cursor_col = len(self.buffer.lines[self.buffer.cursor_row])
             return True
@@ -250,21 +375,38 @@ class InputBox:
         return False
     
     def move_right(self) -> bool:
-        """Move cursor right, skipping badges as atomic units."""
+        """
+        Move cursor right, skipping badges as atomic units.
+        
+        Handles both file markers («path») and paste markers (‹PASTE:N›...‹/PASTE›).
+        When at badge start, cursor jumps to badge end.
+        """
         line = self.buffer.lines[self.buffer.cursor_row]
         
-        # Check if we're at the start of a badge
+        # Check if we're at the start of a badge - skip entire badge
         marker = get_marker_at_position(line, self.buffer.cursor_col)
         if marker:
-            start, end, _ = marker
+            start, end, marker_type = marker
             if self.buffer.cursor_col == start:
-                # Skip entire badge
+                # Skip entire badge (both file and paste markers)
                 self.buffer.cursor_col = end
                 return True
         
         # Normal move
         if self.buffer.cursor_col < len(line):
-            self.buffer.cursor_col += 1
+            new_col = self.buffer.cursor_col + 1
+            
+            # Check if we landed inside a badge
+            marker = get_marker_at_position(line, new_col)
+            if marker:
+                start, end, marker_type = marker
+                # If we're inside the badge, skip to end
+                if new_col > start and new_col < end:
+                    self.buffer.cursor_col = end
+                else:
+                    self.buffer.cursor_col = new_col
+            else:
+                self.buffer.cursor_col = new_col
             return True
         elif self.buffer.cursor_row < self.buffer.line_count - 1:
             self.buffer.cursor_row += 1
@@ -275,20 +417,24 @@ class InputBox:
     
     def backspace(self) -> bool:
         """
-        Handle backspace, deleting entire badge if at badge start.
+        Handle backspace, deleting entire badge if cursor is right after a badge.
+        
+        Handles both file markers («path») and paste markers (‹PASTE:N›...‹/PASTE›).
+        When cursor is at the end of a badge, the entire badge is deleted.
         
         Returns:
             True if deletion occurred
         """
         line = self.buffer.lines[self.buffer.cursor_row]
         
-        # Check if cursor is right after a badge
+        # Check if cursor is right after a badge (at badge end position)
         if self.buffer.cursor_col > 0:
+            # Check position just before cursor
             marker = get_marker_at_position(line, self.buffer.cursor_col - 1)
             if marker:
-                start, end, _ = marker
+                start, end, marker_type = marker
+                # If cursor is at the end of the badge, delete entire badge
                 if self.buffer.cursor_col == end:
-                    # Delete entire badge
                     self.buffer.lines[self.buffer.cursor_row] = line[:start] + line[end:]
                     self.buffer.cursor_col = start
                     return True
@@ -340,9 +486,24 @@ class InputBox:
         self._width = max(self.MIN_WIDTH, width)
         self._y = y
         
-        # Calculate height based on content
+        # Calculate height based on content.
+        # In ANSI fallback mode, shrinking without deleting the now-unused rows
+        # leaves stale borders/status lines on screen (ghosting). Use DL to pull
+        # the bottom border up before drawing the new, smaller box.
+        old_height = self._height
         new_height = self._calculate_height()
-        self._height = new_height
+        if new_height < old_height:
+            lines_to_remove = old_height - new_height
+            self._height = new_height
+            if (
+                self.screen is not None
+                and not self.screen.is_curses
+                and self._rendered
+                and self._window is not None
+            ):
+                self._shrink_with_delete_lines(lines_to_remove)
+        else:
+            self._height = new_height
         
         # Total height includes top border, content lines, bottom border
         total_height = self._height + 2
@@ -544,14 +705,75 @@ class InputBox:
         """
         Shrink box height if content allows it.
         
+        Uses ANSI Delete Line (DL) to remove lines without leaving gaps.
+        This pulls the bottom border up cleanly, preventing ghosting.
+        
+        Based on original ouroboros_ui.py shrink_height() implementation.
+        
         Returns:
             True if height changed
         """
         new_height = self._calculate_height()
         if new_height < self._height:
+            lines_to_remove = self._height - new_height
             self._height = new_height
+            
+            # Use ANSI delete_lines to properly remove lines (prevents ghosting)
+            if self._window is not None:
+                self._shrink_with_delete_lines(lines_to_remove)
+            
             return True
         return False
+    
+    def _shrink_with_delete_lines(self, lines_to_remove: int) -> None:
+        """
+        Shrink the input box by deleting lines using ANSI escape codes.
+        
+        Uses ANSI Delete Line (DL) to remove lines without leaving gaps.
+        This pulls the bottom border up cleanly.
+        
+        Based on original ouroboros_ui.py shrink_height() implementation.
+        
+        Strategy:
+        1. Save cursor position
+        2. Move to the first line that needs to be deleted (new_height position in box)
+        3. Delete the extra lines (this pulls content below up)
+        4. Restore cursor position
+        """
+        import sys
+        
+        # Build output batch
+        output = []
+        output.append('\x1b[?25l')  # Hide cursor
+        output.append('\x1b[s')     # Save cursor
+        
+        # Calculate where to delete lines from
+        # We need to move from current cursor position to the first line to delete
+        # The cursor is at visible_row (0-based within the input area)
+        # We need to go to self._height (the new height, which is where old lines start)
+        visible_row = self.buffer.cursor_row - self.buffer.scroll_offset
+        
+        # Move to the first line that will be deleted
+        # new_height is already set, so we need to go to position new_height
+        # (which is 0-based index of first line to delete)
+        lines_to_move = self._height - visible_row
+        
+        if lines_to_move > 0:
+            output.append(f'\x1b[{lines_to_move}B')  # Move down
+        elif lines_to_move < 0:
+            output.append(f'\x1b[{-lines_to_move}A')  # Move up
+        
+        # Delete the extra lines (pulls bottom border up)
+        # ANSI Delete Line: \x1b[{n}M
+        output.append(f'\x1b[{lines_to_remove}M')
+        
+        # Restore cursor
+        output.append('\x1b[u')     # Restore cursor
+        output.append('\x1b[?25h')  # Show cursor
+        
+        # Flush all at once
+        sys.stderr.write(''.join(output))
+        sys.stderr.flush()
     
     def handle_resize(self, new_width: int, new_height: int = None) -> None:
         """

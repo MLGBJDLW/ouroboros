@@ -44,16 +44,18 @@ class BracketedPasteHandler:
     def enable(self) -> None:
         """Enable Bracketed Paste Mode in the terminal."""
         if not self._enabled:
-            sys.stdout.write(ENABLE_BRACKETED_PASTE)
-            sys.stdout.flush()
+            # Write terminal control sequences to stderr to keep stdout clean for
+            # AI consumption (stdout is reserved for the final submitted text).
+            sys.stderr.write(ENABLE_BRACKETED_PASTE)
+            sys.stderr.flush()
             self._enabled = True
             atexit.register(self._cleanup)
     
     def disable(self) -> None:
         """Disable Bracketed Paste Mode in the terminal."""
         if self._enabled:
-            sys.stdout.write(DISABLE_BRACKETED_PASTE)
-            sys.stdout.flush()
+            sys.stderr.write(DISABLE_BRACKETED_PASTE)
+            sys.stderr.flush()
             self._enabled = False
             try:
                 atexit.unregister(self._cleanup)
@@ -64,8 +66,8 @@ class BracketedPasteHandler:
         """Cleanup handler for atexit."""
         if self._enabled:
             try:
-                sys.stdout.write(DISABLE_BRACKETED_PASTE)
-                sys.stdout.flush()
+                sys.stderr.write(DISABLE_BRACKETED_PASTE)
+                sys.stderr.flush()
             except Exception:
                 pass
     

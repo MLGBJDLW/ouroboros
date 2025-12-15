@@ -233,7 +233,13 @@ class TUIApp:
         # Windows path collection state
         self._collecting_path = False
         self._path_buffer = ''
+        self._path_prefix = ''
         self._path_collect_start = 0
+
+        # Ctrl+V handling: many Windows terminals intercept Ctrl+V for paste, so
+        # we also detect it via key state in the main loop.
+        self._ctrl_v_latched = False
+        self._ignore_next_ctrl_v_key = False
     
     @property
     def mode(self) -> str:
@@ -459,6 +465,12 @@ class TUIApp:
         """Main input processing loop."""
         PATH_COLLECT_TIMEOUT = 0.1  # 100ms timeout for path collection
         
+        # Windows paste detection thresholds
+        # Lower threshold to catch smaller pastes (like file paths)
+        PASTE_EVENT_THRESHOLD = 5  # If 5+ events waiting, it's likely a paste
+        PASTE_COLLECT_DELAY = 0.03  # 30ms delay between collection checks
+        PASTE_MIN_LENGTH = 3  # Minimum paste length to treat as paste
+        
         while self._running:
             # Check for resize
             if self.screen and self.screen.check_resize():
@@ -468,13 +480,102 @@ class TUIApp:
             if self._collecting_path and self._path_buffer:
                 if time.time() - self._path_collect_start > PATH_COLLECT_TIMEOUT:
                     self._process_path_buffer()
+
+            # === Ctrl+V Clipboard Paste (Windows Key State) ===
+            # Some terminals swallow Ctrl+V and only inject the pasted characters,
+            # so we detect the key state and read the clipboard directly.
+            if self.keybuffer and self.keybuffer.is_ctrl_v_pressed():
+                if not self._ctrl_v_latched:
+                    self._ctrl_v_latched = True
+                    content = _read_clipboard() if _read_clipboard else ''
+                    if content:
+                        # Prevent duplicate insertion: terminals may also inject
+                        # the pasted characters into the input buffer.
+                        self._ignore_next_ctrl_v_key = True
+                        self.keybuffer.flush_console_input()
+                        if self._collecting_path:
+                            self._process_path_buffer()
+                        self._handle_paste(content)
+                        continue
+            else:
+                self._ctrl_v_latched = False
             
-            # Read input with shorter timeout when collecting path
-            read_timeout = 0.05 if self._collecting_path else 0.1
-            key, is_paste = self.paste_detector.read(
-                self.keybuffer.getch,
-                timeout=read_timeout
-            )
+            # === Windows Paste Detection via Event Count ===
+            # When paste happens, Windows Terminal puts ALL characters in buffer at once
+            # Check event count BEFORE reading - if high, collect all as paste
+            is_paste = False
+            key = ''
+            
+            # Try to use Windows event count detection first
+            event_count = self.keybuffer.get_pending_event_count()
+            if event_count >= PASTE_EVENT_THRESHOLD:
+                # High event count - collect all as paste with buffering
+                paste_parts = []
+                
+                # Keep collecting until no more events arrive
+                max_iterations = 100  # Safety limit
+                for _ in range(max_iterations):
+                    # Collect pending content
+                    chunk = self.keybuffer.read_all_pending()
+                    if chunk:
+                        paste_parts.append(chunk)
+                    
+                    # Wait briefly for more events
+                    time.sleep(PASTE_COLLECT_DELAY)
+                    
+                    # Check if more events arrived
+                    more_events = self.keybuffer.get_pending_event_count()
+                    if more_events < PASTE_EVENT_THRESHOLD:
+                        # No more bulk events - collect any remaining
+                        final_chunk = self.keybuffer.read_all_pending()
+                        if final_chunk:
+                            paste_parts.append(final_chunk)
+                        break
+                
+                paste_content = ''.join(paste_parts)
+                if paste_content and len(paste_content) >= PASTE_MIN_LENGTH:
+                    key = paste_content
+                    is_paste = True
+            
+            # If not detected as paste via event count, use normal read with bracketed paste
+            if not is_paste:
+                read_timeout = 0.05 if self._collecting_path else 0.1
+                key, is_paste = self.paste_detector.read(
+                    self.keybuffer.getch,
+                    timeout=read_timeout
+                )
+
+                # If a paste arrives while we were blocked in read(), we may have
+                # already consumed the first character. If there's now a bulk of
+                # pending input, treat this as paste and include this key.
+                if (
+                    not is_paste
+                    and key
+                    and self.keybuffer is not None
+                    and self.keybuffer.is_printable(key)
+                    and self.keybuffer.get_pending_event_count() >= PASTE_EVENT_THRESHOLD
+                ):
+                    paste_parts = [key]
+
+                    max_iterations = 100  # Safety limit
+                    for _ in range(max_iterations):
+                        chunk = self.keybuffer.read_all_pending()
+                        if chunk:
+                            paste_parts.append(chunk)
+
+                        time.sleep(PASTE_COLLECT_DELAY)
+
+                        more_events = self.keybuffer.get_pending_event_count()
+                        if more_events < PASTE_EVENT_THRESHOLD:
+                            final_chunk = self.keybuffer.read_all_pending()
+                            if final_chunk:
+                                paste_parts.append(final_chunk)
+                            break
+
+                    paste_content = ''.join(paste_parts)
+                    if paste_content and len(paste_content) >= PASTE_MIN_LENGTH:
+                        key = paste_content
+                        is_paste = True
             
             if not key:
                 continue
@@ -547,6 +648,9 @@ class TUIApp:
         
         # Ctrl+V - Paste from clipboard
         if key == Keys.CTRL_V:
+            if getattr(self, '_ignore_next_ctrl_v_key', False):
+                self._ignore_next_ctrl_v_key = False
+                return True
             content = _read_clipboard() if _read_clipboard else None
             if content:
                 self._handle_paste(content)
@@ -686,10 +790,10 @@ class TUIApp:
         # === Windows Path Collection Mode ===
         # When we detect "X:\" pattern (drive letter + colon + backslash),
         # we start collecting characters until we see a space or timeout.
-        # This handles drag-and-drop file paths on Windows.
+        # Characters are inserted into buffer AND tracked in _path_buffer.
+        # On timeout/space, we check if it's a valid path and convert to badge.
         
         if self._collecting_path:
-            # Continue collecting path characters
             if key in (' ', '\t', '\n', '\r'):
                 # Path ended - process it
                 self._process_path_buffer()
@@ -698,10 +802,12 @@ class TUIApp:
                 self.input_box.update_current_line()
                 return
             else:
-                # Continue collecting
+                # Continue collecting - insert char AND track it
                 self._path_buffer += key
-                # Show collecting indicator
+                self.input_box.buffer.insert_char(key)
+                self._path_collect_start = time.time()  # Reset timeout on each char
                 self.input_box.status_bar.set_hint('Collecting path...')
+                self.input_box.update_current_line()
                 return
         
         # === Check for Windows Path Start Pattern ===
@@ -713,10 +819,15 @@ class TUIApp:
                 recent = line[col-2:col]
                 if len(recent) == 2 and recent[1] == ':' and recent[0].isalpha():
                     # This is "C:\" pattern - start collecting!
+                    # The "C:" is already in buffer, we track it as prefix
                     self._collecting_path = True
+                    self._path_prefix = recent  # "C:"
                     self._path_buffer = key  # Start with backslash
                     self._path_collect_start = time.time()
+                    # Insert the backslash into buffer too
+                    self.input_box.buffer.insert_char(key)
                     self.input_box.status_bar.set_hint('Collecting path...')
+                    self.input_box.update_current_line()
                     return
         
         # Check for >>> submit marker
@@ -758,43 +869,82 @@ class TUIApp:
             self.input_box.update_current_line()
     
     def _process_path_buffer(self) -> None:
-        """Process accumulated path buffer as file path badge."""
+        """
+        Process accumulated path buffer as file path badge.
+        
+        The path characters have already been inserted into the buffer.
+        We need to:
+        1. Check if the full path (prefix + buffer) is a valid file path
+        2. If yes, remove the raw text and replace with a badge marker
+        3. If no, leave the text as-is
+        """
         if not self._path_buffer:
             self._collecting_path = False
+            self._path_prefix = ''
+            return
+        
+        if not self.input_box:
+            self._collecting_path = False
+            self._path_buffer = ''
+            self._path_prefix = ''
             return
         
         # Lazy import utils
         create_file_marker, _, is_file_path, _ = _lazy_import_utils()
         
-        # Get the drive letter prefix from buffer (e.g., "C:")
-        line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
-        col = self.input_box.buffer.cursor_col
-        prefix = ""
-        if col >= 2:
-            potential_prefix = line[col-2:col]
-            if len(potential_prefix) == 2 and potential_prefix[1] == ':' and potential_prefix[0].isalpha():
-                prefix = potential_prefix
+        # Get the prefix that was tracked when collection started
+        prefix = getattr(self, '_path_prefix', '')
         
         # Full path = prefix + collected buffer
         full_path = prefix + self._path_buffer
         
         # Check if it's a valid file path
         if is_file_path(full_path.strip()):
-            # Remove the prefix from buffer (backspace twice for "C:")
-            if prefix:
-                self.input_box.buffer.backspace()
-                self.input_box.buffer.backspace()
+            # Calculate how many characters to remove from buffer
+            # The full path (prefix + buffer) is already in the buffer
+            chars_to_remove = len(prefix) + len(self._path_buffer)
             
-            # Insert as file marker badge
-            marker = create_file_marker(full_path.strip())
-            self.input_box.buffer.insert_text(marker)
-        else:
-            # Not a valid path - insert as regular text
-            self.input_box.buffer.insert_text(self._path_buffer)
+            # Get current line and cursor position
+            line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
+            col = self.input_box.buffer.cursor_col
+            
+            # Verify we have enough characters to remove
+            if col >= chars_to_remove:
+                # Remove the raw path text from buffer by deleting chars_to_remove characters
+                # We need to delete from the current position backwards
+                removed = 0
+                for _ in range(chars_to_remove):
+                    if self.input_box.buffer.backspace():
+                        removed += 1
+                    else:
+                        # Can't backspace anymore (at start of buffer)
+                        break
+                
+                # Insert as file marker badge
+                marker = create_file_marker(full_path.strip())
+                self.input_box.buffer.insert_text(marker)
+            else:
+                # Cursor position doesn't match expected - try direct line manipulation
+                # This handles edge cases where cursor moved unexpectedly
+                line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
+                
+                # Find the path in the line and replace it
+                path_in_line = prefix + self._path_buffer
+                if path_in_line in line:
+                    # Find position and replace
+                    pos = line.rfind(path_in_line)
+                    if pos >= 0:
+                        marker = create_file_marker(full_path.strip())
+                        new_line = line[:pos] + marker + line[pos + len(path_in_line):]
+                        self.input_box.buffer.lines[self.input_box.buffer.cursor_row] = new_line
+                        # Adjust cursor position
+                        self.input_box.buffer.cursor_col = pos + len(marker)
+        # else: Not a valid path - leave the text as-is (already in buffer)
         
         # Reset state
         self._collecting_path = False
         self._path_buffer = ''
+        self._path_prefix = ''
         self.input_box.status_bar.set_hint('Ctrl+D: submit')
         self._render()
     
@@ -845,6 +995,23 @@ class TUIApp:
         """Handle pasted content."""
         if not self.input_box:
             return
+
+        # Normalize newlines to '\n' (clipboard on Windows often uses '\r\n').
+        content = content.replace('\r\n', '\n').replace('\r', '\n')
+
+        # Fix split drive-letter pastes where the first letter was handled as a
+        # separate key event (e.g. 'D' then ':\\path...' treated as paste).
+        if content.startswith(':\\') or content.startswith(':/'):
+            row = self.input_box.buffer.cursor_row
+            col = self.input_box.buffer.cursor_col
+            line = self.input_box.buffer.lines[row]
+
+            if 0 < col <= len(line):
+                drive = line[col - 1]
+                prev = line[col - 2] if col - 2 >= 0 else ' '
+                if drive.isalpha() and (col - 1 == 0 or prev.isspace()):
+                    self.input_box.buffer.backspace()
+                    content = drive + content
         
         # Lazy import utils
         create_file_marker, create_paste_marker, is_file_path, _ = _lazy_import_utils()
@@ -852,22 +1019,27 @@ class TUIApp:
         # Update mode
         self.mode = MODE_PASTE
         
-        # Check if content is a file path
-        if is_file_path(content.strip()):
-            marker = create_file_marker(content.strip())
+        cleaned = content.strip()
+
+        # Check if content is a single file path
+        if '\n' not in cleaned and is_file_path(cleaned):
+            marker = create_file_marker(cleaned)
             self.input_box.buffer.insert_text(marker)
         else:
-            # Check if content should be compressed to badge
-            lines = content.split('\n')
-            line_count = len(lines)
-            char_count = len(content)
-            
-            if line_count >= PASTE_LINE_THRESHOLD or char_count >= PASTE_CHAR_THRESHOLD:
-                marker = create_paste_marker(content)
-                self.input_box.buffer.insert_text(marker)
+            # Multiple file paths (one per line)
+            non_empty_lines = [line.strip() for line in cleaned.split('\n') if line.strip()]
+            if len(non_empty_lines) > 1 and all(is_file_path(line) for line in non_empty_lines):
+                markers = '\n'.join(create_file_marker(line) for line in non_empty_lines)
+                self.input_box.buffer.insert_text(markers)
             else:
-                # Insert as regular text
-                self.input_box.buffer.insert_text(content)
+                # Large paste -> paste marker (badge). Otherwise insert raw text.
+                line_count = len(content.split('\n')) if content else 0
+                if line_count >= PASTE_LINE_THRESHOLD or len(content) >= PASTE_CHAR_THRESHOLD:
+                    marker = create_paste_marker(content)
+                    self.input_box.buffer.insert_text(marker)
+                else:
+                    # Insert as regular text
+                    self.input_box.buffer.insert_text(content)
         
         # Reset mode
         self.mode = MODE_INPUT

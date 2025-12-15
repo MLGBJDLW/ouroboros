@@ -73,8 +73,8 @@ def is_file_path(text: str) -> bool:
     if not text:
         return False
     
-    # Windows absolute path: C:\path or D:/path
-    if len(text) >= 3 and text[1] == ':' and text[2] in ('\\', '/'):
+    # Windows absolute path: C:\path or D:/path (case-insensitive drive letter)
+    if len(text) >= 3 and text[0].isalpha() and text[1] == ':' and text[2] in ('\\', '/'):
         return _validate_windows_path(text)
     
     # Windows UNC path: \\server\share
@@ -244,3 +244,102 @@ def is_windows_path_pattern(text: str) -> bool:
     if len(text) < 3:
         return False
     return text[0].isalpha() and text[1] == ':' and text[2] == '\\'
+
+
+def format_file_display(path: str) -> str:
+    """
+    Format a file path for display as a badge.
+    
+    Args:
+        path: File path string
+        
+    Returns:
+        Display string like [ filename.ext ]
+    """
+    filename = get_filename(path)
+    return f"[ {filename} ]"
+
+
+def process_pasted_content(content: str, multiline_threshold: int = 5) -> tuple:
+    """
+    Process pasted content to detect file paths or large pastes.
+    
+    This is the main entry point for handling pasted content.
+    It detects:
+    1. Single file paths -> file marker
+    2. Multiple file paths (one per line) -> multiple file markers
+    3. Large pastes (5+ lines or 100+ chars) -> paste marker with badge
+    4. Regular text -> pass through
+    
+    Args:
+        content: The pasted content
+        multiline_threshold: Number of lines to trigger paste badge (default 5)
+        
+    Returns:
+        Tuple of (display_text, actual_text, is_special, paste_type)
+        - display_text: What to show in the UI (badge or content)
+        - actual_text: What to store in the buffer (marker format for AI extraction)
+        - is_special: Whether this needs special handling (file path or large paste)
+        - paste_type: 'file', 'multifile', 'paste', or 'text'
+        
+    Requirements: 6.1-6.6, 7.1-7.6
+    """
+    # Import badge functions here to avoid circular imports
+    from .badge import create_file_marker, create_paste_marker, format_paste_badge
+    
+    content = content.strip()
+    lines = content.split('\n')
+    line_count = len(lines)
+    
+    # Check if it's a single file path (not multi-line)
+    if '\n' not in content and is_file_path(content):
+        display = format_file_display(content)
+        # Store as marker for AI, display as badge
+        marker = create_file_marker(content)
+        return (display, marker, True, 'file')
+    
+    # Check for multiple file paths (one per line)
+    non_empty_lines = [line.strip() for line in lines if line.strip()]
+    if len(non_empty_lines) > 1 and all(is_file_path(line) for line in non_empty_lines):
+        # Multiple files - create markers for each
+        markers = []
+        displays = []
+        for line in non_empty_lines:
+            markers.append(create_file_marker(line))
+            displays.append(format_file_display(line))
+        return ('\n'.join(displays), '\n'.join(markers), True, 'multifile')
+    
+    # Check for large multi-line paste (code, text, etc.)
+    # Threshold: 5+ lines OR 100+ characters for single line
+    is_large_paste = line_count >= multiline_threshold
+    
+    # Also treat long single lines (like pasted code snippets) as paste
+    if not is_large_paste and line_count == 1 and len(content) > 100:
+        is_large_paste = True
+    
+    if is_large_paste:
+        # Large paste - create marker for storage, badge for display
+        marker = create_paste_marker(content)
+        badge = format_paste_badge(line_count)
+        return (badge, marker, True, 'paste')
+    
+    # Not a file path or large paste, return as-is
+    return (content, content, False, 'text')
+
+
+def format_paste_badge(line_count: int, char_count: int = 0) -> str:
+    """
+    Format a paste badge for display.
+    
+    Args:
+        line_count: Number of lines in the paste
+        char_count: Optional character count for single-line pastes
+        
+    Returns:
+        Badge string like [ Pasted 5 Lines ] or [ Pasted 1 Line (150 chars) ]
+    """
+    if line_count == 1:
+        if char_count > 50:
+            return f"[ Pasted 1 Line ({char_count} chars) ]"
+        return "[ Pasted 1 Line ]"
+    return f"[ Pasted {line_count} Lines ]"

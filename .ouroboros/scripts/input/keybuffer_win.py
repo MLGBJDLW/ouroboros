@@ -197,6 +197,115 @@ class WindowsKeyBuffer:
             pass
         return 0
     
+    def flush_console_input(self) -> None:
+        """Flush the console input buffer using FlushConsoleInputBuffer Win32 API."""
+        if not self._use_readconsole or self._handle is None:
+            # Fallback: drain any pending characters via msvcrt.
+            # Some terminals don't support FlushConsoleInputBuffer reliably, but
+            # still queue pasted characters for msvcrt.getwch().
+            try:
+                while IS_WINDOWS and msvcrt.kbhit():
+                    msvcrt.getwch()
+            except Exception:
+                pass
+            return
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            kernel32.FlushConsoleInputBuffer(self._handle)
+        except Exception:
+            pass
+
+    
+    def is_ctrl_v_pressed(self) -> bool:
+        """
+        Check if Ctrl+V is currently pressed using GetAsyncKeyState.
+        
+        This bypasses terminal interception (Windows Terminal captures Ctrl+V
+        for paste, so ReadConsoleInputW never sees it).
+        
+        Returns:
+            True if Ctrl and V are both pressed
+        """
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            VK_CONTROL = 0x11
+            VK_V = 0x56
+            # High bit (0x8000) means key is currently pressed
+            ctrl_pressed = bool(user32.GetAsyncKeyState(VK_CONTROL) & 0x8000)
+            v_pressed = bool(user32.GetAsyncKeyState(VK_V) & 0x8000)
+            return ctrl_pressed and v_pressed
+        except Exception:
+            return False
+
+    
+    def read_all_pending(self) -> str:
+        """
+        Read all pending characters from console input.
+        Used when paste is detected (many events waiting at once).
+        Returns concatenated printable characters.
+        """
+        if not self._use_readconsole or self._handle is None:
+            return ""
+        
+        try:
+            import ctypes
+            from ctypes import wintypes
+            kernel32 = ctypes.windll.kernel32
+            
+            # Define structures
+            class KEY_EVENT_RECORD(ctypes.Structure):
+                _fields_ = [
+                    ("bKeyDown", wintypes.BOOL),
+                    ("wRepeatCount", wintypes.WORD),
+                    ("wVirtualKeyCode", wintypes.WORD),
+                    ("wVirtualScanCode", wintypes.WORD),
+                    ("uChar", wintypes.WCHAR),
+                    ("dwControlKeyState", wintypes.DWORD),
+                ]
+            
+            class INPUT_RECORD(ctypes.Structure):
+                _fields_ = [
+                    ("EventType", wintypes.WORD),
+                    ("Event", KEY_EVENT_RECORD),
+                ]
+            
+            chars = []
+            max_reads = 50000  # Safety limit
+            
+            for _ in range(max_reads):
+                # Check if more events
+                num_events = wintypes.DWORD()
+                if not kernel32.GetNumberOfConsoleInputEvents(self._handle, ctypes.byref(num_events)):
+                    break
+                if num_events.value == 0:
+                    break
+                
+                # Read one event
+                record = INPUT_RECORD()
+                num_read = wintypes.DWORD()
+                if not kernel32.ReadConsoleInputW(self._handle, ctypes.byref(record), 1, ctypes.byref(num_read)):
+                    break
+                if num_read.value == 0:
+                    break
+                
+                # Only process key down events
+                if record.EventType == 0x0001 and record.Event.bKeyDown:
+                    char = record.Event.uChar
+                    if char:
+                        code = ord(char)
+                        # Include printable chars and newlines
+                        if code >= 32 or code == 10 or code == 13:
+                            if code == 13:
+                                chars.append('\n')
+                            else:
+                                chars.append(char)
+            
+            return ''.join(chars)
+        except Exception:
+            return ""
+    
     def _read_ansi_sequence_from_console_vt(self, kernel32, INPUT_RECORD, KEY_EVENT_RECORD,
                                             timeout: Optional[float], start_time: float) -> str:
         """Read an ANSI escape sequence from console input in VT Input mode."""

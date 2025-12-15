@@ -243,3 +243,148 @@ def get_formatter() -> OutputFormatter:
     if _default_formatter is None:
         _default_formatter = OutputFormatter()
     return _default_formatter
+
+
+# =============================================================================
+# OUTPUT BOX - Visual feedback for submission
+# =============================================================================
+
+# Box drawing characters
+BOX_CHARS = {
+    'tl': '╭', 'tr': '╮', 'bl': '╰', 'br': '╯',
+    'h': '─', 'v': '│', 'lj': '├', 'rj': '┤'
+}
+
+# Theme colors (Mystic Purple)
+THEME = {
+    'border': '\x1b[95m',      # Bright Magenta
+    'prompt': '\x1b[96m',      # Bright Cyan
+    'success': '\x1b[92m',     # Bright Green
+    'dim': '\x1b[2m',          # Dim
+    'reset': '\x1b[0m',        # Reset
+}
+
+
+def _visible_len(text: str) -> int:
+    """Get visible length of text (ignoring ANSI codes)."""
+    clean = strip_ansi(text)
+    # Handle CJK characters (2-column width)
+    import unicodedata
+    width = 0
+    for char in clean:
+        ea = unicodedata.east_asian_width(char)
+        if ea in ('W', 'F'):
+            width += 2
+        elif ord(char) >= 0x1F300:  # Most emoji
+            width += 2
+        else:
+            width += 1
+    return width
+
+
+def _pad_text(text: str, width: int, fill: str = ' ') -> str:
+    """Pad text to width accounting for ANSI codes."""
+    visible = _visible_len(text)
+    if visible >= width:
+        return text
+    return text + fill * (width - visible)
+
+
+def _get_terminal_size() -> tuple:
+    """Get terminal (columns, rows)."""
+    import shutil
+    try:
+        size = shutil.get_terminal_size()
+        return (size.columns, size.lines)
+    except (ValueError, OSError):
+        return (80, 24)
+
+
+class OutputBox:
+    """
+    Box for displaying output/task results - auto-sizes to terminal and content.
+    
+    Used to show visual feedback when user submits input, confirming
+    that the content has been transmitted to Copilot.
+    
+    Based on original ouroboros_ui.py OutputBox implementation.
+    """
+    
+    @staticmethod
+    def render(marker: str, content: str, full_width: bool = True) -> None:
+        """Render output box to stderr (for user feedback).
+        
+        Args:
+            marker: Label for the output (e.g., "TASK", "TRANSMITTED")
+            content: Content to display
+            full_width: If True, stretch to terminal width
+        """
+        cols, rows = _get_terminal_size()
+        c = THEME
+        box = BOX_CHARS
+        
+        # Calculate width
+        if full_width:
+            width = cols - 2  # Full width minus margins
+        else:
+            width = min(cols - 4, 80)
+        
+        content_width = width - 2  # Inside borders
+        sep = box['h'] * content_width
+        
+        # Split content into lines
+        lines = content.split('\n')
+        
+        # Header
+        write_ui_line(f"{c['border']}{box['tl']}{sep}{box['tr']}{c['reset']}")
+        header = f" {c['prompt']}[>] {marker.upper()}{c['reset']}"
+        header_padded = _pad_text(header, content_width)
+        write_ui_line(f"{c['border']}{box['v']}{c['reset']}{header_padded}{c['border']}{box['v']}{c['reset']}")
+        write_ui_line(f"{c['border']}{box['lj']}{sep}{box['rj']}{c['reset']}")
+        
+        # Content with side borders (handle CJK width)
+        for line in lines:
+            line_width = _visible_len(line)
+            if line_width > content_width:
+                # Truncate accounting for display width
+                truncated = ''
+                current_width = 0
+                for ch in line:
+                    import unicodedata
+                    ea = unicodedata.east_asian_width(ch)
+                    ch_width = 2 if ea in ('W', 'F') or ord(ch) >= 0x1F300 else 1
+                    if current_width + ch_width > content_width - 3:
+                        break
+                    truncated += ch
+                    current_width += ch_width
+                line = truncated + f"{c['dim']}...{c['reset']}"
+            padded_line = _pad_text(line, content_width)
+            write_ui_line(f"{c['border']}{box['v']}{c['reset']}{padded_line}{c['border']}{box['v']}{c['reset']}")
+        
+        # Footer
+        write_ui_line(f"{c['border']}{box['bl']}{sep}{box['br']}{c['reset']}")
+    
+    @staticmethod
+    def render_success(message: str = "Transmitted to Copilot") -> None:
+        """Render a success feedback box.
+        
+        Args:
+            message: Success message to display
+        """
+        c = THEME
+        OutputBox.render("SUCCESS", f"{c['success']}✓ {message}{c['reset']}", full_width=False)
+    
+    @staticmethod
+    def render_transmitted(line_count: int = 0, char_count: int = 0) -> None:
+        """Render transmission confirmation box.
+        
+        Args:
+            line_count: Number of lines transmitted
+            char_count: Number of characters transmitted
+        """
+        c = THEME
+        if line_count > 0:
+            content = f"{c['success']}✓ Transmitted {line_count} lines ({char_count} chars) to Copilot{c['reset']}"
+        else:
+            content = f"{c['success']}✓ Transmitted to Copilot{c['reset']}"
+        OutputBox.render("TRANSMITTED", content, full_width=False)
