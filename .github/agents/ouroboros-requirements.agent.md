@@ -251,6 +251,9 @@ Your work is complete when:
 [Complete requirements document]
 === END ARTIFACT ===
 
+## Files Created
+- `.ouroboros/specs/[feature]/requirements.md` (created)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

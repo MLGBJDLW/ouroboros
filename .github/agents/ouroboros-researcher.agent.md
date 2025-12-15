@@ -235,6 +235,9 @@ Your work is complete when:
 ## Recommendations
 1. [Recommendation with reasoning]
 
+## Files Created
+- `.ouroboros/specs/[feature]/research.md` (created)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

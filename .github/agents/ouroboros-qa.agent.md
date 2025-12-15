@@ -238,7 +238,7 @@ Your work is complete when:
 
 ## Test Execution
 
-$ npm test
+$ npm test --run
 [actual terminal output here]
 
 ## Results
@@ -249,6 +249,16 @@ $ npm test
 ## Bug Fix (if applicable)
 - Root cause: [explanation]
 - Fix: [what was changed]
+
+## Gates Result
+| Gate | Status |
+|------|--------|
+| tests | PASS (12/12) or FAIL (10/12) |
+| coverage | [percentage if applicable] |
+
+## Files Changed
+- `tests/auth.test.ts` (added)
+- `src/auth.ts` (modified - bug fix)
 
 ## Final Verdict
 ✅ ALL TESTS PASSED (12/12)

@@ -205,6 +205,9 @@ TASK-1.1 → TASK-1.3 → TASK-2.1 → TASK-3.2
 [Complete task document]
 === END ARTIFACT ===
 
+## Files Created
+- `.ouroboros/specs/[feature]/tasks.md` (created)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

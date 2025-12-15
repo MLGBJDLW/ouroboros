@@ -244,6 +244,9 @@ Your work is complete when:
 [Complete ADR content]
 === END ARTIFACT ===
 
+## Files Created
+- `.ouroboros/specs/[feature]/design.md` (created)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

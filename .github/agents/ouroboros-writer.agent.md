@@ -233,6 +233,9 @@ Your work is complete when:
 - Template used: ✅ / N/A
 - Content complete: ✅
 
+## Files Changed
+- `path/to/file.ext` (created | modified)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

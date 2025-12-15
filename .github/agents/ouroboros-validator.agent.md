@@ -225,6 +225,9 @@ Your work is complete when:
 [Complete validation report]
 === END ARTIFACT ===
 
+## Files Created
+- `.ouroboros/specs/[feature]/validation-report.md` (created)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
