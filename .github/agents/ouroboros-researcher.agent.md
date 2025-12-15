@@ -286,12 +286,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Reading config" | Show actual config content |
 
 **NEVER** make technology claims without reading config files.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["evidence_based_findings", "version_numbers", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["assumptions", "missing_versions", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

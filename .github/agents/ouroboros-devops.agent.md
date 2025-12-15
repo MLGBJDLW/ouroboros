@@ -333,12 +333,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Running CI" | Execute CI commands, show results |
 
 **NEVER** describe operation without showing command output.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["dry_run_for_destructive", "non_interactive_commands", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["force_push_without_approval", "hardcoded_secrets", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

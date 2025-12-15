@@ -276,12 +276,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Reading all documents" | Actually read all 4 |
 
 **NEVER** approve spec without cross-document verification.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["read_all_documents", "complete_coverage_matrix", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["skipped_documents", "vague_issues", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

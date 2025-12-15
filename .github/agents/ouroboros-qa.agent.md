@@ -292,13 +292,3 @@ BEFORE RESPONDING, VERIFY:
 └──────────────────────────────────────────────────────────────┘
 IF ANY CHECK FAILS: Correct before output.
 ```
-
-## 📊 COMPLIANCE
-
-```json
-{
-  "required": ["actual_test_execution", "real_output", "say_equals_do", "return_via_handoff"],
-  "forbidden": ["assumed_results", "goodbye_phrases", "skipped_tests", "empty_promises"],
-  "on_violation": "STOP → correct → continue"
-}
-```

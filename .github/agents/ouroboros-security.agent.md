@@ -296,12 +296,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Checking OWASP category" | Show specific check results |
 
 **NEVER** report security finding without code evidence.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["severity_ratings", "remediation_steps", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["vague_findings", "no_remediation", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```

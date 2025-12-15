@@ -295,12 +295,3 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Analyzing trade-offs" | Show comparison matrix |
 
 **NEVER** describe architecture without visual diagrams.
-
-**COMPLIANCE CONSTRAINTS:**
-```json
-{
-  "required": ["trade_off_analysis", "alternatives_documented", "return_via_handoff", "action_follows_statement"],
-  "forbidden": ["single_option_decision", "no_rationale", "goodbye_phrases", "uncommitted_actions"],
-  "on_violation": "STOP → correct → continue"
-}
-```
