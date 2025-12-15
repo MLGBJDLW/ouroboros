@@ -289,8 +289,20 @@ return handleData(wrapData(processData(data)));  // Just do it directly
 === END ARTIFACT ===
 
 ## Verification
-$ [build command]
-✅ Build passed (0 errors)
+$ pnpm typecheck
+✅ Typecheck passed (0 errors)
+
+$ pnpm test --run
+✅ Tests passed (12/12)
+
+## Gates Result
+| Gate | Status |
+|------|--------|
+| typecheck | PASS |
+| tests | PASS (12/12) |
+
+## Files Changed
+- `path/to/file.ts` (modified)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]

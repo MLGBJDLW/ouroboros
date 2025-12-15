@@ -180,7 +180,10 @@ Here are your options:
 
 ---
 
-## 📐 Dispatch Format
+## 📐 Dispatch Format (Task Packet)
+
+> [!IMPORTANT]
+> **Every dispatch MUST include structured fields for consistent subagent behavior.**
 
 ```javascript
 runSubagent(
@@ -188,19 +191,40 @@ runSubagent(
   prompt: `
     ## Context
     [Relevant project state]
+    [Related Files]: path/to/file1.ts, path/to/file2.ts
     
     ## Task
     [Specific action required]
     
+    ## Contracts (for implementation tasks)
+    - Export: functionName(args): ReturnType
+    - Error: throw/return pattern
+    - Invariants: [must always be true]
+    
+    ## Gates
+    - typecheck: PASS required
+    - tests: PASS required (specify which)
+    
     ## Constraints
-    - [Constraint 1]
-    - [Constraint 2]
+    - [No new dependencies]
+    - [Keep existing API compatible]
+    - [Max complexity budget]
     
     ## Expected Output
-    [What to return]
+    Status + gates_result + files changed
   `
 )
 ```
+
+**Field Requirements by Agent Type:**
+
+| Agent | Contracts | Gates | Constraints |
+|-------|-----------|-------|-------------|
+| `coder` | ✅ Required | ✅ Required | ✅ Required |
+| `qa` | ❌ N/A | ✅ Required | ⚠️ Optional |
+| `writer` | ❌ N/A | ❌ N/A | ✅ Required (path) |
+| `analyst` | ❌ N/A | ❌ N/A | ⚠️ Optional |
+| `devops` | ⚠️ Optional | ✅ Required | ✅ Required |
 
 ---
 

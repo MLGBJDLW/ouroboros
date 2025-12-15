@@ -274,6 +274,13 @@ $ git status
 $ npm run build
 [output]
 
+## Gates Result
+| Gate | Status |
+|------|--------|
+| build | PASS |
+| lint | PASS |
+| tests | PASS (if applicable) |
+
 ## Rollback Plan
 If needed: `git revert abc123`
 

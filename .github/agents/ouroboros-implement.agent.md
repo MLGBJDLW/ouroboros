@@ -173,25 +173,37 @@ python -c "print(); print('[1] 🔧 Task-by-Task'); print('[2] 📦 Phase-by-Pha
 > Execute Task 1.1, then 1.2, then 1.3.
 > If blocked, ASK THE USER, do not skip.
 
-**Example (Native Agent Call):**
+**Example (Task Packet to Coder):**
 ```javascript
 runSubagent(
   agent: "ouroboros-coder",
   prompt: `
+## Context
 [Spec]: [feature-name]
 [Task]: 2.1 - [Task description]
 [Progress]: X/Y tasks
 [Mode]: Task-by-Task | Phase-by-Phase | Auto-Run
+[Related Files]: src/auth.py, src/utils/token.py
 
 ## Task
 Implement Task 2.1: [Task description]
 
-## Target
-File: src/auth.py
-Ref: .ouroboros/specs/[feature]/tasks.md#2.1
+## Contracts
+- Export: validateToken(token: str) -> bool
+- Error: raise AuthError on invalid token
+- Invariants: Token format must be JWT
 
-## Return
-Status + FILES
+## Gates
+- typecheck: PASS required
+- unit tests: PASS required
+
+## Constraints
+- No new dependencies
+- Keep existing API compatible
+- Max 2 new abstractions
+
+## Expected Output
+Status + gates_result + files changed
   `
 )
 ```
