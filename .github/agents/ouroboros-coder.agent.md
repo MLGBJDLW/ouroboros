@@ -179,6 +179,22 @@ Before final output, review your code and:
 
 ---
 
+## 🔒 SECURE DEFAULTS
+
+> [!IMPORTANT]
+> **These security practices are non-negotiable. Security reviews only verify, not fix.**
+
+| Practice | Requirement |
+|----------|-------------|
+| **Input Validation** | Validate at boundary; reject early |
+| **AuthZ Centralization** | Never trust client-supplied IDs/roles |
+| **Parameterized Queries** | Never string-concat queries/commands |
+| **Secret Handling** | Never log secrets/PII; redact tokens |
+| **File Safety** | Size limits, path normalization, allowlist types |
+| **Network Fetch** | Allowlist URLs; block metadata/private IPs (SSRF) |
+
+---
+
 ## 🆕 MODERN PRACTICES
 
 | Category | Prefer | Avoid |
