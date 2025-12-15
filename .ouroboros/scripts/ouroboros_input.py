@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ouroboros_input.py - Enhanced CCL Input Handler v3.0
+ouroboros_input.py - Enhanced CCL Input Handler v3.1
 
 Part of the Ouroboros system. Provides enhanced terminal input with:
 - Real-time character input with dynamic TUI
@@ -21,9 +21,9 @@ Usage:
     python ouroboros_input.py --prompt "Name:" --var feature     # Type C: Free-form
     python ouroboros_input.py --options "opt1" "opt2" "opt3"     # Selection menu
 
-Dependencies: Python 3.6+ standard library only (msvcrt/tty/termios)
+Dependencies: Python 3.9+ standard library only (msvcrt/tty/termios)
 
-Requirements: 22.1-22.5, 29.1-29.4, 20.6-20.8, 30.1-30.3
+
 """
 
 import sys
@@ -34,7 +34,7 @@ import time
 import atexit
 
 # Version
-VERSION = "3.0.0"
+VERSION = "3.1.0"
 
 # Add script directory to path for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -78,7 +78,7 @@ def is_pipe_input() -> bool:
     """
     Check if stdin is a pipe (not a TTY).
     
-    Requirements: 20.6
+
     """
     return not sys.stdin.isatty()
 
@@ -95,7 +95,7 @@ def restore_terminal() -> None:
     """
     Restore terminal state on exit.
     
-    Requirements: 20.7-20.8
+
     """
     global _terminal_restored
     if _terminal_restored:
@@ -119,7 +119,7 @@ def show_goodbye_animation() -> None:
     """
     Display goodbye animation on Ctrl+C.
     
-    Requirements: 30.1-30.3
+
     """
     goodbye_frames = [
         f"{THEME['dim']}♾️  Goodbye...{THEME['reset']}",
@@ -136,7 +136,7 @@ def graceful_exit(exit_code: int = 130) -> None:
     """
     Exit gracefully with animation and terminal restoration.
     
-    Requirements: 20.7-20.8, 30.1-30.3
+
     """
     show_goodbye_animation()
     restore_terminal()
@@ -151,7 +151,7 @@ def detect_yes_no(prompt: str) -> bool:
     """
     Detect if prompt is a yes/no question.
     
-    Requirements: 29.1
+
     """
     return bool(re.search(r'\[y/n\]', prompt, re.IGNORECASE))
 
@@ -164,7 +164,7 @@ def parse_numbered_options(text: str) -> list:
     1. Option one
     2. Option two
     
-    Requirements: 29.4
+
     """
     options = []
     pattern = r'^\s*(\d+)[.)\]]\s*(.+)$'
@@ -184,7 +184,7 @@ def parse_menu_options(header: str, prompt: str = '') -> tuple:
     Returns:
         Tuple of (title, options_list) if menu detected, (None, None) otherwise.
     
-    Requirements: 29.1-29.4
+
     """
     # Check for [y/n] confirmation pattern in prompt
     if prompt and detect_yes_no(prompt):
@@ -232,7 +232,7 @@ def get_pipe_input() -> str:
     """
     Read input from pipe/stdin.
     
-    Requirements: 20.6
+
     """
     return sys.stdin.read().strip()
 
@@ -309,7 +309,7 @@ def get_tui_input(header: str = '', prompt: str = '',
     """
     Get input using the new TUI system.
     
-    Requirements: 22.1-22.5
+
     """
     if not TUI_AVAILABLE:
         return get_fallback_input(show_ui=True)
@@ -332,7 +332,7 @@ def get_selection_input(options: list, title: str = "Select an option:",
     """
     Interactive selection menu with arrow key navigation.
     
-    Requirements: 28.1-28.8, 29.1-29.4
+
     """
     if not TUI_AVAILABLE:
         # Fallback to numbered selection
@@ -451,7 +451,7 @@ def output_result(marker: str, content: str) -> None:
     When TUI is available, the Task Box already shows the content visually,
     so we suppress the visible stdout echo while still sending to stdout.
     
-    Requirements: 10.1-10.4
+
     """
     if TUI_AVAILABLE:
         # Use TUI output formatting
@@ -543,7 +543,7 @@ def parse_args():
     """
     Parse command line arguments.
     
-    Requirements: 22.1-22.5
+
     """
     parser = argparse.ArgumentParser(
         description='Ouroboros Enhanced Input Handler v3',
@@ -587,7 +587,7 @@ def detect_mode(args) -> str:
     - 'prompt': --prompt provided
     - 'ccl': default CCL mode
     
-    Requirements: 22.1-22.5, 29.1-29.4
+
     """
     # Check for pipe input first
     if is_pipe_input():
@@ -620,7 +620,7 @@ def main():
     """
     Main entry point.
     
-    Requirements: 22.1-22.5, 29.1-29.4, 20.6-20.8
+
     """
     args = parse_args()
     

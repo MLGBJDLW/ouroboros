@@ -4,7 +4,7 @@ Slash command handler module.
 This module provides slash command detection, fuzzy matching,
 and autocomplete functionality.
 
-Requirements: 8.1-8.6, 18.1-18.4, 32.1-32.6
+
 """
 
 from typing import List, Tuple, Optional, Dict

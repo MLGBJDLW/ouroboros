@@ -5,7 +5,7 @@ This package provides text utilities, badge processing,
 and file path detection functions.
 
 Uses lazy imports for fast startup (<200ms target).
-Requirements: 17.1-17.4
+
 """
 
 # Lazy import implementation for fast startup

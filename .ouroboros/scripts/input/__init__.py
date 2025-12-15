@@ -5,7 +5,7 @@ This package provides cross-platform keyboard input handling,
 paste detection, clipboard access, and slash command processing.
 
 Uses lazy imports for fast startup (<200ms target).
-Requirements: 17.1-17.4
+
 """
 
 # Lazy import implementation for fast startup

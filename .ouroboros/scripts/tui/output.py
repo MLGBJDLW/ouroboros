@@ -4,7 +4,7 @@ Output formatting module for Ouroboros TUI.
 This module provides functions for formatting and outputting
 the final content to stdout while keeping UI elements on stderr.
 
-Requirements: 10.1-10.4, 16.1-16.7
+
 """
 
 import sys
@@ -36,10 +36,10 @@ def strip_ansi(text: str) -> str:
     Returns:
         Clean text without ANSI codes
         
-    Requirements: 10.2, 16.6
+
     
     Property 5: Output Content Purity
-    Validates: Requirements 10.1-10.4, 16.6
+
     """
     return ANSI_PATTERN.sub('', text)
 
@@ -59,10 +59,10 @@ def format_output(text: str) -> str:
     Returns:
         Clean text ready for AI consumption
         
-    Requirements: 10.1-10.4, 16.1-16.7
+
     
     Property 5: Output Content Purity
-    Validates: Requirements 10.1-10.4, 16.6
+
     """
     # Expand markers (file paths and paste content)
     expanded = expand_markers(text)
@@ -87,7 +87,7 @@ def write_output(text: str, stream=None) -> None:
         text: Text to output
         stream: Output stream (default: sys.stdout)
         
-    Requirements: 10.1-10.2
+
     """
     if stream is None:
         stream = sys.stdout
@@ -111,7 +111,7 @@ def write_ui(text: str) -> None:
     Args:
         text: UI text to write
         
-    Requirements: 10.2
+
     """
     sys.stderr.write(text)
     sys.stderr.flush()
@@ -140,7 +140,7 @@ def has_ansi_codes(text: str) -> bool:
         True if text contains ANSI codes
         
     Property 5: Output Content Purity
-    Validates: Requirements 10.1-10.4, 16.6
+
     """
     return bool(ANSI_PATTERN.search(text))
 
@@ -158,7 +158,7 @@ def validate_output_purity(text: str) -> bool:
         True if text is pure (no ANSI codes)
         
     Property 5: Output Content Purity
-    Validates: Requirements 10.1-10.4, 16.6
+
     """
     return not has_ansi_codes(text)
 

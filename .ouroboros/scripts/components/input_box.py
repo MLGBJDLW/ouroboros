@@ -4,7 +4,7 @@ InputBox component module.
 This module provides the main input area component with multi-line
 support, scrolling, badge rendering, and status bar.
 
-Requirements: 2.1-2.7, 14.1-14.4, 25.1-25.5
+
 """
 
 from typing import Optional, TYPE_CHECKING
@@ -36,7 +36,7 @@ class InputBox:
     - Virtual scrolling for content > 5 lines
     - CJK character support (2-column width)
     
-    Requirements: 2.1-2.7, 14.1-14.4, 25.1-25.5
+
     """
     
     # Layout constants

@@ -4,7 +4,7 @@ Main TUI application loop module.
 This module provides the main application loop with component
 orchestration, input handling, and mode switching.
 
-Requirements: 1.1-1.5, 4.1-4.10, 19.1-19.5, 21.1-21.5, 31.1-31.5, 20.7-20.8, 30.1-30.3
+
 """
 
 import sys
@@ -13,7 +13,7 @@ import atexit
 from typing import Optional, Tuple
 
 # Use absolute imports for compatibility when scripts dir is in sys.path
-# Requirements: 17.1-17.4 (lazy loading for fast startup)
+
 from tui.screen import ScreenManager
 from tui.theme import ThemeManager
 from data.config import get_config
@@ -130,7 +130,7 @@ def _lazy_import_utils():
 MODE_INPUT = 'INPUT'
 MODE_PASTE = 'PASTE'
 
-# Minimum terminal size (Requirements: 20.1)
+# Minimum terminal size
 MIN_TERMINAL_COLS = 20
 MIN_TERMINAL_ROWS = 5
 MODE_HISTORY = 'HISTORY'
@@ -159,7 +159,7 @@ def show_goodbye_animation() -> None:
     """
     Display goodbye animation on Ctrl+C.
     
-    Requirements: 30.1-30.3
+
     """
     goodbye_frames = [
         f"{THEME['dim']}♾️  Goodbye...{THEME['reset']}",
@@ -189,7 +189,7 @@ class TUIApp:
     - Badge processing on paste
     - Path collection mode for Windows drag-drop
     
-    Requirements: 1.1-1.5, 4.1-4.10, 19.1-19.5, 21.1-21.5, 31.1-31.5
+
     """
     
     def __init__(self, 
@@ -260,7 +260,7 @@ class TUIApp:
         Returns:
             The submitted text content, or None if cancelled
             
-        Requirements: 20.7-20.8, 30.1-30.3
+
         """
         try:
             with ScreenManager(use_alt_screen=not self.skip_welcome) as screen:
@@ -287,7 +287,7 @@ class TUIApp:
         """
         Handle Ctrl+C with graceful exit animation.
         
-        Requirements: 20.7-20.8, 30.1-30.3
+
         """
         show_goodbye_animation()
         sys.exit(EXIT_CODE_CANCELLED)
@@ -358,14 +358,14 @@ class TUIApp:
         Args:
             full_redraw: If True, clear screen before rendering (only on init/resize)
         
-        Requirements: 20.1 - Terminal too small handling
+
         """
         if not self.screen:
             return
         
         cols, rows = self.screen.get_size()
         
-        # Check minimum size (Requirements: 20.1)
+        # Check minimum size
         # Minimum: 20 columns x 5 rows for basic functionality
         if cols < MIN_TERMINAL_COLS or rows < MIN_TERMINAL_ROWS:
             self._render_too_small_message(cols, rows)
@@ -400,7 +400,7 @@ class TUIApp:
         """
         Render "terminal too small" message.
         
-        Requirements: 20.1 - Display minimal "resize needed" message
+
         when terminal is resized to very small dimensions (less than 20x5).
         """
         self.screen.clear()
@@ -611,7 +611,7 @@ class TUIApp:
         
         Returns True if key was handled.
         
-        Requirements: 20.7-20.8, 30.1-30.3
+
         """
         # Ctrl+C - Cancel with graceful exit
         if key == Keys.CTRL_C:

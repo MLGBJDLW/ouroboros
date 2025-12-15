@@ -5,7 +5,7 @@ This package provides curses-based terminal UI components with
 fallback to ANSI rendering when curses is unavailable.
 
 Uses lazy imports for fast startup (<200ms target).
-Requirements: 17.1-17.4
+
 """
 
 # Lazy import implementation for fast startup

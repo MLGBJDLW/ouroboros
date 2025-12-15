@@ -4,7 +4,7 @@ Windows-specific keyboard input handler.
 This module provides Windows keyboard handling using ReadConsoleW
 for IME support and VK code handling for arrow keys.
 
-Requirements: 5.1-5.7, 27.1-27.2
+
 """
 
 import sys

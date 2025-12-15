@@ -5,7 +5,7 @@ This module provides ANSI-based rendering when curses is unavailable.
 It implements the same interface as the curses components for seamless
 fallback.
 
-Requirements: 11.1-11.4, 20.5
+
 """
 
 import sys

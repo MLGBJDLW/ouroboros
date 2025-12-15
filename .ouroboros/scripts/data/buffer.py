@@ -4,7 +4,7 @@ TextBuffer module.
 This module provides multi-line text buffer with cursor management,
 scrolling, and word navigation.
 
-Requirements: 15.1-15.6
+
 """
 
 
@@ -64,7 +64,7 @@ class TextBuffer:
         """
         Insert a new line at cursor position.
         
-        Requirements 15.1-15.6:
+
         - WHEN Enter is pressed, insert a new line at cursor position
         - WHEN Enter is pressed at end of line, create a new empty line below
         - WHEN Enter is pressed in middle of line, split the line at cursor position

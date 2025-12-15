@@ -3,7 +3,7 @@ ConfigManager module.
 
 This module provides configuration management with JSON persistence.
 
-Requirements: 20.3-20.4, 27.5
+
 """
 
 import os
@@ -40,7 +40,7 @@ class ConfigManager:
     - Fallback flag (use_fallback_input for IME issues)
     - Graceful handling of corrupted config file
     
-    Requirements: 20.3-20.4, 27.5
+
     """
 
     def __init__(self, config_file: str = None):

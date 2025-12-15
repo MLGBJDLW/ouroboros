@@ -1,10 +1,10 @@
-# ♾️ Project Ouroboros v3.0.4
+# ♾️ Project Ouroboros v3.1.0
 
 > **Save Money on GitHub Copilot** — A persistent context system that reduces redundant conversations and maximizes your Copilot subscription value.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Copilot Compatible](https://img.shields.io/badge/GitHub%20Copilot-Compatible-blue)](https://github.com/features/copilot)
-[![Version: 3.0.4](https://img.shields.io/badge/Version-3.0.4-green)](https://github.com/MLGBJDLW/ouroboros)
+[![Version: 3.1.0](https://img.shields.io/badge/Version-3.1.0-green)](https://github.com/MLGBJDLW/ouroboros)
 [![CI](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml/badge.svg)](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml)
 
 ---

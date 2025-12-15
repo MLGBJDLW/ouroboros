@@ -4,7 +4,7 @@ WelcomeBox component module.
 This module provides the header component showing branding
 and keyboard shortcuts in a two-column layout with color coding.
 
-Requirements: 3.1-3.3
+
 """
 
 from typing import Optional, TYPE_CHECKING

@@ -4,7 +4,7 @@ StatusBar component module.
 This module provides the status bar showing mode, scroll position,
 and cursor position embedded in the bottom border of the InputBox.
 
-Requirements: 12.1-12.3
+
 """
 
 from typing import Optional, TYPE_CHECKING

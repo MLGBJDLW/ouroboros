@@ -5,7 +5,7 @@ This package contains reusable UI components like InputBox,
 WelcomeBox, SelectionMenu, and StatusBar.
 
 Uses lazy imports for fast startup (<200ms target).
-Requirements: 17.1-17.4
+
 """
 
 # Lazy import implementation for fast startup

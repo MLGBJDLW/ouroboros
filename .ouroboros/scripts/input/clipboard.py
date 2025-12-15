@@ -4,7 +4,7 @@ Clipboard access module.
 This module provides cross-platform clipboard access using
 win32clipboard/ctypes on Windows and xclip/xsel/pbpaste on Unix.
 
-Requirements: 26.1-26.5
+
 """
 
 import sys

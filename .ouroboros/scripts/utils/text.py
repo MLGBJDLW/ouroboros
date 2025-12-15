@@ -7,7 +7,7 @@ This module provides text processing utilities including:
 - ANSI escape code stripping
 - Text padding to width
 
-Requirements: 2.7
+
 """
 
 import re
@@ -34,8 +34,7 @@ def char_width(char: str) -> int:
     Returns:
         Display width: 2 for wide characters, 1 for normal, 0 for control chars
         
-    Property 1: Character Width Calculation
-    Validates: Requirements 2.7
+
     """
     if not char:
         return 0

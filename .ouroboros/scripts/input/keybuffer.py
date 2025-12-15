@@ -4,7 +4,7 @@ Unified cross-platform keyboard input handler.
 This module provides the KeyBuffer class for reading keyboard input
 across Windows and Unix platforms with curses integration.
 
-Requirements: 4.1-4.10, 5.1-5.7
+
 """
 
 import sys

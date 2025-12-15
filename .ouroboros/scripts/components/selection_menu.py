@@ -4,7 +4,7 @@ SelectionMenu component module.
 This module provides an interactive selection menu with
 arrow key navigation, page scrolling, and number key selection.
 
-Requirements: 28.1-28.8, 29.1-29.4
+
 """
 
 import re
@@ -31,7 +31,7 @@ class SelectionMenu:
     - Yes/No detection from [y/n] pattern in prompt
     - Numbered options parsing from header text
     
-    Requirements: 28.1-28.8, 29.1-29.4
+
     """
     
     # Layout constants

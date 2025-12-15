@@ -10,7 +10,7 @@ Marker formats:
 - File path: «/full/path/file.ext» displays as [ file.ext ]
 - Paste: ‹PASTE:N›content‹/PASTE› displays as [ Pasted N Lines ]
 
-Requirements: 6.1-6.6, 7.1-7.6, 16.2-16.3
+
 """
 
 import re
@@ -54,10 +54,9 @@ def create_file_marker(path: str) -> str:
     Returns:
         Marked path string
         
-    Requirements: 6.5, 16.2
+
     
-    Property 2: File Path Marker Round-Trip
-    Validates: Requirements 6.1-6.6, 16.2
+
     """
     # Clean the path
     path = path.strip().strip('"').strip("'")
@@ -112,10 +111,9 @@ def create_paste_marker(content: str) -> str:
     Returns:
         Marked content string
         
-    Requirements: 7.5, 16.3
+
     
-    Property 3: Paste Marker Round-Trip
-    Validates: Requirements 7.1-7.6, 16.3
+
     """
     lines = content.split('\n')
     line_count = len(lines)
@@ -192,11 +190,9 @@ def expand_markers(text: str) -> str:
     Returns:
         Text with all markers expanded to original content
         
-    Requirements: 6.6, 7.6, 16.2-16.3
+
     
-    Property 2: File Path Marker Round-Trip
-    Property 3: Paste Marker Round-Trip
-    Validates: Requirements 6.1-6.6, 7.1-7.6, 16.2-16.3
+
     """
     result = text
     
@@ -239,7 +235,7 @@ def render_for_display(text: str) -> str:
     Returns:
         Text with markers converted to display badges
         
-    Requirements: 6.1-6.4, 7.1-7.2
+
     """
     result = text
     
@@ -306,7 +302,7 @@ def format_paste_badge(line_count: int, char_count: int = 0) -> str:
     Returns:
         Badge string like [ Pasted 5 Lines ] or [ Pasted 1 Line (150 chars) ]
         
-    Requirements: 7.1-7.2
+
     """
     if line_count == 1:
         if char_count > 50:

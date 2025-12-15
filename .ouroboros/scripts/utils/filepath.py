@@ -4,7 +4,7 @@ File path detection module for Ouroboros TUI.
 This module provides file path detection and validation for both
 Windows and Unix paths, including relative paths and known file extensions.
 
-Requirements: 6.1-6.6, 31.1-31.5
+
 """
 
 import os
@@ -66,7 +66,7 @@ def is_file_path(text: str) -> bool:
     Returns:
         True if text appears to be a file path
         
-    Requirements: 6.1-6.6, 31.1-31.5
+
     """
     text = text.strip().strip('"').strip("'")
     
@@ -224,7 +224,7 @@ def detect_windows_path_start(char: str) -> bool:
     Returns:
         True if char is a valid drive letter (A-Z, a-z)
         
-    Requirements: 31.1-31.5
+
     """
     return char.isalpha() and len(char) == 1
 
@@ -239,7 +239,7 @@ def is_windows_path_pattern(text: str) -> bool:
     Returns:
         True if text starts with Windows path pattern like 'C:\\'
         
-    Requirements: 31.1-31.5
+
     """
     if len(text) < 3:
         return False
@@ -282,7 +282,7 @@ def process_pasted_content(content: str, multiline_threshold: int = 5) -> tuple:
         - is_special: Whether this needs special handling (file path or large paste)
         - paste_type: 'file', 'multifile', 'paste', or 'text'
         
-    Requirements: 6.1-6.6, 7.1-7.6
+
     """
     # Import badge functions here to avoid circular imports
     from .badge import create_file_marker, create_paste_marker, format_paste_badge

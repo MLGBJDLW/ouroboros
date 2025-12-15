@@ -4,7 +4,7 @@ Window wrapper module.
 This module provides a wrapper around curses windows with
 enhanced functionality for UI components.
 
-Requirements: 2.1, 23.1-23.4
+
 """
 
 import sys

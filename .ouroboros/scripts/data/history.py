@@ -4,7 +4,7 @@ HistoryManager module.
 This module provides command history with file persistence
 and search functionality.
 
-Requirements: 13.1-13.4, 19.1-19.5
+
 """
 
 import os
@@ -27,7 +27,7 @@ class HistoryManager:
     - Avoids consecutive duplicate entries
     - Graceful handling of corrupted history file
     
-    Requirements: 13.1-13.4, 19.1-19.5
+
     """
 
     def __init__(self, history_file: str = None, max_entries: int = 1000):
@@ -76,7 +76,7 @@ class HistoryManager:
         """
         Add entry to history.
         
-        Avoids consecutive duplicate entries (Requirement 13.1).
+        Avoids consecutive duplicate entries.
         
         Args:
             entry: The command/input to add to history
@@ -100,7 +100,7 @@ class HistoryManager:
         """
         Go back in history (older entries).
         
-        Used for Up arrow navigation (Requirement 13.2).
+        Used for Up arrow navigation.
         
         Args:
             current_input: Current input to save when starting to browse
@@ -125,7 +125,7 @@ class HistoryManager:
         """
         Go forward in history (newer entries).
         
-        Used for Down arrow navigation (Requirement 13.3).
+        Used for Down arrow navigation.
         
         Returns:
             The history entry at the new position, or temp current if at end
@@ -142,7 +142,7 @@ class HistoryManager:
         """
         Search history entries containing query.
         
-        Used for Ctrl+R reverse search (Requirements 19.1-19.5).
+        Used for Ctrl+R reverse search.
         Results are ordered by recency (most recent first).
         
         Args:
@@ -165,7 +165,7 @@ class HistoryManager:
         """
         Search backward from current position for entry containing query.
         
-        Used for Ctrl+R repeated presses (Requirement 19.3).
+        Used for Ctrl+R repeated presses.
         
         Args:
             query: Search query string

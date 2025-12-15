@@ -3,7 +3,7 @@ ThemeManager module.
 
 This module manages color pairs and styling for the Mystic Purple theme.
 
-Requirements: 9.1-9.7
+
 """
 
 import sys

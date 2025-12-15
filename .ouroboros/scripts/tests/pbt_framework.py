@@ -5,7 +5,7 @@ This framework provides property-based testing using only Python standard librar
 It includes generators for various data types and a decorator for running
 property tests with shrinking support.
 
-Requirements: Testing Strategy
+
 """
 
 import random

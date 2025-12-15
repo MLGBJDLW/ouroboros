@@ -4,7 +4,7 @@ Unix-specific keyboard input handler.
 This module provides Unix keyboard handling using termios raw mode
 and UTF-8 multi-byte reading.
 
-Requirements: 5.1-5.7, 27.3
+
 """
 
 import sys

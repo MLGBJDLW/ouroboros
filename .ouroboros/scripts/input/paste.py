@@ -4,7 +4,7 @@ Paste detection module.
 This module provides paste detection via Bracketed Paste Mode
 and event count detection fallback.
 
-Requirements: 7.3-7.4
+
 """
 
 import sys

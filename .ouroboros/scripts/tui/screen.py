@@ -4,7 +4,7 @@ ScreenManager module.
 This module manages curses screen initialization, cleanup,
 and resize handling.
 
-Requirements: 1.1-1.5, 24.1-24.5
+
 """
 
 import sys
