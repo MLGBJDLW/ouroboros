@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class SelectionMenu:
     """
     Arrow-key navigable selection menu.
-    
+
     Features:
     - Arrow key navigation (Up/Down)
     - Page Up/Down, Home/End support
@@ -30,24 +30,27 @@ class SelectionMenu:
     - Custom input option ([Custom input...])
     - Yes/No detection from [y/n] pattern in prompt
     - Numbered options parsing from header text
-    
+
 
     """
-    
+
     # Layout constants
     MIN_WIDTH = 30
     MAX_VISIBLE = 10  # Maximum visible options before scrolling
-    CUSTOM_INPUT_TEXT = '[Custom input...]'
+    CUSTOM_INPUT_TEXT = "[Custom input...]"
     PREFERRED_WIDTH_RATIO = 0.7  # Target width relative to terminal (when possible)
-    
-    def __init__(self, screen: Optional['ScreenManager'] = None,
-                 theme: Optional['ThemeManager'] = None,
-                 options: List[str] = None,
-                 title: str = '',
-                 allow_custom: bool = True):
+
+    def __init__(
+        self,
+        screen: Optional["ScreenManager"] = None,
+        theme: Optional["ThemeManager"] = None,
+        options: List[str] = None,
+        title: str = "",
+        allow_custom: bool = True,
+    ):
         """
         Initialize SelectionMenu.
-        
+
         Args:
             screen: Parent ScreenManager
             theme: ThemeManager for styling
@@ -59,118 +62,122 @@ class SelectionMenu:
         self.theme = theme
         self.title = title
         self.allow_custom = allow_custom
-        
+
         # Options list
         self._options: List[str] = []
         self._has_custom = False
-        
+
         if options:
             self.set_options(options)
-        
+
         # Selection state
         self._selected_index = 0
         self._scroll_offset = 0
-        
+
         # Window
-        self._window: Optional['Window'] = None
+        self._window: Optional["Window"] = None
         self._width = 60
         self._visible_count = self.MAX_VISIBLE
-    
+
     @property
     def options(self) -> List[str]:
         """Get list of options."""
         return self._options
-    
+
     @property
     def option_count(self) -> int:
         """Get total number of options."""
         return len(self._options)
-    
+
     @property
     def selected_index(self) -> int:
         """Get currently selected index."""
         return self._selected_index
-    
+
     def set_options(self, options: List[str]) -> None:
         """
         Set the options list.
-        
+
         Args:
             options: List of option strings
         """
         self._options = list(options)
-        
+
         # Add custom input option if allowed
         if self.allow_custom and self.CUSTOM_INPUT_TEXT not in self._options:
             self._options.append(self.CUSTOM_INPUT_TEXT)
             self._has_custom = True
-        
+
         # Reset selection
         self._selected_index = 0
         self._scroll_offset = 0
-    
+
     @staticmethod
     def detect_yes_no(prompt: str) -> bool:
         """
         Detect if prompt is a yes/no question.
-        
+
         Args:
             prompt: Prompt text to check
-            
+
         Returns:
             True if prompt contains [y/n] pattern
         """
-        return bool(re.search(r'\[y/n\]', prompt, re.IGNORECASE))
-    
+        return bool(re.search(r"\[y/n\]", prompt, re.IGNORECASE))
+
     @staticmethod
     def parse_numbered_options(text: str) -> List[str]:
         """
         Parse numbered options from text.
-        
+
         Looks for patterns like:
         1. Option one
         2. Option two
-        
+
         Args:
             text: Text containing numbered options
-            
+
         Returns:
             List of parsed options
         """
         options = []
-        pattern = r'^\s*(\d+)[.)\]]\s*(.+)$'
-        
-        for line in text.split('\n'):
+        pattern = r"^\s*(\d+)[.)\]]\s*(.+)$"
+
+        for line in text.split("\n"):
             match = re.match(pattern, line.strip())
             if match:
                 options.append(match.group(2).strip())
-        
+
         return options
-    
+
     @classmethod
-    def create_yes_no_menu(cls, screen=None, theme=None, 
-                           prompt: str = '') -> 'SelectionMenu':
+    def create_yes_no_menu(
+        cls, screen=None, theme=None, prompt: str = ""
+    ) -> "SelectionMenu":
         """
         Create a Yes/No selection menu.
-        
+
         Args:
             screen: Parent ScreenManager
             theme: ThemeManager
             prompt: Prompt text
-            
+
         Returns:
             SelectionMenu configured for Yes/No
         """
-        menu = cls(screen=screen, theme=theme, 
-                   options=['Yes', 'No'], 
-                   title=prompt, 
-                   allow_custom=False)
+        menu = cls(
+            screen=screen,
+            theme=theme,
+            options=["Yes", "No"],
+            title=prompt,
+            allow_custom=False,
+        )
         return menu
 
     def move_up(self) -> bool:
         """
         Move selection up one item.
-        
+
         Returns:
             True if selection changed
         """
@@ -179,11 +186,11 @@ class SelectionMenu:
             self._ensure_visible()
             return True
         return False
-    
+
     def move_down(self) -> bool:
         """
         Move selection down one item.
-        
+
         Returns:
             True if selection changed
         """
@@ -192,11 +199,11 @@ class SelectionMenu:
             self._ensure_visible()
             return True
         return False
-    
+
     def page_up(self) -> bool:
         """
         Move selection up by one page.
-        
+
         Returns:
             True if selection changed
         """
@@ -205,25 +212,27 @@ class SelectionMenu:
             self._ensure_visible()
             return True
         return False
-    
+
     def page_down(self) -> bool:
         """
         Move selection down by one page.
-        
+
         Returns:
             True if selection changed
         """
         max_index = len(self._options) - 1
         if self._selected_index < max_index:
-            self._selected_index = min(max_index, self._selected_index + self._visible_count)
+            self._selected_index = min(
+                max_index, self._selected_index + self._visible_count
+            )
             self._ensure_visible()
             return True
         return False
-    
+
     def home(self) -> bool:
         """
         Move selection to first item.
-        
+
         Returns:
             True if selection changed
         """
@@ -232,11 +241,11 @@ class SelectionMenu:
             self._scroll_offset = 0
             return True
         return False
-    
+
     def end(self) -> bool:
         """
         Move selection to last item.
-        
+
         Returns:
             True if selection changed
         """
@@ -246,14 +255,14 @@ class SelectionMenu:
             self._ensure_visible()
             return True
         return False
-    
+
     def select_by_number(self, num: int) -> bool:
         """
         Quick-select option by number (1-9).
-        
+
         Args:
             num: Number key pressed (1-9)
-            
+
         Returns:
             True if valid selection
         """
@@ -263,59 +272,59 @@ class SelectionMenu:
             self._ensure_visible()
             return True
         return False
-    
+
     def _ensure_visible(self) -> None:
         """Ensure selected item is visible in viewport."""
         if self._selected_index < self._scroll_offset:
             self._scroll_offset = self._selected_index
         elif self._selected_index >= self._scroll_offset + self._visible_count:
             self._scroll_offset = self._selected_index - self._visible_count + 1
-    
+
     def get_selected(self) -> Tuple[int, str, bool]:
         """
         Get the selected option.
-        
+
         Returns:
             Tuple of (index, value, is_custom)
         """
         if not self._options:
-            return (-1, '', False)
-        
+            return (-1, "", False)
+
         value = self._options[self._selected_index]
         is_custom = self._has_custom and value == self.CUSTOM_INPUT_TEXT
-        
+
         return (self._selected_index, value, is_custom)
-    
+
     def get_yes_no_result(self) -> str:
         """
         Get result for Yes/No menu.
-        
+
         Returns:
             'y' for Yes, 'n' for No
         """
         _, value, _ = self.get_selected()
-        if value.lower().startswith('y'):
-            return 'y'
-        return 'n'
-    
+        if value.lower().startswith("y"):
+            return "y"
+        return "n"
+
     def _get_scroll_indicators(self) -> Tuple[str, str]:
         """
         Get scroll indicator strings.
-        
+
         Returns:
             Tuple of (above_indicator, below_indicator)
         """
-        above = ''
-        below = ''
-        
+        above = ""
+        below = ""
+
         if self._scroll_offset > 0:
             count = self._scroll_offset
-            above = f'↑ {count} more above'
-        
+            above = f"↑ {count} more above"
+
         remaining = len(self._options) - (self._scroll_offset + self._visible_count)
         if remaining > 0:
-            below = f'↓ {remaining} more below'
-        
+            below = f"↓ {remaining} more below"
+
         return (above, below)
 
     def _calculate_width(self, max_width: int) -> int:
@@ -415,24 +424,26 @@ class SelectionMenu:
         if not layout:
             # Always show something if options exist.
             idx = min(max(0, start_index), len(self._options) - 1)
-            layout.append((idx, wrapped_options[idx][:1] if wrapped_options else [""], True))
+            layout.append(
+                (idx, wrapped_options[idx][:1] if wrapped_options else [""], True)
+            )
 
         return layout
 
     def render(self, y: int = 0, width: int = None) -> int:
         """
         Render the selection menu.
-        
+
         Args:
             y: Starting row position
             width: Available width (auto-calculated if not specified)
-            
+
         Returns:
             Total height used
         """
         if self.screen is None or not self._options:
             return 0
-        
+
         # Calculate dimensions
         if width is None:
             cols, _ = self.screen.get_size()
@@ -455,7 +466,9 @@ class SelectionMenu:
         # Compute max available height on screen for this menu.
         max_total_height = max(0, rows - y)
 
-        def build_layout_for_scroll(scroll_offset: int) -> Tuple[List[Tuple[int, List[str], bool]], bool]:
+        def build_layout_for_scroll(
+            scroll_offset: int,
+        ) -> Tuple[List[Tuple[int, List[str], bool]], bool]:
             has_title = bool(self.title)
             reserved = 2  # borders
             reserved += 1 if has_title else 0
@@ -463,13 +476,17 @@ class SelectionMenu:
 
             # First pass: decide visible options without reserving below indicator.
             option_lines_budget = max_total_height - reserved
-            layout = self._compute_visible_layout(wrapped_options, scroll_offset, option_lines_budget)
+            layout = self._compute_visible_layout(
+                wrapped_options, scroll_offset, option_lines_budget
+            )
             below_needed = (scroll_offset + len(layout)) < len(self._options)
 
             # Second pass: if below indicator is needed, reserve one line and recompute.
             if below_needed:
                 option_lines_budget = max_total_height - reserved - 1
-                layout = self._compute_visible_layout(wrapped_options, scroll_offset, option_lines_budget)
+                layout = self._compute_visible_layout(
+                    wrapped_options, scroll_offset, option_lines_budget
+                )
                 below_needed = (scroll_offset + len(layout)) < len(self._options)
 
             return layout, below_needed
@@ -484,7 +501,7 @@ class SelectionMenu:
         if self._scroll_offset != prev_offset:
             layout, _ = build_layout_for_scroll(self._scroll_offset)
             self._visible_count = max(1, len(layout))
-        
+
         # Calculate total height
         has_title = bool(self.title)
         above_indicator, below_indicator = self._get_scroll_indicators()
@@ -498,15 +515,20 @@ class SelectionMenu:
         if below_indicator:
             content_height += 1
 
-        total_height = min(max_total_height, content_height + 2)  # Add borders, cap to screen
-        
+        total_height = min(
+            max_total_height, content_height + 2
+        )  # Add borders, cap to screen
+
         # Center horizontally
         x = (width - self._width) // 2
 
         # Clear previous window if the new menu is smaller (prevents border ghosting)
         if self._window is not None:
             try:
-                if self._window.height > total_height or self._window.width > self._width:
+                if (
+                    self._window.height > total_height
+                    or self._window.width > self._width
+                ):
                     self._window.clear()
                     self._window.refresh()
             except Exception:
@@ -514,93 +536,120 @@ class SelectionMenu:
 
         # Create window
         self._window = self.screen.create_window(total_height, self._width, y, x)
-        
+
         # Get attributes
         border_attr = 0
         accent_attr = 0
         dim_attr = 0
         reverse_attr = 0
         if self.theme:
-            border_attr = self.theme.get_attr('border')
-            accent_attr = self.theme.get_attr('accent')
-            dim_attr = self.theme.get_attr('dim')
-            reverse_attr = self.theme.get_attr('reverse')
-        
+            border_attr = self.theme.get_attr("border")
+            accent_attr = self.theme.get_attr("accent")
+            dim_attr = self.theme.get_attr("dim")
+            reverse_attr = self.theme.get_attr("reverse")
+
         # Draw box
-        self._window.draw_box('rounded', border_attr)
-        
+        self._window.draw_box("rounded", border_attr)
+
         # Current row for content
         row = 1
-        
+
         # Draw title if present
         if has_title:
-            title_line = pad_text(self.title, inner_width, align='center', fill_char=' ', truncate=True)
+            title_line = pad_text(
+                self.title, inner_width, align="center", fill_char=" ", truncate=True
+            )
             self._window.write(row, 1, title_line, accent_attr)
             row += 1
-        
+
         # Draw above scroll indicator
         if above_indicator:
-            self._window.write(row, 1, pad_text(above_indicator, inner_width, align='left', truncate=True), dim_attr)
+            self._window.write(
+                row,
+                1,
+                pad_text(above_indicator, inner_width, align="left", truncate=True),
+                dim_attr,
+            )
             row += 1
-        
+
         # Draw visible options
         for actual_index, wrapped_lines, is_truncated in layout:
             is_selected = actual_index == self._selected_index
-            
+
             # Format option with number prefix (1-9)
             if actual_index < 9:
-                prefix = f'{actual_index + 1}. '
+                prefix = f"{actual_index + 1}. "
             else:
-                prefix = '   '
-            
+                prefix = "   "
+
             # Selection indicator
             if is_selected:
-                indicator = '▸ '
+                indicator = "▸ "
                 attr = reverse_attr if reverse_attr else accent_attr
             else:
-                indicator = '  '
+                indicator = "  "
                 attr = 0
 
-            first_prefix = f'{indicator}{prefix}'
-            cont_prefix = ' ' * visible_len(first_prefix)
+            first_prefix = f"{indicator}{prefix}"
+            cont_prefix = " " * visible_len(first_prefix)
 
             for line_idx, text_line in enumerate(wrapped_lines):
                 if row >= total_height - 1:
                     break
 
                 render_prefix = first_prefix if line_idx == 0 else cont_prefix
-                render_line = f'{render_prefix}{text_line}'
+                render_line = f"{render_prefix}{text_line}"
 
-                if is_truncated and line_idx == len(wrapped_lines) - 1 and visible_len(text_line) >= 1:
+                if (
+                    is_truncated
+                    and line_idx == len(wrapped_lines) - 1
+                    and visible_len(text_line) >= 1
+                ):
                     # Indicate truncation if we had to cut off wrapped lines.
-                    render_line = f'{render_prefix}{text_line[:-1]}…'
+                    render_line = f"{render_prefix}{text_line[:-1]}…"
 
-                self._window.write(row, 1, pad_text(render_line, inner_width, align='left', fill_char=' ', truncate=True), attr)
+                self._window.write(
+                    row,
+                    1,
+                    pad_text(
+                        render_line,
+                        inner_width,
+                        align="left",
+                        fill_char=" ",
+                        truncate=True,
+                    ),
+                    attr,
+                )
                 row += 1
-        
+
         # Draw below scroll indicator
         if below_indicator:
             if row < total_height - 1:
-                self._window.write(row, 1, pad_text(below_indicator, inner_width, align='left', truncate=True), dim_attr)
+                self._window.write(
+                    row,
+                    1,
+                    pad_text(below_indicator, inner_width, align="left", truncate=True),
+                    dim_attr,
+                )
             row += 1
-        
+
         self._window.refresh()
         return total_height
-    
-    def render_to_window(self, window: 'Window', y: int = 0) -> int:
+
+    def render_to_window(self, window: "Window", y: int = 0) -> int:
         """
         Render selection menu into an existing window.
-        
+
         Args:
             window: Window to render into
             y: Starting row within window
-            
+
         Returns:
             Number of rows used
         """
         if not self._options:
             return 0
-        
+
         width = window.width
         inner_width = max(1, width - 2)
 
@@ -609,87 +658,127 @@ class SelectionMenu:
         wrapped_options = [self._wrap_text(opt, text_width) for opt in self._options]
 
         max_total_height = max(0, window.height - y)
-        
+
         # Get attributes
         border_attr = 0
         accent_attr = 0
         dim_attr = 0
         reverse_attr = 0
         if self.theme:
-            border_attr = self.theme.get_attr('border')
-            accent_attr = self.theme.get_attr('accent')
-            dim_attr = self.theme.get_attr('dim')
-            reverse_attr = self.theme.get_attr('reverse')
-        
+            border_attr = self.theme.get_attr("border")
+            accent_attr = self.theme.get_attr("accent")
+            dim_attr = self.theme.get_attr("dim")
+            reverse_attr = self.theme.get_attr("reverse")
+
         row = y
-        
+
         # Compute a layout first (so indicators are based on the correct visible_count).
         reserved = 0
         reserved += 1 if self.title else 0
         reserved += 1 if self._scroll_offset > 0 else 0  # above indicator
 
         option_budget = max_total_height - reserved
-        layout = self._compute_visible_layout(wrapped_options, self._scroll_offset, option_budget)
+        layout = self._compute_visible_layout(
+            wrapped_options, self._scroll_offset, option_budget
+        )
         self._visible_count = max(1, len(layout))
 
         # If there are more options below, reserve one line and recompute.
         if (self._scroll_offset + self._visible_count) < len(self._options):
             option_budget = max_total_height - reserved - 1
-            layout = self._compute_visible_layout(wrapped_options, self._scroll_offset, option_budget)
+            layout = self._compute_visible_layout(
+                wrapped_options, self._scroll_offset, option_budget
+            )
             self._visible_count = max(1, len(layout))
 
         above_indicator, below_indicator = self._get_scroll_indicators()
 
         # Draw title if present
         if self.title and row < y + max_total_height:
-            window.write(row, 1, pad_text(self.title, inner_width, align='center', fill_char=' ', truncate=True), accent_attr)
+            window.write(
+                row,
+                1,
+                pad_text(
+                    self.title,
+                    inner_width,
+                    align="center",
+                    fill_char=" ",
+                    truncate=True,
+                ),
+                accent_attr,
+            )
             row += 1
-        
+
         # Draw above scroll indicator
         if above_indicator and row < y + max_total_height:
-            window.write(row, 1, pad_text(above_indicator, inner_width, align='left', truncate=True), dim_attr)
+            window.write(
+                row,
+                1,
+                pad_text(above_indicator, inner_width, align="left", truncate=True),
+                dim_attr,
+            )
             row += 1
 
         for actual_index, wrapped_lines, is_truncated in layout:
             is_selected = actual_index == self._selected_index
-            
+
             # Format option
             if actual_index < 9:
-                prefix = f'{actual_index + 1}. '
+                prefix = f"{actual_index + 1}. "
             else:
-                prefix = '   '
-            
+                prefix = "   "
+
             if is_selected:
-                indicator = '▸ '
+                indicator = "▸ "
                 attr = reverse_attr if reverse_attr else accent_attr
             else:
-                indicator = '  '
+                indicator = "  "
                 attr = 0
 
-            first_prefix = f'{indicator}{prefix}'
-            cont_prefix = ' ' * visible_len(first_prefix)
+            first_prefix = f"{indicator}{prefix}"
+            cont_prefix = " " * visible_len(first_prefix)
 
             for line_idx, text_line in enumerate(wrapped_lines):
                 if row >= y + max_total_height:
                     break
 
                 render_prefix = first_prefix if line_idx == 0 else cont_prefix
-                render_line = f'{render_prefix}{text_line}'
+                render_line = f"{render_prefix}{text_line}"
 
-                if is_truncated and line_idx == len(wrapped_lines) - 1 and visible_len(text_line) >= 1:
-                    render_line = f'{render_prefix}{text_line[:-1]}…'
+                if (
+                    is_truncated
+                    and line_idx == len(wrapped_lines) - 1
+                    and visible_len(text_line) >= 1
+                ):
+                    render_line = f"{render_prefix}{text_line[:-1]}…"
 
-                window.write(row, 1, pad_text(render_line, inner_width, align='left', fill_char=' ', truncate=True), attr)
+                window.write(
+                    row,
+                    1,
+                    pad_text(
+                        render_line,
+                        inner_width,
+                        align="left",
+                        fill_char=" ",
+                        truncate=True,
+                    ),
+                    attr,
+                )
                 row += 1
-        
+
         # Draw below scroll indicator
         if below_indicator:
             if row < y + max_total_height:
-                window.write(row, 1, pad_text(below_indicator, inner_width, align='left', truncate=True), dim_attr)
+                window.write(
+                    row,
+                    1,
+                    pad_text(below_indicator, inner_width, align="left", truncate=True),
+                    dim_attr,
+                )
             row += 1
-        
+
         return row - y
-    
+
     def clear(self) -> None:
         """Clear the menu."""
         if self._window:

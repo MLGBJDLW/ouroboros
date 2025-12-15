@@ -23,29 +23,31 @@ from data.config import get_config
 # These match the values in input/keybuffer.py
 class Keys:
     """Key constants for keyboard handling."""
-    CTRL_C = '\x03'
-    CTRL_D = '\x04'
-    CTRL_J = '\x0a'
-    CTRL_K = '\x0b'
-    CTRL_R = '\x12'
-    CTRL_U = '\x15'
-    CTRL_V = '\x16'
-    ENTER = '\r'
-    NEWLINE = '\n'
-    TAB = '\t'
-    ESCAPE = '\x1b'
-    UP = '\x1b[A'
-    DOWN = '\x1b[B'
-    LEFT = '\x1b[C'
-    RIGHT = '\x1b[D'
-    HOME = '\x1b[H'
-    HOME_ALT = '\x1b[1~'
-    END = '\x1b[F'
-    END_ALT = '\x1b[4~'
-    PAGE_UP = '\x1b[5~'
-    PAGE_DOWN = '\x1b[6~'
-    CTRL_LEFT = '\x1b[1;5D'
-    CTRL_RIGHT = '\x1b[1;5C'
+
+    CTRL_C = "\x03"
+    CTRL_D = "\x04"
+    CTRL_J = "\x0a"
+    CTRL_K = "\x0b"
+    CTRL_R = "\x12"
+    CTRL_U = "\x15"
+    CTRL_V = "\x16"
+    ENTER = "\r"
+    NEWLINE = "\n"
+    TAB = "\t"
+    ESCAPE = "\x1b"
+    UP = "\x1b[A"
+    DOWN = "\x1b[B"
+    LEFT = "\x1b[C"
+    RIGHT = "\x1b[D"
+    HOME = "\x1b[H"
+    HOME_ALT = "\x1b[1~"
+    END = "\x1b[F"
+    END_ALT = "\x1b[4~"
+    PAGE_UP = "\x1b[5~"
+    PAGE_DOWN = "\x1b[6~"
+    CTRL_LEFT = "\x1b[1;5D"
+    CTRL_RIGHT = "\x1b[1;5C"
+
 
 # Lazy imports for non-critical components
 _InputBox = None
@@ -69,6 +71,7 @@ def _lazy_import_components():
     if _InputBox is None:
         from components.input_box import InputBox as IB
         from components.welcome_box import WelcomeBox as WB
+
         _InputBox = IB
         _WelcomeBox = WB
     return _InputBox, _WelcomeBox
@@ -82,19 +85,32 @@ def _lazy_import_input():
             from input.keybuffer import KeyBuffer as KB, Keys as K
             from input.paste import PasteDetector as PD
             from input.clipboard import read_clipboard as rc
-            from input.commands import SlashCommandHandler as SCH, prepend_instruction as pi
+            from input.commands import (
+                SlashCommandHandler as SCH,
+                prepend_instruction as pi,
+            )
         except ImportError:
             from ..input.keybuffer import KeyBuffer as KB, Keys as K
             from ..input.paste import PasteDetector as PD
             from ..input.clipboard import read_clipboard as rc
-            from ..input.commands import SlashCommandHandler as SCH, prepend_instruction as pi
+            from ..input.commands import (
+                SlashCommandHandler as SCH,
+                prepend_instruction as pi,
+            )
         _KeyBuffer = KB
         _Keys = K
         _PasteDetector = PD
         _read_clipboard = rc
         _SlashCommandHandler = SCH
         _prepend_instruction = pi
-    return _KeyBuffer, _Keys, _PasteDetector, _read_clipboard, _SlashCommandHandler, _prepend_instruction
+    return (
+        _KeyBuffer,
+        _Keys,
+        _PasteDetector,
+        _read_clipboard,
+        _SlashCommandHandler,
+        _prepend_instruction,
+    )
 
 
 def _lazy_import_data():
@@ -114,27 +130,44 @@ def _lazy_import_utils():
     global _create_file_marker, _create_paste_marker, _is_file_path, _is_windows_path_pattern
     if _create_file_marker is None:
         try:
-            from utils.badge import create_file_marker as cfm, create_paste_marker as cpm
-            from utils.filepath import is_file_path as ifp, is_windows_path_pattern as iwpp
+            from utils.badge import (
+                create_file_marker as cfm,
+                create_paste_marker as cpm,
+            )
+            from utils.filepath import (
+                is_file_path as ifp,
+                is_windows_path_pattern as iwpp,
+            )
         except ImportError:
-            from ..utils.badge import create_file_marker as cfm, create_paste_marker as cpm
-            from ..utils.filepath import is_file_path as ifp, is_windows_path_pattern as iwpp
+            from ..utils.badge import (
+                create_file_marker as cfm,
+                create_paste_marker as cpm,
+            )
+            from ..utils.filepath import (
+                is_file_path as ifp,
+                is_windows_path_pattern as iwpp,
+            )
         _create_file_marker = cfm
         _create_paste_marker = cpm
         _is_file_path = ifp
         _is_windows_path_pattern = iwpp
-    return _create_file_marker, _create_paste_marker, _is_file_path, _is_windows_path_pattern
+    return (
+        _create_file_marker,
+        _create_paste_marker,
+        _is_file_path,
+        _is_windows_path_pattern,
+    )
 
 
 # Mode constants
-MODE_INPUT = 'INPUT'
-MODE_PASTE = 'PASTE'
+MODE_INPUT = "INPUT"
+MODE_PASTE = "PASTE"
 
 # Minimum terminal size
 MIN_TERMINAL_COLS = 20
 MIN_TERMINAL_ROWS = 5
-MODE_HISTORY = 'HISTORY'
-MODE_SEARCH = 'SEARCH'
+MODE_HISTORY = "HISTORY"
+MODE_SEARCH = "SEARCH"
 
 # Paste detection thresholds
 PASTE_LINE_THRESHOLD = 5
@@ -148,17 +181,17 @@ EXIT_CODE_CANCELLED = 130
 
 # Theme colors for animation
 THEME = {
-    'border': '\033[95m',
-    'accent': '\033[95m\033[1m',
-    'dim': '\033[2m',
-    'reset': '\033[0m',
+    "border": "\033[95m",
+    "accent": "\033[95m\033[1m",
+    "dim": "\033[2m",
+    "reset": "\033[0m",
 }
 
 
 def show_goodbye_animation() -> None:
     """
     Display goodbye animation on Ctrl+C.
-    
+
 
     """
     goodbye_frames = [
@@ -177,7 +210,7 @@ def show_goodbye_animation() -> None:
 class TUIApp:
     """
     Main TUI application with component orchestration.
-    
+
     Features:
     - Main input loop with KeyBuffer
     - Component orchestration (WelcomeBox, InputBox)
@@ -188,18 +221,20 @@ class TUIApp:
     - Ctrl+R reverse history search mode
     - Badge processing on paste
     - Path collection mode for Windows drag-drop
-    
+
 
     """
-    
-    def __init__(self, 
-                 header: str = '',
-                 prompt: str = '',
-                 skip_welcome: bool = False,
-                 show_line_numbers: bool = True):
+
+    def __init__(
+        self,
+        header: str = "",
+        prompt: str = "",
+        skip_welcome: bool = False,
+        show_line_numbers: bool = True,
+    ):
         """
         Initialize TUI application.
-        
+
         Args:
             header: Custom header text for WelcomeBox
             prompt: Custom prompt text for InputBox
@@ -210,7 +245,7 @@ class TUIApp:
         self.prompt = prompt
         self.skip_welcome = skip_welcome
         self.show_line_numbers = show_line_numbers
-        
+
         # Components (initialized in run())
         self.screen: Optional[ScreenManager] = None
         self.theme: Optional[ThemeManager] = None
@@ -220,46 +255,46 @@ class TUIApp:
         self.paste_detector: Optional[PasteDetector] = None
         self.slash_handler: Optional[SlashCommandHandler] = None
         self.history: Optional[HistoryManager] = None
-        
+
         # State
         self._mode = MODE_INPUT
         self._running = False
         self._result: Optional[str] = None
         self._last_resize_time = 0
-        self._search_query = ''
+        self._search_query = ""
         self._search_results = []
         self._search_index = 0
-        
+
         # Windows path collection state
         self._collecting_path = False
-        self._path_buffer = ''
-        self._path_prefix = ''
+        self._path_buffer = ""
+        self._path_prefix = ""
         self._path_collect_start = 0
 
         # Ctrl+V handling: many Windows terminals intercept Ctrl+V for paste, so
         # we also detect it via key state in the main loop.
         self._ctrl_v_latched = False
         self._ignore_next_ctrl_v_key = False
-    
+
     @property
     def mode(self) -> str:
         """Get current mode."""
         return self._mode
-    
+
     @mode.setter
     def mode(self, value: str) -> None:
         """Set current mode and update UI."""
         self._mode = value
         if self.input_box:
             self.input_box.mode = value
-    
+
     def run(self) -> Optional[str]:
         """
         Run the TUI application.
-        
+
         Returns:
             The submitted text content, or None if cancelled
-            
+
 
         """
         try:
@@ -267,144 +302,149 @@ class TUIApp:
                 self.screen = screen
                 self._init_components()
                 self._running = True
-                
+
                 # Initial render with full redraw
                 self._render(full_redraw=True)
-                
+
                 # Main input loop
                 self._main_loop()
-                
+
         except KeyboardInterrupt:
             self._result = None
             self._handle_ctrl_c()
         finally:
             self._cleanup_components()
             self._running = False
-        
+
         return self._result
-    
+
     def _handle_ctrl_c(self) -> None:
         """
         Handle Ctrl+C with graceful exit animation.
-        
+
 
         """
         show_goodbye_animation()
         sys.exit(EXIT_CODE_CANCELLED)
-    
+
     def _init_components(self) -> None:
         """Initialize all UI components using lazy imports."""
         global _read_clipboard
-        
+
         # Load configuration from ouroboros.config.json
         self.config = get_config()
-        
+
         # Lazy import components
         InputBox, WelcomeBox = _lazy_import_components()
-        KeyBuffer, _, PasteDetector, read_clipboard, SlashCommandHandler, _ = _lazy_import_input()
+        (
+            KeyBuffer,
+            _,
+            PasteDetector,
+            read_clipboard,
+            SlashCommandHandler,
+            _,
+        ) = _lazy_import_input()
         HistoryManager = _lazy_import_data()
-        
+
         # Store read_clipboard reference for use in handlers
         _read_clipboard = read_clipboard
-        
+
         # Theme - respects config.ansi_colors setting
         self.theme = ThemeManager(self.screen)
         if self.screen.is_curses and self.config.ansi_colors:
             self.theme.init_colors()
-        
+
         # Welcome box
         if not self.skip_welcome:
             self.welcome_box = WelcomeBox(
-                self.screen, 
-                self.theme,
-                custom_header=self.header
+                self.screen, self.theme, custom_header=self.header
             )
-        
+
         # Input box
         self.input_box = InputBox(
             self.screen,
             self.theme,
             show_line_numbers=self.show_line_numbers,
-            prompt_header=self.prompt
+            prompt_header=self.prompt,
         )
-        
+
         # Set default status bar hint
-        self.input_box.status_bar.set_hint('Ctrl+D: submit')
-        
+        self.input_box.status_bar.set_hint("Ctrl+D: submit")
+
         # Input handlers
         self.keybuffer = KeyBuffer()
         self.keybuffer.__enter__()
-        
+
         self.paste_detector = PasteDetector()
         self.paste_detector.enable()
-        
+
         # Slash command handler
         self.slash_handler = SlashCommandHandler()
-        
+
         # History
         self.history = HistoryManager()
-    
+
     def _cleanup_components(self) -> None:
         """Cleanup components on exit."""
         if self.keybuffer:
             self.keybuffer.__exit__(None, None, None)
         if self.paste_detector:
             self.paste_detector.disable()
-    
+
     def _render(self, full_redraw: bool = False) -> None:
         """
         Render all components.
-        
+
         Args:
             full_redraw: If True, clear screen before rendering (only on init/resize)
-        
+
 
         """
         if not self.screen:
             return
-        
+
         cols, rows = self.screen.get_size()
-        
+
         # Check minimum size
         # Minimum: 20 columns x 5 rows for basic functionality
         if cols < MIN_TERMINAL_COLS or rows < MIN_TERMINAL_ROWS:
             self._render_too_small_message(cols, rows)
             return
-        
+
         # Only clear screen on initial render or resize to prevent flickering
         if full_redraw:
             self.screen.clear()
-        
+
         y = 0
-        
+
         # Render welcome box
         if self.welcome_box and not self.skip_welcome:
             y += self.welcome_box.render(y, cols)
             y += 1  # Gap
-        
+
         # Store input box start position
         self._input_box_y = y
-        
+
         # Render input box (this also positions cursor)
         if self.input_box:
             self.input_box.render(y, cols)
-        
+
         # Render slash command dropdown if active
         if self.slash_handler and self.slash_handler.active:
             self._render_slash_dropdown(y)
             # Re-position cursor after dropdown render
             if self.input_box:
                 self.input_box._position_cursor()
-    
+
     def _render_too_small_message(self, cols: int, rows: int) -> None:
         """
         Render "terminal too small" message.
-        
+
 
         when terminal is resized to very small dimensions (less than 20x5).
         """
         self.screen.clear()
-        
+
         # Center the message as best we can
         message = "Resize"
         if cols >= len(message):
@@ -416,66 +456,66 @@ class TUIApp:
             # Terminal is extremely small, just write what we can
             self.screen.move_cursor(0, 0)
             sys.stderr.write(message[:cols])
-        
+
         sys.stderr.flush()
-    
+
     def _render_slash_dropdown(self, input_y: int) -> None:
         """Render slash command dropdown below input box."""
         if not self.slash_handler or not self.slash_handler.matches:
             return
-        
+
         cols, rows = self.screen.get_size()
-        
+
         # Calculate dropdown position
         dropdown_y = input_y + (self.input_box.height if self.input_box else 1) + 2
         dropdown_width = min(60, cols - 4)
         dropdown_x = 2
-        
+
         # Get dropdown items
         items = self.slash_handler.get_dropdown_items()
         max_visible = min(len(items), rows - dropdown_y - 1)
-        
+
         if max_visible <= 0:
             return
-        
+
         # Create dropdown window
         dropdown_win = self.screen.create_window(
             max_visible + 2, dropdown_width, dropdown_y, dropdown_x
         )
-        
+
         # Draw border
-        border_attr = self.theme.get_attr('border') if self.theme else 0
-        dropdown_win.draw_box('rounded', border_attr)
-        
+        border_attr = self.theme.get_attr("border") if self.theme else 0
+        dropdown_win.draw_box("rounded", border_attr)
+
         # Draw items
         for i, (cmd, desc) in enumerate(items[:max_visible]):
             if i == self.slash_handler.selected_index:
-                attr = self.theme.get_attr('accent') if self.theme else 0
-                marker = '>'
+                attr = self.theme.get_attr("accent") if self.theme else 0
+                marker = ">"
             else:
                 attr = 0
-                marker = ' '
-            
+                marker = " "
+
             line = f"{marker} {cmd:<20} — {desc}"
-            dropdown_win.write(i + 1, 1, line[:dropdown_width - 2], attr)
-        
+            dropdown_win.write(i + 1, 1, line[: dropdown_width - 2], attr)
+
         dropdown_win.refresh()
-    
+
     def _main_loop(self) -> None:
         """Main input processing loop."""
         PATH_COLLECT_TIMEOUT = 0.1  # 100ms timeout for path collection
-        
+
         # Windows paste detection thresholds
         # Lower threshold to catch smaller pastes (like file paths)
         PASTE_EVENT_THRESHOLD = 5  # If 5+ events waiting, it's likely a paste
         PASTE_COLLECT_DELAY = 0.03  # 30ms delay between collection checks
         PASTE_MIN_LENGTH = 3  # Minimum paste length to treat as paste
-        
+
         while self._running:
             # Check for resize
             if self.screen and self.screen.check_resize():
                 self._handle_resize()
-            
+
             # Check for path collection timeout
             if self._collecting_path and self._path_buffer:
                 if time.time() - self._path_collect_start > PATH_COLLECT_TIMEOUT:
@@ -487,7 +527,7 @@ class TUIApp:
             if self.keybuffer and self.keybuffer.is_ctrl_v_pressed():
                 if not self._ctrl_v_latched:
                     self._ctrl_v_latched = True
-                    content = _read_clipboard() if _read_clipboard else ''
+                    content = _read_clipboard() if _read_clipboard else ""
                     if content:
                         # Prevent duplicate insertion: terminals may also inject
                         # the pasted characters into the input buffer.
@@ -499,19 +539,19 @@ class TUIApp:
                         continue
             else:
                 self._ctrl_v_latched = False
-            
+
             # === Windows Paste Detection via Event Count ===
             # When paste happens, Windows Terminal puts ALL characters in buffer at once
             # Check event count BEFORE reading - if high, collect all as paste
             is_paste = False
-            key = ''
-            
+            key = ""
+
             # Try to use Windows event count detection first
             event_count = self.keybuffer.get_pending_event_count()
             if event_count >= PASTE_EVENT_THRESHOLD:
                 # High event count - collect all as paste with buffering
                 paste_parts = []
-                
+
                 # Keep collecting until no more events arrive
                 max_iterations = 100  # Safety limit
                 for _ in range(max_iterations):
@@ -519,10 +559,10 @@ class TUIApp:
                     chunk = self.keybuffer.read_all_pending()
                     if chunk:
                         paste_parts.append(chunk)
-                    
+
                     # Wait briefly for more events
                     time.sleep(PASTE_COLLECT_DELAY)
-                    
+
                     # Check if more events arrived
                     more_events = self.keybuffer.get_pending_event_count()
                     if more_events < PASTE_EVENT_THRESHOLD:
@@ -531,18 +571,17 @@ class TUIApp:
                         if final_chunk:
                             paste_parts.append(final_chunk)
                         break
-                
-                paste_content = ''.join(paste_parts)
+
+                paste_content = "".join(paste_parts)
                 if paste_content and len(paste_content) >= PASTE_MIN_LENGTH:
                     key = paste_content
                     is_paste = True
-            
+
             # If not detected as paste via event count, use normal read with bracketed paste
             if not is_paste:
                 read_timeout = 0.05 if self._collecting_path else 0.1
                 key, is_paste = self.paste_detector.read(
-                    self.keybuffer.getch,
-                    timeout=read_timeout
+                    self.keybuffer.getch, timeout=read_timeout
                 )
 
                 # If a paste arrives while we were blocked in read(), we may have
@@ -553,7 +592,8 @@ class TUIApp:
                     and key
                     and self.keybuffer is not None
                     and self.keybuffer.is_printable(key)
-                    and self.keybuffer.get_pending_event_count() >= PASTE_EVENT_THRESHOLD
+                    and self.keybuffer.get_pending_event_count()
+                    >= PASTE_EVENT_THRESHOLD
                 ):
                     paste_parts = [key]
 
@@ -572,14 +612,14 @@ class TUIApp:
                                 paste_parts.append(final_chunk)
                             break
 
-                    paste_content = ''.join(paste_parts)
+                    paste_content = "".join(paste_parts)
                     if paste_content and len(paste_content) >= PASTE_MIN_LENGTH:
                         key = paste_content
                         is_paste = True
-            
+
             if not key:
                 continue
-            
+
             # Handle paste content
             if is_paste:
                 # If collecting path, process it first
@@ -587,30 +627,30 @@ class TUIApp:
                     self._process_path_buffer()
                 self._handle_paste(key)
                 continue
-            
+
             # Handle key based on current mode
             if self._mode == MODE_SEARCH:
                 if self._handle_search_key(key):
                     continue
-            
+
             # Handle special keys
             if self._handle_special_key(key):
                 continue
-            
+
             # Handle navigation keys
             if self._handle_navigation_key(key):
                 continue
-            
+
             # Handle printable characters
             if self.keybuffer.is_printable(key):
                 self._handle_printable(key)
-    
+
     def _handle_special_key(self, key: str) -> bool:
         """
         Handle special keys (Ctrl combinations, etc.).
-        
+
         Returns True if key was handled.
-        
+
 
         """
         # Ctrl+C - Cancel with graceful exit
@@ -619,48 +659,50 @@ class TUIApp:
             self._running = False
             self._handle_ctrl_c()
             return True
-        
+
         # Ctrl+D - Submit
         if key == Keys.CTRL_D:
             self._submit()
             return True
-        
+
         # Ctrl+U - Clear line
         if key == Keys.CTRL_U:
             if self.input_box:
                 self.input_box.buffer.clear_line()
                 self._render()
             return True
-        
+
         # Ctrl+K - Delete to end of line
         if key == Keys.CTRL_K:
             if self.input_box:
                 line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
                 col = self.input_box.buffer.cursor_col
-                self.input_box.buffer.lines[self.input_box.buffer.cursor_row] = line[:col]
+                self.input_box.buffer.lines[self.input_box.buffer.cursor_row] = line[
+                    :col
+                ]
                 self._render()
             return True
-        
+
         # Ctrl+R - Reverse search
         if key == Keys.CTRL_R:
             self._start_search()
             return True
-        
+
         # Ctrl+V - Paste from clipboard
         if key == Keys.CTRL_V:
-            if getattr(self, '_ignore_next_ctrl_v_key', False):
+            if getattr(self, "_ignore_next_ctrl_v_key", False):
                 self._ignore_next_ctrl_v_key = False
                 return True
             content = _read_clipboard() if _read_clipboard else None
             if content:
                 self._handle_paste(content)
             return True
-        
+
         # Enter - New line or submit
-        if key in (Keys.ENTER, Keys.NEWLINE, '\r', '\n'):
+        if key in (Keys.ENTER, Keys.NEWLINE, "\r", "\n"):
             self._handle_enter()
             return True
-        
+
         # Tab - Slash command completion
         if key == Keys.TAB:
             if self.slash_handler and self.slash_handler.active:
@@ -670,7 +712,7 @@ class TUIApp:
                     self.input_box.buffer.insert_text(completed)
                     self._render()
             return True
-        
+
         # Escape - Cancel slash command or search
         if key == Keys.ESCAPE:
             if self.slash_handler and self.slash_handler.active:
@@ -680,30 +722,30 @@ class TUIApp:
             if self._mode == MODE_SEARCH:
                 self._cancel_search()
                 return True
-        
+
         # Backspace
         if self.keybuffer.is_backspace(key):
             self._handle_backspace()
             return True
-        
+
         # Delete
         if self.keybuffer.is_delete(key):
             if self.input_box:
                 self.input_box.buffer.delete()
                 self._render()
             return True
-        
+
         return False
-    
+
     def _handle_navigation_key(self, key: str) -> bool:
         """
         Handle navigation keys (arrows, home, end).
-        
+
         Returns True if key was handled.
         """
         if not self.input_box:
             return False
-        
+
         # Up arrow
         if key == Keys.UP:
             # In slash command mode, navigate dropdown
@@ -711,17 +753,17 @@ class TUIApp:
                 self.slash_handler.move_up()
                 self._render()
                 return True
-            
+
             # On first line, navigate history
             if self.input_box.buffer.cursor_row == 0:
                 self._history_back()
                 return True
-            
+
             # Otherwise, move cursor up
             self.input_box.buffer.move_up()
             self._render()
             return True
-        
+
         # Down arrow
         if key == Keys.DOWN:
             # In slash command mode, navigate dropdown
@@ -729,72 +771,79 @@ class TUIApp:
                 self.slash_handler.move_down()
                 self._render()
                 return True
-            
+
             # At last line and in history mode, navigate forward
-            if (self.input_box.buffer.cursor_row == self.input_box.buffer.line_count - 1 
-                and self._mode == MODE_HISTORY):
+            if (
+                self.input_box.buffer.cursor_row == self.input_box.buffer.line_count - 1
+                and self._mode == MODE_HISTORY
+            ):
                 self._history_forward()
                 return True
-            
+
             # Otherwise, move cursor down
             self.input_box.buffer.move_down()
             self._render()
             return True
-        
+
         # Left arrow
         if key == Keys.LEFT:
             self.input_box.move_left()
             self._render()
             return True
-        
+
         # Right arrow
         if key == Keys.RIGHT:
             self.input_box.move_right()
             self._render()
             return True
-        
+
         # Ctrl+Left - Word left
         if key == Keys.CTRL_LEFT:
             self.input_box.buffer.word_left()
             self._render()
             return True
-        
+
         # Ctrl+Right - Word right
         if key == Keys.CTRL_RIGHT:
             self.input_box.buffer.word_right()
             self._render()
             return True
-        
+
         # Home
         if key in (Keys.HOME, Keys.HOME_ALT):
             self.input_box.buffer.home()
             self._render()
             return True
-        
+
         # End
         if key in (Keys.END, Keys.END_ALT):
             self.input_box.buffer.end()
             self._render()
             return True
-        
+
         return False
-    
+
     def _handle_printable(self, key: str) -> None:
         """Handle printable character input with Windows path detection."""
         if not self.input_box:
             return
-        
+
         # Lazy import utils for path detection
-        create_file_marker, _, is_file_path, is_windows_path_pattern = _lazy_import_utils()
-        
+        (
+            create_file_marker,
+            _,
+            is_file_path,
+            is_windows_path_pattern,
+        ) = _lazy_import_utils()
+
         # === Windows Path Collection Mode ===
         # When we detect "X:\" pattern (drive letter + colon + backslash),
         # we start collecting characters until we see a space or timeout.
         # Characters are inserted into buffer AND tracked in _path_buffer.
         # On timeout/space, we check if it's a valid path and convert to badge.
-        
+
         if self._collecting_path:
-            if key in (' ', '\t', '\n', '\r'):
+            if key in (" ", "\t", "\n", "\r"):
                 # Path ended - process it
                 self._process_path_buffer()
                 # Insert the space/tab normally
@@ -806,18 +855,18 @@ class TUIApp:
                 self._path_buffer += key
                 self.input_box.buffer.insert_char(key)
                 self._path_collect_start = time.time()  # Reset timeout on each char
-                self.input_box.status_bar.set_hint('Collecting path...')
+                self.input_box.status_bar.set_hint("Collecting path...")
                 self.input_box.update_current_line()
                 return
-        
+
         # === Check for Windows Path Start Pattern ===
         # Detect "X:\" pattern: when we see '\' after "X:" in buffer
-        if key == '\\':
+        if key == "\\":
             line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
             col = self.input_box.buffer.cursor_col
             if col >= 2:
-                recent = line[col-2:col]
-                if len(recent) == 2 and recent[1] == ':' and recent[0].isalpha():
+                recent = line[col - 2 : col]
+                if len(recent) == 2 and recent[1] == ":" and recent[0].isalpha():
                     # This is "C:\" pattern - start collecting!
                     # The "C:" is already in buffer, we track it as prefix
                     self._collecting_path = True
@@ -826,52 +875,56 @@ class TUIApp:
                     self._path_collect_start = time.time()
                     # Insert the backslash into buffer too
                     self.input_box.buffer.insert_char(key)
-                    self.input_box.status_bar.set_hint('Collecting path...')
+                    self.input_box.status_bar.set_hint("Collecting path...")
                     self.input_box.update_current_line()
                     return
-        
+
         # Check for >>> submit marker
         text = self.input_box.buffer.text
-        if text.endswith('>>') and key == '>':
+        if text.endswith(">>") and key == ">":
             # Remove >>> and submit
             self.input_box.buffer.backspace()
             self.input_box.buffer.backspace()
             self._submit()
             return
-        
+
         # Check for slash command start
-        if key == '/' and self.input_box.buffer.cursor_col == 0:
+        if key == "/" and self.input_box.buffer.cursor_col == 0:
             if self.slash_handler:
-                self.slash_handler.start('/')
-        
+                self.slash_handler.start("/")
+
         # Insert character
         self.input_box.buffer.insert_char(key)
-        
+
         # Update slash command matches
         if self.slash_handler and self.slash_handler.active:
             current_line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
             self.slash_handler.update(current_line)
             # Update status bar with match count
-            match_count = len(self.slash_handler.matches) if self.slash_handler.matches else 0
+            match_count = (
+                len(self.slash_handler.matches) if self.slash_handler.matches else 0
+            )
             if match_count > 0:
-                self.input_box.status_bar.set_hint(f'{match_count} matches | Tab: complete')
+                self.input_box.status_bar.set_hint(
+                    f"{match_count} matches | Tab: complete"
+                )
             else:
-                self.input_box.status_bar.set_hint('No matches')
+                self.input_box.status_bar.set_hint("No matches")
         else:
             # Default hint
-            self.input_box.status_bar.set_hint('Ctrl+D: submit')
-        
+            self.input_box.status_bar.set_hint("Ctrl+D: submit")
+
         # Use incremental update for single character input (reduces flicker)
         # Only do full render if slash command dropdown needs to be shown
         if self.slash_handler and self.slash_handler.active:
             self._render()
         else:
             self.input_box.update_current_line()
-    
+
     def _process_path_buffer(self) -> None:
         """
         Process accumulated path buffer as file path badge.
-        
+
         The path characters have already been inserted into the buffer.
         We need to:
         1. Check if the full path (prefix + buffer) is a valid file path
@@ -880,34 +933,34 @@ class TUIApp:
         """
         if not self._path_buffer:
             self._collecting_path = False
-            self._path_prefix = ''
+            self._path_prefix = ""
             return
-        
+
         if not self.input_box:
             self._collecting_path = False
-            self._path_buffer = ''
-            self._path_prefix = ''
+            self._path_buffer = ""
+            self._path_prefix = ""
             return
-        
+
         # Lazy import utils
         create_file_marker, _, is_file_path, _ = _lazy_import_utils()
-        
+
         # Get the prefix that was tracked when collection started
-        prefix = getattr(self, '_path_prefix', '')
-        
+        prefix = getattr(self, "_path_prefix", "")
+
         # Full path = prefix + collected buffer
         full_path = prefix + self._path_buffer
-        
+
         # Check if it's a valid file path
         if is_file_path(full_path.strip()):
             # Calculate how many characters to remove from buffer
             # The full path (prefix + buffer) is already in the buffer
             chars_to_remove = len(prefix) + len(self._path_buffer)
-            
+
             # Get current line and cursor position
             line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
             col = self.input_box.buffer.cursor_col
-            
+
             # Verify we have enough characters to remove
             if col >= chars_to_remove:
                 # Remove the raw path text from buffer by deleting chars_to_remove characters
@@ -919,7 +972,7 @@ class TUIApp:
                     else:
                         # Can't backspace anymore (at start of buffer)
                         break
-                
+
                 # Insert as file marker badge
                 marker = create_file_marker(full_path.strip())
                 self.input_box.buffer.insert_text(marker)
@@ -927,7 +980,7 @@ class TUIApp:
                 # Cursor position doesn't match expected - try direct line manipulation
                 # This handles edge cases where cursor moved unexpectedly
                 line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
-                
+
                 # Find the path in the line and replace it
                 path_in_line = prefix + self._path_buffer
                 if path_in_line in line:
@@ -935,262 +988,282 @@ class TUIApp:
                     pos = line.rfind(path_in_line)
                     if pos >= 0:
                         marker = create_file_marker(full_path.strip())
-                        new_line = line[:pos] + marker + line[pos + len(path_in_line):]
-                        self.input_box.buffer.lines[self.input_box.buffer.cursor_row] = new_line
+                        new_line = line[:pos] + marker + line[pos + len(path_in_line) :]
+                        self.input_box.buffer.lines[
+                            self.input_box.buffer.cursor_row
+                        ] = new_line
                         # Adjust cursor position
                         self.input_box.buffer.cursor_col = pos + len(marker)
         # else: Not a valid path - leave the text as-is (already in buffer)
-        
+
         # Reset state
         self._collecting_path = False
-        self._path_buffer = ''
-        self._path_prefix = ''
-        self.input_box.status_bar.set_hint('Ctrl+D: submit')
+        self._path_buffer = ""
+        self._path_prefix = ""
+        self.input_box.status_bar.set_hint("Ctrl+D: submit")
         self._render()
-    
+
     def _handle_enter(self) -> None:
         """Handle Enter key press."""
         if not self.input_box:
             return
-        
+
         # In slash command mode, complete selection
         if self.slash_handler and self.slash_handler.active:
             completed = self.slash_handler.complete()
             self.input_box.buffer.clear()
-            self.input_box.buffer.insert_text(completed + ' ')
+            self.input_box.buffer.insert_text(completed + " ")
             self._render()
             return
-        
+
         # Insert newline (multi-line mode default)
         self.input_box.buffer.newline()
         self._render()
-    
+
     def _handle_backspace(self) -> None:
         """Handle Backspace key press."""
         if not self.input_box:
             return
-        
+
         # Check if we should delete a badge
         if not self.input_box.backspace():
             # Normal backspace
             self.input_box.buffer.backspace()
-        
+
         # Update slash command if active
         if self.slash_handler and self.slash_handler.active:
             current_line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
-            if not current_line.startswith('/'):
+            if not current_line.startswith("/"):
                 self.slash_handler.cancel()
-                self.input_box.status_bar.set_hint('Ctrl+D: submit')
+                self.input_box.status_bar.set_hint("Ctrl+D: submit")
             else:
                 self.slash_handler.update(current_line)
-                match_count = len(self.slash_handler.matches) if self.slash_handler.matches else 0
+                match_count = (
+                    len(self.slash_handler.matches) if self.slash_handler.matches else 0
+                )
                 if match_count > 0:
-                    self.input_box.status_bar.set_hint(f'{match_count} matches | Tab: complete')
+                    self.input_box.status_bar.set_hint(
+                        f"{match_count} matches | Tab: complete"
+                    )
                 else:
-                    self.input_box.status_bar.set_hint('No matches')
-        
+                    self.input_box.status_bar.set_hint("No matches")
+
         self._render()
-    
+
     def _handle_paste(self, content: str) -> None:
         """Handle pasted content."""
         if not self.input_box:
             return
 
         # Normalize newlines to '\n' (clipboard on Windows often uses '\r\n').
-        content = content.replace('\r\n', '\n').replace('\r', '\n')
+        content = content.replace("\r\n", "\n").replace("\r", "\n")
 
         # Fix split drive-letter pastes where the first letter was handled as a
         # separate key event (e.g. 'D' then ':\\path...' treated as paste).
-        if content.startswith(':\\') or content.startswith(':/'):
+        if content.startswith(":\\") or content.startswith(":/"):
             row = self.input_box.buffer.cursor_row
             col = self.input_box.buffer.cursor_col
             line = self.input_box.buffer.lines[row]
 
             if 0 < col <= len(line):
                 drive = line[col - 1]
-                prev = line[col - 2] if col - 2 >= 0 else ' '
+                prev = line[col - 2] if col - 2 >= 0 else " "
                 if drive.isalpha() and (col - 1 == 0 or prev.isspace()):
                     self.input_box.buffer.backspace()
                     content = drive + content
-        
+
         # Lazy import utils
         create_file_marker, create_paste_marker, is_file_path, _ = _lazy_import_utils()
-        
+
         # Update mode
         self.mode = MODE_PASTE
-        
+
         cleaned = content.strip()
 
         # Check if content is a single file path
-        if '\n' not in cleaned and is_file_path(cleaned):
+        if "\n" not in cleaned and is_file_path(cleaned):
             marker = create_file_marker(cleaned)
             self.input_box.buffer.insert_text(marker)
         else:
             # Multiple file paths (one per line)
-            non_empty_lines = [line.strip() for line in cleaned.split('\n') if line.strip()]
-            if len(non_empty_lines) > 1 and all(is_file_path(line) for line in non_empty_lines):
-                markers = '\n'.join(create_file_marker(line) for line in non_empty_lines)
+            non_empty_lines = [
+                line.strip() for line in cleaned.split("\n") if line.strip()
+            ]
+            if len(non_empty_lines) > 1 and all(
+                is_file_path(line) for line in non_empty_lines
+            ):
+                markers = "\n".join(
+                    create_file_marker(line) for line in non_empty_lines
+                )
                 self.input_box.buffer.insert_text(markers)
             else:
                 # Large paste -> paste marker (badge). Otherwise insert raw text.
-                line_count = len(content.split('\n')) if content else 0
-                if line_count >= PASTE_LINE_THRESHOLD or len(content) >= PASTE_CHAR_THRESHOLD:
+                line_count = len(content.split("\n")) if content else 0
+                if (
+                    line_count >= PASTE_LINE_THRESHOLD
+                    or len(content) >= PASTE_CHAR_THRESHOLD
+                ):
                     marker = create_paste_marker(content)
                     self.input_box.buffer.insert_text(marker)
                 else:
                     # Insert as regular text
                     self.input_box.buffer.insert_text(content)
-        
+
         # Reset mode
         self.mode = MODE_INPUT
         self._render()
-    
+
     def _handle_resize(self) -> None:
         """Handle terminal resize with debounce."""
         current_time = time.time() * 1000
         if current_time - self._last_resize_time < RESIZE_DEBOUNCE_MS:
             return
-        
+
         self._last_resize_time = current_time
-        
+
         if self.screen:
             cols, rows = self.screen.resize()
             if self.input_box:
                 self.input_box.handle_resize(cols, rows)
             # Full redraw on resize
             self._render(full_redraw=True)
-    
+
     def _history_back(self) -> None:
         """Navigate to previous history entry."""
         if not self.history or not self.input_box:
             return
-        
+
         current_text = self.input_box.buffer.text
         entry = self.history.go_back(current_text)
-        
+
         self.input_box.buffer.clear()
         self.input_box.buffer.insert_text(entry)
         self.mode = MODE_HISTORY
         self._render()
-    
+
     def _history_forward(self) -> None:
         """Navigate to next history entry."""
         if not self.history or not self.input_box:
             return
-        
+
         entry = self.history.go_forward()
-        
+
         self.input_box.buffer.clear()
         self.input_box.buffer.insert_text(entry)
-        
+
         if self.history.at_end:
             self.mode = MODE_INPUT
-        
+
         self._render()
-    
+
     def _start_search(self) -> None:
         """Start reverse history search mode."""
         self.mode = MODE_SEARCH
-        self._search_query = ''
+        self._search_query = ""
         self._search_results = []
         self._search_index = 0
-        
+
         if self.input_box:
-            self.input_box.status_bar.set_hint('(reverse-i-search): ')
-        
+            self.input_box.status_bar.set_hint("(reverse-i-search): ")
+
         self._render()
-    
+
     def _cancel_search(self) -> None:
         """Cancel search mode."""
         self.mode = MODE_INPUT
-        self._search_query = ''
-        
+        self._search_query = ""
+
         if self.input_box:
-            self.input_box.status_bar.set_hint('')
-        
+            self.input_box.status_bar.set_hint("")
+
         self._render()
-    
+
     def _handle_search_key(self, key: str) -> bool:
         """
         Handle key in search mode.
-        
+
         Returns True if key was handled.
         """
         # Enter - Accept search result
-        if key in (Keys.ENTER, '\r', '\n'):
+        if key in (Keys.ENTER, "\r", "\n"):
             self.mode = MODE_INPUT
             if self.input_box:
-                self.input_box.status_bar.set_hint('')
+                self.input_box.status_bar.set_hint("")
             self._render()
             return True
-        
+
         # Escape - Cancel search
         if key == Keys.ESCAPE:
             self._cancel_search()
             return True
-        
+
         # Ctrl+R - Next search result
         if key == Keys.CTRL_R:
-            if self._search_results and self._search_index < len(self._search_results) - 1:
+            if (
+                self._search_results
+                and self._search_index < len(self._search_results) - 1
+            ):
                 self._search_index += 1
                 self._apply_search_result()
             return True
-        
+
         # Backspace - Remove last search char
         if self.keybuffer.is_backspace(key):
             if self._search_query:
                 self._search_query = self._search_query[:-1]
                 self._update_search()
             return True
-        
+
         # Printable - Add to search query
         if self.keybuffer.is_printable(key):
             self._search_query += key
             self._update_search()
             return True
-        
+
         return False
-    
+
     def _update_search(self) -> None:
         """Update search results based on current query."""
         if not self.history or not self.input_box:
             return
-        
+
         self._search_results = self.history.search(self._search_query)
         self._search_index = 0
-        
-        self.input_box.status_bar.set_hint(f'(reverse-i-search)`{self._search_query}\': ')
-        
+
+        self.input_box.status_bar.set_hint(
+            f"(reverse-i-search)`{self._search_query}': "
+        )
+
         self._apply_search_result()
-    
+
     def _apply_search_result(self) -> None:
         """Apply current search result to input."""
         if not self.input_box:
             return
-        
+
         if self._search_results and self._search_index < len(self._search_results):
             result = self._search_results[self._search_index]
             self.input_box.buffer.clear()
             self.input_box.buffer.insert_text(result)
-        
+
         self._render()
-    
+
     def _submit(self) -> None:
         """Submit the current input."""
         if not self.input_box:
             self._running = False
             return
-        
+
         text = self.input_box.buffer.text.strip()
-        
+
         # Don't submit empty input
         if not text:
             return
-        
+
         # Add to history
         if self.history:
             self.history.add(text)
-        
+
         # Expand markers and prepare result
         self._result = format_output(text)
         self._running = False
@@ -1200,19 +1273,21 @@ class TUIApp:
 from .output import format_output
 
 
-def run_tui(header: str = '',
-            prompt: str = '',
-            skip_welcome: bool = False,
-            show_line_numbers: bool = True) -> Optional[str]:
+def run_tui(
+    header: str = "",
+    prompt: str = "",
+    skip_welcome: bool = False,
+    show_line_numbers: bool = True,
+) -> Optional[str]:
     """
     Convenience function to run the TUI application.
-    
+
     Args:
         header: Custom header text
         prompt: Custom prompt text
         skip_welcome: Skip welcome box
         show_line_numbers: Show line numbers
-        
+
     Returns:
         Submitted text or None if cancelled
     """
@@ -1220,6 +1295,6 @@ def run_tui(header: str = '',
         header=header,
         prompt=prompt,
         skip_welcome=skip_welcome,
-        show_line_numbers=show_line_numbers
+        show_line_numbers=show_line_numbers,
     )
     return app.run()

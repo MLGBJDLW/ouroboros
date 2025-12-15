@@ -47,15 +47,15 @@ if SCRIPT_DIR not in sys.path:
 # =============================================================================
 
 THEME = {
-    'border': '\033[95m',
-    'prompt': '\033[96m',
-    'success': '\033[92m',
-    'warning': '\033[93m',
-    'error': '\033[91m',
-    'info': '\033[94m',
-    'accent': '\033[95m\033[1m',
-    'dim': '\033[2m',
-    'reset': '\033[0m',
+    "border": "\033[95m",
+    "prompt": "\033[96m",
+    "success": "\033[92m",
+    "warning": "\033[93m",
+    "error": "\033[91m",
+    "info": "\033[94m",
+    "accent": "\033[95m\033[1m",
+    "dim": "\033[2m",
+    "reset": "\033[0m",
 }
 
 
@@ -63,21 +63,22 @@ THEME = {
 # UTILITY FUNCTIONS
 # =============================================================================
 
+
 def write(text: str) -> None:
     """Write text to stderr (UI output)."""
     sys.stderr.write(text)
     sys.stderr.flush()
 
 
-def writeln(text: str = '') -> None:
+def writeln(text: str = "") -> None:
     """Write line to stderr (UI output)."""
-    write(text + '\n')
+    write(text + "\n")
 
 
 def is_pipe_input() -> bool:
     """
     Check if stdin is a pipe (not a TTY).
-    
+
 
     """
     return not sys.stdin.isatty()
@@ -94,20 +95,20 @@ _terminal_restored = False
 def restore_terminal() -> None:
     """
     Restore terminal state on exit.
-    
+
 
     """
     global _terminal_restored
     if _terminal_restored:
         return
     _terminal_restored = True
-    
+
     # Exit alternate screen buffer
-    sys.stderr.write('\033[?1049l')
+    sys.stderr.write("\033[?1049l")
     # Show cursor
-    sys.stderr.write('\033[?25h')
+    sys.stderr.write("\033[?25h")
     # Reset attributes
-    sys.stderr.write('\033[0m')
+    sys.stderr.write("\033[0m")
     sys.stderr.flush()
 
 
@@ -118,7 +119,7 @@ atexit.register(restore_terminal)
 def show_goodbye_animation() -> None:
     """
     Display goodbye animation on Ctrl+C.
-    
+
 
     """
     goodbye_frames = [
@@ -135,7 +136,7 @@ def show_goodbye_animation() -> None:
 def graceful_exit(exit_code: int = 130) -> None:
     """
     Exit gracefully with animation and terminal restoration.
-    
+
 
     """
     show_goodbye_animation()
@@ -147,80 +148,81 @@ def graceful_exit(exit_code: int = 130) -> None:
 # MENU OPTION PARSING
 # =============================================================================
 
+
 def detect_yes_no(prompt: str) -> bool:
     """
     Detect if prompt is a yes/no question.
-    
+
 
     """
-    return bool(re.search(r'\[y/n\]', prompt, re.IGNORECASE))
+    return bool(re.search(r"\[y/n\]", prompt, re.IGNORECASE))
 
 
 def parse_numbered_options(text: str) -> list:
     """
     Parse numbered options from text.
-    
+
     Looks for patterns like:
     1. Option one
     2. Option two
-    
+
 
     """
     options = []
-    pattern = r'^\s*(\d+)[.)\]]\s*(.+)$'
-    
-    for line in text.split('\n'):
+    pattern = r"^\s*(\d+)[.)\]]\s*(.+)$"
+
+    for line in text.split("\n"):
         match = re.match(pattern, line.strip())
         if match:
             options.append(match.group(2).strip())
-    
+
     return options
 
 
-def parse_menu_options(header: str, prompt: str = '') -> tuple:
+def parse_menu_options(header: str, prompt: str = "") -> tuple:
     """
     Parse menu options from header text.
-    
+
     Returns:
         Tuple of (title, options_list) if menu detected, (None, None) otherwise.
-    
+
 
     """
     # Check for [y/n] confirmation pattern in prompt
     if prompt and detect_yes_no(prompt):
-        title = header.replace('\\n', ' ').strip() if header else "Confirm"
+        title = header.replace("\\n", " ").strip() if header else "Confirm"
         return (title, ["Yes", "No"])
-    
+
     # Support both actual newlines and escaped \n from command line
-    if '\\n' in header:
-        lines = header.split('\\n')
+    if "\\n" in header:
+        lines = header.split("\\n")
     else:
-        lines = header.split('\n')
-    
+        lines = header.split("\n")
+
     if len(lines) < 2:
         return (None, None)
-    
+
     title = None
     options = []
-    
+
     for line in lines:
         line = line.strip()
         if not line:
             continue
-        
+
         # Try to match numbered option patterns
-        match = re.match(r'^\s*[\[\(]?(\d+)[\.\)\]:\s]\s*(.+)$', line)
-        
+        match = re.match(r"^\s*[\[\(]?(\d+)[\.\)\]:\s]\s*(.+)$", line)
+
         if match:
             options.append(match.group(2).strip())
         elif not options:
             # First non-option line before options = title
             title = line
-    
+
     # Only return if we found at least 2 options
     if len(options) >= 2:
         return (title or "Select an option:", options)
-    
+
     return (None, None)
 
 
@@ -228,10 +230,11 @@ def parse_menu_options(header: str, prompt: str = '') -> tuple:
 # INPUT FUNCTIONS
 # =============================================================================
 
+
 def get_pipe_input() -> str:
     """
     Read input from pipe/stdin.
-    
+
 
     """
     return sys.stdin.read().strip()
@@ -259,27 +262,31 @@ def get_fallback_input(show_ui: bool = True) -> str:
     if show_ui:
         writeln()
         writeln(f"{THEME['border']}╔{'═' * 50}╗{THEME['reset']}")
-        writeln(f"{THEME['border']}║{THEME['reset']}  [*]  Ouroboros - Awaiting Command{' ' * 15}{THEME['border']}║{THEME['reset']}")
+        writeln(
+            f"{THEME['border']}║{THEME['reset']}  [*]  Ouroboros - Awaiting Command{' ' * 15}{THEME['border']}║{THEME['reset']}"
+        )
         writeln(f"{THEME['border']}╚{'═' * 50}╝{THEME['reset']}")
         writeln()
-    
+
     write(f"{THEME['prompt']}>{THEME['reset']} ")
-    
+
     try:
         line = input()
-        if line.strip() == '<<<':
+        if line.strip() == "<<<":
             # Multiline mode
-            writeln(f"  {THEME['info']}Multi-line mode. Type >>> to submit:{THEME['reset']}")
+            writeln(
+                f"  {THEME['info']}Multi-line mode. Type >>> to submit:{THEME['reset']}"
+            )
             lines = []
             while True:
                 try:
                     next_line = input("  │ ")
-                    if next_line.strip() == '>>>':
+                    if next_line.strip() == ">>>":
                         break
                     lines.append(next_line)
                 except EOFError:
                     break
-            return '\n'.join(lines)
+            return "\n".join(lines)
         return line
     except EOFError:
         return ""
@@ -299,27 +306,29 @@ try:
     from components.selection_menu import SelectionMenu
     from input.keybuffer import KeyBuffer, Keys
     from input.commands import prepend_instruction
+
     TUI_AVAILABLE = True
 except ImportError:
     pass
 
 
-def get_tui_input(header: str = '', prompt: str = '', 
-                  skip_welcome: bool = False) -> str:
+def get_tui_input(
+    header: str = "", prompt: str = "", skip_welcome: bool = False
+) -> str:
     """
     Get input using the new TUI system.
-    
+
 
     """
     if not TUI_AVAILABLE:
         return get_fallback_input(show_ui=True)
-    
+
     try:
         result = run_tui(
             header=header,
             prompt=prompt,
             skip_welcome=skip_welcome,
-            show_line_numbers=True
+            show_line_numbers=True,
         )
         return result if result else ""
     except KeyboardInterrupt:
@@ -327,11 +336,12 @@ def get_tui_input(header: str = '', prompt: str = '',
         return ""  # Never reached
 
 
-def get_selection_input(options: list, title: str = "Select an option:",
-                        allow_custom: bool = True) -> str:
+def get_selection_input(
+    options: list, title: str = "Select an option:", allow_custom: bool = True
+) -> str:
     """
     Interactive selection menu with arrow key navigation.
-    
+
 
     """
     if not TUI_AVAILABLE:
@@ -351,90 +361,90 @@ def get_selection_input(options: list, title: str = "Select an option:",
         except ValueError:
             pass
         return choice  # Return as-is if invalid
-    
+
     # Use TUI SelectionMenu
     try:
         from tui.screen import ScreenManager
         from tui.theme import ThemeManager
-        
+
         with ScreenManager(use_alt_screen=True) as screen:
             theme = ThemeManager(screen)
             if screen.is_curses:
                 theme.init_colors()
-            
+
             menu = SelectionMenu(
                 screen=screen,
                 theme=theme,
                 options=options,
                 title=title,
-                allow_custom=allow_custom
+                allow_custom=allow_custom,
             )
-            
+
             cols, rows = screen.get_size()
             menu.render(y=2, width=cols)
-            
+
             kb = KeyBuffer()
             kb.__enter__()
-            
+
             try:
                 while True:
                     key = kb.getch()
-                    
+
                     # Cancel
                     if key == Keys.CTRL_C or key == Keys.ESCAPE:
                         kb.__exit__(None, None, None)
                         graceful_exit(130)
-                    
+
                     # Navigation
                     if key == Keys.UP:
                         menu.move_up()
                         menu.render(y=2, width=cols)
                         continue
-                    
+
                     if key == Keys.DOWN:
                         menu.move_down()
                         menu.render(y=2, width=cols)
                         continue
-                    
-                    if key in (Keys.PAGE_UP, '\033[5~'):
+
+                    if key in (Keys.PAGE_UP, "\033[5~"):
                         menu.page_up()
                         menu.render(y=2, width=cols)
                         continue
-                    
-                    if key in (Keys.PAGE_DOWN, '\033[6~'):
+
+                    if key in (Keys.PAGE_DOWN, "\033[6~"):
                         menu.page_down()
                         menu.render(y=2, width=cols)
                         continue
-                    
+
                     if key in (Keys.HOME, Keys.HOME_ALT):
                         menu.home()
                         menu.render(y=2, width=cols)
                         continue
-                    
+
                     if key in (Keys.END, Keys.END_ALT):
                         menu.end()
                         menu.render(y=2, width=cols)
                         continue
-                    
+
                     # Number key selection
-                    if key.isdigit() and key != '0':
+                    if key.isdigit() and key != "0":
                         if menu.select_by_number(int(key)):
                             menu.render(y=2, width=cols)
                         continue
-                    
+
                     # Enter to select
-                    if key in (Keys.ENTER, '\r', '\n'):
+                    if key in (Keys.ENTER, "\r", "\n"):
                         idx, value, is_custom = menu.get_selected()
                         kb.__exit__(None, None, None)
-                        
+
                         if is_custom:
                             # Get custom input
                             return get_tui_input(prompt="Custom input")
                         return value
-                        
+
             finally:
                 kb.__exit__(None, None, None)
-                
+
     except KeyboardInterrupt:
         graceful_exit(130)
         return ""  # Never reached
@@ -444,30 +454,31 @@ def get_selection_input(options: list, title: str = "Select an option:",
 # OUTPUT FUNCTIONS
 # =============================================================================
 
+
 def output_result(marker: str, content: str) -> None:
     """
     Output formatted content to stdout for AI consumption.
-    
+
     When TUI is available, the Task Box already shows the content visually,
     so we suppress the visible stdout echo while still sending to stdout.
-    
+
 
     """
     if TUI_AVAILABLE:
         # Use TUI output formatting
         formatted = format_output(content)
-        
+
         # Print to stdout (so AI can read it), then immediately clear from screen
         # Count how many lines we'll print
-        line_count = formatted.count('\n') + 1  # +1 for print's trailing newline
-        
+        line_count = formatted.count("\n") + 1  # +1 for print's trailing newline
+
         # Print the content (AI reads this from stdout)
         print(formatted)
-        
+
         # Move cursor up and clear the lines we just printed
         # This makes the output invisible on terminal but still in stdout
-        sys.stderr.write(f'\033[{line_count}A')  # Move cursor up
-        sys.stderr.write('\033[J')  # Clear from cursor to end of screen
+        sys.stderr.write(f"\033[{line_count}A")  # Move cursor up
+        sys.stderr.write("\033[J")  # Clear from cursor to end of screen
         sys.stderr.flush()
 
         # Show a visible submission box on stderr (user feedback) while keeping
@@ -475,7 +486,7 @@ def output_result(marker: str, content: str) -> None:
         try:
             from tui.output import OutputBox, THEME as OUTPUT_THEME  # type: ignore
 
-            total_lines = formatted.count('\n') + (1 if formatted else 0)
+            total_lines = formatted.count("\n") + (1 if formatted else 0)
             total_chars = len(formatted)
 
             # Build a preview for display (avoid dumping huge payloads to the terminal).
@@ -488,7 +499,7 @@ def output_result(marker: str, content: str) -> None:
                 preview_lines = preview_lines[:max_preview_lines]
                 truncated = True
 
-            preview = '\n'.join(preview_lines)
+            preview = "\n".join(preview_lines)
             if len(preview) > max_preview_chars:
                 preview = preview[:max_preview_chars]
                 truncated = True
@@ -501,36 +512,40 @@ def output_result(marker: str, content: str) -> None:
 
             display_parts = [header]
             if preview:
-                display_parts.extend(['', preview])
+                display_parts.extend(["", preview])
             if truncated:
-                display_parts.extend([
-                    '',
-                    f"{OUTPUT_THEME['dim']}... (preview truncated; full content sent to Copilot){OUTPUT_THEME['reset']}",
-                ])
+                display_parts.extend(
+                    [
+                        "",
+                        f"{OUTPUT_THEME['dim']}... (preview truncated; full content sent to Copilot){OUTPUT_THEME['reset']}",
+                    ]
+                )
 
             # Add a blank line before the box to separate from previous output.
-            sys.stderr.write('\n')
+            sys.stderr.write("\n")
             sys.stderr.flush()
 
-            OutputBox.render(marker, '\n'.join(display_parts), full_width=True)
+            OutputBox.render(marker, "\n".join(display_parts), full_width=True)
         except Exception:
             pass
     else:
         # Fallback: prepend instruction if slash command
         formatted = content
-        if content.strip().startswith('/'):
+        if content.strip().startswith("/"):
             # Simple slash command detection
             cmd = content.strip().split()[0]
             agent_map = {
-                '/ouroboros': 'ouroboros.agent.md',
-                '/ouroboros-spec': 'ouroboros-spec.agent.md',
-                '/ouroboros-init': 'ouroboros-init.agent.md',
-                '/ouroboros-implement': 'ouroboros-implement.agent.md',
-                '/ouroboros-archive': 'ouroboros-archive.agent.md',
+                "/ouroboros": "ouroboros.agent.md",
+                "/ouroboros-spec": "ouroboros-spec.agent.md",
+                "/ouroboros-init": "ouroboros-init.agent.md",
+                "/ouroboros-implement": "ouroboros-implement.agent.md",
+                "/ouroboros-archive": "ouroboros-archive.agent.md",
             }
             if cmd in agent_map:
-                formatted = f"Follow the prompt '.github/agents/{agent_map[cmd]}'\n\n{content}"
-        
+                formatted = (
+                    f"Follow the prompt '.github/agents/{agent_map[cmd]}'\n\n{content}"
+                )
+
         # Output to stdout (visible in fallback mode)
         print(formatted)
 
@@ -539,36 +554,35 @@ def output_result(marker: str, content: str) -> None:
 # CLI ARGUMENT PARSING
 # =============================================================================
 
+
 def parse_args():
     """
     Parse command line arguments.
-    
+
 
     """
     parser = argparse.ArgumentParser(
-        description='Ouroboros Enhanced Input Handler v3',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Ouroboros Enhanced Input Handler v3",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument('--var', default='task', 
-                        help='Variable name for output marker')
-    parser.add_argument('--prompt', default='', 
-                        help='Custom prompt text')
-    parser.add_argument('--header', default='', 
-                        help='Header/menu text (Type B)')
-    parser.add_argument('--options', nargs='+', 
-                        help='Options for selection menu (space-separated)')
-    parser.add_argument('--no-custom', action='store_true', 
-                        help='Disable custom input in selection menu')
-    parser.add_argument('--no-ui', action='store_true', 
-                        help='Disable UI decorations')
-    parser.add_argument('--ascii', action='store_true', 
-                        help='Use ASCII characters')
-    parser.add_argument('--no-color', action='store_true', 
-                        help='Disable colors')
-    parser.add_argument('--reset-config', action='store_true', 
-                        help='Reset configuration')
-    parser.add_argument('--version', action='version', 
-                        version=f'%(prog)s {VERSION}')
+    parser.add_argument("--var", default="task", help="Variable name for output marker")
+    parser.add_argument("--prompt", default="", help="Custom prompt text")
+    parser.add_argument("--header", default="", help="Header/menu text (Type B)")
+    parser.add_argument(
+        "--options", nargs="+", help="Options for selection menu (space-separated)"
+    )
+    parser.add_argument(
+        "--no-custom",
+        action="store_true",
+        help="Disable custom input in selection menu",
+    )
+    parser.add_argument("--no-ui", action="store_true", help="Disable UI decorations")
+    parser.add_argument("--ascii", action="store_true", help="Use ASCII characters")
+    parser.add_argument("--no-color", action="store_true", help="Disable colors")
+    parser.add_argument(
+        "--reset-config", action="store_true", help="Reset configuration"
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     return parser.parse_args()
 
 
@@ -576,122 +590,121 @@ def parse_args():
 # MODE DETECTION
 # =============================================================================
 
+
 def detect_mode(args) -> str:
     """
     Detect input mode based on arguments and environment.
-    
+
     Modes:
     - 'pipe': stdin is a pipe
     - 'selection': --options provided
     - 'menu': --header with numbered options or [y/n]
     - 'prompt': --prompt provided
     - 'ccl': default CCL mode
-    
+
 
     """
     # Check for pipe input first
     if is_pipe_input():
-        return 'pipe'
-    
+        return "pipe"
+
     # Check for explicit selection menu
     if args.options:
-        return 'selection'
-    
+        return "selection"
+
     # Check for header with menu options
     if args.header:
         title, options = parse_menu_options(args.header, args.prompt)
         if options:
-            return 'menu'
-        return 'header'
-    
+            return "menu"
+        return "header"
+
     # Check for simple prompt
     if args.prompt:
-        return 'prompt'
-    
+        return "prompt"
+
     # Default: CCL mode
-    return 'ccl'
+    return "ccl"
 
 
 # =============================================================================
 # MAIN
 # =============================================================================
 
+
 def main():
     """
     Main entry point.
-    
+
 
     """
     args = parse_args()
-    
+
     # Update theme if colors disabled
     if args.no_color:
         for key in THEME:
-            THEME[key] = ''
-    
+            THEME[key] = ""
+
     # Detect mode
     mode = detect_mode(args)
-    
+
     try:
         # Handle each mode
-        if mode == 'pipe':
+        if mode == "pipe":
             # Pipe input - read directly without UI
             content = get_pipe_input()
-            
-        elif mode == 'selection':
+
+        elif mode == "selection":
             # Explicit selection menu
             content = get_selection_input(
                 options=args.options,
                 title=args.prompt or "Select an option:",
-                allow_custom=not args.no_custom
+                allow_custom=not args.no_custom,
             )
-            
-        elif mode == 'menu':
+
+        elif mode == "menu":
             # Header with detected menu options
             title, options = parse_menu_options(args.header, args.prompt)
             is_yes_no = detect_yes_no(args.prompt) if args.prompt else False
-            
+
             content = get_selection_input(
-                options=options,
-                title=title,
-                allow_custom=not is_yes_no
+                options=options, title=title, allow_custom=not is_yes_no
             )
-            
+
             # Map Yes/No back to y/n for compatibility
             if is_yes_no:
-                if content.lower().startswith('yes'):
-                    content = 'y'
-                elif content.lower().startswith('no'):
-                    content = 'n'
-                    
-        elif mode == 'header':
+                if content.lower().startswith("yes"):
+                    content = "y"
+                elif content.lower().startswith("no"):
+                    content = "n"
+
+        elif mode == "header":
             # Header without menu - show as welcome, then input
             content = get_tui_input(
-                header=args.header,
-                prompt=args.prompt or "[Ouroboros] > "
+                header=args.header, prompt=args.prompt or "[Ouroboros] > "
             )
-            
-        elif mode == 'prompt':
+
+        elif mode == "prompt":
             # Simple prompt mode
             if args.no_ui:
                 content = get_simple_input(args.prompt)
             else:
                 content = get_tui_input(prompt=args.prompt)
-                
+
         else:
             # CCL mode (default)
             if args.no_ui:
                 content = get_fallback_input(show_ui=False)
             else:
                 content = get_tui_input()
-        
+
         # Output result
         if content:
             output_result(args.var, content)
-            
+
     except KeyboardInterrupt:
         graceful_exit(130)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

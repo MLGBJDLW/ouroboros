@@ -209,6 +209,7 @@ jobs:
           cp README.md release-package/
           cp CHANGELOG.md release-package/
           cp LICENSE release-package/
+          cp pyproject.toml release-package/
           
           # =============================================
           # REMOVE CI/CD FILES (repo-specific, not for users)
