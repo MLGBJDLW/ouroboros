@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.5] - 2025-12-15
+
+### Added
+- **Text Wrapping Utility** — New `wrap_text()` function in `utils/text.py` for proper CJK-aware text wrapping with display width calculation
+
+### Fixed
+- **Input Box Shrinking** — Fixed `_shrink_height()` to correctly delete extra content lines when the input box shrinks, preventing ghost lines
+- **Slash Command Completion** — Fixed `SlashCommandHandler.complete()` to properly return completed command with space suffix and cancel mode
+- **Full Render on Char Input** — Added full `_render()` call after single-character input to keep wrapping, cursor positioning, and status bar consistent
+- **Status Hint After Completion** — Slash command completion now restores "Ctrl+D: submit" hint after inserting completed command
+
+---
+
 ## [3.1.2] - 2025-12-15
 
 ### Added

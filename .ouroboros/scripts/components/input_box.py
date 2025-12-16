@@ -22,7 +22,7 @@ from utils.badge import (
     FILE_MARKER_START,
     FILE_MARKER_END,
 )
-from utils.text import visible_len, char_width
+from utils.text import visible_len, char_width, wrap_text
 from components.status_bar import StatusBar
 
 
@@ -106,12 +106,19 @@ class InputBox:
 
     def _calculate_height(self) -> int:
         """
-        Calculate required height based on content.
+        Calculate required height based on visual content (including wrapped lines).
 
         Returns height bounded by MIN_HEIGHT and MAX_HEIGHT.
         """
-        line_count = self.buffer.line_count
-        return max(self.MIN_HEIGHT, min(self.MAX_HEIGHT, line_count))
+        content_width = self._get_content_width()
+
+        # Count total visual lines (accounting for wrapping)
+        visual_line_count = 0
+        for line in self.buffer.lines:
+            wrapped = self._get_wrapped_visual_lines(line, content_width)
+            visual_line_count += len(wrapped)
+
+        return max(self.MIN_HEIGHT, min(self.MAX_HEIGHT, visual_line_count))
 
     def _get_content_width(self) -> int:
         """Get width available for text content."""
@@ -133,12 +140,12 @@ class InputBox:
             width: Available width
 
         Returns:
-            Rendered line for display
+            Rendered line for display (may be truncated if exceeds width)
         """
         # Convert markers to display badges
         display_line = render_for_display(line)
 
-        # Truncate to width if needed
+        # Truncate to width if needed (for single visual line)
         if visible_len(display_line) > width:
             result = []
             current_width = 0
@@ -151,6 +158,34 @@ class InputBox:
             return "".join(result)
 
         return display_line
+
+    def _get_wrapped_visual_lines(self, logical_line: str, width: int) -> list:
+        """
+        Get visual lines for a logical line with wrapping.
+
+        When a logical line exceeds the available width, it is split
+        into multiple visual lines for display.
+
+        Args:
+            logical_line: A single logical line from the buffer
+            width: Available display width
+
+        Returns:
+            List of (visual_line, is_continuation) tuples
+        """
+        # Convert markers to display badges first
+        display_line = render_for_display(logical_line)
+
+        if visible_len(display_line) <= width:
+            return [(display_line, False)]
+
+        # Wrap the display line
+        wrapped = wrap_text(display_line, width)
+        result = []
+        for i, vline in enumerate(wrapped):
+            is_continuation = i > 0
+            result.append((vline, is_continuation))
+        return result
 
     def _get_cursor_display_col(self, line: str, cursor_col: int) -> int:
         """
@@ -533,15 +568,93 @@ class InputBox:
         # Draw prompt header in top border
         # Format: ╭──◎ INPUT──────────────────╮ or ╭──◇ Custom Header──────╮
         prompt_attr = self.theme.get_attr("prompt") if self.theme else 0
+        import os
+
+        def _truncate_to_display_width(text: str, max_width: int) -> str:
+            if max_width <= 0:
+                return ""
+            if visible_len(text) <= max_width:
+                return text
+            result = []
+            current_width = 0
+            for ch in text:
+                w = char_width(ch)
+                if current_width + w > max_width:
+                    break
+                result.append(ch)
+                current_width += w
+            return "".join(result)
+
+        def _shorten_path_middle(path: str, max_width: int) -> str:
+            if max_width <= 0:
+                return ""
+            if visible_len(path) <= max_width:
+                return path
+
+            drive, _ = os.path.splitdrive(path)
+            base = os.path.basename(path.rstrip("/\\")) or path
+            sep = "\\"
+
+            if drive:
+                candidate = f"{drive}{sep}…{sep}{base}"
+            else:
+                candidate = f"…{sep}{base}"
+
+            if visible_len(candidate) <= max_width:
+                return candidate
+
+            # Fall back: keep only the tail and truncate it to fit.
+            if max_width <= 1:
+                return "…"
+            return "…" + _truncate_to_display_width(base, max_width - 1)
+
+        cwd_full = os.getcwd()
+
         if self.prompt_header:
             # Custom header with ◇ symbol
-            header_text = f" ◇ {self.prompt_header} "
+            header_label = f" ◇ {self.prompt_header}"
         else:
             # Default header with ◎ symbol
-            header_text = " ◎ INPUT "
+            header_label = " ◎ INPUT"
 
         header_x = 3  # After ╭──
-        self._window.write(0, header_x, header_text, prompt_attr)
+        max_header_width = max(0, self._width - header_x - 1)
+
+        # Show current working directory right next to INPUT (left-aligned),
+        # and color it with the accent attribute for visibility.
+        accent_attr = self.theme.get_attr("accent") if self.theme else prompt_attr
+        x = header_x
+
+        # Reserve some space for the cwd segment so it doesn't get truncated away.
+        min_cwd_width = 4  # e.g., "…\\x"
+        label_max = max(0, max_header_width - min_cwd_width)
+        header_label = _truncate_to_display_width(header_label, label_max)
+        self._window.write(0, x, header_label, prompt_attr)
+        x += visible_len(header_label)
+
+        remaining = max(0, max_header_width - visible_len(header_label))
+        if remaining > 0:
+            # Draw a long separator between INPUT and cwd, using a distinct color.
+            sep_attr = self.theme.get_attr("info") if self.theme else prompt_attr
+            min_cwd_width = 8  # keep at least a readable tail of the cwd
+            sep_len = max(2, min(8, remaining - min_cwd_width))
+            if sep_len >= remaining:
+                sep_len = max(0, remaining - 1)
+
+            if sep_len > 0:
+                sep = "─" * sep_len
+                self._window.write(0, x, sep, sep_attr)
+                x += sep_len
+                remaining -= sep_len
+
+            if remaining > 0:
+                cwd_display = _shorten_path_middle(cwd_full, remaining)
+                self._window.write(
+                    0,
+                    x,
+                    _truncate_to_display_width(cwd_display, remaining),
+                    accent_attr,
+                )
 
         # Update scroll
         self.update_scroll()
@@ -550,31 +663,46 @@ class InputBox:
         visible_lines = self.buffer.get_visible_lines(self._height)
         content_width = self._get_content_width()
 
-        # Render each visible line
+        # Build visual lines with wrapping
+        # Each logical line may produce multiple visual lines
+        visual_rows = []  # List of (logical_line_idx, visual_line, is_continuation)
         for i, line in enumerate(visible_lines):
-            row = i + 1  # Skip top border
+            logical_idx = self.buffer.scroll_offset + i
+            wrapped = self._get_wrapped_visual_lines(line, content_width)
+            for visual_line, is_continuation in wrapped:
+                visual_rows.append((logical_idx, visual_line, is_continuation))
+
+        # Render visual lines (limited to viewport height)
+        for row_idx, (logical_idx, visual_line, is_continuation) in enumerate(
+            visual_rows[: self._height]
+        ):
+            row = row_idx + 1  # Skip top border
             x = 1  # Skip left border
 
-            # Line number
+            # Line number (show only for first visual line of logical line)
             if self.show_line_numbers:
-                line_num = self.buffer.scroll_offset + i + 1
-                line_num_str = self._render_line_number(line_num)
-                self._window.write(row, x, line_num_str, dim_attr)
+                if not is_continuation:
+                    line_num = logical_idx + 1
+                    line_num_str = self._render_line_number(line_num)
+                    self._window.write(row, x, line_num_str, dim_attr)
+                else:
+                    # Continuation line - show continuation marker
+                    self._window.write(row, x, "  ↪│", dim_attr)
                 x += self.LINE_NUMBER_WIDTH
 
-            # Line content with badge rendering
-            display_content = self._render_line_content(line, content_width)
-            self._window.write(row, x, display_content, 0)
+            # Line content
+            self._window.write(row, x, visual_line, 0)
 
             # Pad remaining space
-            remaining = content_width - visible_len(display_content)
+            remaining = content_width - visible_len(visual_line)
             if remaining > 0:
                 self._window.write(
-                    row, x + visible_len(display_content), " " * remaining, 0
+                    row, x + visible_len(visual_line), " " * remaining, 0
                 )
 
-        # Fill empty lines if viewport is larger than content
-        for i in range(len(visible_lines), self._height):
+        # Fill empty lines if viewport is larger than visual content
+        lines_rendered = min(len(visual_rows), self._height)
+        for i in range(lines_rendered, self._height):
             row = i + 1
             x = 1
 
@@ -606,21 +734,41 @@ class InputBox:
         if self._window is None:
             return
 
-        # Calculate cursor position in window
-        visible_row = self.buffer.cursor_row - self.buffer.scroll_offset
+        content_width = self._get_content_width()
 
-        if visible_row < 0 or visible_row >= self._height:
-            return
+        # Calculate cursor position accounting for visual line wrapping
+        # First, count visual rows for all logical lines before cursor row
+        visual_row_offset = 0
+        for log_row in range(self.buffer.scroll_offset, self.buffer.cursor_row):
+            if log_row < len(self.buffer.lines):
+                line = self.buffer.lines[log_row]
+                wrapped = self._get_wrapped_visual_lines(line, content_width)
+                visual_row_offset += len(wrapped)
 
-        # Window row (add 1 for top border)
-        win_row = visible_row + 1
-
-        # Calculate column
+        # Now handle the cursor's own line
         line = self.buffer.lines[self.buffer.cursor_row]
         display_col = self._get_cursor_display_col(line, self.buffer.cursor_col)
 
+        # Calculate which visual line within the current logical line
+        visual_line_in_current = (
+            display_col // content_width if content_width > 0 else 0
+        )
+        col_in_visual_line = (
+            display_col % content_width if content_width > 0 else display_col
+        )
+
+        # Total visual row from top of viewport
+        total_visual_row = visual_row_offset + visual_line_in_current
+
+        # Check if cursor is within visible viewport
+        if total_visual_row < 0 or total_visual_row >= self._height:
+            return
+
+        # Window row (add 1 for top border)
+        win_row = total_visual_row + 1
+
         # Window column (add 1 for left border, add line number width if shown)
-        win_col = 1 + display_col
+        win_col = 1 + col_in_visual_line
         if self.show_line_numbers:
             win_col += self.LINE_NUMBER_WIDTH
 
@@ -753,26 +901,24 @@ class InputBox:
         """
         import sys
 
+        if lines_to_remove <= 0:
+            return
+
         # Build output batch
         output = []
         output.append("\x1b[?25l")  # Hide cursor
         output.append("\x1b[s")  # Save cursor
 
-        # Calculate where to delete lines from
-        # We need to move from current cursor position to the first line to delete
-        # The cursor is at visible_row (0-based within the input area)
-        # We need to go to self._height (the new height, which is where old lines start)
-        visible_row = self.buffer.cursor_row - self.buffer.scroll_offset
-
-        # Move to the first line that will be deleted
-        # new_height is already set, so we need to go to position new_height
-        # (which is 0-based index of first line to delete)
-        lines_to_move = self._height - visible_row
-
-        if lines_to_move > 0:
-            output.append(f"\x1b[{lines_to_move}B")  # Move down
-        elif lines_to_move < 0:
-            output.append(f"\x1b[{-lines_to_move}A")  # Move up
+        # Move to the first extra content row (absolute positioning is robust even
+        # when wrapping is active and the cursor's visual row differs from logical row).
+        #
+        # Terminal coordinates are 1-based.
+        # - Top border row:    self._y + 1
+        # - First content row: self._y + 2
+        # - First extra row (new_height index): self._y + 2 + self._height
+        delete_row = self._y + self._height + 2
+        delete_col = self._x + 1
+        output.append(f"\x1b[{delete_row};{delete_col}H")
 
         # Delete the extra lines (pulls bottom border up)
         # ANSI Delete Line: \x1b[{n}M

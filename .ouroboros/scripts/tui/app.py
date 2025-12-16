@@ -276,6 +276,10 @@ class TUIApp:
         self._ctrl_v_latched = False
         self._ignore_next_ctrl_v_key = False
 
+        # Track the last-rendered slash dropdown region so we can erase it
+        # when it disappears or changes size/position (ANSI mode doesn't auto-clear).
+        self._slash_dropdown_rect: Optional[Tuple[int, int, int, int]] = None
+
     @property
     def mode(self) -> str:
         """Get current mode."""
@@ -414,6 +418,11 @@ class TUIApp:
         # Only clear screen on initial render or resize to prevent flickering
         if full_redraw:
             self.screen.clear()
+            self._slash_dropdown_rect = None
+        else:
+            # Clear any previous dropdown before redrawing components so we don't
+            # leave stale boxes behind when it disappears or shrinks.
+            self._clear_slash_dropdown()
 
         y = 0
 
@@ -430,11 +439,26 @@ class TUIApp:
             self.input_box.render(y, cols)
 
         # Render slash command dropdown if active
-        if self.slash_handler and self.slash_handler.active:
+        if (
+            self.slash_handler
+            and self.slash_handler.active
+            and self.slash_handler.matches
+        ):
             self._render_slash_dropdown(y)
             # Re-position cursor after dropdown render
             if self.input_box:
                 self.input_box._position_cursor()
+
+    def _clear_slash_dropdown(self) -> None:
+        """Erase the last-rendered slash dropdown region (if any)."""
+        if not self.screen or not self._slash_dropdown_rect:
+            return
+
+        dropdown_y, dropdown_x, height, width = self._slash_dropdown_rect
+        clear_win = self.screen.create_window(height, width, dropdown_y, dropdown_x)
+        clear_win.clear()
+        clear_win.refresh()
+        self._slash_dropdown_rect = None
 
     def _render_too_small_message(self, cols: int, rows: int) -> None:
         """
@@ -479,8 +503,10 @@ class TUIApp:
             return
 
         # Create dropdown window
+        height = max_visible + 2
+        self._slash_dropdown_rect = (dropdown_y, dropdown_x, height, dropdown_width)
         dropdown_win = self.screen.create_window(
-            max_visible + 2, dropdown_width, dropdown_y, dropdown_x
+            height, dropdown_width, dropdown_y, dropdown_x
         )
 
         # Draw border
@@ -710,6 +736,7 @@ class TUIApp:
                 if self.input_box:
                     self.input_box.buffer.clear()
                     self.input_box.buffer.insert_text(completed)
+                    self.input_box.status_bar.set_hint("Ctrl+D: submit")
                     self._render()
             return True
 
@@ -848,7 +875,7 @@ class TUIApp:
                 self._process_path_buffer()
                 # Insert the space/tab normally
                 self.input_box.buffer.insert_char(key)
-                self.input_box.update_current_line()
+                self._render()
                 return
             else:
                 # Continue collecting - insert char AND track it
@@ -856,7 +883,7 @@ class TUIApp:
                 self.input_box.buffer.insert_char(key)
                 self._path_collect_start = time.time()  # Reset timeout on each char
                 self.input_box.status_bar.set_hint("Collecting path...")
-                self.input_box.update_current_line()
+                self._render()
                 return
 
         # === Check for Windows Path Start Pattern ===
@@ -876,7 +903,7 @@ class TUIApp:
                     # Insert the backslash into buffer too
                     self.input_box.buffer.insert_char(key)
                     self.input_box.status_bar.set_hint("Collecting path...")
-                    self.input_box.update_current_line()
+                    self._render()
                     return
 
         # Check for >>> submit marker
@@ -914,12 +941,8 @@ class TUIApp:
             # Default hint
             self.input_box.status_bar.set_hint("Ctrl+D: submit")
 
-        # Use incremental update for single character input (reduces flicker)
-        # Only do full render if slash command dropdown needs to be shown
-        if self.slash_handler and self.slash_handler.active:
-            self._render()
-        else:
-            self.input_box.update_current_line()
+        # Full render keeps wrapping, cursor positioning, and status bar consistent.
+        self._render()
 
     def _process_path_buffer(self) -> None:
         """
@@ -1013,6 +1036,7 @@ class TUIApp:
             completed = self.slash_handler.complete()
             self.input_box.buffer.clear()
             self.input_box.buffer.insert_text(completed + " ")
+            self.input_box.status_bar.set_hint("Ctrl+D: submit")
             self._render()
             return
 
