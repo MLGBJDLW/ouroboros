@@ -105,8 +105,8 @@ class SlashCommandHandler:
         """
         Tab completion logic.
 
-        - If only one match exists, complete immediately and add a space
-        - If multiple matches, cycle to next match
+        - Complete the currently selected match and add a space
+        - Always exit slash command mode after completion
         - If no matches, return current prefix unchanged
 
         Returns:
@@ -115,14 +115,10 @@ class SlashCommandHandler:
         if not self.matches:
             return self.prefix
 
-        if len(self.matches) == 1:
-            result = self.matches[0] + " "
-            self.cancel()
-            return result
-
-        # Cycle to next match
-        self.selected_index = (self.selected_index + 1) % len(self.matches)
-        return self.matches[self.selected_index]
+        index = min(max(self.selected_index, 0), len(self.matches) - 1)
+        result = self.matches[index] + " "
+        self.cancel()
+        return result
 
     def cancel(self) -> None:
         """Cancel command mode."""

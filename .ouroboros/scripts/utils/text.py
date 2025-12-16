@@ -6,13 +6,14 @@ This module provides text processing utilities including:
 - Display width calculation
 - ANSI escape code stripping
 - Text padding to width
+- Text wrapping for visual display
 
 
 """
 
 import re
 import unicodedata
-from typing import Optional
+from typing import Optional, List
 
 
 # ANSI escape sequence pattern
@@ -187,3 +188,50 @@ def _truncate_to_width(text: str, width: int) -> str:
         current_width += char_w
 
     return "".join(result)
+
+
+def wrap_text(text: str, width: int) -> List[str]:
+    """
+    Wrap text to a target display width (CJK-aware).
+
+    This wraps by display columns (not codepoints) so wide characters
+    do not break alignment. Each output line will fit within the
+    specified display width.
+
+    Args:
+        text: The text to wrap (single logical line, no newlines expected)
+        width: Target display width in columns
+
+    Returns:
+        List of wrapped lines that fit within width
+    """
+    if width <= 0:
+        return [""]
+    if not text:
+        return [""]
+
+    lines: List[str] = []
+    current: List[str] = []
+    current_width = 0
+
+    for char in text:
+        char_w = char_width(char)
+        if char_w <= 0:
+            continue
+
+        # If adding this character would exceed width, start a new line
+        if current_width + char_w > width:
+            if current:
+                lines.append("".join(current))
+            current = [char]
+            current_width = char_w
+            continue
+
+        current.append(char)
+        current_width += char_w
+
+    # Don't forget the last line
+    if current or not lines:
+        lines.append("".join(current))
+
+    return lines

@@ -15,6 +15,7 @@ _lazy_imports = {
     "visible_len": ".text",
     "strip_ansi": ".text",
     "pad_text": ".text",
+    "wrap_text": ".text",
     # Badge utilities
     "create_file_marker": ".badge",
     "create_paste_marker": ".badge",
