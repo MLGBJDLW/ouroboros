@@ -1,11 +1,17 @@
 name: Release
 
 on:
+  # Wait for CI workflow to complete successfully before releasing
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  # Official release on manual tag push
   push:
-    branches: [main]  # Auto CD on push to main
     tags:
-      - 'v*'          # Official release on tag
-  workflow_dispatch:  # Manual trigger support
+      - 'v*'
+  # Manual trigger support
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -37,11 +43,17 @@ jobs:
     name: Build and Release
     needs: [test]
     runs-on: ubuntu-latest
+    # Only run if CI succeeded (for workflow_run trigger) or always run for tags/manual
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Determine version and release type
         id: version
@@ -100,6 +112,16 @@ jobs:
           echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "📦 Releasing version: $VERSION (draft=$IS_DRAFT, prerelease=$IS_PRERELEASE)"
+
+      - name: Update README version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Update version in README title
+          sed -i "s/# ♾️ Project Ouroboros v[0-9]*\.[0-9]*\.[0-9]*/# ♾️ Project Ouroboros v${VERSION}/" README.md
+          
+          echo "✅ Updated README.md to v${VERSION}"
+          grep "# ♾️ Project Ouroboros" README.md
 
       - name: Generate release notes
         id: changelog
@@ -322,3 +344,20 @@ jobs:
             ouroboros-v${{ steps.version.outputs.version }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit README version update
+        if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Check if README was modified
+          if git diff --quiet README.md; then
+            echo "📝 No changes to README.md, skipping commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git commit -m "chore: update README version to v${VERSION} [skip ci]"
+            git push origin HEAD:main
+            echo "✅ Committed README version update to main"
+          fi
