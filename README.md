@@ -200,6 +200,13 @@ This command:
 3. ✅ Routes tasks to specialized sub-agents automatically
 4. ✅ Never ends until you say "stop", "end", "terminate", or "quit"
 
+> [!IMPORTANT]
+> **Verify Activation**: You should see a banner like:
+> ```
+> ♾️ OUROBOROS — SESSION ACTIVE
+> ```
+> If you don't see this banner or the CCL prompt `[Ouroboros] >`, **re-run `/ouroboros`** to ensure proper activation.
+
 ### The "Never Say Goodbye" Protocol
 
 Once `/ouroboros` is active, the AI will:
