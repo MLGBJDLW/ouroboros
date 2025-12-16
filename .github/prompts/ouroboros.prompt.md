@@ -1,5 +1,6 @@
 ---
 description: "♾️ Ouroboros Master Orchestrator - Entry Point"
+agent: ouroboros
 ---
 
 # /ouroboros
