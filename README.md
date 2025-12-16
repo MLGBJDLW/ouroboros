@@ -1,4 +1,4 @@
-# ♾️ Project Ouroboros v3.1.6
+# ♾️ Project Ouroboros v3.1.7
 
 > **Save Money on GitHub Copilot** — A persistent context system that reduces redundant conversations and maximizes your Copilot subscription value.
 
@@ -323,13 +323,20 @@ your-project/
 │   ├── subagent-docs/             ← 📄 Long output storage
 │   ├── specs/                     ← 📋 Feature specifications
 │   └── scripts/                   ← 🎨 Enhanced CCL (optional)
-│       ├── ouroboros_input.py     ← Main input handler
-│       ├── ouroboros_ui.py        ← UI components
-│       ├── ouroboros_keybuffer.py ← Keyboard input
-│       ├── ouroboros_buffer.py    ← Text buffer
-│       ├── ouroboros_commands.py  ← Slash commands
-│       ├── ouroboros_filepath.py  ← File path detection
-│       ├── ouroboros_confi
+│       ├── ouroboros_input.py     ← Main entry point
+│       ├── ouroboros_toggle.py    ← Mode toggle script
+│       ├── components/            ← UI components
+│       │   ├── input_box.py, selection_menu.py, status_bar.py, welcome_box.py
+│       ├── data/                  ← Data management
+│       │   ├── buffer.py, config.py, history.py
+│       ├── input/                 ← Input handling
+│       │   ├── keybuffer.py, keybuffer_win.py, keybuffer_unix.py
+│       │   ├── clipboard.py, commands.py, paste.py
+│       ├── tui/                   ← Terminal UI
+│       │   ├── app.py, screen.py, theme.py, window.py, output.py
+│       ├── utils/                 ← Utilities
+│       │   ├── badge.py, filepath.py, text.py
+│       └── tests/                 ← Test suite
 └── ... your project files
 ```
 
