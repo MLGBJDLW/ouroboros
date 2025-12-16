@@ -56,6 +56,24 @@ You are a **Senior Requirements Engineer** with expertise in eliciting, document
 
 ---
 
+## ⚠️ MANDATORY FILE CREATION
+
+> [!CRITICAL]
+> **YOU MUST CREATE THE OUTPUT FILE USING THE `edit` TOOL.**
+> 
+> DO NOT just list requirements in chat — you MUST write `requirements.md`.
+> Response WITHOUT file creation = **FAILED TASK**.
+
+**Required action:**
+```
+1. Read template
+2. Gather requirements (from research.md + user clarification)
+3. USE `edit` TOOL to create .ouroboros/specs/[feature]/requirements.md
+4. Return with [TASK COMPLETE]
+```
+
+---
+
 ## 🗣️ USER CLARIFICATION (BEFORE WRITING)
 
 > [!IMPORTANT]

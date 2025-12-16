@@ -106,63 +106,185 @@ python -c "print(); print('[1] auth-system'); print('[2] payment-flow'); print('
 > [!CAUTION]
 > **SUBAGENT MUST RETURN AFTER EACH PHASE.** Do NOT proceed autonomously.
 
+> [!IMPORTANT]
+> **AFTER EACH PHASE**: Verify file was created before proceeding to next phase.
+
 ### Phase 1: Research
 ```javascript
 runSubagent(
   agent: "ouroboros-researcher",
   prompt: `
 [Feature]: [feature-name]
-[Spec]: .ouroboros/specs/[feature-name]/
+[Spec Folder]: .ouroboros/specs/[feature-name]/
 [Phase]: 1/5 - Research
 
-## Task
-Complete Phase 1: Research
+## MANDATORY OUTPUT
+YOU MUST create file: .ouroboros/specs/[feature-name]/research.md
 
 ## Template
-.ouroboros/specs/templates/research-template.md
+Read and follow: .ouroboros/specs/templates/research-template.md
 
-## Return
-Status + [PHASE 1 COMPLETE]
+## Requirements
+1. Read the template FIRST
+2. Research the codebase (tech stack, patterns, affected files)
+3. USE edit TOOL to CREATE research.md
+4. Return with [PHASE 1 COMPLETE]
+
+⚠️ FAILURE TO CREATE FILE = FAILED TASK
   `
 )
 ```
+**After return**: Verify `.ouroboros/specs/[feature]/research.md` exists
 **Output**: `[PHASE 1 COMPLETE]` → Wait for user approval
 
 ### Phase 2: Requirements
 ```javascript
 runSubagent(
   agent: "ouroboros-requirements",
-  prompt: `Complete Phase 2: Requirements. Template: .ouroboros/specs/templates/requirements-template.md`
+  prompt: `
+[Feature]: [feature-name]
+[Spec Folder]: .ouroboros/specs/[feature-name]/
+[Phase]: 2/5 - Requirements
+
+## MANDATORY OUTPUT
+YOU MUST create file: .ouroboros/specs/[feature-name]/requirements.md
+
+## Template
+Read and follow: .ouroboros/specs/templates/requirements-template.md
+
+## Input
+Read: .ouroboros/specs/[feature-name]/research.md
+
+## Requirements
+1. Read the template FIRST
+2. Read research.md for context
+3. Define requirements in EARS notation
+4. USE edit TOOL to CREATE requirements.md
+5. Return with [PHASE 2 COMPLETE]
+
+⚠️ FAILURE TO CREATE FILE = FAILED TASK
+  `
 )
 ```
+**After return**: Verify `.ouroboros/specs/[feature]/requirements.md` exists
 **Output**: `[PHASE 2 COMPLETE]` → Wait for user approval
 
 ### Phase 3: Design
 ```javascript
 runSubagent(
   agent: "ouroboros-architect",
-  prompt: `Complete Phase 3: Design. Template: .ouroboros/specs/templates/design-template.md`
+  prompt: `
+[Feature]: [feature-name]
+[Spec Folder]: .ouroboros/specs/[feature-name]/
+[Phase]: 3/5 - Design
+
+## MANDATORY OUTPUT
+YOU MUST create file: .ouroboros/specs/[feature-name]/design.md
+
+## Template
+Read and follow: .ouroboros/specs/templates/design-template.md
+
+## Input
+Read: research.md, requirements.md
+
+## Requirements
+1. Read the template FIRST
+2. Analyze trade-offs, create Mermaid diagrams
+3. USE edit TOOL to CREATE design.md
+4. Return with [PHASE 3 COMPLETE]
+
+⚠️ FAILURE TO CREATE FILE = FAILED TASK
+  `
 )
 ```
+**After return**: Verify `.ouroboros/specs/[feature]/design.md` exists
 **Output**: `[PHASE 3 COMPLETE]` → Wait for user approval
 
 ### Phase 4: Tasks
 ```javascript
 runSubagent(
   agent: "ouroboros-tasks",
-  prompt: `Complete Phase 4: Tasks. Template: .ouroboros/specs/templates/tasks-template.md`
+  prompt: `
+[Feature]: [feature-name]
+[Spec Folder]: .ouroboros/specs/[feature-name]/
+[Phase]: 4/5 - Tasks
+
+## MANDATORY OUTPUT
+YOU MUST create file: .ouroboros/specs/[feature-name]/tasks.md
+
+## Template
+Read and follow: .ouroboros/specs/templates/tasks-template.md
+
+## Input
+Read: research.md, requirements.md, design.md
+
+## Requirements
+1. Read ALL previous docs + template
+2. Break down into phases and atomic tasks
+3. USE edit TOOL to CREATE tasks.md
+4. Return with [PHASE 4 COMPLETE]
+
+⚠️ FAILURE TO CREATE FILE = FAILED TASK
+  `
 )
 ```
+**After return**: Verify `.ouroboros/specs/[feature]/tasks.md` exists
 **Output**: `[PHASE 4 COMPLETE]` → Wait for user approval
 
 ### Phase 5: Validation
 ```javascript
 runSubagent(
   agent: "ouroboros-validator",
-  prompt: `Complete Phase 5: Validation. Template: .ouroboros/specs/templates/validation-template.md`
+  prompt: `
+[Feature]: [feature-name]
+[Spec Folder]: .ouroboros/specs/[feature-name]/
+[Phase]: 5/5 - Validation
+
+## MANDATORY OUTPUT
+YOU MUST create file: .ouroboros/specs/[feature-name]/validation-report.md
+
+## Template
+Read and follow: .ouroboros/specs/templates/validation-template.md
+
+## Input
+Read ALL: research.md, requirements.md, design.md, tasks.md
+
+## Requirements
+1. Read ALL 4 documents + template
+2. Build traceability matrix
+3. Identify gaps / inconsistencies
+4. USE edit TOOL to CREATE validation-report.md
+5. Return with [PHASE 5 COMPLETE]
+
+⚠️ FAILURE TO CREATE FILE = FAILED TASK
+  `
 )
 ```
+**After return**: Verify `.ouroboros/specs/[feature]/validation-report.md` exists
 **Output**: `[PHASE 5 COMPLETE]` → User decides: proceed/revise/abort
+
+---
+
+## 🔍 VERIFICATION PROTOCOL
+
+> [!IMPORTANT]
+> **AFTER EACH PHASE, YOU MUST VERIFY FILE CREATION.**
+
+**Verification command:**
+```javascript
+// After subagent returns, use read tool to verify:
+read(".ouroboros/specs/[feature-name]/[expected-file].md")
+```
+
+| Phase | Expected File | If Missing |
+|-------|---------------|------------|
+| 1 | `research.md` | Re-delegate to researcher |
+| 2 | `requirements.md` | Re-delegate to requirements |
+| 3 | `design.md` | Re-delegate to architect |
+| 4 | `tasks.md` | Re-delegate to tasks |
+| 5 | `validation-report.md` | Re-delegate to validator |
+
+**If file missing after re-delegation**: Report failure to user.
 
 ---
 

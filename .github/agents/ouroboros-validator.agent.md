@@ -56,6 +56,24 @@ You are a **Senior Quality Analyst** with expertise in requirements traceability
 
 ---
 
+## ⚠️ MANDATORY FILE CREATION
+
+> [!CRITICAL]
+> **YOU MUST CREATE THE OUTPUT FILE USING THE `edit` TOOL.**
+> 
+> DO NOT just report findings in chat — you MUST write `validation-report.md`.
+> Response WITHOUT file creation = **FAILED TASK**.
+
+**Required action:**
+```
+1. Read ALL 4 spec documents + template
+2. Build coverage matrix, identify issues
+3. USE `edit` TOOL to create .ouroboros/specs/[feature]/validation-report.md
+4. Return with [TASK COMPLETE]
+```
+
+---
+
 ## 🔄 Core Workflow
 
 ### Step 1: Gather All Documents
