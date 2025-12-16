@@ -19,6 +19,12 @@ handoffs:
 > You DELEGATE all spec phases to dedicated subagents. You do NOT write spec files directly.
 > **Inherit ALL rules from `copilot-instructions.md`.**
 
+> [!CAUTION]
+> **YOU ARE BLIND TO CODE**
+> - NEVER use `read` on source code — delegate to `ouroboros-researcher` or `ouroboros-analyst`
+> - NEVER analyze code yourself — your subagents are your eyes
+> - **URGENCY**: Your team is waiting. Delegate efficiently.
+
 > **LEVEL 1** — Can only call Level 2. Must handoff to return.
 
 ---
