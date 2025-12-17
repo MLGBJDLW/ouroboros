@@ -150,24 +150,72 @@ runSubagent(
 YOU MUST create file: .ouroboros/specs/[feature-name]/requirements.md
 
 ## Template
-Read and follow: .ouroboros/specs/templates/requirements-template.md
+COPY: .ouroboros/specs/templates/requirements-template.md
 
 ## Input
 Read: .ouroboros/specs/[feature-name]/research.md
 
 ## Requirements
-1. Read the template FIRST
+1. COPY template to target path
 2. Read research.md for context
 3. Define requirements in EARS notation
-4. USE edit TOOL to CREATE requirements.md
-5. Return with [PHASE 2 COMPLETE]
+4. If ANY requirement is unclear, output "Clarification Questions" section
+5. USE edit TOOL to CREATE requirements.md
+6. Return with [PHASE 2 COMPLETE] or [CLARIFICATION NEEDED]
 
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
   `
 )
 ```
-**After return**: Verify `.ouroboros/specs/[feature]/requirements.md` exists
+**After return**: Check for "Clarification Questions" in response
+
+---
+
+### Phase 2.5: Clarification Q&A (If Needed)
+
+> [!CAUTION]
+> **ORCHESTRATOR MUST ask questions ONE BY ONE using MENU format!**
+> Do NOT present all questions at once.
+
+**When requirements agent returns with "Clarification Questions":**
+
+1. **Parse** the CLQ-XXX questions from response
+2. **For EACH question** (one at a time):
+   
+   a. **Execute CCL MENU:**
+   ```python
+   python -c "print(); print('[1] Option A'); print('[2] Option B'); print('[3] Custom...'); choice = input('Select: ')"
+   ```
+
+
+   
+   b. **Record answer** for this question
+   
+   c. **Proceed to next question**
+
+
+
+3. **After ALL questions answered**: 
+   Delegate to `ouroboros-writer` to update requirements.md with answers:
+   ```javascript
+   runSubagent(
+     agent: "ouroboros-writer",
+     prompt: `
+   Update .ouroboros/specs/[feature]/requirements.md:
+   - CLQ-001: User chose "[answer]" → Update REQ-XXX
+   - CLQ-002: User chose "[answer]" → Update REQ-YYY
+   `
+   )
+   ```
+
+4. **Proceed to Phase 3**
+
+---
+
+**After Phase 2 complete**: Verify `.ouroboros/specs/[feature]/requirements.md` exists
 **Output**: `[PHASE 2 COMPLETE]` → Wait for user approval
+
+
 
 ### Phase 3: Design
 ```javascript

@@ -1,99 +1,154 @@
-# Research: [Feature Name]
+# Research: {{FEATURE_NAME}}
 
-> **Created**: YYYY-MM-DD
-> **Analyzed by**: `ouroboros-researcher`
+> **Phase**: 1/5 - Research  
+> **Input**: User request  
+> **Created**: {{DATE}}  
 > **Status**: 🟡 Draft | 🟢 Approved
 
 ---
 
-## Project Overview
+## Executive Summary
+
+<!-- ACTION REQUIRED: 2-3 sentence summary of what this feature is and why it's needed -->
+
+{{Brief description of the feature and its value}}
+
+---
+
+## Project Context
 
 ### Tech Stack
-| Layer | Technology |
-|-------|------------|
-| Frontend | [e.g., React 18 + TypeScript] |
-| Backend | [e.g., Python 3.11 + FastAPI] |
-| Database | [e.g., PostgreSQL] |
-| Build | [e.g., Vite, Poetry] |
+
+<!-- ACTION REQUIRED: Fill with actual versions from package.json, requirements.txt, etc. -->
+
+| Layer | Technology | Version | Why This Tech |
+|-------|------------|---------|---------------|
+| Frontend | {{e.g., React}} | {{18.2.0}} | {{Existing stack / User preference / Performance}} |
+| Backend | {{e.g., FastAPI}} | {{0.100.0}} | {{...}} |
+| Database | {{e.g., PostgreSQL}} | {{15.0}} | {{...}} |
+| Build | {{e.g., Vite}} | {{5.0.0}} | {{...}} |
 
 ### Key Dependencies
-- [List relevant packages/libraries]
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| {{package1}} | {{version}} | {{why needed}} |
+| {{package2}} | {{version}} | {{why needed}} |
 
 ---
 
 ## Existing Architecture
 
 ### Relevant Patterns
-| Pattern | Location | Description |
-|---------|----------|-------------|
-| [e.g., State Management] | `src/stores/` | Zustand-based stores |
-| [e.g., API Routes] | `src/api/routes/` | RESTful endpoints |
+
+<!-- ACTION REQUIRED: Identify patterns with file evidence -->
+
+| Pattern | Location | Evidence |
+|---------|----------|----------|
+| {{State Management}} | `src/stores/` | {{Found Zustand stores}} |
+| {{API Layer}} | `src/api/` | {{RESTful endpoints}} |
+| {{Component Structure}} | `src/components/` | {{Atomic design pattern}} |
 
 ### Code Structure
+
 ```
 src/
-├── components/     # [Brief description]
-├── services/       # [Brief description]
-├── stores/         # [Brief description]
-└── api/            # [Brief description]
+├── components/     # {{Description}}
+├── services/       # {{Description}}
+├── stores/         # {{Description}}
+└── api/            # {{Description}}
 ```
 
 ---
 
-## Affected Files
+## Affected Files Analysis
 
-### Frontend
-| File | Action | Purpose |
-|------|--------|---------|
-| `path/to/file.tsx` | NEW | [What it does] |
-| `path/to/file.tsx` | MODIFY | [What changes] |
+### Files to CREATE
 
-### Backend
-| File | Action | Purpose |
-|------|--------|---------|
-| `path/to/file.py` | NEW | [What it does] |
-| `path/to/file.py` | MODIFY | [What changes] |
+| File | Purpose | Estimated Size |
+|------|---------|----------------|
+| `{{path/to/new.tsx}}` | {{What it does}} | {{~100 lines}} |
 
-### Shared/Config
-| File | Action | Purpose |
-|------|--------|---------|
-| `path/to/config` | MODIFY | [What changes] |
+### Files to MODIFY
+
+| File | Changes | Risk |
+|------|---------|------|
+| `{{path/to/existing.ts}}` | {{What changes}} | 🟢 Low / 🟡 Medium / 🔴 High |
+
+### Files to DELETE (if any)
+
+| File | Reason |
+|------|--------|
+| {{None expected}} | - |
 
 ---
 
 ## Technical Constraints
 
-- [ ] [Constraint 1: e.g., Must maintain backward compatibility]
-- [ ] [Constraint 2: e.g., No new dependencies without approval]
-- [ ] [Constraint 3: e.g., Must support existing auth tokens]
+<!-- ACTION REQUIRED: List actual constraints discovered -->
+
+- [ ] {{Constraint 1: e.g., Must maintain backward compatibility with v2 API}}
+- [ ] {{Constraint 2: e.g., No new dependencies without approval}}
+- [ ] {{Constraint 3: e.g., Must support existing auth tokens}}
+- [ ] {{Constraint 4: [NEEDS CLARIFICATION: ...] — if any}}
 
 ---
 
 ## Recommended Approach
 
 ### Strategy
-[Brief description of the recommended implementation approach]
 
-### Rationale
-- [Why this approach fits existing patterns]
-- [Benefits over alternatives]
+{{Brief description of the recommended implementation approach}}
 
-### Risks
-| Risk | Mitigation |
-|------|------------|
-| [Risk 1] | [How to handle] |
+### Why This Approach
+
+<!-- ACTION REQUIRED: Justify with evidence from codebase analysis -->
+
+| Factor | Reasoning |
+|--------|-----------|
+| Fits existing patterns | {{Matches current component structure in X}} |
+| Minimal disruption | {{Only modifies N files}} |
+| Scalable | {{Can extend to support future Y}} |
+
+### Alternatives Considered
+
+| Alternative | Rejected Because |
+|-------------|------------------|
+| {{Option B}} | {{Reason}} |
+| {{Option C}} | {{Reason}} |
+
+### Risks & Mitigations
+
+| Risk | Level | Mitigation |
+|------|-------|------------|
+| {{Risk 1}} | 🟡 Medium | {{How to handle}} |
 
 ---
 
 ## Open Questions
 
-- [ ] [Question needing clarification before requirements]
-- [ ] [Technical decision pending]
+<!-- ACTION REQUIRED: List anything needing user clarification -->
+
+- [ ] {{Question 1: [NEEDS CLARIFICATION: ...]}}
+- [ ] {{Question 2: Technical decision pending}}
 
 ---
 
-## Approval
+## Quality Self-Check
 
-- [ ] Tech stack analysis complete
-- [ ] Affected files identified
-- [ ] Ready for Requirements phase
+Before marking complete, verify:
+
+- [ ] Tech stack has actual version numbers (not placeholders)
+- [ ] All patterns cited have file evidence
+- [ ] Affected files include specific paths
+- [ ] Constraints are project-specific (not generic)
+- [ ] Recommended approach has clear rationale
+- [ ] Risks are identified with mitigations
+
+---
+
+## → Next Phase
+
+**Output**: This research.md  
+**Next**: requirements.md (Phase 2)  
+**Handoff**: Ready for `ouroboros-requirements` agent

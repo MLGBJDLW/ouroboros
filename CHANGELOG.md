@@ -5,7 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.9] - 2025-12-16
+
+### Added
+- **GPT Compliance Rules** — Enhanced `copilot-instructions.md` with explicit behavior rules for better OpenAI GPT model compliance:
+  - **EXIT TRIGGERS** — Only explicit commands (`quit`/`exit`/`stop`) end session; `thanks`/`ok` continue CCL
+  - **INPUT ROUTING** — Table mapping user input types to required actions (delegate, continue, clarify, etc.)
+
+### Changed
+- **Spec Agents Template Workflow** — All 5 spec workflow agents now use **Copy-then-Modify** pattern instead of Read→Create:
+  - `ouroboros-researcher`, `ouroboros-requirements`, `ouroboros-architect`, `ouroboros-tasks`, `ouroboros-validator`
+  - Workflow: COPY template → MODIFY by filling placeholders → PRESERVE structure
+
+- **Spec Templates Enhancement** — Major upgrade to all 5 spec templates (inspired by Spec-kit patterns):
+  - **Unified Placeholder Format**: `{{PLACEHOLDER}}` for clear fill-in markers
+  - **Action Comments**: `<!-- ACTION REQUIRED: ... -->` for critical sections
+  - **Cross-Doc References**: `**Input**: [previous-phase.md]` headers linking phases
+  - **Quality Self-Checks**: Each template ends with verification checklist
+  - **Priority System**: P1/P2/P3 labels + "Why This Priority" rationale (requirements)
+  - **Parallel Markers**: `[P]` tags for tasks that can run concurrently (tasks)
+  - **REQ Traceability**: `[REQ-XXX]` tags linking tasks back to requirements
+  - **Independent Tests**: Each requirement includes verification method
+  - **`[NEEDS CLARIFICATION: ...]`**: Explicit uncertainty markers
+  - **ADR-style Decisions**: "Why This Approach" + "Alternatives Rejected" sections (design)
+
+- **Requirements Clarification Q&A Flow** — New interactive clarification process for Phase 2:
+  - `ouroboros-requirements` outputs structured `CLQ-XXX` questions with 2-4 options + expert recommendation
+  - `ouroboros-spec` presents questions **ONE BY ONE** using MENU format (not all at once)
+  - After user answers, delegates to `ouroboros-writer` to update requirements.md
+  - New **Phase 2.5** in spec workflow for handling clarifications
+
+
+---
+
+
+
 ## [3.1.8] - 2025-12-16
+
 
 ### Fixed
 - **Multi-line History Persistence** — Fixed input history saving/loading that was splitting multi-line entries into separate single-line entries. Now multi-line inputs are properly preserved as single history entries when navigating with Up/Down arrow keys.

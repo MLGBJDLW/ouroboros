@@ -1,14 +1,21 @@
-# Design Document: [Feature Name]
+# Design: {{FEATURE_NAME}}
+
+> **Phase**: 3/5 - Design  
+> **Input**: [research.md](./research.md), [requirements.md](./requirements.md)  
+> **Created**: {{DATE}}  
+> **Status**: 🟡 Draft | 🟢 Approved
+
+---
 
 ## Overview
 
-[Brief description of the technical approach and what this design accomplishes]
+{{Brief description of the technical approach and architecture}}
 
 ### Design Principles
 
-1. **[Principle 1]**: [e.g., Lightweight first - avoid heavy dependencies]
-2. **[Principle 2]**: [e.g., Single implementation - no duplicate code paths]
-3. **[Principle 3]**: [e.g., Complete connection - all modules properly imported]
+1. **{{Principle 1}}**: {{e.g., Lightweight first — avoid heavy dependencies}}
+2. **{{Principle 2}}**: {{e.g., Single source of truth — no duplicate state}}
+3. **{{Principle 3}}**: {{e.g., Fail fast — validate early}}
 
 ---
 
@@ -27,55 +34,63 @@ flowchart TB
     Frontend --> Backend
 ```
 
-### Components
+### Component Overview
 
-| Component | Responsibility | File(s) |
-|-----------|---------------|---------|
-| [Component 1] | [What it does] | `path/to/file.ext` |
-| [Component 2] | [What it does] | `path/to/file.ext` |
-| [Component 3] | [What it does] | `path/to/file.ext` |
+| Component | Responsibility | File(s) | Covers REQs |
+|-----------|---------------|---------|-------------|
+| {{Component 1}} | {{What it does}} | `{{path/to/file}}` | REQ-001, REQ-002 |
+| {{Component 2}} | {{What it does}} | `{{path/to/file}}` | REQ-003 |
 
 ---
 
-## Components and Interfaces
+## Component Details
 
-### 1. [Component Name] (NEW/MODIFY)
+### 1. {{Component Name}} (NEW)
+
+<!-- ACTION REQUIRED: Define interface with actual types -->
 
 ```typescript
-// path/to/file.ts
-interface ComponentInterface {
-  property: string;
-  method(): void;
+// {{path/to/file.ts}}
+interface {{ComponentInterface}} {
+  {{property}}: {{Type}};
+  {{method}}(): {{ReturnType}};
 }
-
-// Key methods
-function keyMethod(param: Type): ReturnType;
 ```
 
-### 2. [Component Name] (NEW/MODIFY)
+**Why This Design**: {{Rationale for this approach}}
+
+**Covers**: REQ-001, REQ-002
+
+---
+
+### 2. {{Component Name}} (MODIFY)
 
 ```python
-# path/to/file.py
-class ComponentClass:
-    def __init__(self, param: Type):
+# {{path/to/file.py}}
+class {{ComponentClass}}:
+    def __init__(self, {{param}}: {{Type}}):
         pass
     
-    async def key_method(self) -> ReturnType:
-        """Description of method behavior"""
+    async def {{method}}(self) -> {{ReturnType}}:
+        """{{Description}}"""
         pass
 ```
+
+**Why This Design**: {{Rationale}}
+
+**Covers**: REQ-003
 
 ---
 
 ## Data Models
 
-### [Entity Name]
+### {{Entity Name}}
 
 ```typescript
-interface EntityName {
+interface {{EntityName}} {
   id: string;
-  field1: string;
-  field2: number;
+  {{field1}}: {{Type}};
+  {{field2}}: {{Type}};
   createdAt: Date;
   updatedAt: Date;
 }
@@ -91,21 +106,27 @@ erDiagram
 
 ---
 
-## Correctness Properties
+## Design Decisions (ADR-style)
 
-> *A property is a characteristic or behavior that should hold true across all valid executions. Properties bridge human-readable specs and machine-verifiable correctness.*
+### Decision 1: {{Topic}}
 
-### Property 1: [Property Name]
-*For any* [input/condition], the [System_Component] should [expected behavior].
-**Validates: Requirements 1.1, 1.2**
+**Context**: {{Problem statement}}
 
-### Property 2: [Property Name]
-*For any* [input/condition], the [System_Component] should [expected behavior].
-**Validates: Requirements 2.1**
+**Decision**: {{Chosen approach}}
 
-### Property 3: [Property Name]
-*For any* [input/condition], the [System_Component] should [expected behavior].
-**Validates: Requirements 3.1, 3.2**
+**Why**: 
+- {{Reason 1}}
+- {{Reason 2}}
+
+**Alternatives Rejected**:
+| Alternative | Rejected Because |
+|-------------|------------------|
+| {{Option A}} | {{Reason}} |
+| {{Option B}} | {{Reason}} |
+
+**Trade-offs**:
+- ✅ {{Benefit}}
+- ⚠️ {{Drawback to accept}}
 
 ---
 
@@ -113,59 +134,73 @@ erDiagram
 
 | Error Type | Handling Strategy |
 |------------|-------------------|
-| [Network errors] | [Retry with exponential backoff] |
-| [Validation errors] | [Return structured error message] |
-| [Timeout] | [Cancel and notify user] |
+| {{Network errors}} | {{Retry with exponential backoff}} |
+| {{Validation errors}} | {{Return structured error message}} |
+| {{Timeout}} | {{Cancel and notify user}} |
 
 ---
 
 ## Testing Strategy
 
-### Unit Tests
-- [Component A] - test individual methods
-- [Component B] - test edge cases
+### By Requirement Priority
 
-### Property-Based Tests
-- **Property 1** - [framework: Hypothesis/fast-check]
-- **Property 2** - [framework: Hypothesis/fast-check]
+| Priority | Test Type | Coverage |
+|----------|-----------|----------|
+| P1 (MVP) | Unit + Integration | 100% |
+| P2 | Unit | 80%+ |
+| P3 | Unit | Best effort |
 
-### Integration Tests
-- End-to-end flow testing
-- Cross-component communication
+### Test Plan
+
+- **Unit Tests**: {{Component A, Component B}}
+- **Integration Tests**: {{End-to-end flow}}
+- **Property Tests**: {{If applicable — Hypothesis/fast-check}}
 
 ---
 
 ## Files Summary
 
-### Files to Create
-| File | Purpose |
-|------|---------|
-| `path/to/new/file.ext` | [Description] |
+### Files to CREATE
 
-### Files to Modify
-| File | Changes |
-|------|---------|
-| `path/to/existing/file.ext` | [What changes] |
+| File | Component | Purpose |
+|------|-----------|---------|
+| `{{path/to/new.ts}}` | {{Component 1}} | {{Description}} |
 
-### Files to Delete
-| File | Reason |
-|------|--------|
-| `path/to/deprecated/file.ext` | [Why removing] |
+### Files to MODIFY
+
+| File | Changes | Risk |
+|------|---------|------|
+| `{{path/to/existing.ts}}` | {{What changes}} | 🟢/🟡/🔴 |
 
 ---
 
-## Requirements Mapping
+## Requirements Traceability
 
-| Requirement | Addressed By |
-|-------------|--------------|
-| Requirement 1 | [Component/Property] |
-| Requirement 2 | [Component/Property] |
-| Requirement 3 | [Component/Property] |
+<!-- ACTION REQUIRED: Every REQ must map to at least one component -->
+
+| REQ ID | Requirement | Component | Test Strategy |
+|--------|-------------|-----------|---------------|
+| REQ-001 | {{Title}} | {{Component 1}} | Unit + Integration |
+| REQ-002 | {{Title}} | {{Component 1}} | Unit |
+| REQ-003 | {{Title}} | {{Component 2}} | Integration |
 
 ---
 
-## Approval
+## Quality Self-Check
 
-- [ ] Architecture reviewed
-- [ ] Security considerations addressed
-- [ ] Ready for Implementation phase
+Before marking complete, verify:
+
+- [ ] All REQ-XXX are mapped to components
+- [ ] At least 2 alternatives were considered for major decisions
+- [ ] Trade-offs are documented (both pros and cons)
+- [ ] Mermaid diagrams render correctly
+- [ ] File paths are specific (not generic)
+- [ ] Error handling is defined
+
+---
+
+## → Next Phase
+
+**Output**: This design.md  
+**Next**: tasks.md (Phase 4)  
+**Handoff**: Ready for `ouroboros-tasks` agent

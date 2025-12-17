@@ -1,87 +1,163 @@
-# Requirements Document
+# Requirements: {{FEATURE_NAME}}
+
+> **Phase**: 2/5 - Requirements  
+> **Input**: [research.md](./research.md)  
+> **Created**: {{DATE}}  
+> **Status**: 🟡 Draft | 🟢 Approved
+
+---
 
 ## Introduction
 
-[Brief description of the feature and the problem it solves]
+{{Brief description of the feature and the problem it solves}}
 
 **Core Goals:**
-1. [Primary goal]
-2. [Secondary goal]
-3. [Tertiary goal]
+1. {{Primary goal}}
+2. {{Secondary goal}}
+3. {{Tertiary goal}}
+
+---
 
 ## Glossary
 
 | Term | Definition |
 |------|------------|
-| [Term 1] | [Definition - project-specific terminology] |
-| [Term 2] | [Definition] |
+| {{Term 1}} | {{Project-specific definition}} |
+| {{Term 2}} | {{Definition}} |
 
 ---
 
-## Requirements
+## Functional Requirements
 
-### Requirement 1: [Requirement Title]
+<!-- 
+  ACTION REQUIRED: 
+  - Use EARS notation (WHEN/WHILE/IF-THEN/SHALL)
+  - Each requirement must have P1/P2/P3 priority
+  - Each requirement must have Independent Test
+-->
 
-**User Story:** As a [role], I want [capability], so that [benefit].
+### REQ-001: {{Requirement Title}} (Priority: P1) 🎯
 
-#### Acceptance Criteria
+**User Story**: As a {{role}}, I want {{capability}}, so that {{benefit}}.
 
-1. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
-2. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
-3. IF [condition] THEN the [System_Component] SHALL [fallback behavior]
-4. WHILE [state] THEN the [System_Component] SHALL [ongoing behavior]
+**Why P1**: {{Explain why this is highest priority — MVP critical}}
 
----
+**Independent Test**: {{How to verify this requirement works on its own}}
 
-### Requirement 2: [Requirement Title]
-
-**User Story:** As a [role], I want [capability], so that [benefit].
-
-#### Acceptance Criteria
-
-1. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
-2. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
-3. IF [error condition] THEN the [System_Component] SHALL [error handling]
+**Acceptance Criteria** (EARS notation):
+1. WHEN {{trigger}}, the System SHALL {{behavior}}
+2. WHILE {{state}}, the System SHALL {{ongoing behavior}}
+3. IF {{error condition}}, THEN the System SHALL {{error handling}}
 
 ---
 
-### Requirement 3: [Requirement Title]
+### REQ-002: {{Requirement Title}} (Priority: P1)
 
-**User Story:** As a [role], I want [capability], so that [benefit].
+**User Story**: As a {{role}}, I want {{capability}}, so that {{benefit}}.
 
-#### Acceptance Criteria
+**Why P1**: {{...}}
 
-1. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
-2. WHEN [trigger/condition] THEN the [System_Component] SHALL [expected behavior]
+**Independent Test**: {{...}}
+
+**Acceptance Criteria**:
+1. WHEN {{trigger}}, the System SHALL {{behavior}}
+2. IF {{condition}}, THEN the System SHALL {{fallback}}
+
+---
+
+### REQ-003: {{Requirement Title}} (Priority: P2)
+
+**User Story**: As a {{role}}, I want {{capability}}, so that {{benefit}}.
+
+**Why P2**: {{Important but not MVP-critical}}
+
+**Independent Test**: {{...}}
+
+**Acceptance Criteria**:
+1. WHEN {{trigger}}, the System SHALL {{behavior}}
+
+---
+
+### REQ-004: {{Requirement Title}} (Priority: P3)
+
+**User Story**: As a {{role}}, I want {{capability}}, so that {{benefit}}.
+
+**Why P3**: {{Nice to have if time permits}}
+
+**Independent Test**: {{...}}
+
+**Acceptance Criteria**:
+1. WHEN {{trigger}}, the System SHALL {{behavior}}
+
+---
+
+## Edge Cases
+
+<!-- ACTION REQUIRED: Identify boundary conditions and error scenarios -->
+
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| What if {{empty input}}? | {{System should...}} |
+| What if {{network failure}}? | {{System should...}} |
+| What if {{concurrent access}}? | {{System should...}} |
+| {{[NEEDS CLARIFICATION: ...]}} | {{Awaiting user input}} |
 
 ---
 
 ## Non-Functional Requirements
 
-| Category | Requirement |
-|----------|-------------|
-| Performance | [e.g., Response time < 200ms] |
-| Security | [e.g., All data encrypted at rest] |
-| Accessibility | [e.g., WCAG 2.1 AA compliance] |
+| Category | Requirement | Metric |
+|----------|-------------|--------|
+| Performance | Response time | < {{200ms}} |
+| Security | Data handling | {{Encrypted at rest}} |
+| Accessibility | Compliance | {{WCAG 2.1 AA}} |
+| Scalability | Concurrent users | {{1000+}} |
 
 ---
 
 ## Out of Scope
 
-- [Explicitly list what this feature does NOT include]
-- [Helps prevent scope creep]
+<!-- ACTION REQUIRED: Explicitly define boundaries to prevent scope creep -->
+
+- ❌ {{Feature X — will be handled in future iteration}}
+- ❌ {{Integration with Y — not part of this spec}}
+- ❌ {{Admin features — separate spec needed}}
 
 ---
 
 ## Open Questions
 
-- [ ] [Question needing clarification]
-- [ ] [Decision pending]
+- [ ] {{[NEEDS CLARIFICATION: Auth method not specified — email/password? OAuth?]}}
+- [ ] {{[NEEDS CLARIFICATION: Data retention period?]}}
 
 ---
 
-## Approval
+## Requirements Summary
 
-- [ ] Product Owner approved
-- [ ] Tech Lead reviewed
-- [ ] Ready for Design phase
+| Priority | Count | Coverage |
+|----------|-------|----------|
+| P1 (Must) | {{N}} | MVP |
+| P2 (Should) | {{N}} | Post-MVP |
+| P3 (Could) | {{N}} | Future |
+
+---
+
+## Quality Self-Check
+
+Before marking complete, verify:
+
+- [ ] All requirements have unique IDs (REQ-XXX)
+- [ ] All requirements have P1/P2/P3 priority
+- [ ] All requirements have Independent Test description
+- [ ] All requirements use EARS notation (WHEN/SHALL)
+- [ ] Edge cases are identified
+- [ ] Out of scope is explicitly defined
+- [ ] No ambiguous language ("fast", "easy", "better")
+
+---
+
+## → Next Phase
+
+**Output**: This requirements.md  
+**Next**: design.md (Phase 3)  
+**Handoff**: Ready for `ouroboros-architect` agent
