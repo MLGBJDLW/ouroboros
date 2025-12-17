@@ -12,7 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **EXIT TRIGGERS** — Only explicit commands (`quit`/`exit`/`stop`) end session; `thanks`/`ok` continue CCL
   - **INPUT ROUTING** — Table mapping user input types to required actions (delegate, continue, clarify, etc.)
 
+### Changed
+- **Spec Agents Template Workflow** — All 5 spec workflow agents now use **Copy-then-Modify** pattern instead of Read→Create:
+  - `ouroboros-researcher`, `ouroboros-requirements`, `ouroboros-architect`, `ouroboros-tasks`, `ouroboros-validator`
+  - Workflow: COPY template → MODIFY by filling placeholders → PRESERVE structure
+
 ---
+
 
 ## [3.1.8] - 2025-12-16
 
