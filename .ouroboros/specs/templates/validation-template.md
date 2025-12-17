@@ -1,108 +1,151 @@
-# Validation Report: [Feature Name]
+# Validation Report: {{FEATURE_NAME}}
 
-> **Generated**: YYYY-MM-DD
-> **Validated by**: `ouroboros-validator`
+> **Phase**: 5/5 - Validation  
+> **Input**: All previous docs (research.md, requirements.md, design.md, tasks.md)  
+> **Generated**: {{DATE}}  
 > **Status**: 🟡 Pending Review | 🟢 Approved | 🔴 Revisions Needed
 
 ---
 
-## 📊 Executive Summary
+## Executive Summary
 
-[One paragraph summarizing what this feature will do and its scope]
+{{One paragraph summarizing the feature scope and readiness for implementation}}
 
----
-
-## 🔍 Consistency Check
-
-### Cross-Document Traceability
-
-| Source | Target | Status | Notes |
-|--------|--------|--------|-------|
-| Research → Requirements | ✅ / ⚠️ / ❌ | [All affected files covered in requirements] |
-| Requirements → Design | ✅ / ⚠️ / ❌ | [All REQ-XXX have design coverage] |
-| Design → Tasks | ✅ / ⚠️ / ❌ | [All components have implementation tasks] |
-| Tasks → Requirements | ✅ / ⚠️ / ❌ | [All tasks trace back to requirements] |
-
-### Unresolved Items
-
-| Document | Issue | Severity | Suggested Action |
-|----------|-------|----------|------------------|
-| [e.g., design.md] | REQ-003 not addressed | 🟡 Medium | Add component for auth |
+**Verdict**: ✅ **PASS** | ❌ **FAIL**
 
 ---
 
-## 📁 Impact Analysis
+## Document Checklist
 
-### Files to CREATE (X new files)
-
-| File Path | Purpose | Estimated Size |
-|-----------|---------|----------------|
-| `src/components/NewFeature.tsx` | [Main component] | ~100 lines |
-
-### Files to MODIFY (Y existing files)
-
-| File Path | Changes | Risk Level |
-|-----------|---------|------------|
-| `src/routes.ts` | Add new route (line ~25) | 🟢 Low |
-| `src/api/handlers.py` | New endpoint handler | 🟡 Medium |
-
-### Files to DELETE (if any)
-
-| File Path | Reason |
-|-----------|--------|
-| [None expected] | - |
+| Document | Exists | Complete | Notes |
+|----------|--------|----------|-------|
+| research.md | ✅/❌ | ✅/⚠️/❌ | {{Notes}} |
+| requirements.md | ✅/❌ | ✅/⚠️/❌ | {{Notes}} |
+| design.md | ✅/❌ | ✅/⚠️/❌ | {{Notes}} |
+| tasks.md | ✅/❌ | ✅/⚠️/❌ | {{Notes}} |
 
 ---
 
-## ⚠️ Risk Assessment
+## Traceability Matrix
+
+<!-- ACTION REQUIRED: Every REQ must have Design AND Task coverage -->
+
+| REQ ID | Priority | Requirement | Design Coverage | Task Coverage | Status |
+|--------|----------|-------------|-----------------|---------------|--------|
+| REQ-001 | P1 | {{Title}} | ✅ {{Component}} | ✅ T007-T011 | COVERED |
+| REQ-002 | P1 | {{Title}} | ✅ {{Component}} | ✅ T012-T013 | COVERED |
+| REQ-003 | P2 | {{Title}} | ⚠️ Partial | ❌ Missing | **GAP** |
+
+### Coverage Summary
+
+| Metric | Count | Percentage |
+|--------|-------|------------|
+| Total Requirements | {{N}} | 100% |
+| Fully Covered | {{N}} | {{X%}} |
+| Partially Covered | {{N}} | {{Y%}} |
+| No Coverage | {{N}} | {{Z%}} |
+
+---
+
+## Issues Found
+
+### Blocker Issues (Must Fix Before Implementation)
+
+<!-- If none, write: "None — ready for implementation" -->
+
+| ID | Severity | Document | Issue | Suggested Fix |
+|----|----------|----------|-------|---------------|
+| CRT-001 | 🔴 CRITICAL | {{doc}} | {{Issue description}} | {{How to fix}} |
+
+### Warning Issues (Should Fix)
+
+| ID | Severity | Document | Issue | Suggested Fix |
+|----|----------|----------|-------|---------------|
+| WRN-001 | 🟡 WARNING | {{doc}} | {{Issue description}} | {{How to fix}} |
+
+### Minor Issues (Can Fix Later)
+
+| ID | Severity | Document | Issue | Suggested Fix |
+|----|----------|----------|-------|---------------|
+| INF-001 | 🟢 INFO | {{doc}} | {{Improvement suggestion}} | {{Optional}} |
+
+---
+
+## Cross-Document Consistency
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Terminology consistent | ✅/⚠️/❌ | {{Same terms used across docs}} |
+| File paths match | ✅/⚠️/❌ | {{research → design → tasks}} |
+| REQ IDs consistent | ✅/⚠️/❌ | {{Same numbering}} |
+| Priority alignment | ✅/⚠️/❌ | {{P1 in reqs = P1 in tasks}} |
+
+---
+
+## Risk Assessment
 
 | Risk | Level | Impact | Mitigation |
 |------|-------|--------|------------|
-| [e.g., Breaking API change] | 🔴 High / 🟡 Medium / 🟢 Low | [Who/what is affected] | [How to mitigate] |
-| [e.g., Performance regression] | 🟡 Medium | [Potential slowdown] | [Benchmark before/after] |
+| {{Breaking change}} | 🔴 High | {{Who/what affected}} | {{How to mitigate}} |
+| {{Performance}} | 🟡 Medium | {{Potential slowdown}} | {{Benchmark}} |
+| {{Scope creep}} | 🟢 Low | {{Minor delay}} | {{Out of scope defined}} |
 
 ---
 
-## 📋 Implementation Readiness
+## Implementation Readiness
 
 ### Prerequisites Checklist
 
-- [ ] All requirements have unique IDs (REQ-XXX)
+- [ ] All P1 requirements have full coverage
 - [ ] All design components have corresponding tasks
 - [ ] All tasks have file paths specified
-- [ ] No unresolved open questions in research.md
+- [ ] No unresolved `[NEEDS CLARIFICATION]` items
 - [ ] Risk mitigations documented
+- [ ] No CRITICAL issues remaining
 
 ### Recommended Execution Mode
 
-| Mode | Recommended When |
-|------|------------------|
-| 🔧 Task-by-Task | High-risk changes identified above |
-| 📦 Phase-by-Phase | Normal development (DEFAULT) |
-| 🚀 Auto-Run All | No risks identified, trusted changes |
+| Mode | When to Use |
+|------|-------------|
+| 🔧 Task-by-Task | High-risk changes, learning codebase |
+| 📦 Phase-by-Phase | Normal development (**DEFAULT**) |
+| 🚀 Auto-Run All | Low-risk, well-understood changes |
 
-**Suggested Mode**: [Phase-by-Phase / Task-by-Task / Auto-Run based on risk assessment]
+**Suggested Mode**: {{Based on risk assessment}}
 
 ---
 
-## ✅ User Decision
+## User Decision
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Spec: [feature-name]
+📋 Spec: {{FEATURE_NAME}}
 📊 Status: Validation Complete
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Options:
-  [yes]           → Proceed to /ouroboros-implement
-  [revise X]      → Return to Phase X (1=Research, 2=Req, 3=Design, 4=Tasks)
-  [abort]         → Cancel this spec
+  [yes]      → Proceed to /ouroboros-implement
+  [revise X] → Return to Phase X (1=Research, 2=Req, 3=Design, 4=Tasks)
+  [abort]    → Cancel this spec
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
 
-## 📝 Approval Log
+## Approval Log
 
 | Date | Reviewer | Decision | Notes |
 |------|----------|----------|-------|
-| YYYY-MM-DD | [User] | Pending | Initial validation |
+| {{DATE}} | {{User}} | Pending | Initial validation |
+
+---
+
+## Quality Self-Check
+
+Before marking complete, verify:
+
+- [ ] All 4 input documents were read
+- [ ] Traceability matrix is complete (every REQ mapped)
+- [ ] All issues are classified by severity
+- [ ] Consistency checks performed
+- [ ] Verdict is clearly stated (PASS/FAIL)
+- [ ] Recommended execution mode provided

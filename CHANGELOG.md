@@ -17,7 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ouroboros-researcher`, `ouroboros-requirements`, `ouroboros-architect`, `ouroboros-tasks`, `ouroboros-validator`
   - Workflow: COPY template → MODIFY by filling placeholders → PRESERVE structure
 
+- **Spec Templates Enhancement** — Major upgrade to all 5 spec templates (inspired by Spec-kit patterns):
+  - **Unified Placeholder Format**: `{{PLACEHOLDER}}` for clear fill-in markers
+  - **Action Comments**: `<!-- ACTION REQUIRED: ... -->` for critical sections
+  - **Cross-Doc References**: `**Input**: [previous-phase.md]` headers linking phases
+  - **Quality Self-Checks**: Each template ends with verification checklist
+  - **Priority System**: P1/P2/P3 labels + "Why This Priority" rationale (requirements)
+  - **Parallel Markers**: `[P]` tags for tasks that can run concurrently (tasks)
+  - **REQ Traceability**: `[REQ-XXX]` tags linking tasks back to requirements
+  - **Independent Tests**: Each requirement includes verification method
+  - **`[NEEDS CLARIFICATION: ...]`**: Explicit uncertainty markers
+  - **ADR-style Decisions**: "Why This Approach" + "Alternatives Rejected" sections (design)
+
 ---
+
 
 
 ## [3.1.8] - 2025-12-16
