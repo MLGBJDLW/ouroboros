@@ -29,6 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **`[NEEDS CLARIFICATION: ...]`**: Explicit uncertainty markers
   - **ADR-style Decisions**: "Why This Approach" + "Alternatives Rejected" sections (design)
 
+- **Requirements Clarification Q&A Flow** — New interactive clarification process for Phase 2:
+  - `ouroboros-requirements` outputs structured `CLQ-XXX` questions with 2-4 options + expert recommendation
+  - `ouroboros-spec` presents questions **ONE BY ONE** using MENU format (not all at once)
+  - After user answers, delegates to `ouroboros-writer` to update requirements.md
+  - New **Phase 2.5** in spec workflow for handling clarifications
+
+
 ---
 
 
