@@ -45,17 +45,45 @@ class HistoryManager:
         self._temp_current = ""  # Temp storage for current input when browsing
         self._load()
 
+    @staticmethod
+    def _escape(entry: str) -> str:
+        """Escape newlines and backslashes for single-line storage."""
+        return entry.replace("\\", "\\\\").replace("\n", "\\n")
+
+    @staticmethod
+    def _unescape(line: str) -> str:
+        """Unescape a line back to multi-line entry."""
+        result = []
+        i = 0
+        while i < len(line):
+            if line[i] == "\\" and i + 1 < len(line):
+                next_char = line[i + 1]
+                if next_char == "n":
+                    result.append("\n")
+                    i += 2
+                    continue
+                elif next_char == "\\":
+                    result.append("\\")
+                    i += 2
+                    continue
+            result.append(line[i])
+            i += 1
+        return "".join(result)
+
     def _load(self) -> None:
         """
         Load history from file.
 
         Handles corrupted history file gracefully by starting with empty history.
+        Multi-line entries are stored as single lines with escaped newlines.
         """
         try:
             if os.path.exists(self.history_file):
                 with open(self.history_file, "r", encoding="utf-8") as f:
                     lines = f.read().strip().split("\n")
-                    self.entries = [line for line in lines if line.strip()]
+                    self.entries = [
+                        self._unescape(line) for line in lines if line.strip()
+                    ]
         except (IOError, OSError, UnicodeDecodeError):
             # Handle corrupted file gracefully - start with empty history
             self.entries = []
@@ -66,8 +94,10 @@ class HistoryManager:
         try:
             # Keep only max_entries
             entries_to_save = self.entries[-self.max_entries :]
+            # Escape each entry so multi-line content becomes single line
+            escaped = [self._escape(entry) for entry in entries_to_save]
             with open(self.history_file, "w", encoding="utf-8") as f:
-                f.write("\n".join(entries_to_save) + "\n")
+                f.write("\n".join(escaped) + "\n")
         except (IOError, OSError):
             pass  # Silently fail on save errors
 
