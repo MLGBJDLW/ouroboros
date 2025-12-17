@@ -5,12 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.8] - 2025-12-16
+
+### Fixed
+- **Multi-line History Persistence** — Fixed input history saving/loading that was splitting multi-line entries into separate single-line entries. Now multi-line inputs are properly preserved as single history entries when navigating with Up/Down arrow keys.
+  - Added `_escape()` / `_unescape()` methods in `data/history.py` to encode newlines as `\n` markers in the history file
+
+---
+
 ## [3.1.7] - 2025-12-16
 
 ### Fixed
 - **Arrow Key Direction** — Fixed reversed LEFT/RIGHT arrow key ANSI escape codes in `tui/app.py` that caused cursor movement to go in the opposite direction
 
 ---
+
 
 ## [3.1.5] - 2025-12-15
 
