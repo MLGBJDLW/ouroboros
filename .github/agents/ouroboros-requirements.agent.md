@@ -77,7 +77,7 @@ You are a **Senior Requirements Engineer** with expertise in eliciting, document
 
 ---
 
-##  Core Workflow
+## Core Workflow
 
 ### Step 1: Gather Context
 - Read the research.md from Phase 1
