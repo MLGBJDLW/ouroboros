@@ -148,9 +148,9 @@ runSubagent(
    - history: 2 files > 7 days (will archive)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-**Execute via `run_command` tool (Type B: Menu):**
+**Execute via `run_command` tool (Type B: Menu with Question):**
 ```python
-python -c "print(); print('[1] Archive specific spec'); print('[2] Archive all'); print('[3] Cleanup only'); choice = input('Choice [1-3]: ')"
+python -c "print('📦 Found archivable specs. Select action:'); print(); print('[1] Archive specific spec'); print('[2] Archive all'); print('[3] Cleanup only'); choice = input('Choice [1-3]: ')"
 ```
 
 **If NO completed specs:**
@@ -166,9 +166,9 @@ Would you like to run cleanup instead?
    - Archive old history files (> 7 days)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-**Execute via `run_command` tool (Type D: Confirm):**
+**Execute via `run_command` tool (Type D: Confirm with Question):**
 ```python
-python -c "print(); print('[y] Yes - run cleanup'); print('[n] No - cancel'); confirm = input('Confirm [y/n]: ')"
+python -c "print('🧹 No completed specs found. Run cleanup tasks? (Delete old subagent-docs, archive old history files)'); print(); print('[y] Yes - run cleanup'); print('[n] No - cancel'); confirm = input('Confirm [y/n]: ')"
 ```
 
 ---

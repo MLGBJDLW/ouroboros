@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-12-18
+
+### Added
+- **CCL Question Text Integration** — LLM agents can now include contextual question text directly in CCL commands using `print('question')` before options:
+  - **Type A+Q: TASK with Inquiry** — New variant for asking questions before receiving general input
+  - **6 Output Types** — Upgraded from 5 types (TASK, MENU, CONFIRM, FEATURE, QUESTION → add TASK+Q)
+  - **`--question` CLI Argument** — New parameter for `ouroboros_input.py` to display question text in TUI header
+
+- **TUI Word-Wrap Support** — Question text auto-wraps to fit terminal width:
+  - `WelcomeBox` — Added `_wrap_text()` method with multi-line rendering + separator line
+  - `SelectionMenu` — Title/question now wraps across multiple lines with dynamic height calculation + separator line
+  - **Visual Separator** — Horizontal line (`───`) between question and options/input for clarity
+
+### Changed
+- **All Level 1 Orchestrator CCL Examples** — Updated with question text in `python -c` format:
+  - `ouroboros-spec.agent.md` — 3 locations
+  - `ouroboros-init.agent.md` — 1 location
+  - `ouroboros-implement.agent.md` — 3 locations
+  - `ouroboros-archive.agent.md` — 2 locations
+
+- **Toggle Script Patterns** — Updated `PATTERNS` dictionary in `ouroboros_toggle.py`:
+  - Added `Type A_Q` for TASK with question
+  - Types B, C, D, E now capture question from initial `print()` statement
+  - Enhanced mode uses `--question` parameter
+
+- **Documentation Updates**:
+  - `copilot-instructions.md` — Added Question Text tip block, updated output types table
+  - `ouroboros.agent.md` — Renamed "FIVE OUTPUT TYPES" to "SIX OUTPUT TYPES" with new examples
+
+---
+
 ## [3.1.9] - 2025-12-16
 
 ### Added

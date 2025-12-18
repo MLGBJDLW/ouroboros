@@ -74,9 +74,9 @@ Estimated time: 1-2 minutes
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Then ask for confirmation (Type D: Confirm):**
+**Then ask for confirmation (Type D: Confirm with Question):**
 ```python
-python -c "print(); print('[y] Yes - proceed with initialization'); print('[n] No - cancel'); confirm = input('Confirm [y/n]: ')"
+python -c "print('🚀 Ready to initialize Ouroboros. This will scan project and create context files.'); print(); print('[y] Yes - proceed with initialization'); print('[n] No - cancel'); confirm = input('Confirm [y/n]: ')"
 ```
 
 **If user says 'y' or 'yes'**: Proceed to Phase 1

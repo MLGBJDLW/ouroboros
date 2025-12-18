@@ -17,7 +17,6 @@ import sys
 import os
 import re
 import argparse
-import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -36,7 +35,6 @@ SEARCH_DIRS = [
     Path(".github/agents"),
     Path(".github/prompts"),
     Path(".github"),
-    Path("."),  # Root directory for AGENTS.md
 ]
 
 # File patterns to include
@@ -65,24 +63,21 @@ PATTERNS = {
         "default_template": "python -c \"print('{header}'); choice = input('{prompt}')\"",
         "enhanced_template": 'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var choice',
     },
-    # Type C: Feature/free-form input (with optional menu)
+    # Type C: Feature/free-form input
     "C": {
         "default": r'python -c "feature = input\(\'([^\']*)\'\)"',
-        "default_menu": r'python -c "print\(\);(?: print\(\'[^\']*\'\);)+ feature = input\(\'([^\']*)\'\)"',
-        "enhanced": r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--header "([^"]*)")? --prompt "([^"]*)" --var feature',
+        "enhanced": r'python \.ouroboros/scripts/ouroboros_input\.py --prompt "([^"]*)" --var feature',
         "default_template": "python -c \"feature = input('{prompt}')\"",
         "enhanced_template": 'python .ouroboros/scripts/ouroboros_input.py --prompt "{prompt}" --var feature',
-        "enhanced_template_with_header": 'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var feature',
     },
-    # Type D: Confirmation (y/n) with menu
+    # Type D: Confirmation (y/n)
     "D": {
-        "default": r'python -c "confirm = input\(\'[^\']*\'\)"',
-        "default_menu": r'python -c "print\(\);(?: print\(\'[^\']*\'\);)+ confirm = input\(\'([^\']*)\'\)"',
-        "enhanced": r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--header "([^"]*)")? --prompt "([^"]*)" --var confirm(?:\s+--no-ui)?',
+        "default": r'python -c "(?:print\(\'([^\']*)\'\); )?confirm = input\(\'\\[y/n\\]: \'\)"',
+        "enhanced": r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--header "([^"]*)")? --prompt "\\[y/n\\]:" --var confirm --no-ui',
         "default_template": "python -c \"confirm = input('[y/n]: ')\"",
-        "default_template_menu": "python -c \"print(); print('[y] Yes'); print('[n] No'); confirm = input('{prompt}')\"",
+        "default_template_with_print": "python -c \"print('{header}'); confirm = input('[y/n]: ')\"",
         "enhanced_template": 'python .ouroboros/scripts/ouroboros_input.py --prompt "[y/n]:" --var confirm --no-ui',
-        "enhanced_template_with_header": 'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var confirm --no-ui',
+        "enhanced_template_with_header": 'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "[y/n]:" --var confirm --no-ui',
     },
     # Type E: Question
     "E": {
@@ -159,6 +154,79 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
     """Convert default mode commands to enhanced mode. Returns (new_content, count)."""
     changes = 0
 
+    # ==========================================================================
+    # NEW FORMAT: Question + Options (print('question'); print(); print('[1]...'))
+    # Must be processed BEFORE old format patterns to avoid partial matching
+    # ==========================================================================
+
+    # Type A+Q: Standard CCL with question
+    # Format: print('question'); task = input('[Ouroboros] > ')
+    def replace_task_with_question(match):
+        question = match.group(1).replace("'", '"')
+        return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}"'
+
+    pattern_a_q = (
+        r'python -c "print\(\'([^\']*)\'\); task = input\(\'\[Ouroboros\] > \'\)"'
+    )
+    content, n = re.subn(pattern_a_q, replace_task_with_question, content)
+    changes += n
+
+    # Type B with Question: Menu with question + print() + options + choice
+    # Format: print('question'); print(); print('[1] A'); print('[2] B'); choice = input('...')
+    def replace_menu_with_question(match):
+        full_match = match.group(0)
+        question_match = re.search(r"print\('([^']*)'\); print\(\)", full_match)
+        question = question_match.group(1) if question_match else ""
+        print_items = re.findall(r"print\('(\[[^\]]+\][^']*)'\)", full_match)
+        prompt_match = re.search(r"choice = input\('([^']*)'\)", full_match)
+        prompt = prompt_match.group(1) if prompt_match else "Select:"
+        header = "\\n".join(print_items)
+        if question:
+            return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}" --header "{header}" --prompt "{prompt}" --var choice'
+        return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var choice'
+
+    pattern_b_question = r'python -c "print\(\'[^\']*\'\); print\(\);(?: print\(\'[^\']*\'\);)+ choice = input\(\'[^\']*\'\)"'
+    content, n = re.subn(pattern_b_question, replace_menu_with_question, content)
+    changes += n
+
+    # Type C with Question: Feature input with question
+    def replace_feature_with_question(match):
+        full_match = match.group(0)
+        question_match = re.search(r"print\('([^']*)'\); print\(\)", full_match)
+        question = question_match.group(1) if question_match else ""
+        print_items = re.findall(r"print\('(\[[^\]]+\][^']*)'\)", full_match)
+        prompt_match = re.search(r"feature = input\('([^']*)'\)", full_match)
+        prompt = prompt_match.group(1) if prompt_match else "Feature:"
+        header = "\\n".join(print_items)
+        if question:
+            return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}" --header "{header}" --prompt "{prompt}" --var feature'
+        return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var feature'
+
+    pattern_c_question = r'python -c "print\(\'[^\']*\'\); print\(\);(?: print\(\'[^\']*\'\);)+ feature = input\(\'[^\']*\'\)"'
+    content, n = re.subn(pattern_c_question, replace_feature_with_question, content)
+    changes += n
+
+    # Type D with Question: Confirm with question
+    def replace_confirm_with_question(match):
+        full_match = match.group(0)
+        question_match = re.search(r"print\('([^']*)'\); print\(\)", full_match)
+        question = question_match.group(1) if question_match else ""
+        print_items = re.findall(r"print\('(\[[^\]]+\][^']*)'\)", full_match)
+        prompt_match = re.search(r"confirm = input\('([^']*)'\)", full_match)
+        prompt = prompt_match.group(1) if prompt_match else "[y/n]:"
+        header = "\\n".join(print_items)
+        if question:
+            return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}" --header "{header}" --prompt "{prompt}" --var confirm'
+        return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var confirm'
+
+    pattern_d_question = r'python -c "print\(\'[^\']*\'\); print\(\);(?: print\(\'[^\']*\'\);)+ confirm = input\(\'[^\']*\'\)"'
+    content, n = re.subn(pattern_d_question, replace_confirm_with_question, content)
+    changes += n
+
+    # ==========================================================================
+    # ORIGINAL FORMAT (from working git version)
+    # ==========================================================================
+
     # Type A: Standard CCL - match multiple formats
     # Format 1: python -c "task = input('[Ouroboros] > ')"
     # Format 2: python -c "task = input(\'[Ouroboros] > \')"
@@ -172,52 +240,20 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
         content, n = re.subn(pattern, replacement_a, content)
         changes += n
 
-    # Type B: Menu with multiple print() calls + choice
-    # New format: print(); print('[1] A'); print('[2] B'); choice = input('...')
-    def replace_menu_new(match):
-        # Extract all the print statements and the prompt
-        full_match = match.group(0)
-        # Find all print('[x] ...') patterns
-        print_items = re.findall(r"print\('(\[[^\]]+\][^']*)'\)", full_match)
-        prompt_match = re.search(r"choice = input\('([^']*)'\)", full_match)
-        prompt = prompt_match.group(1) if prompt_match else "Select:"
-
-        # Build header from print items
-        header = "\\n".join(print_items)
-        return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var choice'
-
-    # Match: print(); print('[1] ...'); print('[2] ...'); ... choice = input('...')
-    pattern_b_new = r'python -c "print\(\);(?: print\(\'\[[^\]]+\][^\']*\'\);)+ choice = input\(\'[^\']*\'\)"'
-    content, n = re.subn(pattern_b_new, replace_menu_new, content)
-    changes += n
-
-    # Also match old format for backwards compatibility: print('\\n[1]...\\n[2]...'); choice = input('...')
-    def replace_menu_old(match):
+    # Type B: Menu with print + choice
+    def replace_menu(match):
         header = match.group(1).replace("\\n", "\n").replace("'", '"')
         prompt = match.group(2).replace("'", '"')
         header_escaped = header.replace("\n", "\\n")
         return f'python .ouroboros/scripts/ouroboros_input.py --header "{header_escaped}" --prompt "{prompt}" --var choice'
 
-    pattern_b_old = (
+    pattern_b = (
         r'python -c "print\(\'((?:[^\'\\]|\\.)*)\'\); choice = input\(\'([^\']*)\'\)"'
     )
-    content, n = re.subn(pattern_b_old, replace_menu_old, content)
+    content, n = re.subn(pattern_b, replace_menu, content)
     changes += n
 
-    # Type C: Feature input with menu (new format: print(); print('[1]...'); feature = input('...'))
-    def replace_feature_menu(match):
-        full_match = match.group(0)
-        print_items = re.findall(r"print\('(\[[^\]]+\][^']*)'\)", full_match)
-        prompt_match = re.search(r"feature = input\('([^']*)'\)", full_match)
-        prompt = prompt_match.group(1) if prompt_match else "Feature:"
-        header = "\\n".join(print_items)
-        return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var feature'
-
-    pattern_c_menu = r'python -c "print\(\);(?: print\(\'\[[^\]]+\][^\']*\'\);)+ feature = input\(\'[^\']*\'\)"'
-    content, n = re.subn(pattern_c_menu, replace_feature_menu, content)
-    changes += n
-
-    # Type C: Feature input simple (old format)
+    # Type C: Feature input
     def replace_feature(match):
         prompt = match.group(1).replace("'", '"')
         return f'python .ouroboros/scripts/ouroboros_input.py --prompt "{prompt}" --var feature'
@@ -226,25 +262,17 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
     content, n = re.subn(pattern_c, replace_feature, content)
     changes += n
 
-    # Type D: Confirmation with menu (new format: print(); print('[y]...'); confirm = input('...'))
-    def replace_confirm_menu(match):
-        full_match = match.group(0)
-        print_items = re.findall(r"print\('(\[[^\]]+\][^']*)'\)", full_match)
-        prompt_match = re.search(r"confirm = input\('([^']*)'\)", full_match)
-        prompt = prompt_match.group(1) if prompt_match else "[y/n]:"
-        header = "\\n".join(print_items)
-        return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "{prompt}" --var confirm --no-ui'
-
-    pattern_d_menu = r'python -c "print\(\);(?: print\(\'\[[^\]]+\][^\']*\'\);)+ confirm = input\(\'[^\']*\'\)"'
-    content, n = re.subn(pattern_d_menu, replace_confirm_menu, content)
-    changes += n
-
-    # Type D: Confirmation simple (old format)
+    # Type D: Confirmation with optional print
     def replace_confirm(match):
-        prompt = match.group(1) if match.group(1) else "[y/n]:"
-        return f'python .ouroboros/scripts/ouroboros_input.py --prompt "{prompt}" --var confirm --no-ui'
+        header = match.group(1) if match.group(1) else None
+        if header:
+            header = header.replace("\\n", "").strip().replace("'", '"')
+            return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "[y/n]:" --var confirm --no-ui'
+        return 'python .ouroboros/scripts/ouroboros_input.py --prompt "[y/n]:" --var confirm --no-ui'
 
-    pattern_d = r'python -c "confirm = input\(\'([^\']*)\'\)"'
+    pattern_d = (
+        r'python -c "(?:print\(\'([^\']*)\'\); )?confirm = input\(\'\\[y/n\\]: \'\)"'
+    )
     content, n = re.subn(pattern_d, replace_confirm, content)
     changes += n
 
@@ -264,6 +292,81 @@ def convert_to_default(content: str) -> tuple[str, int]:
     """Convert enhanced mode commands back to default mode. Returns (new_content, count)."""
     changes = 0
 
+    # ==========================================================================
+    # NEW FORMAT: Reverse conversion for --question patterns
+    # ==========================================================================
+
+    # Type A+Q: Standard CCL with question -> python -c with print
+    def replace_task_with_question_reverse(match):
+        question = match.group(1).replace('"', "'")
+        return f"python -c \"print('{question}'); task = input('[Ouroboros] > ')\""
+
+    pattern_a_q_rev = (
+        r'python \.ouroboros/scripts/ouroboros_input\.py --question "([^"]*)"(?!\s+--)'
+    )
+    content, n = re.subn(pattern_a_q_rev, replace_task_with_question_reverse, content)
+    changes += n
+
+    # Type B with Question: Menu with question -> python -c with print statements
+    def replace_menu_with_question_reverse(match):
+        question = match.group(1).replace('"', "'") if match.group(1) else ""
+        header = match.group(2).replace('"', "'") if match.group(2) else ""
+        prompt = match.group(3).replace('"', "'") if match.group(3) else "Select:"
+
+        # Convert header to multiple print statements
+        options = header.split("\\n")
+        print_stmts = "; ".join([f"print('{opt}')" for opt in options])
+
+        if question:
+            return f"python -c \"print('{question}'); print(); {print_stmts}; choice = input('{prompt}')\""
+        return f"python -c \"print(); {print_stmts}; choice = input('{prompt}')\""
+
+    pattern_b_q_rev = r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var choice'
+    content, n = re.subn(pattern_b_q_rev, replace_menu_with_question_reverse, content)
+    changes += n
+
+    # Type C with Question: Feature with question -> python -c with print statements
+    def replace_feature_with_question_reverse(match):
+        question = match.group(1).replace('"', "'") if match.group(1) else ""
+        header = match.group(2).replace('"', "'") if match.group(2) else ""
+        prompt = match.group(3).replace('"', "'") if match.group(3) else "Feature:"
+
+        options = header.split("\\n")
+        print_stmts = "; ".join([f"print('{opt}')" for opt in options])
+
+        if question:
+            return f"python -c \"print('{question}'); print(); {print_stmts}; feature = input('{prompt}')\""
+        return f"python -c \"print(); {print_stmts}; feature = input('{prompt}')\""
+
+    pattern_c_q_rev = r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var feature'
+    content, n = re.subn(
+        pattern_c_q_rev, replace_feature_with_question_reverse, content
+    )
+    changes += n
+
+    # Type D with Question: Confirm with question -> python -c with print statements
+    def replace_confirm_with_question_reverse(match):
+        question = match.group(1).replace('"', "'") if match.group(1) else ""
+        header = match.group(2).replace('"', "'") if match.group(2) else ""
+        prompt = match.group(3).replace('"', "'") if match.group(3) else "[y/n]:"
+
+        options = header.split("\\n")
+        print_stmts = "; ".join([f"print('{opt}')" for opt in options])
+
+        if question:
+            return f"python -c \"print('{question}'); print(); {print_stmts}; confirm = input('{prompt}')\""
+        return f"python -c \"print(); {print_stmts}; confirm = input('{prompt}')\""
+
+    pattern_d_q_rev = r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var confirm'
+    content, n = re.subn(
+        pattern_d_q_rev, replace_confirm_with_question_reverse, content
+    )
+    changes += n
+
+    # ==========================================================================
+    # ORIGINAL FORMAT (from working git version)
+    # ==========================================================================
+
     # Type A: Standard CCL - match standalone calls (no --arguments after)
     # Use negative lookahead to avoid matching calls with arguments
     pattern_a_exact = r"python \.ouroboros/scripts/ouroboros_input\.py(?!\s+--)"
@@ -271,34 +374,17 @@ def convert_to_default(content: str) -> tuple[str, int]:
     content, n = re.subn(pattern_a_exact, replacement_a, content)
     changes += n
 
-    # Type B: Menu with header + prompt -> convert to multiple print() calls
+    # Type B: Menu with header + prompt
     def replace_menu(match):
-        header = match.group(1)  # e.g., "[1] Option A\\n[2] Option B"
+        header = match.group(1).replace('"', "'")
         prompt = match.group(2).replace('"', "'")
-
-        # Split header by \\n and create multiple print() calls
-        items = header.split("\\n")
-        print_calls = "; ".join([f"print('{item}')" for item in items if item.strip()])
-
-        return f"python -c \"print(); {print_calls}; choice = input('{prompt}')\""
+        return f"python -c \"print('{header}'); choice = input('{prompt}')\""
 
     pattern_b = r'python \.ouroboros/scripts/ouroboros_input\.py --header "([^"]*)" --prompt "([^"]*)" --var choice'
     content, n = re.subn(pattern_b, replace_menu, content)
     changes += n
 
-    # Type C: Feature input with header -> convert to multiple print() calls
-    def replace_feature_with_header(match):
-        header = match.group(1)
-        prompt = match.group(2).replace('"', "'")
-        items = header.split("\\n")
-        print_calls = "; ".join([f"print('{item}')" for item in items if item.strip()])
-        return f"python -c \"print(); {print_calls}; feature = input('{prompt}')\""
-
-    pattern_c_header = r'python \.ouroboros/scripts/ouroboros_input\.py --header "([^"]*)" --prompt "([^"]*)" --var feature'
-    content, n = re.subn(pattern_c_header, replace_feature_with_header, content)
-    changes += n
-
-    # Type C: Feature input simple (no header)
+    # Type C: Feature input
     def replace_feature(match):
         prompt = match.group(1).replace('"', "'")
         return f"python -c \"feature = input('{prompt}')\""
@@ -307,24 +393,15 @@ def convert_to_default(content: str) -> tuple[str, int]:
     content, n = re.subn(pattern_c, replace_feature, content)
     changes += n
 
-    # Type D: Confirmation with header -> convert to multiple print() calls
-    def replace_confirm_with_header(match):
-        header = match.group(1)
-        prompt = match.group(2).replace('"', "'")
-        items = header.split("\\n")
-        print_calls = "; ".join([f"print('{item}')" for item in items if item.strip()])
-        return f"python -c \"print(); {print_calls}; confirm = input('{prompt}')\""
-
-    pattern_d_header = r'python \.ouroboros/scripts/ouroboros_input\.py --header "([^"]*)" --prompt "([^"]*)" --var confirm(?:\s+--no-ui)?'
-    content, n = re.subn(pattern_d_header, replace_confirm_with_header, content)
-    changes += n
-
-    # Type D: Confirmation simple (no header)
+    # Type D: Confirmation
     def replace_confirm(match):
-        prompt = match.group(1).replace('"', "'")
-        return f"python -c \"confirm = input('{prompt}')\""
+        header = match.group(1) if match.group(1) else None
+        if header:
+            header = header.replace('"', "'")
+            return f"python -c \"print('{header}'); confirm = input('[y/n]: ')\""
+        return "python -c \"confirm = input('[y/n]: ')\""
 
-    pattern_d = r'python \.ouroboros/scripts/ouroboros_input\.py --prompt "([^"]*)" --var confirm(?:\s+--no-ui)?'
+    pattern_d = r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--header "([^"]*)")? --prompt "\[y/n\]:" --var confirm(?:\s+--no-ui)?'
     content, n = re.subn(pattern_d, replace_confirm, content)
     changes += n
 
@@ -345,42 +422,6 @@ def convert_to_default(content: str) -> tuple[str, int]:
 # =============================================================================
 
 
-def cleanup_old_backups(backup_dir: Path, keep_count: int = 5) -> int:
-    """
-    Clean up old backup folders, keeping only the most recent ones.
-
-    Args:
-        backup_dir: Path to the backup directory
-        keep_count: Number of most recent backups to keep (default: 5)
-
-    Returns:
-        Number of backup folders deleted
-    """
-    if not backup_dir.exists():
-        return 0
-
-    # Get all backup folders (they should be named with timestamps)
-    backup_folders = [
-        d
-        for d in backup_dir.iterdir()
-        if d.is_dir() and re.match(r"\d{8}_\d{6}", d.name)
-    ]
-
-    # Sort by name (timestamp format ensures chronological order)
-    backup_folders.sort(reverse=True)
-
-    # Delete old backups beyond keep_count
-    deleted_count = 0
-    for old_backup in backup_folders[keep_count:]:
-        try:
-            shutil.rmtree(old_backup)
-            deleted_count += 1
-        except Exception as e:
-            print(f"  ⚠️  Could not delete old backup {old_backup.name}: {e}")
-
-    return deleted_count
-
-
 def create_backup(repo_root: Path, files: list[Path]) -> Path:
     """Create backup of files before modification."""
     backup_dir = repo_root / BACKUP_DIR
@@ -396,11 +437,6 @@ def create_backup(repo_root: Path, files: list[Path]) -> Path:
             dest.write_text(file.read_text(encoding="utf-8"), encoding="utf-8")
         except IOError:
             continue
-
-    # Clean up old backups after creating new one
-    deleted = cleanup_old_backups(backup_dir, keep_count=5)
-    if deleted > 0:
-        print(f"  🧹 Cleaned up {deleted} old backup(s)")
 
     return backup_path
 

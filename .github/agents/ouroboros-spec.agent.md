@@ -90,9 +90,9 @@ before we move to the next phase.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Then ask for feature name (Type C: Feature):**
+**Then ask for feature name (Type C: Feature with Question):**
 ```python
-python -c "print(); print('[1] auth-system'); print('[2] payment-flow'); print('[3] Custom...'); feature = input('Feature [1-3 or name]: ')"
+python -c "print('📋 Select or enter feature name for spec creation:'); print(); print('[1] auth-system'); print('[2] payment-flow'); print('[3] Custom...'); feature = input('Feature [1-3 or name]: ')"
 ```
 
 **After receiving feature name:**
@@ -184,7 +184,7 @@ Read: .ouroboros/specs/[feature-name]/research.md
    
    a. **Execute CCL MENU:**
    ```python
-   python -c "print(); print('[1] Option A'); print('[2] Option B'); print('[3] Custom...'); choice = input('Select: ')"
+   python -c "print('❓ [CLQ-XXX Question content]'); print(); print('[1] Option A'); print('[2] Option B'); print('[3] Custom...'); choice = input('Select: ')"
    ```
 
 
@@ -362,9 +362,9 @@ All 5 phases are complete and validated.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Execute via `run_command` tool (Type B: Menu):**
+**Execute via `run_command` tool (Type B: Menu with Question):**
 ```python
-python -c "print(); print('[1] ⚙️ /ouroboros-implement'); print('[2] 📝 Revise'); print('[3] 🔄 /ouroboros'); choice = input('Select [1-3]: ')"
+python -c "print('✅ Spec document complete! Select next action:'); print(); print('[1] ⚙️ /ouroboros-implement'); print('[2] 📝 Revise'); print('[3] 🔄 /ouroboros'); choice = input('Select [1-3]: ')"
 ```
 
 **If choice = 1**: Use handoff to `ouroboros-implement`

@@ -79,12 +79,17 @@ python -c "task = input('[Ouroboros] > ')"
 
 ### Five Output Types (Level 0 & 1 Only)
 
+> [!TIP]
+> **Question Text**: Use `print('question')` before options to display a question. Text auto-wraps in terminal.
+
 | Type | When | Format |
 |------|------|--------|
 | TASK | Next task | `python -c "task = input('[Ouroboros] > ')"` |
-| MENU | Options | `python -c "print('[1]...'); choice = input('Select: ')"` |
-| CONFIRM | Yes/No | `python -c "print(); print('[y] Yes'); print('[n] No'); confirm = input('[y/n]: ')"` |
-| QUESTION | Clarify | `python -c "question = input('Question? ')"` |
+| TASK+Q | With inquiry | `python -c "print('💭 Question here'); task = input('[Ouroboros] > ')"` |
+| MENU | Options | `python -c "print('📋 Question'); print(); print('[1] A'); print('[2] B'); choice = input('Select: ')"` |
+| CONFIRM | Yes/No | `python -c "print('⚠️ Question'); print(); print('[y] Yes'); print('[n] No'); confirm = input('[y/n]: ')"` |
+| FEATURE | Free-form | `python -c "print('🔧 Question'); feature = input('Feature: ')"` |
+| QUESTION | Clarify | `python -c "print('❓ Question'); question = input('Your answer: ')"` |
 
 **RULE:** Use `run_command` tool with **Python** format. NO PowerShell/Bash.
 
