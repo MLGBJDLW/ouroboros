@@ -83,13 +83,74 @@ class WelcomeBox:
             Required height in rows
         """
         if self.custom_header:
-            return 4  # Title + custom header + borders
+            # Calculate wrapped lines for custom header + separator line
+            inner_width = (
+                min(self.MAX_WIDTH, width) - 4
+            )  # Account for borders + padding
+            wrapped_lines = self._wrap_text(self.custom_header, inner_width)
+            return 3 + len(
+                wrapped_lines
+            )  # top border + content + separator + bottom border
 
         if self._is_compact(width):
             return 4  # Compact: title + 2 shortcut lines + border
 
         # Full: title + 4 shortcut rows + border
         return 2 + len(self.SHORTCUT_ROWS)
+
+    def _wrap_text(self, text: str, max_width: int) -> list:
+        """
+        Wrap text to fit within max_width.
+
+        Handles multi-line input (\\n) and long lines.
+
+        Args:
+            text: Text to wrap
+            max_width: Maximum width per line
+
+        Returns:
+            List of wrapped lines
+        """
+        if max_width <= 0:
+            return [text]
+
+        result = []
+        # First split by explicit newlines
+        paragraphs = text.replace("\\n", "\n").split("\n")
+
+        for para in paragraphs:
+            if not para:
+                result.append("")
+                continue
+
+            # Wrap each paragraph
+            words = para.split(" ")
+            current_line = ""
+
+            for word in words:
+                if not word:
+                    continue
+
+                test_line = f"{current_line} {word}".strip() if current_line else word
+
+                if len(test_line) <= max_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        result.append(current_line)
+                    # If word itself is too long, split it
+                    if len(word) > max_width:
+                        while len(word) > max_width:
+                            result.append(word[:max_width])
+                            word = word[max_width:]
+                        current_line = word
+                    else:
+                        current_line = word
+
+            if current_line:
+                result.append(current_line)
+
+        return result if result else [""]
 
     def _get_key_attr(self, key_type: str) -> int:
         """Get attribute for key based on type."""
@@ -147,9 +208,20 @@ class WelcomeBox:
 
         # Draw content
         if self.custom_header:
-            # Custom header text
-            header_x = (box_width - len(self.custom_header) - 2) // 2
-            self._window.write(1, max(1, header_x), self.custom_header, 0)
+            # Custom header text with word wrap
+            inner_width = box_width - 4  # Borders + padding
+            wrapped_lines = self._wrap_text(self.custom_header, inner_width)
+            row = 1
+            for line in wrapped_lines:
+                # Center each line
+                line_x = (box_width - len(line)) // 2
+                self._window.write(row, max(1, line_x), line, 0)
+                row += 1
+            # Draw separator line after question
+            separator = "─" * (inner_width - 2)
+            sep_x = (box_width - len(separator)) // 2
+            dim_attr = self.theme.get_attr("dim") if self.theme else 0
+            self._window.write(row, max(1, sep_x), separator, dim_attr)
         elif self._is_compact(box_width):
             # Compact mode: simple layout
             self._render_compact_shortcuts(box_width)

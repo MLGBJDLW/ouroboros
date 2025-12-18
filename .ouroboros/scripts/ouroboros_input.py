@@ -569,6 +569,11 @@ def parse_args():
     parser.add_argument("--prompt", default="", help="Custom prompt text")
     parser.add_argument("--header", default="", help="Header/menu text (Type B)")
     parser.add_argument(
+        "--question",
+        default="",
+        help="Question text to display above input (auto word-wrap)",
+    )
+    parser.add_argument(
         "--options", nargs="+", help="Options for selection menu (space-separated)"
     )
     parser.add_argument(
@@ -648,6 +653,10 @@ def main():
     # Detect mode
     mode = detect_mode(args)
 
+    # Prepare question header (if provided)
+    # Question text is displayed above the input/menu
+    question_header = args.question if hasattr(args, "question") else ""
+
     try:
         # Handle each mode
         if mode == "pipe":
@@ -656,9 +665,13 @@ def main():
 
         elif mode == "selection":
             # Explicit selection menu
+            title = args.prompt or "Select an option:"
+            # Prepend question to title if provided
+            if question_header:
+                title = f"{question_header}\n\n{title}"
             content = get_selection_input(
                 options=args.options,
-                title=args.prompt or "Select an option:",
+                title=title,
                 allow_custom=not args.no_custom,
             )
 
@@ -666,6 +679,10 @@ def main():
             # Header with detected menu options
             title, options = parse_menu_options(args.header, args.prompt)
             is_yes_no = detect_yes_no(args.prompt) if args.prompt else False
+
+            # Prepend question to title if provided
+            if question_header:
+                title = f"{question_header}\n\n{title}"
 
             content = get_selection_input(
                 options=options, title=title, allow_custom=not is_yes_no
@@ -680,23 +697,34 @@ def main():
 
         elif mode == "header":
             # Header without menu - show as welcome, then input
+            header = args.header
+            # Prepend question to header if provided
+            if question_header:
+                header = f"{question_header}\n\n{header}"
             content = get_tui_input(
-                header=args.header, prompt=args.prompt or "[Ouroboros] > "
+                header=header, prompt=args.prompt or "[Ouroboros] > "
             )
 
         elif mode == "prompt":
             # Simple prompt mode
             if args.no_ui:
+                # For no-ui, print question first
+                if question_header:
+                    writeln(question_header)
                 content = get_simple_input(args.prompt)
             else:
-                content = get_tui_input(prompt=args.prompt)
+                header = question_header if question_header else ""
+                content = get_tui_input(header=header, prompt=args.prompt)
 
         else:
             # CCL mode (default)
             if args.no_ui:
+                if question_header:
+                    writeln(question_header)
                 content = get_fallback_input(show_ui=False)
             else:
-                content = get_tui_input()
+                # Pass question as header for display
+                content = get_tui_input(header=question_header)
 
         # Output result
         if content:

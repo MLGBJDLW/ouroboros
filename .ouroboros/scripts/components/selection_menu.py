@@ -471,7 +471,10 @@ class SelectionMenu:
         ) -> Tuple[List[Tuple[int, List[str], bool]], bool]:
             has_title = bool(self.title)
             reserved = 2  # borders
-            reserved += 1 if has_title else 0
+            if has_title:
+                # Reserve space for wrapped title lines + separator
+                title_lines = self._wrap_text(self.title, inner_width - 2)
+                reserved += len(title_lines) + 1  # +1 for separator
             reserved += 1 if scroll_offset > 0 else 0  # above indicator
 
             # First pass: decide visible options without reserving below indicator.
@@ -509,7 +512,9 @@ class SelectionMenu:
         option_line_count = sum(len(lines) for _, lines, _ in layout)
         content_height = option_line_count
         if has_title:
-            content_height += 1
+            # Calculate wrapped title lines + separator line
+            title_lines = self._wrap_text(self.title, inner_width - 2)
+            content_height += len(title_lines) + 1  # +1 for separator
         if above_indicator:
             content_height += 1
         if below_indicator:
@@ -554,12 +559,22 @@ class SelectionMenu:
         # Current row for content
         row = 1
 
-        # Draw title if present
+        # Draw title if present (supports multi-line with wrap)
         if has_title:
-            title_line = pad_text(
-                self.title, inner_width, align="center", fill_char=" ", truncate=True
-            )
-            self._window.write(row, 1, title_line, accent_attr)
+            title_lines = self._wrap_text(self.title, inner_width - 2)  # Leave padding
+            for title_line in title_lines:
+                title_padded = pad_text(
+                    title_line,
+                    inner_width,
+                    align="center",
+                    fill_char=" ",
+                    truncate=True,
+                )
+                self._window.write(row, 1, title_padded, accent_attr)
+                row += 1
+            # Draw separator line after title/question
+            separator = "─" * (inner_width - 2)
+            self._window.write(row, 2, separator, dim_attr)
             row += 1
 
         # Draw above scroll indicator
@@ -693,21 +708,30 @@ class SelectionMenu:
 
         above_indicator, below_indicator = self._get_scroll_indicators()
 
-        # Draw title if present
-        if self.title and row < y + max_total_height:
-            window.write(
-                row,
-                1,
-                pad_text(
-                    self.title,
-                    inner_width,
-                    align="center",
-                    fill_char=" ",
-                    truncate=True,
-                ),
-                accent_attr,
-            )
-            row += 1
+        # Draw title if present (supports multi-line with wrap)
+        if self.title:
+            title_lines = self._wrap_text(self.title, inner_width - 2)
+            for title_line in title_lines:
+                if row >= y + max_total_height:
+                    break
+                window.write(
+                    row,
+                    1,
+                    pad_text(
+                        title_line,
+                        inner_width,
+                        align="center",
+                        fill_char=" ",
+                        truncate=True,
+                    ),
+                    accent_attr,
+                )
+                row += 1
+            # Draw separator line after title
+            if row < y + max_total_height:
+                separator = "─" * (inner_width - 2)
+                window.write(row, 2, separator, dim_attr)
+                row += 1
 
         # Draw above scroll indicator
         if above_indicator and row < y + max_total_height:

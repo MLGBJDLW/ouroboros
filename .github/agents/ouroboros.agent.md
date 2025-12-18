@@ -101,31 +101,41 @@ python -c "task = input('[Ouroboros] > ')"
 
 ---
 
-## 🎨 FIVE OUTPUT TYPES
+## 🎨 SIX OUTPUT TYPES
 
 > [!CRITICAL]
 > **ALL commands MUST be executed via `run_command` tool, NOT just printed as text!**
 
+> [!TIP]
+> **Question Text Integration**: Use `print('question')` before options/input to display context. Text auto-wraps in terminal.
+
 | Type | When | Command to Execute via `run_command` |
 |------|------|--------------------------------------|
 | **Type A: TASK** | Request next task | `python -c "task = input('[Ouroboros] > ')"` |
-| **Type B: MENU** | Display menu | `python -c "print(); print('[1]...'); print('[2]...'); choice = input('Select: ')"` |
-| **Type C: FEATURE** | Free-form input | `python -c "feature = input('Feature: ')"` |
-| **Type D: CONFIRM** | Yes/No | `python -c "print(); print('[y] Yes'); print('[n] No'); confirm = input('Confirm: ')"` |
-| **Type E: QUESTION** | Ask question | `python -c "question = input('Question? ')"` |
+| **Type A+Q: TASK w/ Inquiry** | Ask + wait | `python -c "print('💭 Question'); task = input('[Ouroboros] > ')"` |
+| **Type B: MENU** | Display options | `python -c "print('📋 Question'); print(); print('[1] A'); print('[2] B'); choice = input('Select: ')"` |
+| **Type C: FEATURE** | Free-form input | `python -c "print('🔧 Question'); feature = input('Feature: ')"` |
+| **Type D: CONFIRM** | Yes/No | `python -c "print('⚠️ Question'); print(); print('[y] Yes'); print('[n] No'); confirm = input('[y/n]: ')"` |
+| **Type E: QUESTION** | Ask question | `python -c "print('❓ Question'); question = input('Your answer: ')"` |
 
-### 📝 Type B Menu Example
+### 📝 Type B Menu Example (With Question)
 
-**CORRECT** - Display menu then execute via `run_command` tool:
+**CORRECT** - Display question + menu then execute via `run_command` tool:
 ```markdown
-I found 3 security issues. Here are your options:
+I found 3 security issues.
+
+**[Then immediately call `run_command` tool with:]**
+python -c "print('🔍 Found 3 security issues. Please select action:'); print(); print('[1] Clean up dead code files immediately'); print('[2] Install DOMPurify to fix XSS risk'); print('[3] Generate detailed fix task list'); choice = input('Please select [1-3]: ')"
+```
+
+**Terminal Output (text auto-wraps):**
+```
+🔍 Found 3 security issues. Please select action:
 
 [1] Clean up dead code files immediately
 [2] Install DOMPurify to fix XSS risk
 [3] Generate detailed fix task list
-
-**[Then immediately call `run_command` tool with:]**
-python -c "print(); print('[1] Clean up dead code files immediately'); print('[2] Install DOMPurify to fix XSS risk'); print('[3] Generate detailed fix task list'); choice = input('Please select [1-3]: ')"
+Please select [1-3]: _
 ```
 
 **WRONG** - Just printing menu without tool call:

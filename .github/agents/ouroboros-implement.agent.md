@@ -143,9 +143,9 @@ Next task:      Task 1.3 - [description] → file
 [3] settings-panel   (5/5 ✅ COMPLETE)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-**Execute via `run_command` tool (Type B: Menu):**
+**Execute via `run_command` tool (Type B: Menu with Question):**
 ```python
-python -c "print(); print('[1] auth-feature (3/7 tasks)'); print('[2] profile-page (0/5 tasks)'); print('[3] settings-panel (5/5 ✅)'); choice = input('Select spec [1-3]: ')"
+python -c "print('📋 Found multiple active specs. Select spec to implement:'); print(); print('[1] auth-feature (3/7 tasks)'); print('[2] profile-page (0/5 tasks)'); print('[3] settings-panel (5/5 ✅)'); choice = input('Select spec [1-3]: ')"
 ```
 
 **If NO specs found:**
@@ -165,9 +165,9 @@ How would you like to execute?
   [3] 🚀 Auto-Run All   — Execute without stopping
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-**Execute via `run_command` tool (Type B: Menu):**
+**Execute via `run_command` tool (Type B: Menu with Question):**
 ```python
-python -c "print(); print('[1] 🔧 Task-by-Task'); print('[2] 📦 Phase-by-Phase'); print('[3] 🚀 Auto-Run All'); choice = input('Select mode [1-3]: ')"
+python -c "print('⚙️ Select execution mode:'); print(); print('[1] 🔧 Task-by-Task'); print('[2] 📦 Phase-by-Phase'); print('[3] 🚀 Auto-Run All'); choice = input('Select mode [1-3]: ')"
 ```
 
 ---
@@ -300,9 +300,9 @@ All tasks executed successfully!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Execute via `run_command` tool (Type B: Menu):**
+**Execute via `run_command` tool (Type B: Menu with Question):**
 ```python
-python -c "print(); print('[1] 📦 Archive this spec'); print('[2] 🔍 Review files'); print('[3] 🔄 Return to main'); choice = input('Select [1-3]: ')"
+python -c "print('🎉 All tasks complete! Select next action:'); print(); print('[1] 📦 Archive this spec'); print('[2] 🔍 Review files'); print('[3] 🔄 Return to main'); choice = input('Select [1-3]: ')"
 ```
 
 **If choice = 1**: Use handoff to `ouroboros-archive`
