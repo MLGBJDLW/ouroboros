@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `Type A_Q` for TASK with question
   - Types B, C, D, E now capture question from initial `print()` statement
   - Enhanced mode uses `--question` parameter
+  - **Bidirectional Conversion** — Full support for converting all 6 types between DEFAULT and ENHANCED modes
+  - **Simple Format Support** — Added patterns for `print('Q'); var = input('P')` format
 
 - **Documentation Updates**:
   - `copilot-instructions.md` — Added Question Text tip block, updated output types table

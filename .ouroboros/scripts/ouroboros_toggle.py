@@ -285,6 +285,36 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
     content, n = re.subn(pattern_e, replace_question, content)
     changes += n
 
+    # Type C2: Simple feature with question (no menu)
+    # Format: print('question'); feature = input('prompt')
+    def replace_simple_feature_with_question(match):
+        question = match.group(1).replace("'", '"')
+        prompt = match.group(2).replace("'", '"')
+        return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}" --prompt "{prompt}" --var feature'
+
+    pattern_simple_feature = (
+        r'python -c "print\(\'([^\']*)\'\); feature = input\(\'([^\']*)\'\)"'
+    )
+    content, n = re.subn(
+        pattern_simple_feature, replace_simple_feature_with_question, content
+    )
+    changes += n
+
+    # Type E2: Simple question with question (no menu)
+    # Format: print('question'); question = input('prompt')
+    def replace_simple_question_with_question(match):
+        question = match.group(1).replace("'", '"')
+        prompt = match.group(2).replace("'", '"')
+        return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}" --prompt "{prompt}" --var question'
+
+    pattern_simple_question = (
+        r'python -c "print\(\'([^\']*)\'\); question = input\(\'([^\']*)\'\)"'
+    )
+    content, n = re.subn(
+        pattern_simple_question, replace_simple_question_with_question, content
+    )
+    changes += n
+
     return content, changes
 
 
@@ -412,6 +442,34 @@ def convert_to_default(content: str) -> tuple[str, int]:
 
     pattern_e = r'python \.ouroboros/scripts/ouroboros_input\.py --prompt "([^"]*)" --var question'
     content, n = re.subn(pattern_e, replace_question, content)
+    changes += n
+
+    # Type C2: Simple feature with question -> python -c
+    def replace_simple_feature_reverse(match):
+        question = match.group(1).replace('"', "'")
+        prompt = match.group(2).replace('"', "'")
+        return f"python -c \"print('{question}'); feature = input('{prompt}')\""
+
+    pattern_simple_feature_rev = r'python \.ouroboros/scripts/ouroboros_input\.py --question "([^"]*)" --prompt "([^"]*)" --var feature'
+    content, n = re.subn(
+        pattern_simple_feature_rev,
+        replace_simple_feature_reverse,
+        content,
+    )
+    changes += n
+
+    # Type E2: Simple question with question -> python -c
+    def replace_simple_question_reverse(match):
+        question = match.group(1).replace('"', "'")
+        prompt = match.group(2).replace('"', "'")
+        return f"python -c \"print('{question}'); question = input('{prompt}')\""
+
+    pattern_simple_question_rev = r'python \.ouroboros/scripts/ouroboros_input\.py --question "([^"]*)" --prompt "([^"]*)" --var question'
+    content, n = re.subn(
+        pattern_simple_question_rev,
+        replace_simple_question_reverse,
+        content,
+    )
     changes += n
 
     return content, changes
