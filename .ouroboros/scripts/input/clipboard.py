@@ -74,9 +74,7 @@ class ClipboardManager:
     def _read_macos(self) -> str:
         """Read clipboard on macOS using pbpaste."""
         try:
-            result = subprocess.run(
-                ["pbpaste"], capture_output=True, text=True, timeout=2
-            )
+            result = subprocess.run(["pbpaste"], capture_output=True, text=True, timeout=2)
             return result.stdout if result.returncode == 0 else ""
         except Exception:
             return ""
@@ -115,9 +113,7 @@ class ClipboardManager:
 
         # Try wl-paste for Wayland
         try:
-            result = subprocess.run(
-                ["wl-paste"], capture_output=True, text=True, timeout=2
-            )
+            result = subprocess.run(["wl-paste"], capture_output=True, text=True, timeout=2)
             if result.returncode == 0:
                 return result.stdout
         except FileNotFoundError:
@@ -142,9 +138,7 @@ class ClipboardManager:
                 self._available = False
         elif IS_MACOS:
             try:
-                result = subprocess.run(
-                    ["which", "pbpaste"], capture_output=True, timeout=1
-                )
+                result = subprocess.run(["which", "pbpaste"], capture_output=True, timeout=1)
                 self._available = result.returncode == 0
             except Exception:
                 self._available = False

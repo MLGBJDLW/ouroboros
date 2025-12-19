@@ -15,9 +15,7 @@ import unittest
 import random
 
 # Add scripts directory to path
-scripts_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+scripts_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, scripts_dir)
 
 from tests.pbt_framework import Generator, property_test
@@ -82,9 +80,7 @@ class SelectionMenu:
     def page_down(self):
         max_index = len(self._options) - 1
         if self._selected_index < max_index:
-            self._selected_index = min(
-                max_index, self._selected_index + self._visible_count
-            )
+            self._selected_index = min(max_index, self._selected_index + self._visible_count)
             self._ensure_visible()
             return True
         return False
@@ -292,9 +288,7 @@ class TestSelectionMenuBoundsProperty(unittest.TestCase):
             f"selected_index {menu.selected_index} should be < {n}",
         )
 
-    @property_test(
-        MenuWithOperationsGenerator(min_options=5, max_options=30), iterations=100
-    )
+    @property_test(MenuWithOperationsGenerator(min_options=5, max_options=30), iterations=100)
     def test_bounds_with_many_options(self, value: tuple):
         """
         **Feature: curses-tui-frontend, Property 8: Selection Menu Bounds**
@@ -314,9 +308,7 @@ class TestSelectionMenuBoundsProperty(unittest.TestCase):
         self.assertGreaterEqual(menu.selected_index, 0)
         self.assertLess(menu.selected_index, n)
 
-    @property_test(
-        MenuOperationSequenceGenerator(min_ops=50, max_ops=200), iterations=100
-    )
+    @property_test(MenuOperationSequenceGenerator(min_ops=50, max_ops=200), iterations=100)
     def test_bounds_with_many_operations(self, operations: list):
         """
         **Feature: curses-tui-frontend, Property 8: Selection Menu Bounds**

@@ -15,9 +15,7 @@ import unittest
 import random
 
 # Add scripts directory to path
-scripts_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+scripts_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, scripts_dir)
 
 from tests.pbt_framework import Generator, property_test
@@ -75,9 +73,7 @@ class InputBox:
     MIN_HEIGHT = 1
     MAX_HEIGHT = 5
 
-    def __init__(
-        self, screen=None, theme=None, show_line_numbers=True, prompt_header=""
-    ):
+    def __init__(self, screen=None, theme=None, show_line_numbers=True, prompt_header=""):
         self.screen = screen
         self.theme = theme
         self.show_line_numbers = show_line_numbers
@@ -198,9 +194,7 @@ class TestInputBoxHeightBoundsProperty(unittest.TestCase):
             f"Height {calculated_height} should be <= {InputBox.MAX_HEIGHT}",
         )
 
-    @property_test(
-        LineOperationSequenceGenerator(min_ops=10, max_ops=50), iterations=100
-    )
+    @property_test(LineOperationSequenceGenerator(min_ops=10, max_ops=50), iterations=100)
     def test_virtual_scrolling_when_exceeds_max(self, operations: list):
         """
         **Feature: curses-tui-frontend, Property 9: Input Box Height Bounds**

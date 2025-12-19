@@ -46,9 +46,7 @@ class StringGenerator(Generator[str]):
     """Generate random strings from an alphabet."""
 
     def __init__(self, alphabet: str = None, min_len: int = 0, max_len: int = 50):
-        self.alphabet = (
-            alphabet or "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        )
+        self.alphabet = alphabet or "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         self.min_len = min_len
         self.max_len = max_len
 
@@ -110,11 +108,7 @@ class FilePathGenerator(Generator[str]):
             drive = rng.choice("CDEFGH")
             depth = rng.randint(1, 5)
             parts = [
-                "".join(
-                    rng.choices(
-                        "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 15)
-                    )
-                )
+                "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 15)))
                 for _ in range(depth)
             ]
             return f"{drive}:\\" + "\\".join(parts)
@@ -122,11 +116,7 @@ class FilePathGenerator(Generator[str]):
             # Unix path
             depth = rng.randint(1, 5)
             parts = [
-                "".join(
-                    rng.choices(
-                        "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 15)
-                    )
-                )
+                "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 15)))
                 for _ in range(depth)
             ]
             return "/" + "/".join(parts)
@@ -157,9 +147,7 @@ class MultilineGenerator(Generator[str]):
         lines = []
         for _ in range(num_lines):
             line_len = rng.randint(0, self.max_line_len)
-            line = "".join(
-                rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 .,!?", k=line_len)
-            )
+            line = "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 .,!?", k=line_len))
             lines.append(line)
         return "\n".join(lines)
 

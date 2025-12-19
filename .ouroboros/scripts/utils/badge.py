@@ -264,9 +264,7 @@ def render_for_display(text: str) -> str:
 
         return f"[ Pasted {line_count} Lines ]"
 
-    result = re.sub(
-        r"‹PASTE:(\d+)›(.*?)‹/PASTE›", paste_to_badge, result, flags=re.DOTALL
-    )
+    result = re.sub(r"‹PASTE:(\d+)›(.*?)‹/PASTE›", paste_to_badge, result, flags=re.DOTALL)
 
     return result
 

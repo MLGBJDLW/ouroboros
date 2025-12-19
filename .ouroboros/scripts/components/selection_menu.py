@@ -151,9 +151,7 @@ class SelectionMenu:
         return options
 
     @classmethod
-    def create_yes_no_menu(
-        cls, screen=None, theme=None, prompt: str = ""
-    ) -> "SelectionMenu":
+    def create_yes_no_menu(cls, screen=None, theme=None, prompt: str = "") -> "SelectionMenu":
         """
         Create a Yes/No selection menu.
 
@@ -222,9 +220,7 @@ class SelectionMenu:
         """
         max_index = len(self._options) - 1
         if self._selected_index < max_index:
-            self._selected_index = min(
-                max_index, self._selected_index + self._visible_count
-            )
+            self._selected_index = min(max_index, self._selected_index + self._visible_count)
             self._ensure_visible()
             return True
         return False
@@ -424,9 +420,7 @@ class SelectionMenu:
         if not layout:
             # Always show something if options exist.
             idx = min(max(0, start_index), len(self._options) - 1)
-            layout.append(
-                (idx, wrapped_options[idx][:1] if wrapped_options else [""], True)
-            )
+            layout.append((idx, wrapped_options[idx][:1] if wrapped_options else [""], True))
 
         return layout
 
@@ -520,9 +514,7 @@ class SelectionMenu:
         if below_indicator:
             content_height += 1
 
-        total_height = min(
-            max_total_height, content_height + 2
-        )  # Add borders, cap to screen
+        total_height = min(max_total_height, content_height + 2)  # Add borders, cap to screen
 
         # Center horizontally
         x = (width - self._width) // 2
@@ -530,10 +522,7 @@ class SelectionMenu:
         # Clear previous window if the new menu is smaller (prevents border ghosting)
         if self._window is not None:
             try:
-                if (
-                    self._window.height > total_height
-                    or self._window.width > self._width
-                ):
+                if self._window.height > total_height or self._window.width > self._width:
                     self._window.clear()
                     self._window.refresh()
             except Exception:
@@ -693,9 +682,7 @@ class SelectionMenu:
         reserved += 1 if self._scroll_offset > 0 else 0  # above indicator
 
         option_budget = max_total_height - reserved
-        layout = self._compute_visible_layout(
-            wrapped_options, self._scroll_offset, option_budget
-        )
+        layout = self._compute_visible_layout(wrapped_options, self._scroll_offset, option_budget)
         self._visible_count = max(1, len(layout))
 
         # If there are more options below, reserve one line and recompute.

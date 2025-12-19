@@ -81,9 +81,7 @@ class HistoryManager:
             if os.path.exists(self.history_file):
                 with open(self.history_file, "r", encoding="utf-8") as f:
                     lines = f.read().strip().split("\n")
-                    self.entries = [
-                        self._unescape(line) for line in lines if line.strip()
-                    ]
+                    self.entries = [self._unescape(line) for line in lines if line.strip()]
         except (IOError, OSError, UnicodeDecodeError):
             # Handle corrupted file gracefully - start with empty history
             self.entries = []

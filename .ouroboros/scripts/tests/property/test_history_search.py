@@ -16,9 +16,7 @@ import random
 import tempfile
 
 # Add scripts directory to path
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from tests.pbt_framework import Generator, property_test, StringGenerator
 from data.history import HistoryManager
@@ -31,18 +29,14 @@ class HistorySearchGenerator(Generator):
     Returns a tuple of (HistoryManager, query_string).
     """
 
-    def __init__(
-        self, min_entries: int = 0, max_entries: int = 50, max_entry_len: int = 80
-    ):
+    def __init__(self, min_entries: int = 0, max_entries: int = 50, max_entry_len: int = 80):
         self.min_entries = min_entries
         self.max_entries = max_entries
         self.max_entry_len = max_entry_len
 
     def generate(self, rng: random.Random) -> tuple:
         # Create a temporary history file
-        temp_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".history"
-        )
+        temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".history")
         temp_file.close()
 
         # Create history manager with temp file
@@ -53,9 +47,7 @@ class HistorySearchGenerator(Generator):
         num_entries = rng.randint(self.min_entries, self.max_entries)
         for _ in range(num_entries):
             entry_len = rng.randint(1, self.max_entry_len)
-            entry = "".join(
-                rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 ", k=entry_len)
-            )
+            entry = "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 ", k=entry_len))
             history.entries.append(entry.strip())
 
         # Filter out empty entries
@@ -111,9 +103,7 @@ class TestHistorySearchProperty(unittest.TestCase):
         # Cleanup is handled by the test framework
         pass
 
-    @property_test(
-        HistorySearchGenerator(min_entries=1, max_entries=50), iterations=100
-    )
+    @property_test(HistorySearchGenerator(min_entries=1, max_entries=50), iterations=100)
     def test_search_results_contain_query(self, value: tuple):
         """
         **Feature: curses-tui-frontend, Property 7: History Search Correctness**
@@ -140,9 +130,7 @@ class TestHistorySearchProperty(unittest.TestCase):
             except:
                 pass
 
-    @property_test(
-        HistorySearchGenerator(min_entries=5, max_entries=50), iterations=100
-    )
+    @property_test(HistorySearchGenerator(min_entries=5, max_entries=50), iterations=100)
     def test_search_results_ordered_by_recency(self, value: tuple):
         """
         **Feature: curses-tui-frontend, Property 7: History Search Correctness**
@@ -181,9 +169,7 @@ class TestHistorySearchProperty(unittest.TestCase):
             except:
                 pass
 
-    @property_test(
-        HistorySearchGenerator(min_entries=1, max_entries=30), iterations=100
-    )
+    @property_test(HistorySearchGenerator(min_entries=1, max_entries=30), iterations=100)
     def test_search_finds_all_matching_entries(self, value: tuple):
         """
         **Feature: curses-tui-frontend, Property 7: History Search Correctness**
@@ -197,9 +183,7 @@ class TestHistorySearchProperty(unittest.TestCase):
             results = history.search(query)
 
             # Count expected matches
-            expected_matches = [
-                e for e in history.entries if query.lower() in e.lower()
-            ]
+            expected_matches = [e for e in history.entries if query.lower() in e.lower()]
 
             # Results should contain all matching entries (as a set, ignoring order)
             self.assertEqual(

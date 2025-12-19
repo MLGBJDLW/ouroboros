@@ -126,9 +126,7 @@ class ScreenManager:
         # Set up resize handling
         if not IS_WINDOWS:
             # Unix: use SIGWINCH
-            self._original_sigwinch = signal.signal(
-                signal.SIGWINCH, self._handle_sigwinch
-            )
+            self._original_sigwinch = signal.signal(signal.SIGWINCH, self._handle_sigwinch)
 
         # Get initial size
         self._last_size = self.get_size()

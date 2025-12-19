@@ -14,9 +14,7 @@ import os
 import unittest
 
 # Add scripts directory to path
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from tests.pbt_framework import property_test, FilePathGenerator, Generator
 import random
@@ -50,19 +48,11 @@ class FilePathWithExtensionGenerator(Generator[str]):
             drive = rng.choice("CDEFGH")
             depth = rng.randint(1, 4)
             parts = [
-                "".join(
-                    rng.choices(
-                        "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 12)
-                    )
-                )
+                "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 12)))
                 for _ in range(depth)
             ]
             filename = (
-                "".join(
-                    rng.choices(
-                        "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 10)
-                    )
-                )
+                "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 10)))
                 + ext
             )
             parts.append(filename)
@@ -71,19 +61,11 @@ class FilePathWithExtensionGenerator(Generator[str]):
             # Unix path
             depth = rng.randint(1, 4)
             parts = [
-                "".join(
-                    rng.choices(
-                        "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 12)
-                    )
-                )
+                "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 12)))
                 for _ in range(depth)
             ]
             filename = (
-                "".join(
-                    rng.choices(
-                        "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 10)
-                    )
-                )
+                "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 10)))
                 + ext
             )
             parts.append(filename)
@@ -112,19 +94,11 @@ class RelativePathGenerator(Generator[str]):
         prefix = rng.choice(["./", "../", "../../"])
         depth = rng.randint(0, 3)
         parts = [
-            "".join(
-                rng.choices(
-                    "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 10)
-                )
-            )
+            "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 10)))
             for _ in range(depth)
         ]
         filename = (
-            "".join(
-                rng.choices(
-                    "abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 8)
-                )
-            )
+            "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789_-", k=rng.randint(1, 8)))
             + ext
         )
         parts.append(filename)
@@ -249,9 +223,7 @@ class TestFileMarkerRoundTrip(unittest.TestCase):
             via_extract = extract_file_path(marker)
             via_expand = expand_markers(marker)
 
-            self.assertEqual(
-                via_extract, via_expand, f"Extraction methods differ for '{path}'"
-            )
+            self.assertEqual(via_extract, via_expand, f"Extraction methods differ for '{path}'")
             self.assertEqual(
                 path, via_extract, f"Extracted path differs from original for '{path}'"
             )

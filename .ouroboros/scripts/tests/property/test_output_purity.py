@@ -16,9 +16,7 @@ import random
 from typing import List
 
 # Add scripts directory to path
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from tests.pbt_framework import (
     property_test,
@@ -58,9 +56,7 @@ class TextWithANSIGenerator(Generator[str]):
         "\x1b[K",  # Clear line
     ]
 
-    def __init__(
-        self, min_len: int = 1, max_len: int = 100, ansi_probability: float = 0.3
-    ):
+    def __init__(self, min_len: int = 1, max_len: int = 100, ansi_probability: float = 0.3):
         self.min_len = min_len
         self.max_len = max_len
         self.ansi_probability = ansi_probability
@@ -114,9 +110,7 @@ class TextWithMarkersGenerator(Generator[str]):
 
             if part_type == "text":
                 length = rng.randint(1, 30)
-                text = "".join(
-                    rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 .,", k=length)
-                )
+                text = "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 .,", k=length))
                 parts.append(text)
 
             elif part_type == "file_marker":
@@ -259,9 +253,7 @@ class TestOutputContentPurity(unittest.TestCase):
         """
         result = format_output(text)
 
-        self.assertFalse(
-            has_ansi_codes(result), f"Output contains ANSI codes: {repr(result)}"
-        )
+        self.assertFalse(has_ansi_codes(result), f"Output contains ANSI codes: {repr(result)}")
 
     @property_test(TextWithMarkersGenerator(), iterations=100)
     def test_format_output_with_markers_is_pure(self, text: str):
@@ -274,9 +266,7 @@ class TestOutputContentPurity(unittest.TestCase):
         """
         result = format_output(text)
 
-        self.assertTrue(
-            validate_output_purity(result), f"Output is not pure: {repr(result)}"
-        )
+        self.assertTrue(validate_output_purity(result), f"Output is not pure: {repr(result)}")
 
     @property_test(SlashCommandGenerator(), iterations=100)
     def test_slash_command_output_is_pure(self, text: str):
@@ -310,9 +300,7 @@ class TestOutputContentPurity(unittest.TestCase):
         result = format_output(text)
 
         # Plain text should be preserved
-        self.assertEqual(
-            text, result, f"Plain text was modified: '{text}' -> '{result}'"
-        )
+        self.assertEqual(text, result, f"Plain text was modified: '{text}' -> '{result}'")
 
     @property_test(MultilineGenerator(min_lines=1, max_lines=10), iterations=100)
     def test_multiline_output_is_pure(self, text: str):
@@ -356,9 +344,7 @@ class TestOutputContentPurity(unittest.TestCase):
 
         for input_text, expected in test_cases:
             result = strip_ansi(input_text)
-            self.assertEqual(
-                expected, result, f"strip_ansi failed for {repr(input_text)}"
-            )
+            self.assertEqual(expected, result, f"strip_ansi failed for {repr(input_text)}")
 
     def test_has_ansi_codes_detection(self):
         """

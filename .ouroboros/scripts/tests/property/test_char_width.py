@@ -15,9 +15,7 @@ import os
 import unittest
 
 # Add scripts directory to path
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from tests.pbt_framework import property_test, CJKStringGenerator, StringGenerator
 from utils.text import char_width, visible_len
@@ -48,9 +46,7 @@ class TestCharWidthProperty(unittest.TestCase):
             f"Width mismatch for '{text}': expected {expected_width}, got {actual_width}",
         )
 
-    @property_test(
-        CJKStringGenerator(min_len=0, max_len=50, cjk_ratio=1.0), iterations=100
-    )
+    @property_test(CJKStringGenerator(min_len=0, max_len=50, cjk_ratio=1.0), iterations=100)
     def test_cjk_chars_have_width_2(self, text: str):
         """
         **Feature: curses-tui-frontend, Property 1: Character Width Calculation**

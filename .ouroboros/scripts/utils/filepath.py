@@ -152,12 +152,7 @@ def is_file_path(text: str) -> bool:
         return False
 
     # Windows absolute path: C:\path or D:/path (case-insensitive drive letter)
-    if (
-        len(text) >= 3
-        and text[0].isalpha()
-        and text[1] == ":"
-        and text[2] in ("\\", "/")
-    ):
+    if len(text) >= 3 and text[0].isalpha() and text[1] == ":" and text[2] in ("\\", "/"):
         return _validate_windows_path(text)
 
     # Windows UNC path: \\server\share

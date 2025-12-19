@@ -16,9 +16,7 @@ import unittest
 import random
 
 # Add scripts directory to path
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from tests.pbt_framework import Generator, property_test
 from data.buffer import TextBuffer
@@ -47,9 +45,7 @@ class BufferStateGenerator(Generator):
         num_lines = rng.randint(self.min_lines, self.max_lines)
         for _ in range(num_lines):
             line_len = rng.randint(0, self.max_line_len)
-            line = "".join(
-                rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 ", k=line_len)
-            )
+            line = "".join(rng.choices("abcdefghijklmnopqrstuvwxyz0123456789 ", k=line_len))
             buffer.lines.append(line)
 
         # Set cursor to valid random position
@@ -74,9 +70,7 @@ class BufferStateGenerator(Generator):
         if buffer.lines[buffer.cursor_row]:
             shorter = TextBuffer()
             shorter.lines = list(buffer.lines)
-            shorter.lines[buffer.cursor_row] = buffer.lines[buffer.cursor_row][
-                : buffer.cursor_col
-            ]
+            shorter.lines[buffer.cursor_row] = buffer.lines[buffer.cursor_row][: buffer.cursor_col]
             shorter.cursor_row = buffer.cursor_row
             shorter.cursor_col = len(shorter.lines[shorter.cursor_row])
             results.append(shorter)
@@ -146,9 +140,7 @@ class TestEnterNewlineProperty(unittest.TestCase):
             f"Cursor row should be {original_row + 1}, got {buffer.cursor_row}",
         )
 
-        self.assertEqual(
-            buffer.cursor_col, 0, f"Cursor col should be 0, got {buffer.cursor_col}"
-        )
+        self.assertEqual(buffer.cursor_col, 0, f"Cursor col should be 0, got {buffer.cursor_col}")
 
     @property_test(BufferStateGenerator(), iterations=100)
     def test_newline_increases_line_count_by_one(self, buffer: TextBuffer):

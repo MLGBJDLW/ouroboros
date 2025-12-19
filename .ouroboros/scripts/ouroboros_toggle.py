@@ -165,9 +165,7 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
         question = match.group(1).replace("'", '"')
         return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}"'
 
-    pattern_a_q = (
-        r'python -c "print\(\'([^\']*)\'\); task = input\(\'\[Ouroboros\] > \'\)"'
-    )
+    pattern_a_q = r'python -c "print\(\'([^\']*)\'\); task = input\(\'\[Ouroboros\] > \'\)"'
     content, n = re.subn(pattern_a_q, replace_task_with_question, content)
     changes += n
 
@@ -247,9 +245,7 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
         header_escaped = header.replace("\n", "\\n")
         return f'python .ouroboros/scripts/ouroboros_input.py --header "{header_escaped}" --prompt "{prompt}" --var choice'
 
-    pattern_b = (
-        r'python -c "print\(\'((?:[^\'\\]|\\.)*)\'\); choice = input\(\'([^\']*)\'\)"'
-    )
+    pattern_b = r'python -c "print\(\'((?:[^\'\\]|\\.)*)\'\); choice = input\(\'([^\']*)\'\)"'
     content, n = re.subn(pattern_b, replace_menu, content)
     changes += n
 
@@ -268,11 +264,11 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
         if header:
             header = header.replace("\\n", "").strip().replace("'", '"')
             return f'python .ouroboros/scripts/ouroboros_input.py --header "{header}" --prompt "[y/n]:" --var confirm --no-ui'
-        return 'python .ouroboros/scripts/ouroboros_input.py --prompt "[y/n]:" --var confirm --no-ui'
+        return (
+            'python .ouroboros/scripts/ouroboros_input.py --prompt "[y/n]:" --var confirm --no-ui'
+        )
 
-    pattern_d = (
-        r'python -c "(?:print\(\'([^\']*)\'\); )?confirm = input\(\'\\[y/n\\]: \'\)"'
-    )
+    pattern_d = r'python -c "(?:print\(\'([^\']*)\'\); )?confirm = input\(\'\\[y/n\\]: \'\)"'
     content, n = re.subn(pattern_d, replace_confirm, content)
     changes += n
 
@@ -292,12 +288,8 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
         prompt = match.group(2).replace("'", '"')
         return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}" --prompt "{prompt}" --var feature'
 
-    pattern_simple_feature = (
-        r'python -c "print\(\'([^\']*)\'\); feature = input\(\'([^\']*)\'\)"'
-    )
-    content, n = re.subn(
-        pattern_simple_feature, replace_simple_feature_with_question, content
-    )
+    pattern_simple_feature = r'python -c "print\(\'([^\']*)\'\); feature = input\(\'([^\']*)\'\)"'
+    content, n = re.subn(pattern_simple_feature, replace_simple_feature_with_question, content)
     changes += n
 
     # Type E2: Simple question with question (no menu)
@@ -307,12 +299,8 @@ def convert_to_enhanced(content: str) -> tuple[str, int]:
         prompt = match.group(2).replace("'", '"')
         return f'python .ouroboros/scripts/ouroboros_input.py --question "{question}" --prompt "{prompt}" --var question'
 
-    pattern_simple_question = (
-        r'python -c "print\(\'([^\']*)\'\); question = input\(\'([^\']*)\'\)"'
-    )
-    content, n = re.subn(
-        pattern_simple_question, replace_simple_question_with_question, content
-    )
+    pattern_simple_question = r'python -c "print\(\'([^\']*)\'\); question = input\(\'([^\']*)\'\)"'
+    content, n = re.subn(pattern_simple_question, replace_simple_question_with_question, content)
     changes += n
 
     return content, changes
@@ -369,9 +357,7 @@ def convert_to_default(content: str) -> tuple[str, int]:
         return f"python -c \"print(); {print_stmts}; feature = input('{prompt}')\""
 
     pattern_c_q_rev = r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var feature'
-    content, n = re.subn(
-        pattern_c_q_rev, replace_feature_with_question_reverse, content
-    )
+    content, n = re.subn(pattern_c_q_rev, replace_feature_with_question_reverse, content)
     changes += n
 
     # Type D with Question: Confirm with question -> python -c with print statements
@@ -388,9 +374,7 @@ def convert_to_default(content: str) -> tuple[str, int]:
         return f"python -c \"print(); {print_stmts}; confirm = input('{prompt}')\""
 
     pattern_d_q_rev = r'python \.ouroboros/scripts/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var confirm'
-    content, n = re.subn(
-        pattern_d_q_rev, replace_confirm_with_question_reverse, content
-    )
+    content, n = re.subn(pattern_d_q_rev, replace_confirm_with_question_reverse, content)
     changes += n
 
     # ==========================================================================
@@ -688,15 +672,11 @@ Examples:
         action="store_true",
         help="Preview changes without modifying files",
     )
-    parser.add_argument(
-        "--status", "-s", action="store_true", help="Show current mode status"
-    )
+    parser.add_argument("--status", "-s", action="store_true", help="Show current mode status")
     parser.add_argument(
         "--interactive", "-i", action="store_true", help="Force interactive menu mode"
     )
-    parser.add_argument(
-        "--version", action="version", version=f"ouroboros_toggle.py {VERSION}"
-    )
+    parser.add_argument("--version", action="version", version=f"ouroboros_toggle.py {VERSION}")
 
     return parser.parse_args()
 

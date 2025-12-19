@@ -476,9 +476,7 @@ class InputBox:
                 start, end, marker_type = marker
                 # If cursor is at the end of the badge, delete entire badge
                 if self.buffer.cursor_col == end:
-                    self.buffer.lines[self.buffer.cursor_row] = (
-                        line[:start] + line[end:]
-                    )
+                    self.buffer.lines[self.buffer.cursor_row] = line[:start] + line[end:]
                     self.buffer.cursor_col = start
                     return True
 
@@ -496,9 +494,7 @@ class InputBox:
 
     def _update_status_bar(self) -> None:
         """Update status bar with current state."""
-        self.status_bar.set_cursor_position(
-            self.buffer.cursor_row + 1, self.buffer.cursor_col + 1
-        )
+        self.status_bar.set_cursor_position(self.buffer.cursor_row + 1, self.buffer.cursor_col + 1)
 
         # Calculate scroll info
         viewport_height = self._height
@@ -696,9 +692,7 @@ class InputBox:
             # Pad remaining space
             remaining = content_width - visible_len(visual_line)
             if remaining > 0:
-                self._window.write(
-                    row, x + visible_len(visual_line), " " * remaining, 0
-                )
+                self._window.write(row, x + visible_len(visual_line), " " * remaining, 0)
 
         # Fill empty lines if viewport is larger than visual content
         lines_rendered = min(len(visual_rows), self._height)
@@ -714,9 +708,7 @@ class InputBox:
 
         # Update and render status bar in bottom border
         self._update_status_bar()
-        self.status_bar.render_to_window(
-            self._window, total_height - 1, 2, self._width - 2
-        )
+        self.status_bar.render_to_window(self._window, total_height - 1, 2, self._width - 2)
 
         # Refresh window first (renders content)
         self._window.refresh()
@@ -750,12 +742,8 @@ class InputBox:
         display_col = self._get_cursor_display_col(line, self.buffer.cursor_col)
 
         # Calculate which visual line within the current logical line
-        visual_line_in_current = (
-            display_col // content_width if content_width > 0 else 0
-        )
-        col_in_visual_line = (
-            display_col % content_width if content_width > 0 else display_col
-        )
+        visual_line_in_current = display_col // content_width if content_width > 0 else 0
+        col_in_visual_line = display_col % content_width if content_width > 0 else display_col
 
         # Total visual row from top of viewport
         total_visual_row = visual_row_offset + visual_line_in_current

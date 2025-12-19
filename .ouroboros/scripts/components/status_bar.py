@@ -229,9 +229,7 @@ class StatusBar:
         # Middle border fills remaining space
         hint_len = len(hint_text)
         pos_len = len(pos_text)
-        mid_len = (
-            content_width - len(left_border) - hint_len - pos_len - len(right_border)
-        )
+        mid_len = content_width - len(left_border) - hint_len - pos_len - len(right_border)
         mid_border = "─" * max(1, mid_len)
 
         # Write each segment with appropriate attributes
