@@ -9,6 +9,8 @@ and keyboard shortcuts in a two-column layout with color coding.
 
 from typing import Optional, TYPE_CHECKING
 
+from utils.text import visible_len, wrap_text
+
 if TYPE_CHECKING:
     from ..tui.screen import ScreenManager
     from ..tui.theme import ThemeManager
@@ -133,17 +135,16 @@ class WelcomeBox:
 
                 test_line = f"{current_line} {word}".strip() if current_line else word
 
-                if len(test_line) <= max_width:
+                if visible_len(test_line) <= max_width:
                     current_line = test_line
                 else:
                     if current_line:
                         result.append(current_line)
-                    # If word itself is too long, split it
-                    if len(word) > max_width:
-                        while len(word) > max_width:
-                            result.append(word[:max_width])
-                            word = word[max_width:]
-                        current_line = word
+                    # If word itself is too long, split it (CJK-aware)
+                    if visible_len(word) > max_width:
+                        wrapped = wrap_text(word, max_width)
+                        result.extend(wrapped[:-1])
+                        current_line = wrapped[-1] if wrapped else ""
                     else:
                         current_line = word
 
@@ -213,8 +214,8 @@ class WelcomeBox:
             wrapped_lines = self._wrap_text(self.custom_header, inner_width)
             row = 1
             for line in wrapped_lines:
-                # Center each line
-                line_x = (box_width - len(line)) // 2
+                # Center each line (use visible_len for CJK support)
+                line_x = (box_width - visible_len(line)) // 2
                 self._window.write(row, max(1, line_x), line, 0)
                 row += 1
             # Draw separator line after question
