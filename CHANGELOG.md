@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.13] - 2025-12-18
+
+### Fixed
+- **History Navigation** — Resolved a regression where navigating stored entries could stick or skip when working with multi-line inputs; traversal now mirrors the on-screen content consistently.
+- **Arrow Key Direction** — Corrected left/right handling in the input box so cursor movement now matches the pressed arrow key.
+
+---
+
 ## [3.1.12] - 2025-12-18
 
 ### Fixed
