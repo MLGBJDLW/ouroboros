@@ -438,8 +438,10 @@ def get_selection_input(
                         kb.__exit__(None, None, None)
 
                         if is_custom:
-                            # Get custom input
-                            return get_tui_input(prompt="Custom input")
+                            # Get custom input - preserve question context
+                            return get_tui_input(
+                                header=title, prompt="Enter custom value:"
+                            )
                         return value
 
             finally:
