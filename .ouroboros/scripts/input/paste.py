@@ -296,7 +296,9 @@ class PasteDetector:
         """Check if paste mode is enabled."""
         return self._handler.is_enabled
 
-    def read(self, getch_func: Callable, timeout: Optional[float] = None) -> Tuple[str, bool]:
+    def read(
+        self, getch_func: Callable, timeout: Optional[float] = None
+    ) -> Tuple[str, bool]:
         """
         Read input, handling paste sequences transparently.
 

@@ -158,7 +158,9 @@ class WindowsKeyBuffer:
             ENABLE_PROCESSED_INPUT = 0x0001
             ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200
 
-            self._vt_input_mode = bool(self._old_mode.value & ENABLE_VIRTUAL_TERMINAL_INPUT)
+            self._vt_input_mode = bool(
+                self._old_mode.value & ENABLE_VIRTUAL_TERMINAL_INPUT
+            )
 
             new_mode = ENABLE_PROCESSED_INPUT
             if self._vt_input_mode:
@@ -193,7 +195,9 @@ class WindowsKeyBuffer:
 
             kernel32 = ctypes.windll.kernel32
             num_events = wintypes.DWORD()
-            if kernel32.GetNumberOfConsoleInputEvents(self._handle, ctypes.byref(num_events)):
+            if kernel32.GetNumberOfConsoleInputEvents(
+                self._handle, ctypes.byref(num_events)
+            ):
                 return num_events.value
         except Exception:
             pass
@@ -331,7 +335,9 @@ class WindowsKeyBuffer:
             wait_start = time.time()
             while (time.time() - wait_start) < max_wait:
                 num_events = wintypes.DWORD()
-                if kernel32.GetNumberOfConsoleInputEvents(self._handle, ctypes.byref(num_events)):
+                if kernel32.GetNumberOfConsoleInputEvents(
+                    self._handle, ctypes.byref(num_events)
+                ):
                     if num_events.value > 0:
                         record = INPUT_RECORD()
                         num_read = wintypes.DWORD()

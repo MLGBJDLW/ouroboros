@@ -182,7 +182,9 @@ class FallbackScreenBuffer:
 
         return written
 
-    def write_line(self, row: int, text: str, style: str = "", fill: bool = True) -> None:
+    def write_line(
+        self, row: int, text: str, style: str = "", fill: bool = True
+    ) -> None:
         """Write a full line, optionally filling to width."""
         self.write(row, 0, text, style)
 
@@ -206,7 +208,9 @@ class FallbackScreenBuffer:
         output_parts.append(ANSI.HIDE_CURSOR)
 
         # Determine which rows to render
-        rows_to_render = sorted(self._dirty_rows) if not self._full_redraw else range(self.height)
+        rows_to_render = (
+            sorted(self._dirty_rows) if not self._full_redraw else range(self.height)
+        )
 
         for row in rows_to_render:
             # Move to row position

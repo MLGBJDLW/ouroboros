@@ -15,7 +15,9 @@ import os
 import unittest
 
 # Add scripts directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from tests.pbt_framework import (
     property_test,
@@ -82,17 +84,35 @@ class CodeLikeContentGenerator(Generator[str]):
             pattern = rng.choice(self.CODE_PATTERNS)
             # Fill in placeholders with random identifiers
             line = pattern.format(
-                name="".join(rng.choices("abcdefghijklmnopqrstuvwxyz", k=rng.randint(3, 8))),
-                args="".join(rng.choices("abcdefghijklmnopqrstuvwxyz, ", k=rng.randint(0, 15))),
-                value="".join(
-                    rng.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=rng.randint(1, 10))
+                name="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz", k=rng.randint(3, 8))
                 ),
-                attr="".join(rng.choices("abcdefghijklmnopqrstuvwxyz_", k=rng.randint(3, 10))),
-                module="".join(rng.choices("abcdefghijklmnopqrstuvwxyz_", k=rng.randint(3, 10))),
-                cond="".join(rng.choices("abcdefghijklmnopqrstuvwxyz ", k=rng.randint(3, 15))),
-                action="".join(rng.choices("abcdefghijklmnopqrstuvwxyz()", k=rng.randint(5, 20))),
-                var="".join(rng.choices("abcdefghijklmnopqrstuvwxyz", k=rng.randint(1, 5))),
-                iterable="".join(rng.choices("abcdefghijklmnopqrstuvwxyz[]", k=rng.randint(3, 10))),
+                args="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz, ", k=rng.randint(0, 15))
+                ),
+                value="".join(
+                    rng.choices(
+                        "abcdefghijklmnopqrstuvwxyz0123456789", k=rng.randint(1, 10)
+                    )
+                ),
+                attr="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz_", k=rng.randint(3, 10))
+                ),
+                module="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz_", k=rng.randint(3, 10))
+                ),
+                cond="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz ", k=rng.randint(3, 15))
+                ),
+                action="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz()", k=rng.randint(5, 20))
+                ),
+                var="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz", k=rng.randint(1, 5))
+                ),
+                iterable="".join(
+                    rng.choices("abcdefghijklmnopqrstuvwxyz[]", k=rng.randint(3, 10))
+                ),
                 comment="".join(
                     rng.choices(
                         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ",
@@ -241,7 +261,9 @@ class TestPasteMarkerRoundTrip(unittest.TestCase):
             f"Line count mismatch: expected {expected_lines}, got {line_count}",
         )
 
-        self.assertEqual(content, parsed_content, f"Parsed content differs from original")
+        self.assertEqual(
+            content, parsed_content, f"Parsed content differs from original"
+        )
 
     def test_extract_paste_content_consistency(self):
         """
@@ -265,8 +287,12 @@ class TestPasteMarkerRoundTrip(unittest.TestCase):
             via_extract = extract_paste_content(marker)
             via_expand = expand_markers(marker)
 
-            self.assertEqual(via_extract, via_expand, f"Extraction methods differ for content")
-            self.assertEqual(content, via_extract, f"Extracted content differs from original")
+            self.assertEqual(
+                via_extract, via_expand, f"Extraction methods differ for content"
+            )
+            self.assertEqual(
+                content, via_extract, f"Extracted content differs from original"
+            )
 
     def test_newline_preservation(self):
         """

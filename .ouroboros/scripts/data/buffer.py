@@ -30,7 +30,9 @@ class TextBuffer:
     def insert_char(self, char: str) -> None:
         """Insert a single character at cursor position."""
         line = self.lines[self.cursor_row]
-        self.lines[self.cursor_row] = line[: self.cursor_col] + char + line[self.cursor_col :]
+        self.lines[self.cursor_row] = (
+            line[: self.cursor_col] + char + line[self.cursor_col :]
+        )
         self.cursor_col += 1
 
     def insert_text(self, text: str) -> None:
@@ -85,7 +87,9 @@ class TextBuffer:
         """
         if self.cursor_col > 0:
             line = self.lines[self.cursor_row]
-            self.lines[self.cursor_row] = line[: self.cursor_col - 1] + line[self.cursor_col :]
+            self.lines[self.cursor_row] = (
+                line[: self.cursor_col - 1] + line[self.cursor_col :]
+            )
             self.cursor_col -= 1
             return True
         elif self.cursor_row > 0:
@@ -107,7 +111,9 @@ class TextBuffer:
         """
         line = self.lines[self.cursor_row]
         if self.cursor_col < len(line):
-            self.lines[self.cursor_row] = line[: self.cursor_col] + line[self.cursor_col + 1 :]
+            self.lines[self.cursor_row] = (
+                line[: self.cursor_col] + line[self.cursor_col + 1 :]
+            )
             return True
         elif self.cursor_row < len(self.lines) - 1:
             # Merge with next line

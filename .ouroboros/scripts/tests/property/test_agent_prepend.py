@@ -17,7 +17,9 @@ import random
 from typing import List
 
 # Add scripts directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from tests.pbt_framework import property_test, Generator, StringGenerator
 from input.commands import (
@@ -123,11 +125,15 @@ class TestAgentInstructionPrepending(unittest.TestCase):
                     matched_cmd = cmd
                     break
 
-        self.assertIsNotNone(matched_cmd, f"Content should start with valid command: {content}")
+        self.assertIsNotNone(
+            matched_cmd, f"Content should start with valid command: {content}"
+        )
 
         # Get expected agent file
         agent_file = get_agent_file_for_command(matched_cmd)
-        self.assertIsNotNone(agent_file, f"Command {matched_cmd} should have agent file")
+        self.assertIsNotNone(
+            agent_file, f"Command {matched_cmd} should have agent file"
+        )
 
         # Check the result format
         expected_prefix = f"Follow the prompt '.github/agents/{agent_file}'\n\n"
@@ -138,7 +144,9 @@ class TestAgentInstructionPrepending(unittest.TestCase):
         )
 
         # Check that original content is preserved after prefix
-        self.assertTrue(result.endswith(content), f"Original content should be preserved at end")
+        self.assertTrue(
+            result.endswith(content), f"Original content should be preserved at end"
+        )
 
         # Check exact structure
         self.assertEqual(
@@ -158,7 +166,9 @@ class TestAgentInstructionPrepending(unittest.TestCase):
         """
         result = prepend_instruction(content)
 
-        self.assertEqual(result, content, f"Non-slash content should be returned unchanged")
+        self.assertEqual(
+            result, content, f"Non-slash content should be returned unchanged"
+        )
 
     def test_specific_commands(self):
         """
@@ -220,7 +230,9 @@ class TestAgentInstructionPrepending(unittest.TestCase):
         content = "/ouroborosXYZ some text"
         result = prepend_instruction(content)
 
-        self.assertEqual(result, content, "Partial/invalid command should not trigger prepending")
+        self.assertEqual(
+            result, content, "Partial/invalid command should not trigger prepending"
+        )
 
 
 if __name__ == "__main__":

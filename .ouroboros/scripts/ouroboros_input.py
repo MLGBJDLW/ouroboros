@@ -274,7 +274,9 @@ def get_fallback_input(show_ui: bool = True) -> str:
         line = input()
         if line.strip() == "<<<":
             # Multiline mode
-            writeln(f"  {THEME['info']}Multi-line mode. Type >>> to submit:{THEME['reset']}")
+            writeln(
+                f"  {THEME['info']}Multi-line mode. Type >>> to submit:{THEME['reset']}"
+            )
             lines = []
             while True:
                 try:
@@ -310,7 +312,9 @@ except ImportError:
     pass
 
 
-def get_tui_input(header: str = "", prompt: str = "", skip_welcome: bool = False) -> str:
+def get_tui_input(
+    header: str = "", prompt: str = "", skip_welcome: bool = False
+) -> str:
     """
     Get input using the new TUI system.
 
@@ -435,7 +439,9 @@ def get_selection_input(
 
                         if is_custom:
                             # Get custom input - preserve question context
-                            return get_tui_input(header=title, prompt="Enter custom value:")
+                            return get_tui_input(
+                                header=title, prompt="Enter custom value:"
+                            )
                         return value
 
             finally:
@@ -538,7 +544,9 @@ def output_result(marker: str, content: str) -> None:
                 "/ouroboros-archive": "ouroboros-archive.agent.md",
             }
             if cmd in agent_map:
-                formatted = f"Follow the prompt '.github/agents/{agent_map[cmd]}'\n\n{content}"
+                formatted = (
+                    f"Follow the prompt '.github/agents/{agent_map[cmd]}'\n\n{content}"
+                )
 
         # Output to stdout (visible in fallback mode)
         print(formatted)
@@ -567,7 +575,9 @@ def parse_args():
         default="",
         help="Question text to display above input (auto word-wrap)",
     )
-    parser.add_argument("--options", nargs="+", help="Options for selection menu (space-separated)")
+    parser.add_argument(
+        "--options", nargs="+", help="Options for selection menu (space-separated)"
+    )
     parser.add_argument(
         "--no-custom",
         action="store_true",
@@ -576,7 +586,9 @@ def parse_args():
     parser.add_argument("--no-ui", action="store_true", help="Disable UI decorations")
     parser.add_argument("--ascii", action="store_true", help="Use ASCII characters")
     parser.add_argument("--no-color", action="store_true", help="Disable colors")
-    parser.add_argument("--reset-config", action="store_true", help="Reset configuration")
+    parser.add_argument(
+        "--reset-config", action="store_true", help="Reset configuration"
+    )
     parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     return parser.parse_args()
 
@@ -674,7 +686,9 @@ def main():
             if question_header:
                 title = f"{question_header}\n\n{title}"
 
-            content = get_selection_input(options=options, title=title, allow_custom=not is_yes_no)
+            content = get_selection_input(
+                options=options, title=title, allow_custom=not is_yes_no
+            )
 
             # Map Yes/No back to y/n for compatibility
             if is_yes_no:
@@ -689,7 +703,9 @@ def main():
             # Prepend question to header if provided
             if question_header:
                 header = f"{question_header}\n\n{header}"
-            content = get_tui_input(header=header, prompt=args.prompt or "[Ouroboros] > ")
+            content = get_tui_input(
+                header=header, prompt=args.prompt or "[Ouroboros] > "
+            )
 
         elif mode == "prompt":
             # Simple prompt mode

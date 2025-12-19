@@ -17,7 +17,9 @@ import random
 from typing import List
 
 # Add scripts directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from tests.pbt_framework import property_test, Generator, StringGenerator
 from input.commands import SlashCommandHandler, SLASH_COMMANDS

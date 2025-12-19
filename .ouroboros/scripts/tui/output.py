@@ -387,7 +387,9 @@ class OutputBox:
             message: Success message to display
         """
         c = THEME
-        OutputBox.render("SUCCESS", f"{c['success']}✓ {message}{c['reset']}", full_width=False)
+        OutputBox.render(
+            "SUCCESS", f"{c['success']}✓ {message}{c['reset']}", full_width=False
+        )
 
     @staticmethod
     def render_transmitted(line_count: int = 0, char_count: int = 0) -> None:

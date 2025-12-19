@@ -360,7 +360,9 @@ class TUIApp:
 
         # Welcome box
         if not self.skip_welcome:
-            self.welcome_box = WelcomeBox(self.screen, self.theme, custom_header=self.header)
+            self.welcome_box = WelcomeBox(
+                self.screen, self.theme, custom_header=self.header
+            )
 
         # Input box
         self.input_box = InputBox(
@@ -437,7 +439,11 @@ class TUIApp:
             self.input_box.render(y, cols)
 
         # Render slash command dropdown if active
-        if self.slash_handler and self.slash_handler.active and self.slash_handler.matches:
+        if (
+            self.slash_handler
+            and self.slash_handler.active
+            and self.slash_handler.matches
+        ):
             self._render_slash_dropdown(y)
             # Re-position cursor after dropdown render
             if self.input_box:
@@ -499,7 +505,9 @@ class TUIApp:
         # Create dropdown window
         height = max_visible + 2
         self._slash_dropdown_rect = (dropdown_y, dropdown_x, height, dropdown_width)
-        dropdown_win = self.screen.create_window(height, dropdown_width, dropdown_y, dropdown_x)
+        dropdown_win = self.screen.create_window(
+            height, dropdown_width, dropdown_y, dropdown_x
+        )
 
         # Draw border
         border_attr = self.theme.get_attr("border") if self.theme else 0
@@ -598,7 +606,9 @@ class TUIApp:
             # If not detected as paste via event count, use normal read with bracketed paste
             if not is_paste:
                 read_timeout = 0.05 if self._collecting_path else 0.1
-                key, is_paste = self.paste_detector.read(self.keybuffer.getch, timeout=read_timeout)
+                key, is_paste = self.paste_detector.read(
+                    self.keybuffer.getch, timeout=read_timeout
+                )
 
                 # If a paste arrives while we were blocked in read(), we may have
                 # already consumed the first character. If there's now a bulk of
@@ -608,7 +618,8 @@ class TUIApp:
                     and key
                     and self.keybuffer is not None
                     and self.keybuffer.is_printable(key)
-                    and self.keybuffer.get_pending_event_count() >= PASTE_EVENT_THRESHOLD
+                    and self.keybuffer.get_pending_event_count()
+                    >= PASTE_EVENT_THRESHOLD
                 ):
                     paste_parts = [key]
 
@@ -692,7 +703,9 @@ class TUIApp:
             if self.input_box:
                 line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
                 col = self.input_box.buffer.cursor_col
-                self.input_box.buffer.lines[self.input_box.buffer.cursor_row] = line[:col]
+                self.input_box.buffer.lines[self.input_box.buffer.cursor_row] = line[
+                    :col
+                ]
                 self._render()
             return True
 
@@ -915,9 +928,13 @@ class TUIApp:
             current_line = self.input_box.buffer.lines[self.input_box.buffer.cursor_row]
             self.slash_handler.update(current_line)
             # Update status bar with match count
-            match_count = len(self.slash_handler.matches) if self.slash_handler.matches else 0
+            match_count = (
+                len(self.slash_handler.matches) if self.slash_handler.matches else 0
+            )
             if match_count > 0:
-                self.input_box.status_bar.set_hint(f"{match_count} matches | Tab: complete")
+                self.input_box.status_bar.set_hint(
+                    f"{match_count} matches | Tab: complete"
+                )
             else:
                 self.input_box.status_bar.set_hint("No matches")
         else:
@@ -995,7 +1012,9 @@ class TUIApp:
                     if pos >= 0:
                         marker = create_file_marker(full_path.strip())
                         new_line = line[:pos] + marker + line[pos + len(path_in_line) :]
-                        self.input_box.buffer.lines[self.input_box.buffer.cursor_row] = new_line
+                        self.input_box.buffer.lines[
+                            self.input_box.buffer.cursor_row
+                        ] = new_line
                         # Adjust cursor position
                         self.input_box.buffer.cursor_col = pos + len(marker)
         # else: Not a valid path - leave the text as-is (already in buffer)
@@ -1043,9 +1062,13 @@ class TUIApp:
                 self.input_box.status_bar.set_hint("Ctrl+D: submit")
             else:
                 self.slash_handler.update(current_line)
-                match_count = len(self.slash_handler.matches) if self.slash_handler.matches else 0
+                match_count = (
+                    len(self.slash_handler.matches) if self.slash_handler.matches else 0
+                )
                 if match_count > 0:
-                    self.input_box.status_bar.set_hint(f"{match_count} matches | Tab: complete")
+                    self.input_box.status_bar.set_hint(
+                        f"{match_count} matches | Tab: complete"
+                    )
                 else:
                     self.input_box.status_bar.set_hint("No matches")
 
@@ -1087,14 +1110,23 @@ class TUIApp:
             self.input_box.buffer.insert_text(marker)
         else:
             # Multiple file paths (one per line)
-            non_empty_lines = [line.strip() for line in cleaned.split("\n") if line.strip()]
-            if len(non_empty_lines) > 1 and all(is_file_path(line) for line in non_empty_lines):
-                markers = "\n".join(create_file_marker(line) for line in non_empty_lines)
+            non_empty_lines = [
+                line.strip() for line in cleaned.split("\n") if line.strip()
+            ]
+            if len(non_empty_lines) > 1 and all(
+                is_file_path(line) for line in non_empty_lines
+            ):
+                markers = "\n".join(
+                    create_file_marker(line) for line in non_empty_lines
+                )
                 self.input_box.buffer.insert_text(markers)
             else:
                 # Large paste -> paste marker (badge). Otherwise insert raw text.
                 line_count = len(content.split("\n")) if content else 0
-                if line_count >= PASTE_LINE_THRESHOLD or len(content) >= PASTE_CHAR_THRESHOLD:
+                if (
+                    line_count >= PASTE_LINE_THRESHOLD
+                    or len(content) >= PASTE_CHAR_THRESHOLD
+                ):
                     marker = create_paste_marker(content)
                     self.input_box.buffer.insert_text(marker)
                 else:
@@ -1191,7 +1223,10 @@ class TUIApp:
 
         # Ctrl+R - Next search result
         if key == Keys.CTRL_R:
-            if self._search_results and self._search_index < len(self._search_results) - 1:
+            if (
+                self._search_results
+                and self._search_index < len(self._search_results) - 1
+            ):
                 self._search_index += 1
                 self._apply_search_result()
             return True
@@ -1219,7 +1254,9 @@ class TUIApp:
         self._search_results = self.history.search(self._search_query)
         self._search_index = 0
 
-        self.input_box.status_bar.set_hint(f"(reverse-i-search)`{self._search_query}': ")
+        self.input_box.status_bar.set_hint(
+            f"(reverse-i-search)`{self._search_query}': "
+        )
 
         self._apply_search_result()
 

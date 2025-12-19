@@ -84,9 +84,13 @@ class WelcomeBox:
         """
         if self.custom_header:
             # Calculate wrapped lines for custom header + separator line
-            inner_width = min(self.MAX_WIDTH, width) - 4  # Account for borders + padding
+            inner_width = (
+                min(self.MAX_WIDTH, width) - 4
+            )  # Account for borders + padding
             wrapped_lines = self._wrap_text(self.custom_header, inner_width)
-            return 3 + len(wrapped_lines)  # top border + content + separator + bottom border
+            return 3 + len(
+                wrapped_lines
+            )  # top border + content + separator + bottom border
 
         if self._is_compact(width):
             return 4  # Compact: title + 2 shortcut lines + border
@@ -314,7 +318,9 @@ class WelcomeBox:
         # Single line: title only
         if box_width < self.MIN_WIDTH:
             x = (width - len(self.TITLE)) // 2
-            self._window = self.screen.create_window(1, len(self.TITLE) + 2, y, max(0, x))
+            self._window = self.screen.create_window(
+                1, len(self.TITLE) + 2, y, max(0, x)
+            )
 
             accent_attr = self.theme.get_attr("accent") if self.theme else 0
             self._window.write(0, 1, self.TITLE, accent_attr)
