@@ -34,6 +34,7 @@
   - Use EARS notation (WHEN/WHILE/IF-THEN/SHALL)
   - Each requirement must have P1/P2/P3 priority
   - Each requirement must have Independent Test
+  - Each requirement must have Verified By
 -->
 
 ### REQ-001: {{Requirement Title}} (Priority: P1) 🎯
@@ -42,7 +43,11 @@
 
 **Why P1**: {{Explain why this is highest priority — MVP critical}}
 
+**Depends On**: None | REQ-XXX
+
 **Independent Test**: {{How to verify this requirement works on its own}}
+
+**Verified By**: Unit Test | Integration Test | Manual QA | User Acceptance
 
 **Acceptance Criteria** (EARS notation):
 1. WHEN {{trigger}}, the System SHALL {{behavior}}
@@ -57,7 +62,11 @@
 
 **Why P1**: {{...}}
 
+**Depends On**: REQ-001
+
 **Independent Test**: {{...}}
+
+**Verified By**: {{...}}
 
 **Acceptance Criteria**:
 1. WHEN {{trigger}}, the System SHALL {{behavior}}
@@ -71,7 +80,11 @@
 
 **Why P2**: {{Important but not MVP-critical}}
 
+**Depends On**: REQ-001, REQ-002
+
 **Independent Test**: {{...}}
+
+**Verified By**: {{...}}
 
 **Acceptance Criteria**:
 1. WHEN {{trigger}}, the System SHALL {{behavior}}
@@ -84,10 +97,35 @@
 
 **Why P3**: {{Nice to have if time permits}}
 
+**Depends On**: None
+
 **Independent Test**: {{...}}
+
+**Verified By**: {{...}}
 
 **Acceptance Criteria**:
 1. WHEN {{trigger}}, the System SHALL {{behavior}}
+
+---
+
+## Requirement Dependencies
+
+<!-- ACTION REQUIRED: Map dependencies between requirements -->
+
+```mermaid
+graph LR
+    REQ-001 --> REQ-002
+    REQ-001 --> REQ-003
+    REQ-002 --> REQ-003
+    REQ-004
+```
+
+| REQ ID | Depends On | Blocks |
+|--------|------------|--------|
+| REQ-001 | None | REQ-002, REQ-003 |
+| REQ-002 | REQ-001 | REQ-003 |
+| REQ-003 | REQ-001, REQ-002 | None |
+| REQ-004 | None | None |
 
 ---
 
@@ -95,23 +133,58 @@
 
 <!-- ACTION REQUIRED: Identify boundary conditions and error scenarios -->
 
-| Scenario | Expected Behavior |
-|----------|-------------------|
-| What if {{empty input}}? | {{System should...}} |
-| What if {{network failure}}? | {{System should...}} |
-| What if {{concurrent access}}? | {{System should...}} |
-| {{[NEEDS CLARIFICATION: ...]}} | {{Awaiting user input}} |
+| ID | Scenario | Expected Behavior | Related REQ |
+|----|----------|-------------------|-------------|
+| EC-001 | {{Empty input}} | {{System should...}} | REQ-001 |
+| EC-002 | {{Network failure}} | {{System should...}} | REQ-002 |
+| EC-003 | {{Concurrent access}} | {{System should...}} | REQ-003 |
+| EC-004 | {{[NEEDS CLARIFICATION: ...]}} | {{Awaiting user input}} | - |
 
 ---
 
 ## Non-Functional Requirements
 
-| Category | Requirement | Metric |
-|----------|-------------|--------|
-| Performance | Response time | < {{200ms}} |
-| Security | Data handling | {{Encrypted at rest}} |
-| Accessibility | Compliance | {{WCAG 2.1 AA}} |
-| Scalability | Concurrent users | {{1000+}} |
+<!-- ACTION REQUIRED: Define quality attributes with measurable metrics -->
+
+### Performance
+
+| Metric | Requirement | Measurement Method |
+|--------|-------------|-------------------|
+| Response Time | < {{200ms}} for 95th percentile | Load testing |
+| Throughput | {{1000}} requests/second | Stress testing |
+| Memory Usage | < {{512MB}} peak | Profiling |
+
+### Security
+
+| Requirement | Implementation | Verification |
+|-------------|----------------|--------------|
+| {{Authentication}} | {{JWT tokens}} | Security audit |
+| {{Data Encryption}} | {{AES-256 at rest}} | Compliance check |
+| {{Input Validation}} | {{Sanitize all inputs}} | Penetration test |
+
+### Reliability
+
+| Metric | Requirement | Measurement |
+|--------|-------------|-------------|
+| Availability | {{99.9%}} uptime | Monitoring |
+| Error Rate | < {{0.1%}} | Error tracking |
+| Recovery Time | < {{5 minutes}} | Incident drill |
+
+### Usability
+
+| Requirement | Metric | Verification |
+|-------------|--------|--------------|
+| Accessibility | {{WCAG 2.1 AA}} | Automated audit |
+| Mobile Support | {{Responsive design}} | Device testing |
+| Load Time | {{< 3s on 3G}} | Lighthouse |
+
+### Maintainability
+
+| Requirement | Metric | Verification |
+|-------------|--------|--------------|
+| Code Coverage | {{> 80%}} | CI pipeline |
+| Documentation | {{All public APIs}} | Review |
+| Complexity | {{Cyclomatic < 10}} | Linting |
 
 ---
 
@@ -134,11 +207,12 @@
 
 ## Requirements Summary
 
-| Priority | Count | Coverage |
-|----------|-------|----------|
-| P1 (Must) | {{N}} | MVP |
-| P2 (Should) | {{N}} | Post-MVP |
-| P3 (Could) | {{N}} | Future |
+| Priority | Count | Coverage | Estimated Effort |
+|----------|-------|----------|------------------|
+| P1 (Must) | {{N}} | MVP | {{X hours}} |
+| P2 (Should) | {{N}} | Post-MVP | {{Y hours}} |
+| P3 (Could) | {{N}} | Future | {{Z hours}} |
+| **Total** | **{{N}}** | - | **{{Total hours}}** |
 
 ---
 
@@ -148,9 +222,13 @@ Before marking complete, verify:
 
 - [ ] All requirements have unique IDs (REQ-XXX)
 - [ ] All requirements have P1/P2/P3 priority
+- [ ] All requirements have "Depends On" field
+- [ ] All requirements have "Verified By" field
 - [ ] All requirements have Independent Test description
 - [ ] All requirements use EARS notation (WHEN/SHALL)
-- [ ] Edge cases are identified
+- [ ] Dependency graph is accurate
+- [ ] Edge cases are identified with related REQs
+- [ ] NFRs have measurable metrics
 - [ ] Out of scope is explicitly defined
 - [ ] No ambiguous language ("fast", "easy", "better")
 

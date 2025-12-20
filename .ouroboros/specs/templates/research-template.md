@@ -21,19 +21,21 @@
 
 <!-- ACTION REQUIRED: Fill with actual versions from package.json, requirements.txt, etc. -->
 
-| Layer | Technology | Version | Why This Tech |
-|-------|------------|---------|---------------|
-| Frontend | {{e.g., React}} | {{18.2.0}} | {{Existing stack / User preference / Performance}} |
-| Backend | {{e.g., FastAPI}} | {{0.100.0}} | {{...}} |
-| Database | {{e.g., PostgreSQL}} | {{15.0}} | {{...}} |
-| Build | {{e.g., Vite}} | {{5.0.0}} | {{...}} |
+| Layer | Technology | Version | Config File |
+|-------|------------|---------|-------------|
+| Language | {{e.g., TypeScript}} | {{5.3.0}} | `tsconfig.json` |
+| Frontend | {{e.g., React}} | {{18.2.0}} | `package.json` |
+| Backend | {{e.g., FastAPI}} | {{0.100.0}} | `pyproject.toml` |
+| Database | {{e.g., PostgreSQL}} | {{15.0}} | `docker-compose.yml` |
+| Build | {{e.g., Vite}} | {{5.0.0}} | `vite.config.ts` |
+| Test | {{e.g., Vitest}} | {{1.0.0}} | `vitest.config.ts` |
 
 ### Key Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| {{package1}} | {{version}} | {{why needed}} |
-| {{package2}} | {{version}} | {{why needed}} |
+| Package | Version | Purpose | Used In |
+|---------|---------|---------|---------|
+| {{package1}} | {{version}} | {{why needed}} | `{{file.ts}}` |
+| {{package2}} | {{version}} | {{why needed}} | `{{file.ts}}` |
 
 ---
 
@@ -61,6 +63,48 @@ src/
 
 ---
 
+## Existing Tests
+
+<!-- ACTION REQUIRED: Document current test coverage and patterns -->
+
+| Test Type | Framework | Location | Coverage |
+|-----------|-----------|----------|----------|
+| Unit | {{Vitest/Jest}} | `tests/unit/` | {{~80%}} |
+| Integration | {{Playwright/Cypress}} | `tests/e2e/` | {{~50%}} |
+| API | {{Supertest}} | `tests/api/` | {{~70%}} |
+
+### Test Commands
+
+```bash
+# Run all tests
+{{npm test / pytest}}
+
+# Run with coverage
+{{npm run test:coverage / pytest --cov}}
+```
+
+---
+
+## API & External Integrations
+
+<!-- ACTION REQUIRED: Document existing APIs this feature will interact with -->
+
+### Internal APIs
+
+| Endpoint | Method | Purpose | Auth |
+|----------|--------|---------|------|
+| `{{/api/users}}` | GET | {{List users}} | {{Bearer token}} |
+| `{{/api/items}}` | POST | {{Create item}} | {{API key}} |
+
+### External Services
+
+| Service | Purpose | SDK/Client | Docs |
+|---------|---------|------------|------|
+| {{Stripe}} | {{Payments}} | `stripe-js` | {{URL}} |
+| {{Auth0}} | {{Authentication}} | `@auth0/auth0-spa-js` | {{URL}} |
+
+---
+
 ## Affected Files Analysis
 
 ### Files to CREATE
@@ -80,6 +124,18 @@ src/
 | File | Reason |
 |------|--------|
 | {{None expected}} | - |
+
+---
+
+## Performance Baseline
+
+<!-- ACTION REQUIRED: Document current performance metrics if relevant -->
+
+| Metric | Current Value | Target | Measurement |
+|--------|---------------|--------|-------------|
+| Page Load | {{1.2s}} | {{< 1s}} | Lighthouse |
+| API Response | {{200ms}} | {{< 150ms}} | Network tab |
+| Bundle Size | {{450KB}} | {{< 500KB}} | Build output |
 
 ---
 
@@ -141,6 +197,9 @@ Before marking complete, verify:
 - [ ] Tech stack has actual version numbers (not placeholders)
 - [ ] All patterns cited have file evidence
 - [ ] Affected files include specific paths
+- [ ] Existing tests documented with coverage
+- [ ] API endpoints listed (if applicable)
+- [ ] Performance baseline recorded (if applicable)
 - [ ] Constraints are project-specific (not generic)
 - [ ] Recommended approach has clear rationale
 - [ ] Risks are identified with mitigations
