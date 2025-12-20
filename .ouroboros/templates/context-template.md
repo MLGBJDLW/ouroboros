@@ -1,65 +1,70 @@
-# ♾️ Project Ouroboros: Context Template
+# ♾️ Ouroboros Context
 
-> **Instructions**: Agent copies this template to `.ouroboros/history/context-YYYY-MM-DD.md` and updates that file.
-
----
-
-## 📅 Session Info
-
-| Field | Value |
-|-------|-------|
-| **Date** | YYYY-MM-DD |
-| **Time** | HH:MM (24h) |
-| **Timezone** | [e.g., UTC+8, PST] |
-| **Session ID** | [Auto-generated or manual] |
+> **Session**: {{DATE}}  
+> **Last Updated**: {{TIME}}
 
 ---
 
 ## 🎯 Current Goal
 
-[Describe current objective here]
+{{Describe current objective here}}
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Language**: [e.g., Python 3.11, TypeScript 5.x]
-- **Framework**: [e.g., FastAPI, React, Next.js]
-- **Tools**: [e.g., Poetry, npm, Docker]
+| Layer | Technology | Version |
+|-------|------------|---------|
+| Language | {{e.g., TypeScript}} | {{5.3.0}} |
+| Framework | {{e.g., React}} | {{18.2.0}} |
+| Build | {{e.g., Vite}} | {{5.0.0}} |
 
 ---
 
-## � Active Clipboard (Artifact Buffer)
+## � ActiveS Tasks
 
-> Last artifact passed between agents. Updated during handoffs.
-
-```
-[EMPTY - No active artifact]
-```
-
----
-
-## 📋 Pending Issues / Backlog
-
-- [ ] [Issue 1]
-- [ ] [Issue 2]
+| Task | Status | File | Notes |
+|------|--------|------|-------|
+| {{Task 1}} | 🔄 In Progress | `{{path}}` | {{Notes}} |
+| {{Task 2}} | ⬜ Pending | `{{path}}` | - |
 
 ---
 
-## � Session Statistics
+## ✅ Completed
+
+| Task | Completed At | Files Changed |
+|------|--------------|---------------|
+| {{Task}} | {{TIME}} | `{{path}}` |
+
+---
+
+## ⚠️ Pending Issues
+
+| Issue | Severity | Related File | Notes |
+|-------|----------|--------------|-------|
+| {{Issue}} | 🔴/🟡/🟢 | `{{path}}` | {{Notes}} |
+
+---
+
+## 📁 Files Modified This Session
+
+| File | Action | Agent |
+|------|--------|-------|
+| `{{path}}` | Created / Modified | {{agent}} |
+
+---
+
+## 📊 Session Stats
 
 | Metric | Value |
 |--------|-------|
-| Tasks Completed | 0 |
-| Current Task | - |
-| Last Agent | - |
-| Session Start | HH:MM |
-| Last Update | HH:MM |
+| Tasks Completed | {{N}} |
+| Files Changed | {{N}} |
+| Current Agent | {{agent}} |
+| Session Start | {{TIME}} |
 
 ---
 
-## 🔄 Action Log
+## 📝 Notes
 
-| Timestamp | Action | Agent |
-|-----------|--------|-------|
-| HH:MM | Session initialized | Architect |
+{{Any additional context or notes for the next session}}

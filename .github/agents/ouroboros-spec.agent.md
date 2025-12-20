@@ -121,15 +121,17 @@ runSubagent(
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/research.md
 
-## Template
-Read and follow: .ouroboros/specs/templates/research-template.md
+## Template — COPY-THEN-MODIFY (MANDATORY)
+Source: .ouroboros/specs/templates/research-template.md
+Target: .ouroboros/specs/[feature-name]/research.md
 
 ## Requirements
-1. Read the template FIRST
+1. COPY template to target using execute tool
 2. Research the codebase (tech stack, patterns, affected files)
-3. USE edit TOOL to CREATE research.md
+3. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
 4. Return with [PHASE 1 COMPLETE]
 
+⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
   `
 )
@@ -149,20 +151,22 @@ runSubagent(
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/requirements.md
 
-## Template
-COPY: .ouroboros/specs/templates/requirements-template.md
+## Template — COPY-THEN-MODIFY (MANDATORY)
+Source: .ouroboros/specs/templates/requirements-template.md
+Target: .ouroboros/specs/[feature-name]/requirements.md
 
 ## Input
 Read: .ouroboros/specs/[feature-name]/research.md
 
 ## Requirements
-1. COPY template to target path
+1. COPY template to target using execute tool
 2. Read research.md for context
 3. Define requirements in EARS notation
 4. If ANY requirement is unclear, output "Clarification Questions" section
-5. USE edit TOOL to CREATE requirements.md
+5. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
 6. Return with [PHASE 2 COMPLETE] or [CLARIFICATION NEEDED]
 
+⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
   `
 )
@@ -229,18 +233,20 @@ runSubagent(
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/design.md
 
-## Template
-Read and follow: .ouroboros/specs/templates/design-template.md
+## Template — COPY-THEN-MODIFY (MANDATORY)
+Source: .ouroboros/specs/templates/design-template.md
+Target: .ouroboros/specs/[feature-name]/design.md
 
 ## Input
 Read: research.md, requirements.md
 
 ## Requirements
-1. Read the template FIRST
+1. COPY template to target using execute tool
 2. Analyze trade-offs, create Mermaid diagrams
-3. USE edit TOOL to CREATE design.md
+3. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
 4. Return with [PHASE 3 COMPLETE]
 
+⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
   `
 )
@@ -260,18 +266,21 @@ runSubagent(
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/tasks.md
 
-## Template
-Read and follow: .ouroboros/specs/templates/tasks-template.md
+## Template — COPY-THEN-MODIFY (MANDATORY)
+Source: .ouroboros/specs/templates/tasks-template.md
+Target: .ouroboros/specs/[feature-name]/tasks.md
 
 ## Input
 Read: research.md, requirements.md, design.md
 
 ## Requirements
-1. Read ALL previous docs + template
-2. Break down into phases and atomic tasks
-3. USE edit TOOL to CREATE tasks.md
-4. Return with [PHASE 4 COMPLETE]
+1. COPY template to target using execute tool
+2. Read ALL previous docs for context
+3. Break down into phases and atomic tasks
+4. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
+5. Return with [PHASE 4 COMPLETE]
 
+⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
   `
 )
@@ -291,19 +300,22 @@ runSubagent(
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/validation-report.md
 
-## Template
-Read and follow: .ouroboros/specs/templates/validation-template.md
+## Template — COPY-THEN-MODIFY (MANDATORY)
+Source: .ouroboros/specs/templates/validation-template.md
+Target: .ouroboros/specs/[feature-name]/validation-report.md
 
 ## Input
 Read ALL: research.md, requirements.md, design.md, tasks.md
 
 ## Requirements
-1. Read ALL 4 documents + template
-2. Build traceability matrix
-3. Identify gaps / inconsistencies
-4. USE edit TOOL to CREATE validation-report.md
-5. Return with [PHASE 5 COMPLETE]
+1. COPY template to target using execute tool
+2. Read ALL 4 documents for context
+3. Build traceability matrix
+4. Identify gaps / inconsistencies
+5. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
+6. Return with [PHASE 5 COMPLETE]
 
+⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
   `
 )

@@ -5,6 +5,85 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.13] - 2025-12-20
+
+### Changed
+- **Spec Agents Template Workflow Enhancement** — Strengthened COPY-THEN-MODIFY pattern enforcement across all 5 spec workflow agents:
+  - `ouroboros-researcher`, `ouroboros-requirements`, `ouroboros-architect`, `ouroboros-tasks`, `ouroboros-validator`
+  - Added explicit 3-step workflow: COPY template → MODIFY placeholders → PRESERVE structure
+  - Added clear VIOLATIONS list to prevent agents from reading template then writing from scratch
+  - Removed platform-specific commands — agents now use `execute` tool directly for cross-platform compatibility
+
+- **Spec Orchestrator Delegation Prompts** — Updated all 5 phase delegation prompts in `ouroboros-spec.agent.md`:
+  - Unified format: `## Template — COPY-THEN-MODIFY (MANDATORY)` with Source/Target paths
+  - Added `⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT` warning to all phases
+  - Consistent instruction: "COPY template to target using execute tool"
+
+- **Comprehensive Template Upgrades** — Major enhancements to all 7 templates:
+
+  **research-template.md**:
+  - Added `## Existing Tests` section with coverage metrics and test commands
+  - Added `## API & External Integrations` section for internal/external APIs
+  - Added `## Performance Baseline` section with metrics and targets
+  - Enhanced Tech Stack table with Config File column
+  - Enhanced Key Dependencies table with Used In column
+
+  **requirements-template.md**:
+  - Added `Depends On` and `Verified By` fields to each requirement
+  - Added `## Requirement Dependencies` section with Mermaid graph
+  - Added Edge Cases table with ID and Related REQ columns
+  - Expanded NFRs into 5 categories: Performance, Security, Reliability, Usability, Maintainability
+  - Added Estimated Effort to Requirements Summary
+
+  **design-template.md**:
+  - Added `## Sequence Diagrams` section with Happy Path and Error Path examples
+  - Added `## State Diagram` section with state transition table
+  - Added `## API Contract` section with endpoints and request/response schemas
+  - Added `## Security Considerations` section with sensitive data handling
+  - Enhanced Error Handling table with HTTP codes and error codes
+  - Enhanced Testing Strategy with test cases from requirements
+  - Added Backup Plan column to Files to MODIFY table
+
+  **tasks-template.md**:
+  - Added Effort Conversion table (S=0.5h, M=1.5h, L=3h) with totals
+  - Added `Done When` criteria to every task
+  - Added `Acceptance Criteria` reference from requirements to each phase
+  - Added `## Rollback Plan` section with strategies per phase
+  - Added `## Estimated Timeline` section with day-by-day breakdown
+  - Enhanced Critical Path with Mermaid diagram
+  - Added Parallel Opportunities table with reasoning
+
+  **validation-template.md**:
+  - Added `Confidence Level` (High/Medium/Low) to verdict
+  - Added `## Automated Checks` section for programmatically verifiable items
+  - Added Test Coverage column to Traceability Matrix
+  - Added P1 Requirements Status summary table
+  - Added `## Dependency Validation` section for REQ and Task dependencies
+  - Enhanced Risk Assessment with Likelihood and Owner columns
+  - Added Risk Score calculation table
+  - Added Implementation Time estimate table
+  - Added Rationale field to Recommended Execution Mode
+
+  **project-arch-template.md**:
+  - Added `## Environment Setup` section with prerequisites and setup steps
+  - Added `## Common Commands` table with all dev commands
+  - Added `## CI/CD Pipeline` section with stages and triggers
+  - Enhanced Tech Stack table with Config File column
+  - Enhanced Key Components table with Dependencies column
+  - Enhanced Design Patterns with Evidence column
+  - Enhanced Gotchas as structured table
+  - Added Quality Self-Check section
+
+  **context-template.md**:
+  - Simplified structure, removed unused fields
+  - Added `## Active Tasks` table with status tracking
+  - Added `## Completed` table with timestamps
+  - Added `## Pending Issues` table with severity
+  - Added `## Files Modified This Session` table
+  - Streamlined Session Stats
+
+---
+
 ## [3.1.12] - 2025-12-18
 
 ### Fixed
