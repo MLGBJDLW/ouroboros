@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.14] - 2025-12-20
+
+### Added
+- **Integration Coverage in Spec Templates** — Added dedicated Integration sections to 4 spec templates to ensure features are properly wired into existing systems:
+
+  **tasks-template.md**:
+  - Added **Phase 6: Integration & Wiring** between requirement phases and Polish phase
+  - Includes tasks for: Route registration, Navigation UI, Config/Feature flags, Type exports, Service registration
+  - Added `[INTEGRATE]` task tag for integration-specific tasks
+  - Updated Progress Summary table to include Phase 6: Integration and renumbered Phase 7: Polish
+
+  **design-template.md**:
+  - Added **Integration Architecture** section with Entry Point Diagram (Mermaid)
+  - Added Integration Points table (Route, Navigation, Config, Types, Services)
+  - Added Integration Dependencies table showing what the feature needs from existing code
+
+  **validation-template.md**:
+  - Added **Integration Verification** section with Integration Points Check table
+  - Added Integration Test Scenarios (navigate, build, toggle, import)
+  - Added Integration Traceability table linking tasks to verification status
+
+  **research-template.md**:
+  - Added **Integration Entry Points** section to identify system entry points early
+  - Added Existing Patterns for Integration table to follow established patterns
+  - Added Integration Constraints checklist
+
+---
+
 ## [3.1.13] - 2025-12-20
 
 ### Changed

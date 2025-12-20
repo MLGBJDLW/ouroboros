@@ -127,6 +127,36 @@ src/
 
 ---
 
+## Integration Entry Points
+
+<!-- ACTION REQUIRED: Identify HOW this feature will be wired into the existing system -->
+
+### System Entry Points
+
+| Entry Point Type | Current Location | How to Integrate | Evidence |
+|------------------|------------------|------------------|----------|
+| Main App Entry | `{{src/main.tsx}}` | {{Import and initialize}} | Line {{N}} |
+| Router/Navigation | `{{src/router/index.ts}}` | {{Add new route}} | Route config |
+| Config Registry | `{{src/config/features.ts}}` | {{Add feature flag}} | Features object |
+| Navigation UI | `{{src/components/Sidebar.tsx}}` | {{Add nav item}} | Menu array |
+
+### Existing Patterns for Integration
+
+<!-- Look for how other features are integrated and follow the same pattern -->
+
+| Similar Feature | Integration Pattern | Files Involved |
+|-----------------|--------------------|--------------------|
+| {{Auth}} | {{Registered in router, added to menu}} | `router.ts`, `Menu.tsx` |
+| {{Settings}} | {{Config-driven, lazy loaded}} | `config.ts`, `routes.ts` |
+
+### Integration Constraints
+
+- [ ] {{Must follow existing routing pattern}}
+- [ ] {{Must use existing auth context}}
+- [ ] {{Must register in feature flag system}}
+
+---
+
 ## Performance Baseline
 
 <!-- ACTION REQUIRED: Document current performance metrics if relevant -->
