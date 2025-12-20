@@ -5,11 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.13] - 2025-12-18
+## [3.1.13] - 2025-12-20
 
-### Fixed
-- **History Navigation** — Resolved a regression where navigating stored entries could stick or skip when working with multi-line inputs; traversal now mirrors the on-screen content consistently.
-- **Arrow Key Direction** — Corrected left/right handling in the input box so cursor movement now matches the pressed arrow key.
+### Changed
+- **Spec Agents Template Workflow Enhancement** — Strengthened COPY-THEN-MODIFY pattern enforcement across all 5 spec workflow agents:
+  - `ouroboros-researcher`, `ouroboros-requirements`, `ouroboros-architect`, `ouroboros-tasks`, `ouroboros-validator`
+  - Added explicit 3-step workflow: COPY template → MODIFY placeholders → PRESERVE structure
+  - Added clear VIOLATIONS list to prevent agents from reading template then writing from scratch
+  - Removed platform-specific commands — agents now use `execute` tool directly for cross-platform compatibility
+
+- **Spec Orchestrator Delegation Prompts** — Updated all 5 phase delegation prompts in `ouroboros-spec.agent.md`:
+  - Unified format: `## Template — COPY-THEN-MODIFY (MANDATORY)` with Source/Target paths
+  - Added `⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT` warning to all phases
+  - Consistent instruction: "COPY template to target using execute tool"
 
 ---
 
