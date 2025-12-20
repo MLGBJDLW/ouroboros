@@ -133,6 +133,40 @@
 
 ---
 
+## Integration Verification
+
+<!-- ACTION REQUIRED: Verify feature is properly wired into the existing system -->
+
+### Integration Points Check
+
+| Integration Point | Expected | File | Verified | Status |
+|-------------------|----------|------|----------|--------|
+| Route Registration | Route `/{{feature}}` exists | `{{router file}}` | ✅/❌ | {{notes}} |
+| Navigation Menu | Menu item visible and clickable | `{{menu file}}` | ✅/❌ | {{notes}} |
+| Config/Feature Flag | Flag exists and toggleable | `{{config file}}` | ✅/❌ | {{notes}} |
+| Type Exports | Types importable from barrel | `{{types/index}}` | ✅/❌ | {{notes}} |
+| Service Registration | Service accessible | `{{services file}}` | ✅/❌ | {{notes}} |
+
+### Integration Test Scenarios
+
+| Test | How to Verify | Expected Result | Status |
+|------|---------------|-----------------|--------|
+| Navigate to feature | Click menu item or go to URL | Page loads correctly | ✅/❌ |
+| Feature in build | Run `npm run build` | No errors, feature included | ✅/❌ |
+| Feature toggle | Set `FEATURE_X=false` | Feature hidden/disabled | ✅/❌ |
+| Import from barrel | `import { X } from '@/types'` | No import errors | ✅/❌ |
+
+### Integration Traceability
+
+| Task ID | Integration Type | Verified | Notes |
+|---------|------------------|----------|-------|
+| T0XX | Route Registration | ✅/❌ | {{notes}} |
+| T0XX | Navigation Menu | ✅/❌ | {{notes}} |
+| T0XX | Config/Feature Flag | ✅/❌ | {{notes}} |
+| T0XX | Type Exports | ✅/❌ | {{notes}} |
+
+---
+
 ## Risk Assessment
 
 | Risk | Level | Impact | Likelihood | Mitigation | Owner |

@@ -16,7 +16,8 @@
 | Phase 3: REQ-001 (P1) | 0/{{N}} | {{X}}h | ⬜ |
 | Phase 4: REQ-002 (P1) | 0/{{N}} | {{X}}h | ⬜ |
 | Phase 5: REQ-003 (P2) | 0/{{N}} | {{X}}h | ⬜ |
-| Phase 6: Polish | 0/{{N}} | {{X}}h | ⬜ |
+| Phase 6: Integration | 0/{{N}} | {{X}}h | ⬜ |
+| Phase 7: Polish | 0/{{N}} | {{X}}h | ⬜ |
 | **Total** | **0/{{N}}** | **{{Total}}h** | **0%** |
 
 ### Effort Conversion
@@ -168,7 +169,55 @@
 
 ---
 
-## Phase 6: Polish & Cross-Cutting
+## Phase 6: Integration & Wiring
+
+**Purpose**: Connect the feature to existing system entry points
+
+⚠️ **CRITICAL**: Feature is NOT complete until this phase passes! A feature without integration is INCOMPLETE.
+
+### Route/Entry Point Registration
+
+- [ ] **T0XX** [INTEGRATE] Register in main router/app entry
+  - File: `{{src/router/index.ts}}` or `{{src/main.tsx}}`
+  - Change: Import component and add route `"/{{feature}}": FeaturePage`
+  - Effort: S
+  - Done When: Navigating to `/{{feature}}` loads the new page
+
+### Navigation UI
+
+- [ ] **T0XX** [P] [INTEGRATE] Add to navigation menu/sidebar
+  - File: `{{src/components/Sidebar.tsx}}` or `{{src/components/Menu.tsx}}`
+  - Change: Add menu item with icon and label
+  - Effort: S
+  - Done When: Menu shows new item, clicking navigates correctly
+
+### Configuration
+
+- [ ] **T0XX** [P] [INTEGRATE] Add feature flag (if applicable)
+  - File: `{{src/config/features.ts}}` or `{{src/config/index.ts}}`
+  - Change: Add `{{FEATURE_NAME}}: boolean`
+  - Effort: S
+  - Done When: Feature can be toggled via config
+
+### Type/Module Exports
+
+- [ ] **T0XX** [P] [INTEGRATE] Export types from barrel file
+  - File: `{{src/types/index.ts}}`
+  - Change: `export * from './{{feature}}'` or `export type { ... }`
+  - Effort: S
+  - Done When: Types importable from `@/types`
+
+- [ ] **T0XX** [INTEGRATE] Register module/service (if applicable)
+  - File: `{{src/services/index.ts}}` or `{{src/modules/index.ts}}`
+  - Change: Import and register in service container/registry
+  - Effort: S
+  - Done When: Service injectable/accessible from other modules
+
+🔍 **CHECKPOINT**: Integration complete — feature accessible from main app entry point
+
+---
+
+## Phase 7: Polish & Cross-Cutting
 
 **Purpose**: Improvements affecting multiple requirements
 

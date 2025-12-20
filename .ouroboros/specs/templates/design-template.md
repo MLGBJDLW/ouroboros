@@ -310,6 +310,44 @@ erDiagram
 
 ---
 
+## Integration Architecture
+
+<!-- ACTION REQUIRED: Define exactly HOW to wire this feature into the existing system -->
+
+### Entry Point Diagram
+
+```mermaid
+flowchart LR
+    subgraph Existing["Existing System"]
+        MAIN[main entry] --> ROUTER[Router/Registry]
+        ROUTER --> EXISTING[Existing Features]
+    end
+    subgraph New["New Feature"]
+        NEW_COMPONENT[{{FeatureComponent}}]
+    end
+    ROUTER -.->|"Add route/register"| NEW_COMPONENT
+```
+
+### Integration Points
+
+| Integration Type | File to Modify | Specific Change | Location/Line |
+|------------------|----------------|-----------------|---------------|
+| Route Registration | `{{src/router/index.ts}}` | Add route `"/{{feature}}"` | After existing routes |
+| Navigation Menu | `{{src/components/Menu.tsx}}` | Add menu item | `menuItems` array |
+| Config/Feature Flag | `{{src/config/index.ts}}` | Add `FEATURE_{{NAME}}` | `features` object |
+| Type Export | `{{src/types/index.ts}}` | Export new types | End of file |
+| Service Registration | `{{src/services/index.ts}}` | Register service | Container setup |
+
+### Integration Dependencies
+
+| This Feature Needs | From Existing | How to Access |
+|--------------------|---------------|---------------|
+| {{Auth context}} | `{{src/contexts/AuthContext}}` | `useAuth()` hook |
+| {{API client}} | `{{src/api/client}}` | Import directly |
+| {{Config}} | `{{src/config}}` | `getConfig()` |
+
+---
+
 ## Requirements Traceability
 
 <!-- ACTION REQUIRED: Every REQ must map to at least one component -->
