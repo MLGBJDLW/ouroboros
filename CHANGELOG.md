@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.3] - 2025-12-21
+
+### 🔧 Extension UI Fix
+
+#### Fixed
+- **Copilot Chat Step Detection** — "Start Ouroboros" step (Step 2) now shows ✓ after clicking "Open Copilot Chat" button
+  - Added `hasCopilotChatOpened` state tracking in `WorkspaceState`
+  - Step 2 badge updates from "2" to green "✓" when Copilot Chat is opened via our button
+  - State persists across extension reloads
+
+---
+
 ## [3.2.2] - 2025-12-21
 
 ### 🛠️ Agent Skills Integration

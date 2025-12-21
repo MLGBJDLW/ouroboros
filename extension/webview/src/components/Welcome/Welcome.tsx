@@ -10,6 +10,7 @@ interface WelcomeProps {
     onOpenCopilot?: () => void;
     onUpdatePrompts?: () => void;
     isInitialized?: boolean;
+    hasCopilotChatOpened?: boolean;
     hasUpdates?: boolean;
     projectName?: string;
 }
@@ -19,6 +20,7 @@ export function Welcome({
     onOpenCopilot,
     onUpdatePrompts,
     isInitialized = false,
+    hasCopilotChatOpened = false,
     hasUpdates = false,
     projectName,
 }: WelcomeProps) {
@@ -89,7 +91,9 @@ export function Welcome({
                     {/* Step 2: Start Workflow */}
                     <div className={styles.step}>
                         <div className={styles.stepHeader}>
-                            <Badge variant={isInitialized ? 'default' : 'info'} size="small">2</Badge>
+                            <Badge variant={hasCopilotChatOpened ? 'success' : (isInitialized ? 'default' : 'info')} size="small">
+                                {hasCopilotChatOpened ? '✓' : '2'}
+                            </Badge>
                             <span>Start Ouroboros</span>
                         </div>
                         <p className={styles.stepDesc}>

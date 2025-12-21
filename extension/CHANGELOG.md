@@ -2,6 +2,17 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.3] - 2025-12-21
+
+### Fixed
+
+- **Copilot Chat Step Detection** — "Start Ouroboros" step now shows ✓ after opening Copilot Chat
+  - Added `hasCopilotChatOpened` state tracking
+  - Step 2 badge updates from "2" to green "✓" after clicking "Open Copilot Chat"
+  - State persists across extension reloads
+
+---
+
 ## [3.2.2] - 2025-12-21
 
 ### Added

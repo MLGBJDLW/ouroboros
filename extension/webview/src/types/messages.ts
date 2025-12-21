@@ -24,6 +24,7 @@ export interface InitPayload {
 
 export interface WorkspaceStatePayload {
     isInitialized?: boolean;
+    hasCopilotChatOpened?: boolean;
     projectName?: string;
     currentSpec?: string;
     currentPhase: number;

@@ -18,6 +18,7 @@ export interface WorkspaceState {
     phaseStatus?: string;
     taskProgress: Record<string, boolean>;
     executionMode: ExecutionMode;
+    hasCopilotChatOpened?: boolean;
 }
 
 export interface GlobalState {

@@ -149,6 +149,14 @@ export async function handleMessage(
                 const vscode = await import('vscode');
                 // Try to open Copilot Chat with /ouroboros
                 await vscode.commands.executeCommand('workbench.panel.chat.view.copilot.focus');
+                // Update state to mark step as completed
+                await stateManager.updateWorkspaceState({
+                    hasCopilotChatOpened: true,
+                });
+                sidebarProvider.postMessage({
+                    type: 'stateUpdate',
+                    payload: stateManager.getWorkspaceState(),
+                });
             } catch (error) {
                 logger.error('Failed to open Copilot Chat:', error);
             }

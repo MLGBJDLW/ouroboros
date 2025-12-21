@@ -100,6 +100,7 @@ function App() {
                         onOpenCopilot={handleOpenCopilot}
                         onUpdatePrompts={handleUpdatePrompts}
                         isInitialized={state.workspaceState?.isInitialized}
+                        hasCopilotChatOpened={state.workspaceState?.hasCopilotChatOpened}
                         projectName={state.workspaceState?.projectName}
                     />
                 );
