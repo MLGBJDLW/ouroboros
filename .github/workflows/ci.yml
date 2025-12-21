@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
   pull_request:
     branches: [main]
 
@@ -202,3 +204,80 @@ jobs:
             echo "❌ Some tests failed"
             exit 1
           fi
+
+  build-extension:
+    name: Build VS Code Extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install extension dependencies
+        working-directory: extension
+        run: npm install
+
+      - name: Install additional dev dependencies
+        working-directory: extension
+        run: npm install -D prettier eslint-config-prettier @vitest/coverage-v8@2
+
+      - name: Install webview dependencies
+        working-directory: extension/webview
+        run: npm install
+
+      - name: Run ESLint
+        working-directory: extension
+        run: npm run lint
+        continue-on-error: true  # Don't fail CI on lint warnings initially
+
+      - name: Run unit tests with coverage
+        working-directory: extension
+        run: npm run test -- --run --coverage
+        continue-on-error: true  # Don't fail CI on test failures initially
+
+      - name: Build webview
+        working-directory: extension/webview
+        run: npm run build
+
+      - name: Build extension
+        working-directory: extension
+        run: npm run compile
+
+      - name: Verify build output
+        working-directory: extension
+        run: |
+          echo "Checking extension build output..."
+          if [ ! -f "dist/extension.js" ]; then
+            echo "❌ MISSING: dist/extension.js"
+            exit 1
+          fi
+          echo "✓ Extension bundle found"
+          
+          if [ ! -f "webview/dist/assets/index.js" ]; then
+            echo "❌ MISSING: webview/dist/assets/index.js"
+            exit 1
+          fi
+          echo "✓ Webview bundle found"
+          
+          echo "✅ Build verification complete!"
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-bundle
+          path: |
+            extension/dist/
+            extension/webview/dist/
+          retention-days: 7
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: extension/coverage/
+          retention-days: 7

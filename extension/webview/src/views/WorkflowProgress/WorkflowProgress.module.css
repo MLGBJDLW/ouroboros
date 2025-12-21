@@ -1,0 +1,131 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--foreground-secondary);
+}
+
+.emptyIcon {
+    font-size: 32px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+
+.emptyHint {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.workflowType {
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.specName {
+    color: var(--foreground-secondary);
+    font-size: 12px;
+}
+
+.progressSection {
+    margin-bottom: var(--spacing-md);
+}
+
+.statusText {
+    margin-bottom: var(--spacing-sm);
+    font-size: 12px;
+    color: var(--foreground-secondary);
+}
+
+.phases {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: var(--spacing-md);
+}
+
+.phase {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+}
+
+.phase.completed {
+    color: var(--success);
+}
+
+.phase.current {
+    background: var(--list-hover);
+    color: var(--info);
+}
+
+.phase.pending {
+    color: var(--foreground-secondary);
+}
+
+.statusIcon {
+    font-size: 14px;
+}
+
+.phase.current .statusIcon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.phaseName {
+    font-size: 12px;
+}
+
+.modeSection {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border);
+}
+
+.modeLabel {
+    font-size: 12px;
+    color: var(--foreground-secondary);
+}
+
+.modeSelect {
+    padding: 4px 6px;
+    background: var(--input-background);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    color: var(--input-foreground);
+    font-size: 12px;
+}
+
+.modeSelect:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}

@@ -1,4 +1,4 @@
-# ♾️ Project Ouroboros v3.1.14
+# ♾️ Project Ouroboros v3.2.0
 
 > **Save Money on GitHub Copilot** — A persistent context system that reduces redundant conversations and maximizes your Copilot subscription value.
 
@@ -82,6 +82,48 @@ Each agent's tools can be configured via VS Code's agent settings:
 3. Enable/disable tools as needed (`edit`, `execute`, `memory`, etc.)
 
 **For MCP Servers**: Add your MCP configuration to `.vscode/mcp.json` or VS Code settings to extend agent capabilities with external tools.
+
+---
+
+## 🧩 VS Code Extension (v3.2.0+)
+
+Experience Ouroboros with a rich visual interface in VS Code.
+
+### Features
+
+| Feature | Description |
+|:---|:---|
+| **Sidebar UI** | Visual workflow progress, pending requests, agent hierarchy |
+| **LM Tools** | 6 tools for Copilot integration (`ouroboros_ask`, `ouroboros_menu`, etc.) |
+| **Keyboard Shortcuts** | Press 1-4 to switch views, arrows to navigate |
+| **Auto-Detection** | Automatically uses Extension or TUI mode |
+
+### Installation
+
+**From VS Code Marketplace:**
+1. Open VS Code Extensions (`Ctrl+Shift+X`)
+2. Search for **"Ouroboros"**
+3. Click Install
+4. Run: **Ouroboros: Initialize Project** from Command Palette (`Ctrl+Shift+P`)
+
+**From Source:**
+```bash
+cd extension
+npm install
+npm run compile
+# Then press F5 in VS Code to launch Extension Development Host
+```
+
+### Sidebar Views
+
+| Tab | Key | Purpose |
+|:---|:---|:---|
+| Pending Requests | `1` | Respond to agent inputs |
+| Workflow Progress | `2` | Track spec/implement phases |
+| Agent Hierarchy | `3` | See current agent and handoffs |
+| History | `4` | View past interactions |
+
+> 📖 **Extension source**: [`extension/README.md`](extension/README.md)
 
 ---
 

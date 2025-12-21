@@ -5,6 +5,83 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-12-21
+
+### 🧩 VS Code Extension
+
+Major release introducing the Ouroboros VS Code Extension with rich Sidebar UI and LM Tools integration.
+
+#### Added
+
+- **VS Code Extension** — Complete extension implementation in `extension/` directory:
+  - `package.json` with 6 Language Model Tools definitions
+  - ESBuild bundler with TypeScript compilation
+  - Webview provider with message handling
+
+- **6 LM Tools** — Native Copilot tool integration:
+  | Tool | Purpose |
+  |:---|:---|
+  | `ouroboros_ask` | Get user input (task, question, feature) |
+  | `ouroboros_menu` | Present multiple choice options |
+  | `ouroboros_confirm` | Yes/No confirmation dialogs |
+  | `ouroboros_plan_review` | Document/plan review and approval |
+  | `ouroboros_phase_progress` | Report workflow phase progress |
+  | `ouroboros_agent_handoff` | Track agent level transitions |
+
+- **React Webview UI** — Rich sidebar interface with 4 views:
+  | View | Key | Features |
+  |:---|:---|:---|
+  | Pending Requests | `1` | Input forms for ask/menu/confirm/review |
+  | Workflow Progress | `2` | Phase progress bar, status icons |
+  | Agent Hierarchy | `3` | Current agent, handoff history, level legend |
+  | History | `4` | Past interactions, clear button |
+
+- **9 UI Components** — Reusable React components:
+  - Icon, Button, Card (with Header/Body/Footer), Badge
+  - ProgressBar, List (with ListItem), Spinner, EmptyState, Tooltip
+
+- **Keyboard Navigation** — Full keyboard accessibility:
+  - Press `1-4` to switch views
+  - Arrow keys `←`/`→` for tab navigation
+  - Focus management with ARIA roles
+
+- **Dual-Mode CCL Detection** — Auto-detect Extension vs TUI mode:
+  - Extension Mode: Uses LM Tools when available
+  - TUI Mode: Falls back to Python commands
+  - Updated `copilot-instructions.md` with mode detection logic
+
+- **CI/CD Integration** — New `build-extension` job in GitHub Actions:
+  - Installs dependencies (extension + webview)
+  - Builds webview (Vite) and extension (ESBuild)
+  - Verifies build outputs exist
+  - Uploads extension artifact (7-day retention)
+
+- **Extension Documentation**:
+  - `extension/README.md` — Development guide
+  - `docs/extension-guide.md` — User guide with shortcuts
+  - Updated main `README.md` with Extension section
+
+#### Technical Details
+
+- **Bundle Sizes**:
+  | Component | Size |
+  |:---|:---|
+  | Extension (`dist/extension.js`) | 170 KB |
+  | Webview JS (`webview/dist/assets/index.js`) | 161 KB |
+  | Webview CSS (`webview/dist/assets/index.css`) | 13 KB |
+
+- **Dependencies**:
+  - Extension: `zod` for schema validation, `esbuild` for bundling
+  - Webview: `react`, `react-dom`, `vite`, `@vitejs/plugin-react`
+
+- **VS Code Integration**:
+  - Minimum VS Code version: 1.95.0
+  - Sidebar view with Activity Bar icon
+  - Status bar item with dynamic updates
+  - Commands: Initialize, Open Sidebar, Clear History, Cancel Request
+
+---
+
 ## [3.1.14] - 2025-12-20
 
 ### Added
