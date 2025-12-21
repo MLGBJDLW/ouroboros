@@ -249,7 +249,8 @@ export class SidebarProvider
             };
 
             this.pendingRequests.set(requestId, request);
-            this.notifyPendingRequestsUpdate();
+            // Note: Don't call notifyPendingRequestsUpdate here - we'll send newRequest instead
+            // Calling both would cause duplicate entries in the webview
 
             request.timeoutHandle = setTimeout(() => {
                 this.timeoutRequest(requestId);

@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
   pull_request:
     branches: [main]
 
@@ -219,9 +221,23 @@ jobs:
         working-directory: extension
         run: npm install
 
+      - name: Install additional dev dependencies
+        working-directory: extension
+        run: npm install -D prettier eslint-config-prettier @vitest/coverage-v8@2
+
       - name: Install webview dependencies
         working-directory: extension/webview
         run: npm install
+
+      - name: Run ESLint
+        working-directory: extension
+        run: npm run lint
+        continue-on-error: true  # Don't fail CI on lint warnings initially
+
+      - name: Run unit tests with coverage
+        working-directory: extension
+        run: npm run test -- --run --coverage
+        continue-on-error: true  # Don't fail CI on test failures initially
 
       - name: Build webview
         working-directory: extension/webview
@@ -256,4 +272,12 @@ jobs:
           path: |
             extension/dist/
             extension/webview/dist/
+          retention-days: 7
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: extension/coverage/
           retention-days: 7

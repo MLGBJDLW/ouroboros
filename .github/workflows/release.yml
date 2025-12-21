@@ -1,17 +1,19 @@
 name: Release
 
 on:
-  # Wait for CI workflow to complete successfully before releasing
+  # Trigger after CI workflow completes successfully (for both main and tags)
   workflow_run:
     workflows: ["CI"]
     types: [completed]
     branches: [main]
-  # Official release on manual tag push
-  push:
-    tags:
-      - 'v*'
-  # Manual trigger support
+  # Manual trigger for emergency releases
   workflow_dispatch:
+    inputs:
+      skip_ci_check:
+        description: 'Skip CI check (emergency only)'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   contents: write
@@ -43,10 +45,11 @@ jobs:
     name: Build and Release
     needs: [test]
     runs-on: ubuntu-latest
-    # Only run if CI succeeded (for workflow_run trigger) or always run for tags/manual
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    # Only run if CI succeeded OR manual trigger
     if: |
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
@@ -71,8 +74,8 @@ jobs:
             LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
             
             if [ -z "$LATEST_TAG" ]; then
-              # No tags exist, start from v3.1.0
-              VERSION="3.1.0"
+              # No tags exist, start from v3.2.0
+              VERSION="3.2.0"
             else
               # Parse current version and increment patch
               CURRENT=${LATEST_TAG#v}
@@ -80,15 +83,15 @@ jobs:
               MINOR=$(echo $CURRENT | cut -d. -f2)
               PATCH=$(echo $CURRENT | cut -d. -f3)
               
-              # Ensure we're on v3.1.x for auto releases.
-              # If the latest tag is below v3.1.0, jump to v3.1.0.
+              # Ensure we're on v3.2.x for auto releases.
+              # If the latest tag is below v3.2.0, jump to v3.2.0.
               if [ "$MAJOR" -lt 3 ]; then
-                VERSION="3.1.0"
-              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 1 ]; then
-                VERSION="3.1.0"
-              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -eq 1 ]; then
+                VERSION="3.2.0"
+              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 2 ]; then
+                VERSION="3.2.0"
+              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -eq 2 ]; then
                 PATCH=$((PATCH + 1))
-                VERSION="3.1.${PATCH}"
+                VERSION="3.2.${PATCH}"
               else
                 # Default behavior for other branches: increment patch version.
                 PATCH=$((PATCH + 1))
@@ -361,3 +364,47 @@ jobs:
             git push origin HEAD:main
             echo "✅ Committed README version update to main"
           fi
+
+  publish-extension:
+    name: Publish VS Code Extension
+    needs: [release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Install extension dependencies
+        working-directory: extension
+        run: npm install
+
+      - name: Install webview dependencies
+        working-directory: extension/webview
+        run: npm install
+
+      - name: Build extension
+        working-directory: extension
+        run: npm run compile
+
+      - name: Update extension version
+        working-directory: extension
+        run: |
+          VERSION=${{ needs.release.outputs.version }}
+          echo "Updating extension version to ${VERSION}"
+          npm version ${VERSION} --no-git-tag-version --allow-same-version
+
+      - name: Package extension
+        working-directory: extension
+        run: vsce package --out ouroboros-${{ needs.release.outputs.version }}.vsix
+
+      - name: Publish to Marketplace
+        working-directory: extension
+        run: vsce publish -p ${{ secrets.VSCE_PAT }}
+        continue-on-error: true  # Don't fail release if marketplace publish fails

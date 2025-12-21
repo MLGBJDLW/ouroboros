@@ -93,6 +93,65 @@ export function transformForExtensionMode(content: string): string {
     let totalChanges = 0;
 
     // =========================================================================
+    // TABLE ROW PATTERNS: Handle python commands inside markdown tables FIRST
+    // These need SHORT inline replacements to preserve table formatting
+    // =========================================================================
+
+    // Pattern: Table cell with MENU command (choice = input)
+    transformed = transformed.replace(
+        /\|\s*`python -c "print\('[^']*'\);[^"]*choice = input\([^)]*\)"`\s*\|/g,
+        (match) => {
+            totalChanges++;
+            return '| `Use the ouroboros_menu tool with: { "question": "📋 Question", "options": ["A","B"] }` |';
+        }
+    );
+
+    // Pattern: Table cell with CONFIRM command (confirm = input)
+    transformed = transformed.replace(
+        /\|\s*`python -c "print\('[^']*'\);[^"]*confirm = input\([^)]*\)"`\s*\|/g,
+        (match) => {
+            totalChanges++;
+            return '| `Use the ouroboros_confirm tool with: { "question": "⚠️ Question" }` |';
+        }
+    );
+
+    // Pattern: Table cell with FEATURE command (feature = input)
+    transformed = transformed.replace(
+        /\|\s*`python -c "print\('[^']*'\); feature = input\([^)]*\)"`\s*\|/g,
+        (match) => {
+            totalChanges++;
+            return '| `Use the ouroboros_ask tool with: { "type": "task", "question": "🔧 Question" }` |';
+        }
+    );
+
+    // Pattern: Table cell with QUESTION command (question = input)
+    transformed = transformed.replace(
+        /\|\s*`python -c "print\('[^']*'\); question = input\([^)]*\)"`\s*\|/g,
+        (match) => {
+            totalChanges++;
+            return '| `Use the ouroboros_ask tool with: { "type": "task", "question": "❓ Question" }` |';
+        }
+    );
+
+    // Pattern: Table cell with TASK+Q command (print + task = input)
+    transformed = transformed.replace(
+        /\|\s*`python -c "print\('([^']*)'\); task = input\('\[Ouroboros\] > '\)"`\s*\|/g,
+        (_, emoji) => {
+            totalChanges++;
+            return `| \`Use the ouroboros_ask tool with: { "type": "task", "question": "${emoji}" }\` |`;
+        }
+    );
+
+    // Pattern: Table cell with basic TASK command (task = input only)
+    transformed = transformed.replace(
+        /\|\s*`python -c "task = input\('\[Ouroboros\] > '\)"`\s*\|/g,
+        () => {
+            totalChanges++;
+            return '| `Use the ouroboros_ask tool with: { "type": "task" }` |';
+        }
+    );
+
+    // =========================================================================
     // FULL CODE BLOCK PATTERNS: Match entire markdown code blocks
     // These MUST come first to capture the full structure including
     // various label formats and ```python wrapper
