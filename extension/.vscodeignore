@@ -1,0 +1,46 @@
+# Source files (not needed in production)
+src/**
+webview/src/**
+webview/node_modules/**
+webview/public/**
+webview/*.json
+webview/*.ts
+webview/*.html
+
+# Test files
+**/__tests__/**
+**/__mocks__/**
+**/test/**
+**/tests/**
+**/*.test.ts
+**/*.spec.ts
+coverage/**
+
+# Build configs
+*.config.js
+*.config.ts
+tsconfig*.json
+vitest.config.ts
+eslint.config.js
+esbuild.config.js
+.prettierrc
+.prettierignore
+
+# Development files
+.vscode/**
+scripts/**
+node_modules/**
+
+# Git
+.git/**
+.gitignore
+
+# Documentation (keep README)
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Other
+*.map
+*.vsix
+.DS_Store
+Thumbs.db
