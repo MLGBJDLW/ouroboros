@@ -115,7 +115,7 @@
                 "displayName": "Ask User",
                 "toolReferenceName": "ouroboros_ask",
                 "description": "Ask the user for input or task description",
-                "modelDescription": "Use this tool to get input from the user. Supports task input, questions, and feature descriptions.",
+                "modelDescription": "CRITICAL: Use this tool to get input from the user when you need task instructions, feature descriptions, or answers to questions. RULES: 1) Call this tool at the END of every response to maintain the Ouroboros loop. 2) NEVER complete a response without calling this tool. 3) Use type='task' for new task input, type='question' for clarification questions, type='feature' for feature descriptions. 4) Set agentName to your current agent identity (e.g., 'ouroboros', 'ouroboros-coder').",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
@@ -145,7 +145,7 @@
                 "displayName": "Show Menu",
                 "toolReferenceName": "ouroboros_menu",
                 "description": "Present a menu of options to the user",
-                "modelDescription": "Use this tool to present multiple choice options to the user.",
+                "modelDescription": "Use this tool when you need the user to choose from a predefined set of options. USAGE: 1) Provide a clear question explaining what the user is choosing. 2) List all available options in the options array. 3) Set allowCustom=true if the user should be able to provide custom input beyond the listed options. 4) Options should be concise but descriptive.",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
@@ -177,7 +177,7 @@
                 "displayName": "Confirm Action",
                 "toolReferenceName": "ouroboros_confirm",
                 "description": "Ask the user for yes/no confirmation",
-                "modelDescription": "Use this tool to get binary confirmation from the user.",
+                "modelDescription": "Use this tool when you need a yes/no decision from the user. USAGE: 1) Ask clear, specific questions that can be answered with yes or no. 2) Optionally customize button labels with yesLabel and noLabel. 3) Use for confirming actions, validating understanding, or getting approval to proceed.",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
@@ -205,7 +205,7 @@
                 "displayName": "Review Plan",
                 "toolReferenceName": "ouroboros_plan_review",
                 "description": "Present a plan or document for user review",
-                "modelDescription": "Use this tool to request user approval for a plan or walkthrough.",
+                "modelDescription": "Use this tool to present detailed plans, specifications, or documentation for user review and approval. USAGE: 1) Format the plan content in Markdown. 2) Use mode='review' for plans requiring approval, mode='walkthrough' for informational guides. 3) Provide a descriptive title. 4) Wait for user feedback before proceeding with implementation.",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
@@ -237,7 +237,7 @@
                 "displayName": "Update Phase Progress",
                 "toolReferenceName": "ouroboros_phase_progress",
                 "description": "Update and display workflow phase progress",
-                "modelDescription": "Use this tool to report progress through workflow phases.",
+                "modelDescription": "Use this tool to update the UI with current workflow progress. USAGE: 1) Call when entering a new phase of the spec or implement workflow. 2) Set workflow='spec' for specification phases, workflow='implement' for implementation phases. 3) currentPhase is 1-indexed. 4) Provide a descriptive status message explaining current work.",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
@@ -281,7 +281,7 @@
                 "displayName": "Agent Handoff",
                 "toolReferenceName": "ouroboros_agent_handoff",
                 "description": "Notify of agent handoff between levels",
-                "modelDescription": "Use this tool to signal that work is being handed off to another agent.",
+                "modelDescription": "Use this tool when delegating work to a sub-agent or returning results to a parent agent. RULES: 1) fromLevel and toLevel must be 0 (main orchestrator), 1 (workflow agent), or 2 (specialist agent). 2) Always provide a clear reason for the handoff. 3) Call this BEFORE dispatching to another agent or when returning control.",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
