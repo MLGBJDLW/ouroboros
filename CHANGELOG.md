@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2025-12-21
+
+### 🔧 Extension Rename & Fixes
+
+#### Changed
+- **Extension Renamed** — `ouroboros` → `ouroboros-ai` (marketplace name conflict)
+- **Publisher Changed** — `ouroboros` → `MLGBJDLW`
+- **Tool Names Renamed** — All tools from `ouroboros_*` to `ouroborosai_*`:
+  | Old Name | New Name |
+  |:---|:---|
+  | `ouroboros_ask` | `ouroborosai_ask` |
+  | `ouroboros_menu` | `ouroborosai_menu` |
+  | `ouroboros_confirm` | `ouroborosai_confirm` |
+  | `ouroboros_plan_review` | `ouroborosai_plan_review` |
+  | `ouroboros_phase_progress` | `ouroborosai_phase_progress` |
+  | `ouroboros_agent_handoff` | `ouroborosai_agent_handoff` |
+
+#### Added
+- **`.vscodeignore`** — Reduces package size from 3000+ files to ~15 files
+- **`LICENSE.md`** — MIT license file for extension
+
+---
+
 ## [3.2.0] - 2025-12-21
 
 ### 🧩 VS Code Extension
@@ -21,12 +44,12 @@ Major release introducing the Ouroboros VS Code Extension with rich Sidebar UI a
 - **6 LM Tools** — Native Copilot tool integration:
   | Tool | Purpose |
   |:---|:---|
-  | `ouroboros_ask` | Get user input (task, question, feature) |
-  | `ouroboros_menu` | Present multiple choice options |
-  | `ouroboros_confirm` | Yes/No confirmation dialogs |
-  | `ouroboros_plan_review` | Document/plan review and approval |
-  | `ouroboros_phase_progress` | Report workflow phase progress |
-  | `ouroboros_agent_handoff` | Track agent level transitions |
+  | `ouroborosai_ask` | Get user input (task, question, feature) |
+  | `ouroborosai_menu` | Present multiple choice options |
+  | `ouroborosai_confirm` | Yes/No confirmation dialogs |
+  | `ouroborosai_plan_review` | Document/plan review and approval |
+  | `ouroborosai_phase_progress` | Report workflow phase progress |
+  | `ouroborosai_agent_handoff` | Track agent level transitions |
 
 - **React Webview UI** — Rich sidebar interface with 4 views:
   | View | Key | Features |
