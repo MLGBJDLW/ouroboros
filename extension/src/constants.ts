@@ -1,0 +1,69 @@
+/**
+ * Extension constants
+ */
+
+export const EXTENSION_ID = 'ouroboros';
+export const EXTENSION_DISPLAY_NAME = 'Ouroboros';
+
+// View IDs
+export const SIDEBAR_VIEW_ID = 'ouroboros.sidebarView';
+export const SIDEBAR_CONTAINER_ID = 'ouroboros-sidebar';
+
+// Command IDs
+export const COMMANDS = {
+    INITIALIZE_PROJECT: 'ouroboros.initializeProject',
+    OPEN_SIDEBAR: 'ouroboros.openSidebar',
+    CLEAR_HISTORY: 'ouroboros.clearHistory',
+    CANCEL_CURRENT_REQUEST: 'ouroboros.cancelCurrentRequest',
+} as const;
+
+// Tool Names
+export const TOOLS = {
+    ASK: 'ouroboros_ask',
+    MENU: 'ouroboros_menu',
+    CONFIRM: 'ouroboros_confirm',
+    PLAN_REVIEW: 'ouroboros_plan_review',
+    PHASE_PROGRESS: 'ouroboros_phase_progress',
+    AGENT_HANDOFF: 'ouroboros_agent_handoff',
+} as const;
+
+// Configuration Keys
+export const CONFIG = {
+    EXECUTION_MODE: 'ouroboros.executionMode',
+    SHOW_STATUS_BAR: 'ouroboros.showStatusBar',
+    HISTORY_LIMIT: 'ouroboros.historyLimit',
+} as const;
+
+// Execution Modes
+export type ExecutionMode = 'task-by-task' | 'phase-by-phase' | 'auto-run';
+
+// Agent Levels
+export type AgentLevel = 0 | 1 | 2;
+
+// Workflow Types
+export type WorkflowType = 'spec' | 'implement';
+
+// Request Types
+export type RequestType = 'ask' | 'menu' | 'confirm' | 'plan_review' | 'phase_complete';
+
+// Request Status
+export type RequestStatus = 'pending' | 'responded' | 'cancelled' | 'timeout';
+
+// Timeouts (in milliseconds)
+export const TIMEOUTS = {
+    USER_CONFIRMATION: 5 * 60 * 1000, // 5 minutes
+    AUTO_RUN_TASK: 30 * 1000, // 30 seconds
+} as const;
+
+// Storage Keys
+export const STORAGE_KEYS = {
+    WORKSPACE: {
+        CURRENT_SPEC: 'currentSpec',
+        CURRENT_PHASE: 'currentPhase',
+        TASK_PROGRESS: 'taskProgress',
+        EXECUTION_MODE: 'executionMode',
+    },
+    GLOBAL: {
+        INTERACTION_HISTORY: 'interactionHistory',
+    },
+} as const;

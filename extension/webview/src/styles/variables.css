@@ -1,0 +1,61 @@
+/* VS Code Theme Variables */
+:root {
+    /* Background colors */
+    --background: var(--vscode-sideBar-background, #1e1e1e);
+    --background-secondary: var(--vscode-sideBarSectionHeader-background, #252526);
+    --foreground: var(--vscode-sideBar-foreground, #cccccc);
+    --foreground-secondary: var(--vscode-descriptionForeground, #8c8c8c);
+
+    /* Border */
+    --border: var(--vscode-sideBar-border, #3c3c3c);
+    --border-focus: var(--vscode-focusBorder, #007fd4);
+
+    /* Buttons */
+    --button-background: var(--vscode-button-background, #0e639c);
+    --button-foreground: var(--vscode-button-foreground, #ffffff);
+    --button-hover: var(--vscode-button-hoverBackground, #1177bb);
+    --button-secondary-background: var(--vscode-button-secondaryBackground, #3a3d41);
+    --button-secondary-foreground: var(--vscode-button-secondaryForeground, #ffffff);
+    --button-secondary-hover: var(--vscode-button-secondaryHoverBackground, #45494e);
+
+    /* List */
+    --list-hover: var(--vscode-list-hoverBackground, #2a2d2e);
+    --list-active: var(--vscode-list-activeSelectionBackground, #094771);
+    --list-active-foreground: var(--vscode-list-activeSelectionForeground, #ffffff);
+
+    /* Input */
+    --input-background: var(--vscode-input-background, #3c3c3c);
+    --input-foreground: var(--vscode-input-foreground, #cccccc);
+    --input-border: var(--vscode-input-border, transparent);
+    --input-placeholder: var(--vscode-input-placeholderForeground, #8c8c8c);
+
+    /* Status colors */
+    --success: var(--vscode-testing-iconPassed, #73c991);
+    --warning: var(--vscode-editorWarning-foreground, #cca700);
+    --error: var(--vscode-editorError-foreground, #f14c4c);
+    --info: var(--vscode-editorInfo-foreground, #3794ff);
+
+    /* Progress */
+    --progress-background: var(--vscode-progressBar-background, #0e70c0);
+
+    /* Badge */
+    --badge-background: var(--vscode-badge-background, #4d4d4d);
+    --badge-foreground: var(--vscode-badge-foreground, #ffffff);
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+
+    /* Border radius */
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-lg: 8px;
+
+    /* Transitions */
+    --transition-fast: 0.1s ease;
+    --transition-normal: 0.15s ease;
+    --transition-slow: 0.3s ease;
+}

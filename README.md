@@ -85,6 +85,39 @@ Each agent's tools can be configured via VS Code's agent settings:
 
 ---
 
+## 🧩 VS Code Extension (New!)
+
+Experience Ouroboros with a rich visual interface in VS Code.
+
+### Features
+
+| Feature | Description |
+|:---|:---|
+| **Sidebar UI** | Visual workflow progress, pending requests, agent hierarchy |
+| **LM Tools** | 6 tools for Copilot integration (`ouroboros_ask`, `ouroboros_menu`, etc.) |
+| **Keyboard Shortcuts** | Press 1-4 to switch views, arrows to navigate |
+| **Auto-Detection** | Automatically uses Extension or TUI mode |
+
+### Quick Install
+
+1. Open VS Code Extensions (Ctrl+Shift+X)
+2. Search for **"Ouroboros"**
+3. Click Install
+4. Run: **Ouroboros: Initialize Project** from Command Palette
+
+### Sidebar Views
+
+| Tab | Key | Purpose |
+|:---|:---|:---|
+| Pending Requests | `1` | Respond to agent inputs |
+| Workflow Progress | `2` | Track spec/implement phases |
+| Agent Hierarchy | `3` | See current agent and handoffs |
+| History | `4` | View past interactions |
+
+> 📖 **Full documentation**: [`docs/extension-guide.md`](docs/extension-guide.md)
+
+---
+
 ## 🤖 Custom Agents (16 Total)
 
 All agents are located in `.github/agents/`. The system uses a **hub-and-spoke** model with one main orchestrator and specialized subagents.

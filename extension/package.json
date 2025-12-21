@@ -1,0 +1,352 @@
+{
+    "name": "ouroboros",
+    "displayName": "Ouroboros",
+    "description": "Structured AI agent workflow with spec-driven development",
+    "version": "3.0.0",
+    "publisher": "ouroboros",
+    "license": "MIT",
+    "icon": "resources/icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yefansky/ouroboros"
+    },
+    "engines": {
+        "vscode": "^1.95.0"
+    },
+    "categories": [
+        "AI",
+        "Chat",
+        "Programming Languages"
+    ],
+    "keywords": [
+        "ai",
+        "copilot",
+        "agent",
+        "workflow",
+        "spec"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "ouroboros-sidebar",
+                    "title": "Ouroboros",
+                    "icon": "resources/icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "ouroboros-sidebar": [
+                {
+                    "type": "webview",
+                    "id": "ouroboros.sidebarView",
+                    "name": "Ouroboros",
+                    "contextualTitle": "Ouroboros Workflow"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "ouroboros.initializeProject",
+                "title": "Initialize Ouroboros Project",
+                "category": "Ouroboros"
+            },
+            {
+                "command": "ouroboros.openSidebar",
+                "title": "Open Sidebar",
+                "category": "Ouroboros"
+            },
+            {
+                "command": "ouroboros.clearHistory",
+                "title": "Clear Interaction History",
+                "category": "Ouroboros"
+            },
+            {
+                "command": "ouroboros.cancelCurrentRequest",
+                "title": "Cancel Current Request",
+                "category": "Ouroboros"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "ouroboros.initializeProject",
+                    "when": "workspaceFolderCount > 0"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Ouroboros",
+            "properties": {
+                "ouroboros.executionMode": {
+                    "type": "string",
+                    "default": "task-by-task",
+                    "enum": [
+                        "task-by-task",
+                        "phase-by-phase",
+                        "auto-run"
+                    ],
+                    "enumDescriptions": [
+                        "Confirm each task before execution",
+                        "Confirm each phase before execution",
+                        "Run all tasks automatically"
+                    ],
+                    "description": "Default execution mode for implement workflow"
+                },
+                "ouroboros.showStatusBar": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show Ouroboros status in the status bar"
+                },
+                "ouroboros.historyLimit": {
+                    "type": "number",
+                    "default": 100,
+                    "description": "Maximum number of interactions to keep in history"
+                }
+            }
+        },
+        "languageModelTools": [
+            {
+                "name": "ouroboros_ask",
+                "displayName": "Ask User",
+                "toolReferenceName": "ouroboros_ask",
+                "description": "Ask the user for input or task description",
+                "modelDescription": "Use this tool to get input from the user. Supports task input, questions, and feature descriptions.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "Optional question or prompt to show the user"
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "task",
+                                "question",
+                                "feature"
+                            ],
+                            "description": "Type of input expected"
+                        },
+                        "inputLabel": {
+                            "type": "string",
+                            "description": "Label for the input field"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroboros_menu",
+                "displayName": "Show Menu",
+                "toolReferenceName": "ouroboros_menu",
+                "description": "Present a menu of options to the user",
+                "modelDescription": "Use this tool to present multiple choice options to the user.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "question",
+                        "options"
+                    ],
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "Question or prompt for the menu"
+                        },
+                        "options": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "List of options to choose from"
+                        },
+                        "allowCustom": {
+                            "type": "boolean",
+                            "description": "Allow custom input in addition to options"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroboros_confirm",
+                "displayName": "Confirm Action",
+                "toolReferenceName": "ouroboros_confirm",
+                "description": "Ask the user for yes/no confirmation",
+                "modelDescription": "Use this tool to get binary confirmation from the user.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "question"
+                    ],
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "Confirmation question"
+                        },
+                        "yesLabel": {
+                            "type": "string",
+                            "description": "Label for yes button"
+                        },
+                        "noLabel": {
+                            "type": "string",
+                            "description": "Label for no button"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroboros_plan_review",
+                "displayName": "Review Plan",
+                "toolReferenceName": "ouroboros_plan_review",
+                "description": "Present a plan or document for user review",
+                "modelDescription": "Use this tool to request user approval for a plan or walkthrough.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "plan"
+                    ],
+                    "properties": {
+                        "plan": {
+                            "type": "string",
+                            "description": "The plan content in markdown format"
+                        },
+                        "title": {
+                            "type": "string",
+                            "description": "Title for the plan review"
+                        },
+                        "mode": {
+                            "type": "string",
+                            "enum": [
+                                "review",
+                                "walkthrough"
+                            ],
+                            "description": "Review mode"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroboros_phase_progress",
+                "displayName": "Update Phase Progress",
+                "toolReferenceName": "ouroboros_phase_progress",
+                "description": "Update and display workflow phase progress",
+                "modelDescription": "Use this tool to report progress through workflow phases.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "workflow",
+                        "specName",
+                        "currentPhase",
+                        "totalPhases",
+                        "status"
+                    ],
+                    "properties": {
+                        "workflow": {
+                            "type": "string",
+                            "enum": [
+                                "spec",
+                                "implement"
+                            ],
+                            "description": "Workflow type"
+                        },
+                        "specName": {
+                            "type": "string",
+                            "description": "Name of the spec being processed"
+                        },
+                        "currentPhase": {
+                            "type": "number",
+                            "description": "Current phase number (1-indexed)"
+                        },
+                        "totalPhases": {
+                            "type": "number",
+                            "description": "Total number of phases"
+                        },
+                        "status": {
+                            "type": "string",
+                            "description": "Current status message"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroboros_agent_handoff",
+                "displayName": "Agent Handoff",
+                "toolReferenceName": "ouroboros_agent_handoff",
+                "description": "Notify of agent handoff between levels",
+                "modelDescription": "Use this tool to signal that work is being handed off to another agent.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "from",
+                        "to",
+                        "fromLevel",
+                        "toLevel"
+                    ],
+                    "properties": {
+                        "from": {
+                            "type": "string",
+                            "description": "Name of the source agent"
+                        },
+                        "to": {
+                            "type": "string",
+                            "description": "Name of the target agent"
+                        },
+                        "fromLevel": {
+                            "type": "number",
+                            "enum": [
+                                0,
+                                1,
+                                2
+                            ],
+                            "description": "Level of source agent"
+                        },
+                        "toLevel": {
+                            "type": "number",
+                            "enum": [
+                                0,
+                                1,
+                                2
+                            ],
+                            "description": "Level of target agent"
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Reason for handoff"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "compile": "npm run build-webview && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+        "watch": "npm run compile -- --watch",
+        "build-webview": "cd webview && npm run build",
+        "package": "npm run compile -- --minify",
+        "lint": "eslint src --ext ts",
+        "test": "vitest"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/vscode": "^1.95.0",
+        "@typescript-eslint/eslint-plugin": "^8.0.0",
+        "@typescript-eslint/parser": "^8.0.0",
+        "esbuild": "^0.24.0",
+        "eslint": "^9.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^2.0.0"
+    },
+    "dependencies": {
+        "zod": "^3.0.0"
+    }
+}

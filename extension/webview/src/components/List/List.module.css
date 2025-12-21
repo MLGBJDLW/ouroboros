@@ -1,0 +1,24 @@
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.item {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.item.clickable {
+    cursor: pointer;
+}
+
+.item.clickable:hover {
+    background: var(--list-hover);
+}
+
+.item.active {
+    background: var(--list-active);
+    color: var(--list-active-foreground);
+}
