@@ -140,6 +140,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             case 'agentHandoff':
                 dispatch({ type: 'ADD_HANDOFF', payload: message.payload });
                 break;
+            case 'refresh':
+                // Extension is telling us to refresh - request updated state
+                import('../utils/vscodeApi').then(({ postMessage }) => {
+                    postMessage({ type: 'ready' });
+                });
+                break;
         }
     });
 

@@ -20,6 +20,36 @@ interface ResponsePayload {
 }
 
 /**
+ * Check if Ouroboros is initialized in the workspace
+ */
+async function checkInitializationStatus(): Promise<{
+    isInitialized: boolean;
+    projectName: string | undefined;
+}> {
+    const vscode = await import('vscode');
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const projectName = workspaceFolders?.[0]?.name || undefined;
+
+    let isInitialized = false;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        try {
+            const agentsDir = vscode.Uri.joinPath(
+                workspaceFolders[0].uri,
+                '.github',
+                'agents'
+            );
+            await vscode.workspace.fs.stat(agentsDir);
+            isInitialized = true;
+        } catch {
+            // Directory doesn't exist, not initialized
+            isInitialized = false;
+        }
+    }
+
+    return { isInitialized, projectName };
+}
+
+/**
  * Handle messages from the webview
  */
 export async function handleMessage(
@@ -84,13 +114,11 @@ export async function handleMessage(
             break;
         }
 
-        case 'ready': {
-            logger.info('Webview ready');
-            // Get workspace info
-            const workspaceFolders = await import('vscode').then(
-                (vscode) => vscode.workspace.workspaceFolders
-            );
-            const projectName = workspaceFolders?.[0]?.name || undefined;
+        case 'ready':
+        case 'refresh': {
+            logger.info(message.type === 'ready' ? 'Webview ready' : 'Refreshing state');
+
+            const { isInitialized, projectName } = await checkInitializationStatus();
             const workspaceState = stateManager.getWorkspaceState();
 
             sidebarProvider.postMessage({
@@ -99,7 +127,7 @@ export async function handleMessage(
                     workspaceState: {
                         ...workspaceState,
                         projectName,
-                        isInitialized: workspaceState.currentSpec !== undefined,
+                        isInitialized,
                     },
                     history: stateManager.getInteractionHistory(),
                 },

@@ -389,6 +389,39 @@ Use the appropriate Ouroboros LM Tool:
 - ouroboros_phase_progress: For workflow progress updates
 \`\`\``;
     });
+    // =========================================================================
+    // TEXT REPLACEMENTS: Replace run_command references with LM Tools
+    // =========================================================================
+
+    // Replace "USE `run_command` TOOL" with "use the Ouroboros LM Tools"
+    transformed = transformed.replace(
+        /USE\s+`run_command`\s+TOOL[:]?/gi,
+        'use the Ouroboros LM Tools:'
+    );
+
+    // Replace "via `run_command`" with "via Ouroboros LM Tools"
+    transformed = transformed.replace(
+        /via\s+`run_command`/gi,
+        'via Ouroboros LM Tools'
+    );
+
+    // Replace "Execute CCL via run_command" or similar
+    transformed = transformed.replace(
+        /Execute\s+CCL\s+via\s+`run_command`/gi,
+        'Execute CCL via Ouroboros LM Tools'
+    );
+
+    // Replace "using run_command tool" with "using Ouroboros LM Tools"
+    transformed = transformed.replace(
+        /using\s+`?run_command`?\s+tool/gi,
+        'using Ouroboros LM Tools'
+    );
+
+    // Replace remaining "run_command" references in context
+    transformed = transformed.replace(
+        /`run_command`\s+tool/gi,
+        'Ouroboros LM Tools'
+    );
 
     // Add Extension mode header
     transformed = addExtensionModeHeader(transformed);
@@ -405,15 +438,78 @@ function escapeQuotes(str: string): string {
 }
 
 /**
+ * Ouroboros LM Tools to inject into agent files
+ */
+const OUROBOROS_TOOLS = [
+    'ouroboros.ouroboros/ouroboros_ask',
+    'ouroboros.ouroboros/ouroboros_menu',
+    'ouroboros.ouroboros/ouroboros_confirm',
+    'ouroboros.ouroboros/ouroboros_plan_review',
+    'ouroboros.ouroboros/ouroboros_phase_progress',
+    'ouroboros.ouroboros/ouroboros_agent_handoff',
+];
+
+/**
+ * Inject Ouroboros tools into YAML frontmatter's tools array
+ */
+function injectOuroborosTools(content: string): string {
+    const yamlFrontmatterRegex = /^(---\r?\n)([\s\S]*?)(\r?\n---\r?\n)/;
+    const match = content.match(yamlFrontmatterRegex);
+
+    if (!match) {
+        return content;
+    }
+
+    const [fullMatch, startDelim, yamlContent, endDelim] = match;
+    const restOfContent = content.slice(fullMatch.length);
+
+    // Check if there's a tools: line
+    const toolsLineRegex = /^(tools:\s*\[)([^\]]*)\]/m;
+    const toolsMatch = yamlContent.match(toolsLineRegex);
+
+    if (toolsMatch) {
+        // Parse existing tools and add ouroboros tools
+        const existingToolsStr = toolsMatch[2];
+        const existingTools = existingToolsStr
+            .split(',')
+            .map(t => t.trim().replace(/^['"]|['"]$/g, ''))
+            .filter(t => t.length > 0);
+
+        // Add ouroboros tools (avoid duplicates)
+        const allTools = [...existingTools];
+        for (const tool of OUROBOROS_TOOLS) {
+            if (!allTools.includes(tool)) {
+                allTools.push(tool);
+            }
+        }
+
+        // Rebuild tools line
+        const newToolsLine = `tools: [${allTools.map(t => `'${t}'`).join(', ')}]`;
+        const newYamlContent = yamlContent.replace(toolsLineRegex, newToolsLine);
+
+        return startDelim + newYamlContent + endDelim + restOfContent;
+    }
+
+    // No tools: line found, add one before the closing ---
+    const toolsLine = `tools: [${OUROBOROS_TOOLS.map(t => `'${t}'`).join(', ')}]`;
+    const newYamlContent = yamlContent.trimEnd() + '\n' + toolsLine;
+
+    return startDelim + newYamlContent + endDelim + restOfContent;
+}
+
+/**
  * Add Extension mode header to transformed content
+ * Inserts AFTER YAML frontmatter if present to avoid breaking YAML parsing
+ * Also injects Ouroboros tools into the YAML frontmatter
  */
 function addExtensionModeHeader(content: string): string {
+    // First, inject ouroboros tools into YAML frontmatter
+    let processedContent = injectOuroborosTools(content);
+
     const header = `<!-- 
-  ╔═══════════════════════════════════════════════════════════╗
-  ║  OUROBOROS EXTENSION MODE                                 ║
-  ║  Auto-transformed for VS Code LM Tools                    ║
-  ║  Original: https://github.com/MLGBJDLW/ouroboros          ║
-  ╚═══════════════════════════════════════════════════════════╝
+  OUROBOROS EXTENSION MODE
+  Auto-transformed for VS Code LM Tools
+  Original: https://github.com/MLGBJDLW/ouroboros
   
   This file uses Ouroboros LM Tools instead of Python CCL commands.
   Available tools:
@@ -426,7 +522,20 @@ function addExtensionModeHeader(content: string): string {
 -->
 
 `;
-    return header + content;
+
+    // Check if content starts with YAML frontmatter (---)
+    const yamlFrontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
+    const match = processedContent.match(yamlFrontmatterRegex);
+
+    if (match) {
+        // Insert header AFTER the YAML frontmatter
+        const frontmatter = match[0];
+        const restOfContent = processedContent.slice(frontmatter.length);
+        return frontmatter + header + restOfContent;
+    }
+
+    // No YAML frontmatter, prepend header as before
+    return header + processedContent;
 }
 
 /**

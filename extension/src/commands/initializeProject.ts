@@ -16,7 +16,8 @@ const logger = createLogger('InitializeProject');
  * Create the initialize project command handler
  */
 export function createInitializeProjectCommand(
-    context: vscode.ExtensionContext
+    context: vscode.ExtensionContext,
+    onSuccess?: () => void
 ): () => Promise<void> {
     return async () => {
         logger.info('Initializing Ouroboros project...');
@@ -76,6 +77,9 @@ export function createInitializeProjectCommand(
                     }
 
                     logger.info(`Project initialization complete: ${success} success, ${failed} failed`);
+
+                    // Notify callback of success to refresh UI
+                    onSuccess?.();
                 } catch (error) {
                     logger.error('Failed to initialize project:', error);
                     vscode.window.showErrorMessage(

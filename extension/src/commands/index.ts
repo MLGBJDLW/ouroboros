@@ -29,7 +29,10 @@ export function registerCommands(
     disposables.push(
         vscode.commands.registerCommand(
             COMMANDS.INITIALIZE_PROJECT,
-            createInitializeProjectCommand(context)
+            createInitializeProjectCommand(context, () => {
+                // Trigger UI refresh after successful initialization
+                sidebarProvider.postMessage({ type: 'refresh' });
+            })
         )
     );
     logger.info(`Registered command: ${COMMANDS.INITIALIZE_PROJECT}`);

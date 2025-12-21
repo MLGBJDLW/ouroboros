@@ -25,6 +25,8 @@
 }
 
 .logo {
+    display: block;
+    margin: 0 auto;
     width: 64px;
     height: 64px;
     border-radius: 50%;
@@ -119,8 +121,8 @@
 }
 
 .stepDesc code {
-    background: var(--badge-background);
-    color: var(--button-background);
+    background: var(--background);
+    color: var(--info);
     padding: 1px 4px;
     border-radius: var(--radius-sm);
     font-family: var(--font-mono);

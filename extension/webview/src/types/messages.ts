@@ -13,7 +13,8 @@ export type ExtensionMessage =
     | { type: 'pendingRequestsUpdate'; payload: PendingRequest[] }
     | { type: 'historyUpdate'; payload: StoredInteraction[] }
     | { type: 'phaseProgress'; payload: PhaseProgressPayload }
-    | { type: 'agentHandoff'; payload: AgentHandoff };
+    | { type: 'agentHandoff'; payload: AgentHandoff }
+    | { type: 'refresh' };
 
 export interface InitPayload {
     workspaceState: WorkspaceStatePayload;
