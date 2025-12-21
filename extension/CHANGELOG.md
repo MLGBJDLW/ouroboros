@@ -2,6 +2,21 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.1] - 2025-12-21
+
+### Changed
+
+- Renamed extension from `ouroboros` to `ouroboros-ai` (marketplace name conflict)
+- Renamed all tool names from `ouroboros_*` to `ouroborosai_*`
+- Changed publisher to `MLGBJDLW`
+
+### Fixed
+
+- Added `.vscodeignore` to reduce package size
+- Added `LICENSE.md` file
+
+---
+
 ## [3.2.0] - 2025-12-21
 
 ### Added
