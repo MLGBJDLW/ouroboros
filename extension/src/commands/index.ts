@@ -9,6 +9,7 @@ import type { SidebarProvider } from '../webview/SidebarProvider';
 import { createInitializeProjectCommand } from './initializeProject';
 import { createOpenSidebarCommand } from './openSidebar';
 import { createClearHistoryCommand } from './clearHistory';
+import { createUpdatePromptsCommand, createCheckPromptsVersionCommand } from './updatePrompts';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Commands');
@@ -62,6 +63,27 @@ export function registerCommands(
         })
     );
     logger.info(`Registered command: ${COMMANDS.CANCEL_CURRENT_REQUEST}`);
+
+    // Register update prompts command
+    disposables.push(
+        vscode.commands.registerCommand(
+            COMMANDS.UPDATE_PROMPTS,
+            createUpdatePromptsCommand(context, () => {
+                // Trigger UI refresh after successful update
+                sidebarProvider.postMessage({ type: 'refresh' });
+            })
+        )
+    );
+    logger.info(`Registered command: ${COMMANDS.UPDATE_PROMPTS}`);
+
+    // Register check prompts version command
+    disposables.push(
+        vscode.commands.registerCommand(
+            COMMANDS.CHECK_PROMPTS_VERSION,
+            createCheckPromptsVersionCommand(context)
+        )
+    );
+    logger.info(`Registered command: ${COMMANDS.CHECK_PROMPTS_VERSION}`);
 
     logger.info('All commands registered');
 

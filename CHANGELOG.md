@@ -13,6 +13,14 @@ Full integration of the [Agent Skills](https://agentskills.io) open standard for
 
 #### Added
 
+- **Smart Prompt Update** — New feature to update prompts from GitHub while preserving user customizations:
+  - `ouroboros.updatePrompts` command with YAML frontmatter preservation
+  - `ouroboros.checkPromptsVersion` command for version checking
+  - "Update Prompts" button in Home tab (shows after initialization)
+  - Custom `tools:` array in YAML frontmatter now preserved during updates
+  - `versionService.ts` for comparing local vs remote versions
+  - `smartUpdatePrompts()` function preserves user YAML while updating content body
+
 - **Skill Template** — `.ouroboros/templates/skill-template.md` following official agentskills.io specification:
   - YAML frontmatter (`name`, `description`, optional `license`, `compatibility`, `metadata`, `allowed-tools`)
   - Standard directory structure (`scripts/`, `references/`, `assets/`)

@@ -15,6 +15,8 @@ export const COMMANDS = {
     OPEN_SIDEBAR: 'ouroboros.openSidebar',
     CLEAR_HISTORY: 'ouroboros.clearHistory',
     CANCEL_CURRENT_REQUEST: 'ouroboros.cancelCurrentRequest',
+    UPDATE_PROMPTS: 'ouroboros.updatePrompts',
+    CHECK_PROMPTS_VERSION: 'ouroboros.checkPromptsVersion',
 } as const;
 
 // Tool Names

@@ -909,14 +909,16 @@ function escapeQuotes(str: string): string {
 
 /**
  * Ouroboros LM Tools to inject into agent files
+ * Format: {publisher}.{extensionName}/{toolName}
+ * Note: VS Code normalizes publisher to lowercase at runtime
  */
 const OUROBOROS_TOOLS = [
-    'ouroboros-ai.ouroboros-ai/ouroborosai_ask',
-    'ouroboros-ai.ouroboros-ai/ouroborosai_menu',
-    'ouroboros-ai.ouroboros-ai/ouroborosai_confirm',
-    'ouroboros-ai.ouroboros-ai/ouroborosai_plan_review',
-    'ouroboros-ai.ouroboros-ai/ouroborosai_phase_progress',
-    'ouroboros-ai.ouroboros-ai/ouroborosai_agent_handoff',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_ask',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_menu',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_confirm',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_plan_review',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_phase_progress',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_agent_handoff',
 ];
 
 /**
@@ -1283,4 +1285,226 @@ Use the Ouroboros extension sidebar or type \`/ouroboros\` in Copilot Chat.
 
     const readmeUri = vscode.Uri.joinPath(ouroborosDir, 'README.md');
     await vscode.workspace.fs.writeFile(readmeUri, new TextEncoder().encode(readme));
+}
+
+// =========================================================================
+// SMART UPDATE FUNCTIONS
+// These preserve user YAML customizations while updating content body
+// =========================================================================
+
+/**
+ * YAML frontmatter structure
+ */
+interface YamlFrontmatter {
+    /** Full YAML block including delimiters */
+    fullMatch: string;
+    /** YAML content without delimiters */
+    content: string;
+    /** Content after YAML frontmatter */
+    body: string;
+}
+
+/**
+ * Extract YAML frontmatter from markdown content
+ */
+export function extractYamlFrontmatter(content: string): YamlFrontmatter | null {
+    const yamlRegex = /^(---\r?\n)([\s\S]*?)(\r?\n---\r?\n)/;
+    const match = content.match(yamlRegex);
+
+    if (!match) {
+        return null;
+    }
+
+    return {
+        fullMatch: match[0],
+        content: match[2],
+        body: content.slice(match[0].length),
+    };
+}
+
+/**
+ * Preserve user's YAML frontmatter while updating content body
+ * 
+ * Strategy:
+ * 1. Extract user's existing YAML frontmatter
+ * 2. Extract new content's body (after YAML)
+ * 3. Combine user's YAML with new body
+ * 4. Re-inject Ouroboros tools if needed (for orchestrator files)
+ */
+export function preserveYamlFrontmatter(
+    existingContent: string,
+    newContent: string,
+    isOrchestrator: boolean = false
+): string {
+    const existingYaml = extractYamlFrontmatter(existingContent);
+    const newYaml = extractYamlFrontmatter(newContent);
+
+    // If existing file has no YAML, use new content as-is
+    if (!existingYaml) {
+        return newContent;
+    }
+
+    // If new content has no YAML (shouldn't happen), keep existing
+    if (!newYaml) {
+        return existingContent;
+    }
+
+    // Build merged content: user's YAML + new body
+    let mergedContent = `---\n${existingYaml.content}\n---\n${newYaml.body}`;
+
+    // For orchestrators, ensure Ouroboros tools are present in YAML
+    if (isOrchestrator) {
+        mergedContent = injectOuroborosTools(mergedContent);
+    }
+
+    return mergedContent;
+}
+
+/**
+ * Smart update a single file - preserves YAML, updates body
+ */
+async function smartUpdateFile(
+    destUri: vscode.Uri,
+    newContent: string,
+    isOrchestrator: boolean
+): Promise<'updated' | 'created' | 'failed'> {
+    try {
+        // Check if file exists
+        const existingBytes = await vscode.workspace.fs.readFile(destUri);
+        const existingContent = new TextDecoder().decode(existingBytes);
+
+        // Preserve user's YAML, use new body
+        const mergedContent = preserveYamlFrontmatter(
+            existingContent,
+            newContent,
+            isOrchestrator
+        );
+
+        await vscode.workspace.fs.writeFile(
+            destUri,
+            new TextEncoder().encode(mergedContent)
+        );
+        logger.info(`Smart updated file: ${destUri.fsPath}`);
+        return 'updated';
+    } catch {
+        // File doesn't exist, create new
+        await vscode.workspace.fs.writeFile(
+            destUri,
+            new TextEncoder().encode(newContent)
+        );
+        logger.info(`Created new file: ${destUri.fsPath}`);
+        return 'created';
+    }
+}
+
+/**
+ * Smart update all prompts - preserves user YAML customizations
+ * This is the main export for the Update Prompts feature
+ */
+export async function smartUpdatePrompts(
+    workspaceRoot: vscode.Uri,
+    progress?: vscode.Progress<{ message?: string; increment?: number }>
+): Promise<{ updated: number; created: number; failed: number }> {
+    const githubDir = vscode.Uri.joinPath(workspaceRoot, '.github');
+    const agentsDir = vscode.Uri.joinPath(githubDir, 'agents');
+    const promptsDir = vscode.Uri.joinPath(githubDir, 'prompts');
+
+    let updated = 0;
+    let created = 0;
+    let failed = 0;
+
+    const totalFiles =
+        ORCHESTRATOR_AGENT_FILES.length +
+        WORKER_AGENT_FILES.length +
+        PROMPT_FILES.length +
+        CORE_FILES.length;
+
+    // Update ORCHESTRATOR agent files (Level 0 + 1)
+    for (const file of ORCHESTRATOR_AGENT_FILES) {
+        progress?.report({
+            message: `Updating ${file}...`,
+            increment: (1 / totalFiles) * 100,
+        });
+
+        const content = await fetchFromGitHub(`.github/agents/${file}`);
+        if (content) {
+            const transformed = transformForExtensionMode(content);
+            const destUri = vscode.Uri.joinPath(agentsDir, file);
+            const result = await smartUpdateFile(destUri, transformed, true);
+            if (result === 'updated') updated++;
+            else if (result === 'created') created++;
+            else failed++;
+        } else {
+            failed++;
+            logger.warn(`Failed to fetch: ${file}`);
+        }
+    }
+
+    // Update WORKER agent files (Level 2)
+    for (const file of WORKER_AGENT_FILES) {
+        progress?.report({
+            message: `Updating ${file}...`,
+            increment: (1 / totalFiles) * 100,
+        });
+
+        const content = await fetchFromGitHub(`.github/agents/${file}`);
+        if (content) {
+            const transformed = transformWorkerForExtensionMode(content);
+            const destUri = vscode.Uri.joinPath(agentsDir, file);
+            const result = await smartUpdateFile(destUri, transformed, false);
+            if (result === 'updated') updated++;
+            else if (result === 'created') created++;
+            else failed++;
+        } else {
+            failed++;
+            logger.warn(`Failed to fetch: ${file}`);
+        }
+    }
+
+    // Update prompt files
+    for (const file of PROMPT_FILES) {
+        progress?.report({
+            message: `Updating ${file}...`,
+            increment: (1 / totalFiles) * 100,
+        });
+
+        const content = await fetchFromGitHub(`.github/prompts/${file}`);
+        if (content) {
+            const destUri = vscode.Uri.joinPath(promptsDir, file);
+            const result = await smartUpdateFile(destUri, content, false);
+            if (result === 'updated') updated++;
+            else if (result === 'created') created++;
+            else failed++;
+        } else {
+            failed++;
+            logger.warn(`Failed to fetch: ${file}`);
+        }
+    }
+
+    // Update core files
+    for (const file of CORE_FILES) {
+        progress?.report({
+            message: `Updating ${file}...`,
+            increment: (1 / totalFiles) * 100,
+        });
+
+        const content = await fetchFromGitHub(`.github/${file}`);
+        if (content) {
+            const transformed = transformForExtensionMode(content);
+            const destUri = vscode.Uri.joinPath(githubDir, file);
+            const result = await smartUpdateFile(destUri, transformed, false);
+            if (result === 'updated') updated++;
+            else if (result === 'created') created++;
+            else failed++;
+        } else {
+            failed++;
+            logger.warn(`Failed to fetch: ${file}`);
+        }
+    }
+
+    logger.info(
+        `Smart update complete: ${updated} updated, ${created} created, ${failed} failed`
+    );
+
+    return { updated, created, failed };
 }

@@ -6,10 +6,21 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 
 ### Added
 
+- **Smart Prompt Update** — Update prompts while preserving your custom tools:
+  - New command `Ouroboros: Update Prompts (Preserve Custom Tools)`
+  - New command `Ouroboros: Check for Prompt Updates`
+  - "Update Prompts" button in Home tab after initialization
+  - Your custom `tools:` array in YAML frontmatter is preserved
+  - Version checking compares local vs GitHub release versions
+
 - **Agent Skills Support** — Extension now compatible with agentskills.io standard:
   - Skill Suggestion CCL uses standard Type D format (`confirm = input('[y/n]: ')`)
   - Skill name input uses Type C format (`feature = input(...)`)
   - Full compatibility with `promptTransformer.ts` patterns
+
+### Fixed
+
+- Fixed LM Tools prefix to use lowercase `mlgbjdlw.ouroboros-ai/` (matches VS Code runtime)
 
 ---
 

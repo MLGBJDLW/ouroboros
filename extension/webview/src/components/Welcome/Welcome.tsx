@@ -8,14 +8,18 @@ import styles from './Welcome.module.css';
 interface WelcomeProps {
     onInitialize?: () => void;
     onOpenCopilot?: () => void;
+    onUpdatePrompts?: () => void;
     isInitialized?: boolean;
+    hasUpdates?: boolean;
     projectName?: string;
 }
 
 export function Welcome({
     onInitialize,
     onOpenCopilot,
+    onUpdatePrompts,
     isInitialized = false,
+    hasUpdates = false,
     projectName,
 }: WelcomeProps) {
     return (
@@ -101,6 +105,32 @@ export function Welcome({
                             Open Copilot Chat
                         </Button>
                     </div>
+
+                    {/* Step 3: Update Prompts */}
+                    {isInitialized && (
+                        <div className={styles.step}>
+                            <div className={styles.stepHeader}>
+                                <Badge
+                                    variant={hasUpdates ? 'warning' : 'success'}
+                                    size="small"
+                                >
+                                    {hasUpdates ? '!' : '✓'}
+                                </Badge>
+                                <span>Update Prompts</span>
+                            </div>
+                            <p className={styles.stepDesc}>
+                                Update prompts while keeping your custom tools
+                            </p>
+                            <Button
+                                variant={hasUpdates ? 'primary' : 'secondary'}
+                                className={styles.actionButton}
+                                onClick={onUpdatePrompts}
+                            >
+                                <Icon name="sync" />
+                                {hasUpdates ? 'Update Available' : 'Check for Updates'}
+                            </Button>
+                        </div>
+                    )}
                 </CardBody>
             </Card>
 

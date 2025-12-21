@@ -31,6 +31,8 @@ vi.mock('../../constants', () => ({
         OPEN_SIDEBAR: 'ouroboros.openSidebar',
         CLEAR_HISTORY: 'ouroboros.clearHistory',
         CANCEL_CURRENT_REQUEST: 'ouroboros.cancelCurrentRequest',
+        UPDATE_PROMPTS: 'ouroboros.updatePrompts',
+        CHECK_PROMPTS_VERSION: 'ouroboros.checkPromptsVersion',
     },
 }));
 
@@ -45,6 +47,11 @@ vi.mock('../../commands/openSidebar', () => ({
 
 vi.mock('../../commands/clearHistory', () => ({
     createClearHistoryCommand: vi.fn().mockReturnValue(vi.fn()),
+}));
+
+vi.mock('../../commands/updatePrompts', () => ({
+    createUpdatePromptsCommand: vi.fn().mockReturnValue(vi.fn()),
+    createCheckPromptsVersionCommand: vi.fn().mockReturnValue(vi.fn()),
 }));
 
 describe('registerCommands', () => {
@@ -80,8 +87,8 @@ describe('registerCommands', () => {
             mockSidebarProvider as never
         );
 
-        expect(vscode.commands.registerCommand).toHaveBeenCalledTimes(4);
-        expect(disposables).toHaveLength(4);
+        expect(vscode.commands.registerCommand).toHaveBeenCalledTimes(6);
+        expect(disposables).toHaveLength(6);
     });
 
     it('should register cancel request command that shows message when no active request', async () => {

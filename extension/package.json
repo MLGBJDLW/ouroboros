@@ -69,6 +69,16 @@
                 "command": "ouroboros.cancelCurrentRequest",
                 "title": "Cancel Current Request",
                 "category": "Ouroboros"
+            },
+            {
+                "command": "ouroboros.updatePrompts",
+                "title": "Update Prompts (Preserve Custom Tools)",
+                "category": "Ouroboros"
+            },
+            {
+                "command": "ouroboros.checkPromptsVersion",
+                "title": "Check for Prompt Updates",
+                "category": "Ouroboros"
             }
         ],
         "menus": {
