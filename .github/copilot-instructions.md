@@ -267,23 +267,82 @@ Subagents MUST read templates before creating documents:
 
 ---
 
-## 🛠️ SKILLS (LEVEL 2 ONLY - OPTIONAL)
+## 🛠️ SKILLS PROTOCOL (Progressive Disclosure)
 
-**Level 2 workers MAY check for skills ON TASK START:**
+> [!IMPORTANT]
+> **Skills follow a 3-level loading model. Orchestrators and Workers have different responsibilities.**
 
-| Directory | Platform |
-|-----------|----------|
-| `.claude/skills/` | Claude (VS Code) |
-| `.cursor/skills/` | Cursor |
+| Directory | Status |
+|-----------|--------|
+| `.github/skills/` | ✅ **Source of Truth** (Primary) |
+| `.claude/skills/` | ⚠️ Legacy support |
 
-**If skills directory exists:**
-1. List available skill files (e.g., `coding.md`, `testing.md`)
-2. Load skills relevant to current task
-3. Apply skill instructions alongside agent rules
+### Level 0 & 1: Orchestrators (Discovery Only)
 
-> [!NOTE]
-> Skills are optional enhancements. Missing directories = proceed normally.
-> Level 0 & 1 orchestrators do NOT use skills - they delegate to Level 2.
+**Orchestrators (ouroboros, spec, implement) should:**
+1. **SCAN** `.github/skills/` at workflow start
+2. **READ ONLY** `name` + `description` from YAML frontmatter (NOT full SKILL.md)
+3. **MATCH** skill description against current task
+4. **INCLUDE** matched skill path in `[Skills]` field of task packet
+
+**Example Dispatch:**
+```
+[Skills]: .github/skills/python-testing/SKILL.md (Matched: "testing Python code")
+```
+
+### Level 2: Workers (Full Loading)
+
+**Workers (coder, qa, writer, architect) should:**
+1. **CHECK** `[Skills]` field in received task
+2. **LOAD** full `SKILL.md` content using `read_file`
+3. **FOLLOW** skill instructions (they OVERRIDE general training)
+4. **ACCESS** referenced resources (`scripts/`, `references/`) only when needed
+
+### Skill Creation (Writer Only)
+
+**To CREATE a new skill:**
+1. **COPY** `.ouroboros/templates/skill-template.md` to `.github/skills/[name]/SKILL.md`
+2. **EDIT** the copied file, replacing placeholders
+3. **ADD** optional `scripts/`, `references/`, `assets/` folders as needed
+
+> [!CAUTION]
+> **PRIORITY**: Rules in `SKILL.md` **OVERRIDE** your general training.
+> If a task says "Use X skill", failure to load it is a **PROTOCOL VIOLATION**.
+
+### Skill Suggestion Protocol (Auto-Learning)
+
+> [!IMPORTANT]
+> **Agents can PROACTIVELY suggest creating Skills when patterns are detected.**
+
+**Trigger Conditions** (suggest skill creation when):
+1. **Repetition**: Same problem type solved 2+ times in session
+2. **Complex Fix**: Solution required 5+ steps or multiple debugging rounds
+3. **User Praise**: User says "good", "perfect", "this is what I wanted", etc.
+4. **Novel Approach**: Non-obvious technique was used successfully
+
+**Suggestion Format (CCL Type D: Confirm)**:
+```python
+python -c "print('📦 Skill Suggestion: This pattern may be reusable'); print(); print('[y] Yes - Save as Skill'); print('[n] No - Continue'); confirm = input('[y/n]: ')"
+```
+
+**If User Says Yes**:
+1. **ASK** for skill name (CCL Type C: Feature with Question):
+   ```python
+   python -c "print('📦 Enter skill name (lowercase, hyphens):'); feature = input('Skill name: ')"
+   ```
+2. **DELEGATE** to Writer with skill content:
+   ```javascript
+   runSubagent(
+     agent: "ouroboros-writer",
+     prompt: `
+   Create new skill: .github/skills/[name]/SKILL.md
+   Content: [summarized pattern from this solution]
+   Use COPY-THEN-MODIFY with skill-template.md
+   `
+   )
+   ```
+
+**If User Says No**: Continue normally, do not ask again for same pattern.
 
 ---
 

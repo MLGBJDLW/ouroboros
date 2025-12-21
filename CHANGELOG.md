@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.2] - 2025-12-21
+
+### 🛠️ Agent Skills Integration
+
+Full integration of the [Agent Skills](https://agentskills.io) open standard for extending AI agent capabilities.
+
+#### Added
+
+- **Skill Template** — `.ouroboros/templates/skill-template.md` following official agentskills.io specification:
+  - YAML frontmatter (`name`, `description`, optional `license`, `compatibility`, `metadata`, `allowed-tools`)
+  - Standard directory structure (`scripts/`, `references/`, `assets/`)
+  - Progressive loading guidelines (< 500 lines, < 5000 tokens)
+
+- **Skill Creation Protocol** — Writer agent can now create skills using COPY-THEN-MODIFY pattern:
+  - `mkdir -p .github/skills/[name]/` → `cp skill-template.md SKILL.md` → Edit
+
+- **Skills Protocol (Progressive Disclosure)** — Updated `copilot-instructions.md` with:
+  - **Level 0/1 Orchestrators**: Scan `.github/skills/`, read only `name` + `description`, include in `[Skills]` field
+  - **Level 2 Workers**: Load full `SKILL.md` when matched, follow instructions
+
+- **Skill Suggestion (Auto-Learning)** — Orchestrators can proactively suggest creating skills:
+  - **Triggers**: Repetition (2+ times), Complex fix (5+ steps), User praise, Novel approach
+  - **CCL Type D**: Standard confirmation format with `confirm = input('[y/n]: ')`
+  - Delegates to Writer for creation if approved
+
+- **`[Skills]` Field in Dispatches** — All 5 orchestrators now include `[Skills]` in task packets:
+  - `ouroboros`, `ouroboros-init`, `ouroboros-spec`, `ouroboros-implement`, `ouroboros-archive`
+
+---
+
 ## [3.2.1] - 2025-12-21
 
 ### 🔧 Extension Rename & Fixes

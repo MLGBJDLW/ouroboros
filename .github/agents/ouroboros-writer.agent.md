@@ -79,6 +79,7 @@ Other agents CANNOT update context. They delegate to you. When you receive a con
 ### Step 1: Receive Write Request
 - Understand what needs to be written
 - Clarify target file path
+- **Check [Skills]**: Apply tone/style/patterns from active SKILL.md
 - Identify content requirements
 
 ### Step 2: Gather Information
@@ -119,8 +120,58 @@ Other agents CANNOT update context. They delegate to you. When you receive a con
 | Design (Spec Phase 3) | `.ouroboros/specs/templates/design-template.md` |
 | Tasks (Spec Phase 4) | `.ouroboros/specs/templates/tasks-template.md` |
 | Validation (Spec Phase 5) | `.ouroboros/specs/templates/validation-template.md` |
+| **Skill Creation** | `.ouroboros/templates/skill-template.md` |
 
 **RULE**: If a template exists for the document type, **READ IT FIRST** before writing.
+
+### 🛠️ SKILL CREATION PROTOCOL
+
+> [!IMPORTANT]
+> **When creating a Skill, follow the agentskills.io specification:**
+
+**1. Directory Structure** (Each skill is a FOLDER):
+```
+.github/skills/{{skill-name}}/
+├── SKILL.md          # Required: this file
+├── scripts/          # Optional: executable code
+├── references/       # Optional: additional docs
+└── assets/           # Optional: templates, data
+```
+
+**2. Naming Conventions** (`name` field):
+- Lowercase letters, numbers, hyphens ONLY (`a-z`, `0-9`, `-`)
+- Max 64 characters
+- NO consecutive hyphens (`--`)
+- Must NOT start/end with hyphen
+- **MUST match parent directory name**
+
+**3. Description** (`description` field):
+- Max 1024 characters
+- Include BOTH what it does AND when to use it
+- Include specific keywords for agent matching
+
+**4. Optional Fields** (uncomment in template as needed):
+- `license`: License info
+- `compatibility`: Environment requirements
+- `metadata`: Author, version, custom data
+- `allowed-tools`: Pre-approved tools (experimental)
+
+**5. Length Limits**:
+- SKILL.md: < 500 lines, < 5000 tokens
+- Move detailed content to `references/` folder
+- Keep file references ONE level deep
+
+**6. Workflow (COPY-THEN-MODIFY)**:
+```bash
+# Step 1: Create directory
+mkdir -p .github/skills/{{skill-name}}
+
+# Step 2: Copy template
+cp .ouroboros/templates/skill-template.md .github/skills/{{skill-name}}/SKILL.md
+
+# Step 3: Edit the copied file (replace placeholders)
+```
+⚠️ Do NOT read template first. COPY it, then EDIT the copy.
 
 ---
 

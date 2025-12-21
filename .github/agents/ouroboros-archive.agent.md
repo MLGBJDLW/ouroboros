@@ -123,13 +123,17 @@ clean up old temporary files.
 ```javascript
 runSubagent(
   agent: "ouroboros-analyst",
-  prompt: `Scan .ouroboros/specs/ for archivable specs.
-  - List all folders (exclude templates/, archived/)
-  - For each folder, read tasks.md and count completed [x] vs total [ ]
-  - RETURN: List of {folder_name, completed_count, total_count, is_complete}
-  Also check:
-  - .ouroboros/subagent-docs/ for files > 3 days old
-  - .ouroboros/history/ for files > 7 days old`
+  prompt: `
+[Archive Phase]: Scan
+[Skills]: (Include any matched skill paths here)
+
+Scan .ouroboros/specs/ for archivable specs.
+- List all folders (exclude templates/, archived/)
+- For each folder, read tasks.md and count completed [x] vs total [ ]
+- RETURN: List of {folder_name, completed_count, total_count, is_complete}
+Also check:
+- .ouroboros/subagent-docs/ for files > 3 days old
+- .ouroboros/history/ for files > 7 days old`
 )
 ```
 
@@ -181,6 +185,9 @@ python -c "print('🧹 No completed specs found. Run cleanup tasks? (Delete old 
 runSubagent(
   agent: "ouroboros-writer",
   prompt: `
+[Archive Phase]: Execute
+[Skills]: (Include any matched skill paths here)
+
 ADOPT persona: Spec Archiver
 EXECUTE:
    - **STEP 0: MAINTENANCE CLEANUP**
@@ -277,6 +284,6 @@ IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 | "Archiving spec X" | Delegate to writer |
 | "Running cleanup" | Delegate file operations |
 | "Executing CCL" | Use run_command tool |
-| "Checking completion" | Delegate to analyst |
+| "Checking completion" | Delegate to analyst |\r\n| "Archive complete" | Check Skill Suggestion triggers |
 
 **NEVER** describe archiving without actual delegation.

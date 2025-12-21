@@ -2,6 +2,17 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.2] - 2025-12-21
+
+### Added
+
+- **Agent Skills Support** — Extension now compatible with agentskills.io standard:
+  - Skill Suggestion CCL uses standard Type D format (`confirm = input('[y/n]: ')`)
+  - Skill name input uses Type C format (`feature = input(...)`)
+  - Full compatibility with `promptTransformer.ts` patterns
+
+---
+
 ## [3.2.1] - 2025-12-21
 
 ### Changed

@@ -94,6 +94,7 @@ runSubagent(
   prompt: `
 [Init Phase]: 1/2 - Research
 [Target]: .ouroboros/history/project-arch-YYYY-MM-DD.md
+[Skills]: (Include any matched skill paths here)
 
 ## Task
 1. Read Project Architecture Template (.ouroboros/templates/project-arch-template.md)
@@ -116,6 +117,9 @@ Status + [PHASE 1 COMPLETE]
 runSubagent(
   agent: "ouroboros-writer",
   prompt: `
+[Init Phase]: 2/2 - Context Setup
+[Skills]: (Include any matched skill paths here)
+
 1. Read Context Template (.ouroboros/templates/context-template.md)
 2. Create history/context-YYYY-MM-DD.md, fill Tech Stack from Phase 1, set Goal: 'Project initialized'
 3. RETURN: Output [PHASE 2 COMPLETE]
@@ -173,7 +177,7 @@ Type a command or describe what you'd like to build.
 | "Delegating to researcher" | Call runSubagent() |
 | "Starting Phase X" | Dispatch phase agent |
 | "Executing CCL" | Use run_command tool |
-| "Creating project-arch" | Delegate to writer |
+| "Creating project-arch" | Delegate to writer |\r\n| "Init complete" | Check Skill Suggestion triggers |
 
 ---
 

@@ -117,6 +117,7 @@ runSubagent(
 [Feature]: [feature-name]
 [Spec Folder]: .ouroboros/specs/[feature-name]/
 [Phase]: 1/5 - Research
+[Skills]: .github/skills/[name]/SKILL.md (Active)
 
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/research.md
@@ -128,8 +129,9 @@ Target: .ouroboros/specs/[feature-name]/research.md
 ## Requirements
 1. COPY template to target using execute tool
 2. Research the codebase (tech stack, patterns, affected files)
-3. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
-4. Return with [PHASE 1 COMPLETE]
+3. Check [Skills] for specific research guidelines
+4. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
+5. Return with [PHASE 1 COMPLETE]
 
 ⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
@@ -147,6 +149,7 @@ runSubagent(
 [Feature]: [feature-name]
 [Spec Folder]: .ouroboros/specs/[feature-name]/
 [Phase]: 2/5 - Requirements
+[Skills]: .github/skills/[name]/SKILL.md (Active)
 
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/requirements.md
@@ -162,9 +165,10 @@ Read: .ouroboros/specs/[feature-name]/research.md
 1. COPY template to target using execute tool
 2. Read research.md for context
 3. Define requirements in EARS notation
-4. If ANY requirement is unclear, output "Clarification Questions" section
-5. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
-6. Return with [PHASE 2 COMPLETE] or [CLARIFICATION NEEDED]
+4. Applies [Skills] rules for requirement definitions
+5. If ANY requirement is unclear, output "Clarification Questions" section
+6. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
+7. Return with [PHASE 2 COMPLETE] or [CLARIFICATION NEEDED]
 
 ⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
@@ -182,22 +186,14 @@ Read: .ouroboros/specs/[feature-name]/research.md
 > Do NOT present all questions at once.
 
 **When requirements agent returns with "Clarification Questions":**
-
 1. **Parse** the CLQ-XXX questions from response
 2. **For EACH question** (one at a time):
-   
    a. **Execute CCL MENU:**
    ```python
    python -c "print('❓ [CLQ-XXX Question content]'); print(); print('[1] Option A'); print('[2] Option B'); print('[3] Custom...'); choice = input('Select: ')"
    ```
-
-
-   
    b. **Record answer** for this question
-   
    c. **Proceed to next question**
-
-
 
 3. **After ALL questions answered**: 
    Delegate to `ouroboros-writer` to update requirements.md with answers:
@@ -229,6 +225,7 @@ runSubagent(
 [Feature]: [feature-name]
 [Spec Folder]: .ouroboros/specs/[feature-name]/
 [Phase]: 3/5 - Design
+[Skills]: .github/skills/[name]/SKILL.md (Active)
 
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/design.md
@@ -243,8 +240,9 @@ Read: research.md, requirements.md
 ## Requirements
 1. COPY template to target using execute tool
 2. Analyze trade-offs, create Mermaid diagrams
-3. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
-4. Return with [PHASE 3 COMPLETE]
+3. Apply [Skills] architectural patterns if specified
+4. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
+5. Return with [PHASE 3 COMPLETE]
 
 ⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
@@ -262,6 +260,7 @@ runSubagent(
 [Feature]: [feature-name]
 [Spec Folder]: .ouroboros/specs/[feature-name]/
 [Phase]: 4/5 - Tasks
+[Skills]: .github/skills/[name]/SKILL.md (Active)
 
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/tasks.md
@@ -277,8 +276,9 @@ Read: research.md, requirements.md, design.md
 1. COPY template to target using execute tool
 2. Read ALL previous docs for context
 3. Break down into phases and atomic tasks
-4. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
-5. Return with [PHASE 4 COMPLETE]
+4. Ensure tasks respect [Skills] implementation guidelines
+5. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
+6. Return with [PHASE 4 COMPLETE]
 
 ⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
@@ -296,6 +296,7 @@ runSubagent(
 [Feature]: [feature-name]
 [Spec Folder]: .ouroboros/specs/[feature-name]/
 [Phase]: 5/5 - Validation
+[Skills]: .github/skills/[name]/SKILL.md (Active)
 
 ## MANDATORY OUTPUT
 YOU MUST create file: .ouroboros/specs/[feature-name]/validation-report.md
@@ -312,8 +313,9 @@ Read ALL: research.md, requirements.md, design.md, tasks.md
 2. Read ALL 4 documents for context
 3. Build traceability matrix
 4. Identify gaps / inconsistencies
-5. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
-6. Return with [PHASE 5 COMPLETE]
+5. Validate compliance with [Skills]
+6. USE edit TOOL to MODIFY the copied file, replacing {{placeholders}}
+7. Return with [PHASE 5 COMPLETE]
 
 ⚠️ FAILURE TO COPY TEMPLATE FIRST = INVALID OUTPUT
 ⚠️ FAILURE TO CREATE FILE = FAILED TASK
@@ -418,7 +420,7 @@ runSubagent(
 | "Delegating to researcher" | Call runSubagent() |
 | "Moving to phase X" | Dispatch phase agent |
 | "Executing CCL" | Use run_command tool |
-| "Creating spec folder" | Actually create it |
+| "Creating spec folder" | Actually create it |\r\n| "Workflow complete" | Check Skill Suggestion triggers |
 
 ---
 
