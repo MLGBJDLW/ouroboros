@@ -38,7 +38,7 @@ describe('transformForExtensionMode', () => {
         it('should transform TASK command in table cell', () => {
             const input = '| TASK | Next task | `python -c "task = input(\'[Ouroboros] > \')"` |';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
             expect(result).not.toContain('python -c');
         });
 
@@ -46,7 +46,7 @@ describe('transformForExtensionMode', () => {
             const input =
                 "| MENU | Options | `python -c \"print('📋 Question'); print(); print('[1] A'); print('[2] B'); choice = input('Select: ')\"` |";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_menu');
+            expect(result).toContain('ouroborosai_menu');
             expect(result).not.toContain('python -c');
         });
 
@@ -54,7 +54,7 @@ describe('transformForExtensionMode', () => {
             const input =
                 "| CONFIRM | Yes/No | `python -c \"print('⚠️ Question'); print(); print('[y] Yes'); print('[n] No'); confirm = input('[y/n]: ')\"` |";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_confirm');
+            expect(result).toContain('ouroborosai_confirm');
             expect(result).not.toContain('python -c');
         });
 
@@ -62,21 +62,21 @@ describe('transformForExtensionMode', () => {
             const input =
                 "| FEATURE | Input | `python -c \"print('🔧 Question'); feature = input('Feature: ')\"` |";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform QUESTION command in table cell', () => {
             const input =
                 "| QUESTION | Input | `python -c \"print('❓ Question'); question = input('Answer: ')\"` |";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform TASK+Q command in table cell', () => {
             const input =
                 "| TASK+Q | With question | `python -c \"print('🎯 What next?'); task = input('[Ouroboros] > ')\"` |";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
     });
 
@@ -86,7 +86,7 @@ describe('transformForExtensionMode', () => {
 python -c "task = input('[Ouroboros] > ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform code block with menu command', () => {
@@ -94,7 +94,7 @@ python -c "task = input('[Ouroboros] > ')"
 python -c "print('Select option'); print(); print('[1] Option A'); print('[2] Option B'); choice = input('Select: ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_menu');
+            expect(result).toContain('ouroborosai_menu');
         });
 
         it('should transform code block with confirm command', () => {
@@ -102,7 +102,7 @@ python -c "print('Select option'); print(); print('[1] Option A'); print('[2] Op
 python -c "print('Are you sure?'); confirm = input('[y/n]: ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_confirm');
+            expect(result).toContain('ouroborosai_confirm');
         });
 
         it('should transform code block with feature command', () => {
@@ -110,7 +110,7 @@ python -c "print('Are you sure?'); confirm = input('[y/n]: ')"
 python -c "print('Describe feature'); feature = input('Feature: ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform bash code block', () => {
@@ -118,7 +118,7 @@ python -c "print('Describe feature'); feature = input('Feature: ')"
 python -c "task = input('[Ouroboros] > ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
     });
 
@@ -129,7 +129,7 @@ python -c "task = input('[Ouroboros] > ')"
 python -c "task = input('[Ouroboros] > ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
             expect(result).toContain('Ouroboros LM Tools');
         });
 
@@ -139,7 +139,7 @@ python -c "task = input('[Ouroboros] > ')"
 python -c "task = input('[Ouroboros] > ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform menu in labeled block', () => {
@@ -148,7 +148,7 @@ python -c "task = input('[Ouroboros] > ')"
 python -c "print('Choose'); choice = input('Select: ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_menu');
+            expect(result).toContain('ouroborosai_menu');
         });
 
         it('should transform confirm in labeled block', () => {
@@ -157,7 +157,7 @@ python -c "print('Choose'); choice = input('Select: ')"
 python -c "print('Confirm?'); confirm = input('[y/n]: ')"
 \`\`\``;
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_confirm');
+            expect(result).toContain('ouroborosai_confirm');
         });
     });
 
@@ -165,20 +165,20 @@ python -c "print('Confirm?'); confirm = input('[y/n]: ')"
         it('should handle NEVER execute CCL pattern', () => {
             const input = 'NEVER execute CCL (`python -c "task = input(\'[Ouroboros] > \')"`)';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
             expect(result).not.toContain('python -c');
         });
 
         it('should handle NEVER** execute pattern', () => {
             const input = 'NEVER** execute `python -c "task = input(\'[Ouroboros] > \')"`';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should handle inline with dash pattern', () => {
             const input = '`python -c "task = input(\'[Ouroboros] > \')"` - this is CCL';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
     });
 
@@ -186,14 +186,14 @@ python -c "print('Confirm?'); confirm = input('[y/n]: ')"
         it('should transform task input pattern', () => {
             const input = 'python -c "task = input(\'[Ouroboros] > \')"';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform task with question pattern', () => {
             const input =
                 "python -c \"print('What would you like to do?'); task = input('[Ouroboros] > ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
             expect(result).toContain('What would you like to do?');
         });
 
@@ -201,57 +201,57 @@ python -c "print('Confirm?'); confirm = input('[y/n]: ')"
             const input =
                 "python -c \"print('Describe the feature'); feature = input('Feature: ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform feature without question', () => {
             const input = 'python -c "feature = input(\'Enter feature: \')"';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform question input pattern', () => {
             const input = 'python -c "question = input(\'Your question: \')"';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform question with question pattern', () => {
             const input = "python -c \"print('Ask me anything'); question = input('Question: ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
 
         it('should transform simple confirm pattern', () => {
             const input = 'python -c "confirm = input(\'[y/n]: \')"';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_confirm');
+            expect(result).toContain('ouroborosai_confirm');
         });
 
         it('should transform confirm with header', () => {
             const input = "python -c \"print('Proceed?'); confirm = input('[y/n]: ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_confirm');
+            expect(result).toContain('ouroborosai_confirm');
         });
 
         it('should transform full confirm pattern', () => {
             const input =
                 "python -c \"print('Are you sure?'); print(); print('[y] Yes'); print('[n] No'); confirm = input('[y/n]: ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_confirm');
+            expect(result).toContain('ouroborosai_confirm');
         });
 
         it('should transform simple menu pattern', () => {
             const input = "python -c \"print('Options:'); choice = input('Select: ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_menu');
+            expect(result).toContain('ouroborosai_menu');
         });
 
         it('should transform full menu pattern', () => {
             const input =
                 "python -c \"print('Choose:'); print(); print('[1] A'); print('[2] B'); choice = input('Select: ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_menu');
+            expect(result).toContain('ouroborosai_menu');
         });
     });
 
@@ -259,14 +259,14 @@ python -c "print('Confirm?'); confirm = input('[y/n]: ')"
         it('should transform enhanced script with question', () => {
             const input = 'python .ouroboros/scripts/ouroboros_input.py --question "What next?"';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
             expect(result).toContain('What next?');
         });
 
         it('should transform enhanced script standard', () => {
             const input = 'python .ouroboros/scripts/ouroboros_input.py';
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
     });
 
@@ -305,7 +305,7 @@ tools: ['read']
         it('should escape quotes in questions', () => {
             const input = "python -c \"print('What next?'); task = input('[Ouroboros] > ')\"";
             const result = transformForExtensionMode(input);
-            expect(result).toContain('ouroboros_ask');
+            expect(result).toContain('ouroborosai_ask');
         });
     });
 });
@@ -321,7 +321,7 @@ describe('transformWorkerForExtensionMode', () => {
     it('should transform NEVER execute patterns', () => {
         const input = 'NEVER execute CCL (`python -c "task = input(\'[Ouroboros] > \')"`)';
         const result = transformWorkerForExtensionMode(input);
-        expect(result).toContain('ouroboros_ask');
+        expect(result).toContain('ouroborosai_ask');
     });
 
     it('should add note about Extension mode for CCL references', () => {

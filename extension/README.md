@@ -1,4 +1,4 @@
-# Ouroboros VS Code Extension
+# Ouroboros AI VS Code Extension
 
 > Structured AI agent workflow with spec-driven development
 
@@ -17,13 +17,13 @@
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Ouroboros"
+3. Search for "Ouroboros AI"
 4. Click Install
 
 ### From VSIX
 
 ```bash
-code --install-extension ouroboros-x.x.x.vsix
+code --install-extension ouroboros-ai-x.x.x.vsix
 ```
 
 ## Quick Start
@@ -38,12 +38,12 @@ The extension provides 6 tools that AI agents can use:
 
 | Tool | Purpose |
 |:---|:---|
-| `ouroboros_ask` | Get user input (task, question, feature description) |
-| `ouroboros_menu` | Present multiple choice options |
-| `ouroboros_confirm` | Get yes/no confirmation |
-| `ouroboros_plan_review` | Present plan/document for approval |
-| `ouroboros_phase_progress` | Report workflow phase progress |
-| `ouroboros_agent_handoff` | Notify agent level transitions |
+| `ouroborosai_ask` | Get user input (task, question, feature description) |
+| `ouroborosai_menu` | Present multiple choice options |
+| `ouroborosai_confirm` | Get yes/no confirmation |
+| `ouroborosai_plan_review` | Present plan/document for approval |
+| `ouroborosai_phase_progress` | Report workflow phase progress |
+| `ouroborosai_agent_handoff` | Notify agent level transitions |
 
 ## Commands
 

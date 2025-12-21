@@ -18,11 +18,11 @@ import {
 describe('constants', () => {
     describe('extension identifiers', () => {
         it('should have correct extension ID', () => {
-            expect(EXTENSION_ID).toBe('ouroboros');
+            expect(EXTENSION_ID).toBe('ouroboros-ai');
         });
 
         it('should have correct display name', () => {
-            expect(EXTENSION_DISPLAY_NAME).toBe('Ouroboros');
+            expect(EXTENSION_DISPLAY_NAME).toBe('Ouroboros AI');
         });
 
         it('should have correct sidebar view ID', () => {
@@ -54,27 +54,27 @@ describe('constants', () => {
 
     describe('TOOLS', () => {
         it('should have ask tool', () => {
-            expect(TOOLS.ASK).toBe('ouroboros_ask');
+            expect(TOOLS.ASK).toBe('ouroborosai_ask');
         });
 
         it('should have menu tool', () => {
-            expect(TOOLS.MENU).toBe('ouroboros_menu');
+            expect(TOOLS.MENU).toBe('ouroborosai_menu');
         });
 
         it('should have confirm tool', () => {
-            expect(TOOLS.CONFIRM).toBe('ouroboros_confirm');
+            expect(TOOLS.CONFIRM).toBe('ouroborosai_confirm');
         });
 
         it('should have plan review tool', () => {
-            expect(TOOLS.PLAN_REVIEW).toBe('ouroboros_plan_review');
+            expect(TOOLS.PLAN_REVIEW).toBe('ouroborosai_plan_review');
         });
 
         it('should have phase progress tool', () => {
-            expect(TOOLS.PHASE_PROGRESS).toBe('ouroboros_phase_progress');
+            expect(TOOLS.PHASE_PROGRESS).toBe('ouroborosai_phase_progress');
         });
 
         it('should have agent handoff tool', () => {
-            expect(TOOLS.AGENT_HANDOFF).toBe('ouroboros_agent_handoff');
+            expect(TOOLS.AGENT_HANDOFF).toBe('ouroborosai_agent_handoff');
         });
     });
 
