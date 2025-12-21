@@ -48,13 +48,8 @@ export function registerTools(
     logger.info(`Registered tool: ${TOOLS.PLAN_REVIEW}`);
 
     // Register ouroboros_phase_progress
-    const phaseProgressTool = createPhaseProgressTool(
-        stateManager,
-        sidebarProvider
-    );
-    disposables.push(
-        vscode.lm.registerTool(TOOLS.PHASE_PROGRESS, phaseProgressTool)
-    );
+    const phaseProgressTool = createPhaseProgressTool(stateManager, sidebarProvider);
+    disposables.push(vscode.lm.registerTool(TOOLS.PHASE_PROGRESS, phaseProgressTool));
     logger.info(`Registered tool: ${TOOLS.PHASE_PROGRESS}`);
 
     // Register ouroboros_agent_handoff

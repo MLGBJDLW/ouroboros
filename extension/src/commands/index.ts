@@ -39,10 +39,7 @@ export function registerCommands(
 
     // Register open sidebar command
     disposables.push(
-        vscode.commands.registerCommand(
-            COMMANDS.OPEN_SIDEBAR,
-            createOpenSidebarCommand()
-        )
+        vscode.commands.registerCommand(COMMANDS.OPEN_SIDEBAR, createOpenSidebarCommand())
     );
     logger.info(`Registered command: ${COMMANDS.OPEN_SIDEBAR}`);
 
@@ -57,17 +54,12 @@ export function registerCommands(
 
     // Register cancel current request command
     disposables.push(
-        vscode.commands.registerCommand(
-            COMMANDS.CANCEL_CURRENT_REQUEST,
-            () => {
-                const cancelled = sidebarProvider.cancelCurrentRequest();
-                if (!cancelled) {
-                    vscode.window.showInformationMessage(
-                        'No active request to cancel.'
-                    );
-                }
+        vscode.commands.registerCommand(COMMANDS.CANCEL_CURRENT_REQUEST, () => {
+            const cancelled = sidebarProvider.cancelCurrentRequest();
+            if (!cancelled) {
+                vscode.window.showInformationMessage('No active request to cancel.');
             }
-        )
+        })
     );
     logger.info(`Registered command: ${COMMANDS.CANCEL_CURRENT_REQUEST}`);
 

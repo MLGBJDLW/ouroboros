@@ -58,13 +58,13 @@ export function createPlanReviewTool(
                     response: result.timeout
                         ? ''
                         : result.approved
-                            ? 'approved'
-                            : result.feedback ?? 'rejected',
+                          ? 'approved'
+                          : (result.feedback ?? 'rejected'),
                     status: result.timeout
                         ? 'timeout'
                         : result.cancelled
-                            ? 'cancelled'
-                            : 'responded',
+                          ? 'cancelled'
+                          : 'responded',
                 });
 
                 const output: PlanReviewOutput = {

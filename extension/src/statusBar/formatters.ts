@@ -17,12 +17,8 @@ export function formatStatusBarText(state: WorkspaceState): string {
 
     const specName = truncate(state.currentSpec, 20);
     const phase = state.currentPhase > 0 ? ` (${state.currentPhase})` : '';
-    const workflowLabel = state.workflowType
-        ? `${formatWorkflowType(state.workflowType)} `
-        : '';
-    const modeLabel = state.executionMode
-        ? ` | ${formatExecutionMode(state.executionMode)}`
-        : '';
+    const workflowLabel = state.workflowType ? `${formatWorkflowType(state.workflowType)} ` : '';
+    const modeLabel = state.executionMode ? ` | ${formatExecutionMode(state.executionMode)}` : '';
 
     return `${icon} ${label} | ${workflowLabel}${specName}${phase}${modeLabel}`;
 }
@@ -97,9 +93,7 @@ export function formatWorkflowType(workflow: 'spec' | 'implement'): string {
 /**
  * Format execution mode for display
  */
-export function formatExecutionMode(
-    mode: 'task-by-task' | 'phase-by-phase' | 'auto-run'
-): string {
+export function formatExecutionMode(mode: 'task-by-task' | 'phase-by-phase' | 'auto-run'): string {
     switch (mode) {
         case 'task-by-task':
             return 'Task-by-Task';

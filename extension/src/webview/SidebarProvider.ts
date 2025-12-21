@@ -32,9 +32,7 @@ type PendingRequestWithTimeout = PendingRequest & {
 /**
  * Sidebar Webview Provider for Ouroboros
  */
-export class SidebarProvider
-    extends DisposableBase
-    implements vscode.WebviewViewProvider {
+export class SidebarProvider extends DisposableBase implements vscode.WebviewViewProvider {
     private webviewView: vscode.WebviewView | undefined;
     private pendingRequests: Map<string, PendingRequestWithTimeout> = new Map();
 
@@ -73,10 +71,7 @@ export class SidebarProvider
             ],
         };
 
-        webviewView.webview.html = generateHtml(
-            webviewView.webview,
-            this.extensionUri
-        );
+        webviewView.webview.html = generateHtml(webviewView.webview, this.extensionUri);
 
         // Handle messages from webview
         this.register(
@@ -91,16 +86,14 @@ export class SidebarProvider
             payload: {
                 workspaceState: this.stateManager.getWorkspaceState(),
                 history: this.stateManager.getInteractionHistory(),
-                pendingRequests: Array.from(this.pendingRequests.values()).map(
-                    (req) => ({
-                        id: req.id,
-                        type: req.type,
-                        agentName: req.agentName,
-                        agentLevel: req.agentLevel,
-                        data: req.data,
-                        timestamp: req.timestamp,
-                    })
-                ),
+                pendingRequests: Array.from(this.pendingRequests.values()).map((req) => ({
+                    id: req.id,
+                    type: req.type,
+                    agentName: req.agentName,
+                    agentLevel: req.agentLevel,
+                    data: req.data,
+                    timestamp: req.timestamp,
+                })),
             },
         });
     }
@@ -117,10 +110,7 @@ export class SidebarProvider
     /**
      * Create an ask request
      */
-    async createAskRequest(
-        input: AskInput,
-        token: vscode.CancellationToken
-    ): Promise<AskOutput> {
+    async createAskRequest(input: AskInput, token: vscode.CancellationToken): Promise<AskOutput> {
         return this.createRequest<AskInput, AskOutput>('ask', input, token);
     }
 
@@ -141,11 +131,7 @@ export class SidebarProvider
         input: ConfirmInput,
         token: vscode.CancellationToken
     ): Promise<ConfirmOutput> {
-        return this.createRequest<ConfirmInput, ConfirmOutput>(
-            'confirm',
-            input,
-            token
-        );
+        return this.createRequest<ConfirmInput, ConfirmOutput>('confirm', input, token);
     }
 
     /**
@@ -155,11 +141,7 @@ export class SidebarProvider
         input: PlanReviewInput,
         token: vscode.CancellationToken
     ): Promise<PlanReviewOutput> {
-        return this.createRequest<PlanReviewInput, PlanReviewOutput>(
-            'plan_review',
-            input,
-            token
-        );
+        return this.createRequest<PlanReviewInput, PlanReviewOutput>('plan_review', input, token);
     }
 
     /**
@@ -239,10 +221,8 @@ export class SidebarProvider
                 id: requestId,
                 timestamp: Date.now(),
                 type,
-                agentName:
-                    (input as { agentName?: string }).agentName ?? 'unknown',
-                agentLevel:
-                    ((input as { agentLevel?: number }).agentLevel as 0 | 1 | 2) ?? 0,
+                agentName: (input as { agentName?: string }).agentName ?? 'unknown',
+                agentLevel: ((input as { agentLevel?: number }).agentLevel as 0 | 1 | 2) ?? 0,
                 data: input as AskInput | MenuInput | ConfirmInput | PlanReviewInput,
                 resolve: resolve as (value: unknown) => void,
                 reject,
@@ -296,9 +276,7 @@ export class SidebarProvider
         this.notifyPendingRequestsUpdate();
     }
 
-    private clearRequestTimeout(
-        request?: PendingRequestWithTimeout
-    ): void {
+    private clearRequestTimeout(request?: PendingRequestWithTimeout): void {
         if (request?.timeoutHandle) {
             clearTimeout(request.timeoutHandle);
             request.timeoutHandle = undefined;

@@ -67,7 +67,7 @@ export class Disposable {
             dispose: () => disposables.forEach((d) => d.dispose()),
         };
     }
-    dispose() { }
+    dispose() {}
 }
 
 export class EventEmitter<T> {
@@ -95,15 +95,15 @@ export class CancellationTokenSource {
     cancel() {
         this.token.isCancellationRequested = true;
     }
-    dispose() { }
+    dispose() {}
 }
 
 export class LanguageModelToolResult {
-    constructor(public parts: LanguageModelTextPart[]) { }
+    constructor(public parts: LanguageModelTextPart[]) {}
 }
 
 export class LanguageModelTextPart {
-    constructor(public value: string) { }
+    constructor(public value: string) {}
 }
 
 export const ProgressLocation = {

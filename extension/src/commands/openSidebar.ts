@@ -17,9 +17,7 @@ export function createOpenSidebarCommand(): () => Promise<void> {
 
         try {
             // Focus the sidebar view
-            await vscode.commands.executeCommand(
-                `${SIDEBAR_VIEW_ID}.focus`
-            );
+            await vscode.commands.executeCommand(`${SIDEBAR_VIEW_ID}.focus`);
             logger.info('Sidebar opened');
         } catch (error) {
             logger.error('Failed to open sidebar:', error);

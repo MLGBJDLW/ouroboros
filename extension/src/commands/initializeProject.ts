@@ -5,10 +5,7 @@
 
 import * as vscode from 'vscode';
 import { createLogger } from '../utils/logger';
-import {
-    fetchAndTransformPrompts,
-    createOuroborosStructure,
-} from '../utils/promptTransformer';
+import { fetchAndTransformPrompts, createOuroborosStructure } from '../utils/promptTransformer';
 
 const logger = createLogger('InitializeProject');
 
@@ -76,7 +73,9 @@ export function createInitializeProjectCommand(
                         );
                     }
 
-                    logger.info(`Project initialization complete: ${success} success, ${failed} failed`);
+                    logger.info(
+                        `Project initialization complete: ${success} success, ${failed} failed`
+                    );
 
                     // Notify callback of success to refresh UI
                     onSuccess?.();

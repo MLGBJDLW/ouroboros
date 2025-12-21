@@ -11,7 +11,7 @@ import {
     PhaseProgressInputSchema,
     HandoffInputSchema,
     validateInput,
-} from './schemas';
+} from '../../tools/schemas';
 
 describe('validateInput', () => {
     it('should return success for valid input', () => {

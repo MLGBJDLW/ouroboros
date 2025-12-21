@@ -22,10 +22,7 @@ export class StatusBarManager extends DisposableBase {
 
         // Create status bar item
         this.statusBarItem = this.register(
-            vscode.window.createStatusBarItem(
-                vscode.StatusBarAlignment.Left,
-                100
-            )
+            vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
         );
 
         this.statusBarItem.command = COMMANDS.OPEN_SIDEBAR;
@@ -78,10 +75,7 @@ export class StatusBarManager extends DisposableBase {
     /**
      * Show a temporary message in the status bar
      */
-    public showTemporaryMessage(
-        message: string,
-        durationMs: number = 3000
-    ): void {
+    public showTemporaryMessage(message: string, durationMs: number = 3000): void {
         const originalText = this.statusBarItem.text;
         this.statusBarItem.text = message;
 

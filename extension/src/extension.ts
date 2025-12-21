@@ -13,9 +13,7 @@ let stateManager: StateManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
 let sidebarProvider: SidebarProvider | undefined;
 
-export async function activate(
-    context: vscode.ExtensionContext
-): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
     logger.info(`Activating ${EXTENSION_ID} extension...`);
 
     try {
@@ -28,15 +26,11 @@ export async function activate(
 
         // Register sidebar view
         context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider(
-                'ouroboros.sidebarView',
-                sidebarProvider,
-                {
-                    webviewOptions: {
-                        retainContextWhenHidden: true,
-                    },
-                }
-            )
+            vscode.window.registerWebviewViewProvider('ouroboros.sidebarView', sidebarProvider, {
+                webviewOptions: {
+                    retainContextWhenHidden: true,
+                },
+            })
         );
 
         // Register LM Tools
@@ -44,11 +38,7 @@ export async function activate(
         context.subscriptions.push(...toolDisposables);
 
         // Register commands
-        const commandDisposables = registerCommands(
-            context,
-            stateManager,
-            sidebarProvider
-        );
+        const commandDisposables = registerCommands(context, stateManager, sidebarProvider);
         context.subscriptions.push(...commandDisposables);
 
         // Initialize status bar

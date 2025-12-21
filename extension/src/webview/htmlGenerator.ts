@@ -7,10 +7,7 @@ import * as vscode from 'vscode';
 /**
  * Generate the HTML content for the webview
  */
-export function generateHtml(
-    webview: vscode.Webview,
-    extensionUri: vscode.Uri
-): string {
+export function generateHtml(webview: vscode.Webview, extensionUri: vscode.Uri): string {
     // Get the webview script and style URIs
     const scriptUri = webview.asWebviewUri(
         vscode.Uri.joinPath(extensionUri, 'webview', 'dist', 'assets', 'index.js')
@@ -21,13 +18,7 @@ export function generateHtml(
     );
 
     const codiconsUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(
-            extensionUri,
-            'node_modules',
-            '@vscode/codicons',
-            'dist',
-            'codicon.css'
-        )
+        vscode.Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css')
     );
 
     const logoUri = webview.asWebviewUri(
@@ -141,8 +132,7 @@ export function generatePlaceholderHtml(webview: vscode.Webview): string {
  */
 function getNonce(): string {
     let text = '';
-    const possible =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     for (let i = 0; i < 32; i++) {
         text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
