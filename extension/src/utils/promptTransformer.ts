@@ -25,11 +25,11 @@ const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/MLGBJDLW/ouroboros/ma
 // Files to fetch and transform
 // Level 0 + Level 1 Orchestrators (need LM Tools for CCL)
 const ORCHESTRATOR_AGENT_FILES = [
-    'ouroboros.agent.md',          // Level 0 - Main Orchestrator
-    'ouroboros-init.agent.md',     // Level 1
-    'ouroboros-spec.agent.md',     // Level 1
+    'ouroboros.agent.md', // Level 0 - Main Orchestrator
+    'ouroboros-init.agent.md', // Level 1
+    'ouroboros-spec.agent.md', // Level 1
     'ouroboros-implement.agent.md', // Level 1
-    'ouroboros-archive.agent.md',   // Level 1
+    'ouroboros-archive.agent.md', // Level 1
 ];
 
 // Level 2 Workers (NO CCL, handoff only - don't need LM Tools)
@@ -55,9 +55,7 @@ const PROMPT_FILES = [
     'ouroboros-archive.prompt.md',
 ];
 
-const CORE_FILES = [
-    'copilot-instructions.md',
-];
+const CORE_FILES = ['copilot-instructions.md'];
 
 // .ouroboros template files (don't need transformation)
 const OUROBOROS_TEMPLATE_FILES = [
@@ -102,7 +100,7 @@ export function transformForExtensionMode(content: string): string {
         /\|\s*`python -c "print\('[^']*'\);[^"]*choice = input\([^)]*\)"`\s*\|/g,
         (match) => {
             totalChanges++;
-            return '| `Use the ouroboros_menu tool with: { "question": "📋 Question", "options": ["A","B"] }` |';
+            return '| `Use the ouroborosai_menu tool with: { "question": "📋 Question", "options": ["A","B"] }` |';
         }
     );
 
@@ -111,7 +109,7 @@ export function transformForExtensionMode(content: string): string {
         /\|\s*`python -c "print\('[^']*'\);[^"]*confirm = input\([^)]*\)"`\s*\|/g,
         (match) => {
             totalChanges++;
-            return '| `Use the ouroboros_confirm tool with: { "question": "⚠️ Question" }` |';
+            return '| `Use the ouroborosai_confirm tool with: { "question": "⚠️ Question" }` |';
         }
     );
 
@@ -120,7 +118,7 @@ export function transformForExtensionMode(content: string): string {
         /\|\s*`python -c "print\('[^']*'\); feature = input\([^)]*\)"`\s*\|/g,
         (match) => {
             totalChanges++;
-            return '| `Use the ouroboros_ask tool with: { "type": "task", "question": "🔧 Question" }` |';
+            return '| `Use the ouroborosai_ask tool with: { "type": "task", "question": "🔧 Question" }` |';
         }
     );
 
@@ -129,7 +127,7 @@ export function transformForExtensionMode(content: string): string {
         /\|\s*`python -c "print\('[^']*'\); question = input\([^)]*\)"`\s*\|/g,
         (match) => {
             totalChanges++;
-            return '| `Use the ouroboros_ask tool with: { "type": "task", "question": "❓ Question" }` |';
+            return '| `Use the ouroborosai_ask tool with: { "type": "task", "question": "❓ Question" }` |';
         }
     );
 
@@ -138,7 +136,7 @@ export function transformForExtensionMode(content: string): string {
         /\|\s*`python -c "print\('([^']*)'\); task = input\('\[Ouroboros\] > '\)"`\s*\|/g,
         (_, emoji) => {
             totalChanges++;
-            return `| \`Use the ouroboros_ask tool with: { "type": "task", "question": "${emoji}" }\` |`;
+            return `| \`Use the ouroborosai_ask tool with: { "type": "task", "question": "${emoji}" }\` |`;
         }
     );
 
@@ -147,7 +145,7 @@ export function transformForExtensionMode(content: string): string {
         /\|\s*`python -c "task = input\('\[Ouroboros\] > '\)"`\s*\|/g,
         () => {
             totalChanges++;
-            return '| `Use the ouroboros_ask tool with: { "type": "task" }` |';
+            return '| `Use the ouroborosai_ask tool with: { "type": "task" }` |';
         }
     );
 
@@ -164,7 +162,8 @@ export function transformForExtensionMode(content: string): string {
     // ```python
     // python -c "..."
     // ```
-    const patternUseRunCommandBlock = /\*\*[\[\(]?[^*\]]*(?:USE|[Cc]all)[\s`']*run_command[\s`']*[Tt]ool[^\]*]*[\]\)]?:?\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/gi;
+    const patternUseRunCommandBlock =
+        /\*\*[\[\(]?[^*\]]*(?:USE|[Cc]all)[\s`']*run_command[\s`']*[Tt]ool[^\]*]*[\]\)]?:?\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/gi;
     transformed = transformed.replace(patternUseRunCommandBlock, (match, pythonCmd) => {
         totalChanges++;
         // Determine the type based on the python command
@@ -173,7 +172,7 @@ export function transformForExtensionMode(content: string): string {
             const question = questionMatch ? questionMatch[1] : 'Select an option';
             return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_menu\` tool with:
+Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -187,7 +186,7 @@ Use the \`ouroboros_menu\` tool with:
             const question = questionMatch ? questionMatch[1] : 'Please confirm';
             return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_confirm\` tool with:
+Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -202,7 +201,7 @@ Use the \`ouroboros_confirm\` tool with:
             if (question) {
                 return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_ask\` tool with:
+Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -214,7 +213,7 @@ Use the \`ouroboros_ask\` tool with:
             }
             return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_ask\` tool with:
+Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -226,7 +225,8 @@ Use the \`ouroboros_ask\` tool with:
     });
 
     // Pattern: "use run_command tool to execute:" followed by code block
-    const patternRunCommandToExecute = /\*\*[^*]*[Uu]se [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/g;
+    const patternRunCommandToExecute =
+        /\*\*[^*]*[Uu]se [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/g;
     transformed = transformed.replace(patternRunCommandToExecute, (match, pythonCmd) => {
         totalChanges++;
         if (pythonCmd.includes('choice = input')) {
@@ -234,7 +234,7 @@ Use the \`ouroboros_ask\` tool with:
             const question = questionMatch ? questionMatch[1] : 'Select an option';
             return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_menu\` tool with:
+Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -248,7 +248,7 @@ Use the \`ouroboros_menu\` tool with:
             const question = questionMatch ? questionMatch[1] : 'Please confirm';
             return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_confirm\` tool with:
+Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -262,7 +262,7 @@ Use the \`ouroboros_confirm\` tool with:
             if (question) {
                 return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_ask\` tool with:
+Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -274,7 +274,7 @@ Use the \`ouroboros_ask\` tool with:
             }
             return `**use the Ouroboros LM Tools:**
 
-Use the \`ouroboros_ask\` tool with:
+Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -287,13 +287,14 @@ Use the \`ouroboros_ask\` tool with:
 
     // Pattern: Standalone code blocks (```python ... ```) containing python -c input commands
     // These are NOT preceded by any label. Also matches indented code blocks.
-    const patternStandaloneBlock = /\s*```(?:python|bash|sh)[\s\r\n]+(python -c "[^"]*input\([^)]*\)[^"]*")[\s\r\n]*```/g;
+    const patternStandaloneBlock =
+        /\s*```(?:python|bash|sh)[\s\r\n]+(python -c "[^"]*input\([^)]*\)[^"]*")[\s\r\n]*```/g;
     transformed = transformed.replace(patternStandaloneBlock, (match, pythonCmd) => {
         totalChanges++;
         if (pythonCmd.includes('choice = input')) {
             const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
             const question = questionMatch ? questionMatch[1] : 'Select an option';
-            return `Use the \`ouroboros_menu\` tool with:
+            return `Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -305,7 +306,7 @@ Use the \`ouroboros_ask\` tool with:
         } else if (pythonCmd.includes('confirm = input')) {
             const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
             const question = questionMatch ? questionMatch[1] : 'Please confirm';
-            return `Use the \`ouroboros_confirm\` tool with:
+            return `Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -316,7 +317,7 @@ Use the \`ouroboros_ask\` tool with:
         } else if (pythonCmd.includes('feature = input')) {
             const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
             const question = questionMatch ? questionMatch[1] : 'Enter feature';
-            return `Use the \`ouroboros_ask\` tool with:
+            return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -329,7 +330,7 @@ Use the \`ouroboros_ask\` tool with:
             const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
             const question = questionMatch ? questionMatch[1] : null;
             if (question) {
-                return `Use the \`ouroboros_ask\` tool with:
+                return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -339,7 +340,7 @@ Use the \`ouroboros_ask\` tool with:
 }
 \`\`\``;
             }
-            return `Use the \`ouroboros_ask\` tool with:
+            return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -355,7 +356,8 @@ Use the \`ouroboros_ask\` tool with:
     // ```python
     // python -c "print('question'); print(); print('[1] A'); ... choice = input('...')"
     // ```
-    const patternFullBlockMenu = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "print\('([^']*)'\); print\(\);((?:[^"]*print\('\[[^\]]+\][^']*'\);)+)[^"]*choice = input\('([^']*)'\)"[\s\r\n]*```/g;
+    const patternFullBlockMenu =
+        /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "print\('([^']*)'\); print\(\);((?:[^"]*print\('\[[^\]]+\][^']*'\);)+)[^"]*choice = input\('([^']*)'\)"[\s\r\n]*```/g;
     transformed = transformed.replace(patternFullBlockMenu, (_, question, optionsPart) => {
         totalChanges++;
         const optionMatches = optionsPart.match(/\[(\d+)\]\s*([^']*)/g) || [];
@@ -365,7 +367,7 @@ Use the \`ouroboros_ask\` tool with:
         });
         return `**Execute via Ouroboros LM Tools tool (Type B: Menu with Question):**
 
-Use the \`ouroboros_menu\` tool with:
+Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -377,7 +379,8 @@ Use the \`ouroboros_menu\` tool with:
     });
 
     // Pattern: Simpler menu block without detailed option parsing
-    const patternSimpleBlockMenu = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*choice = input[^"]*)"[\s\r\n]*```/g;
+    const patternSimpleBlockMenu =
+        /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*choice = input[^"]*)"[\s\r\n]*```/g;
     transformed = transformed.replace(patternSimpleBlockMenu, (_, pythonCode) => {
         totalChanges++;
         // Extract question from print statement
@@ -385,7 +388,7 @@ Use the \`ouroboros_menu\` tool with:
         const question = questionMatch ? questionMatch[1] : 'Select an option';
         return `**Execute via Ouroboros LM Tools (Menu):**
 
-Use the \`ouroboros_menu\` tool with:
+Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -397,14 +400,15 @@ Use the \`ouroboros_menu\` tool with:
     });
 
     // Pattern: Full code block with confirm (Type D)
-    const patternFullBlockConfirm = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*confirm = input\('\[y\/n\][^"]*)"[\s\r\n]*```/g;
+    const patternFullBlockConfirm =
+        /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*confirm = input\('\[y\/n\][^"]*)"[\s\r\n]*```/g;
     transformed = transformed.replace(patternFullBlockConfirm, (_, pythonCode) => {
         totalChanges++;
         const questionMatch = pythonCode.match(/print\('([^']*)'\)/);
         const question = questionMatch ? questionMatch[1] : 'Please confirm';
         return `**Execute via Ouroboros LM Tools (Confirmation):**
 
-Use the \`ouroboros_confirm\` tool with:
+Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -415,7 +419,8 @@ Use the \`ouroboros_confirm\` tool with:
     });
 
     // Pattern: Full code block with task input (Type A)
-    const patternFullBlockTask = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*task = input\('\[Ouroboros\] > '\)[^"]*)"[\s\r\n]*```/g;
+    const patternFullBlockTask =
+        /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*task = input\('\[Ouroboros\] > '\)[^"]*)"[\s\r\n]*```/g;
     transformed = transformed.replace(patternFullBlockTask, (_, pythonCode) => {
         totalChanges++;
         const questionMatch = pythonCode.match(/print\('([^']*)'\)/);
@@ -423,7 +428,7 @@ Use the \`ouroboros_confirm\` tool with:
         if (question) {
             return `**Execute via Ouroboros LM Tools (Task Input):**
 
-Use the \`ouroboros_ask\` tool with:
+Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -435,7 +440,7 @@ Use the \`ouroboros_ask\` tool with:
         }
         return `**Execute via Ouroboros LM Tools (Task Input):**
 
-Use the \`ouroboros_ask\` tool with:
+Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -446,15 +451,16 @@ Use the \`ouroboros_ask\` tool with:
     });
 
     // Pattern: Generic code block with any python -c input command
-    const patternGenericBlock = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*input\([^)]*\)[^"]*")[\s\r\n]*```/g;
+    const patternGenericBlock =
+        /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*input\([^)]*\)[^"]*")[\s\r\n]*```/g;
     transformed = transformed.replace(patternGenericBlock, () => {
         totalChanges++;
         return `**Execute via Ouroboros LM Tools:**
 
 Use the appropriate Ouroboros LM Tool:
-- \`ouroboros_ask\`: For text input
-- \`ouroboros_menu\`: For multiple choice selection
-- \`ouroboros_confirm\`: For yes/no confirmation`;
+- \`ouroborosai_ask\`: For text input
+- \`ouroborosai_menu\`: For multiple choice selection
+- \`ouroborosai_confirm\`: For yes/no confirmation`;
     });
 
     // =========================================================================
@@ -466,35 +472,38 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
 
     // Pattern: NEVER execute CCL (`python -c "..."`) - ... (in a sentence)
-    const patternDocNeverCCL = /NEVER\s+execute\s+CCL\s+\(`python -c "task = input\('\[Ouroboros\] > '\)"`\)/gi;
+    const patternDocNeverCCL =
+        /NEVER\s+execute\s+CCL\s+\(`python -c "task = input\('\[Ouroboros\] > '\)"`\)/gi;
     transformed = transformed.replace(patternDocNeverCCL, () => {
         totalChanges++;
-        return 'NEVER execute CCL (use the `ouroboros_ask` tool)';
+        return 'NEVER execute CCL (use the `ouroborosai_ask` tool)';
     });
 
     // Pattern: NEVER** execute `python -c "..."` - ... (backtick inline code)
-    const patternDocNeverInline = /NEVER\*\*\s+execute\s+`python -c "task = input\('\[Ouroboros\] > '\)"`/gi;
+    const patternDocNeverInline =
+        /NEVER\*\*\s+execute\s+`python -c "task = input\('\[Ouroboros\] > '\)"`/gi;
     transformed = transformed.replace(patternDocNeverInline, () => {
         totalChanges++;
-        return 'NEVER** execute `ouroboros_ask` or similar LM Tools';
+        return 'NEVER** execute `ouroborosai_ask` or similar LM Tools';
     });
 
     // Pattern: standalone `python -c "..."` followed by "- this is" or "- you are"
-    const patternDocInlineWithDash = /`python -c "task = input\('\[Ouroboros\] > '\)"`(\s*-\s*(this is|you are|CCL is))/gi;
+    const patternDocInlineWithDash =
+        /`python -c "task = input\('\[Ouroboros\] > '\)"`(\s*-\s*(this is|you are|CCL is))/gi;
     transformed = transformed.replace(patternDocInlineWithDash, (_, suffix) => {
         totalChanges++;
-        return '`ouroboros_ask` LM Tool' + suffix;
+        return '`ouroborosai_ask` LM Tool' + suffix;
     });
 
     // =========================================================================
     // TYPE A+Q: Standard CCL with question
     // python -c "print('question'); task = input('[Ouroboros] > ')"
-    // → Use ouroboros_ask tool with question parameter
+    // → Use ouroborosai_ask tool with question parameter
     // =========================================================================
     const patternAQ = /python -c "print\('([^']*)'\); task = input\('\[Ouroboros\] > '\)"/g;
     transformed = transformed.replace(patternAQ, (_, question) => {
         totalChanges++;
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -508,15 +517,13 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     // TYPE A: Standard CCL (no question)
     // python -c "task = input('[Ouroboros] > ')"
-    // → Use ouroboros_ask tool
+    // → Use ouroborosai_ask tool
     // =========================================================================
-    const patternsA = [
-        /python -c "task = input\('\[Ouroboros\] > '\)"/g,
-    ];
+    const patternsA = [/python -c "task = input\('\[Ouroboros\] > '\)"/g];
     for (const pattern of patternsA) {
         transformed = transformed.replace(pattern, () => {
             totalChanges++;
-            return `Use the \`ouroboros_ask\` tool with:
+            return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -530,9 +537,10 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     // TYPE B: Menu with question + options
     // python -c "print('Q'); print(); print('[1] A'); print('[2] B'); choice = input('Select:')"
-    // → Use ouroboros_menu tool
+    // → Use ouroborosai_menu tool
     // =========================================================================
-    const patternBFull = /python -c "print\('([^']*)'\); print\(\);((?:\s*print\('\[[^\]]+\][^']*'\);)+)\s*choice = input\('([^']*)'\)"/g;
+    const patternBFull =
+        /python -c "print\('([^']*)'\); print\(\);((?:\s*print\('\[[^\]]+\][^']*'\);)+)\s*choice = input\('([^']*)'\)"/g;
     transformed = transformed.replace(patternBFull, (_, question, optionsPart, prompt) => {
         totalChanges++;
         // Extract options from print statements
@@ -541,7 +549,7 @@ Use the appropriate Ouroboros LM Tool:
             const match = opt.match(/\[(\d+)\]\s*(.*)/);
             return match ? match[2].trim() : opt;
         });
-        return `Use the \`ouroboros_menu\` tool with:
+        return `Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -557,7 +565,7 @@ Use the appropriate Ouroboros LM Tool:
     const patternBSimple = /python -c "print\('([^']*)'\); choice = input\('([^']*)'\)"/g;
     transformed = transformed.replace(patternBSimple, (_, header, prompt) => {
         totalChanges++;
-        return `Use the \`ouroboros_menu\` tool with:
+        return `Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -571,12 +579,13 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     // TYPE D: Confirmation (y/n)
     // python -c "print('question'); print(); print('[y] Yes'); print('[n] No'); confirm = input('[y/n]: ')"
-    // → Use ouroboros_confirm tool
+    // → Use ouroborosai_confirm tool
     // =========================================================================
-    const patternDFull = /python -c "print\('([^']*)'\); print\(\);(?:\s*print\('\[[yn]\][^']*'\);)+\s*confirm = input\('\[y\/n\]: '\)"/g;
+    const patternDFull =
+        /python -c "print\('([^']*)'\); print\(\);(?:\s*print\('\[[yn]\][^']*'\);)+\s*confirm = input\('\[y\/n\]: '\)"/g;
     transformed = transformed.replace(patternDFull, (_, question) => {
         totalChanges++;
-        return `Use the \`ouroboros_confirm\` tool with:
+        return `Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -591,7 +600,7 @@ Use the appropriate Ouroboros LM Tool:
     const patternDSimple = /python -c "confirm = input\('\[y\/n\]: '\)"/g;
     transformed = transformed.replace(patternDSimple, () => {
         totalChanges++;
-        return `Use the \`ouroboros_confirm\` tool with:
+        return `Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -606,7 +615,7 @@ Use the appropriate Ouroboros LM Tool:
     const patternDHeader = /python -c "print\('([^']*)'\); confirm = input\('\[y\/n\]: '\)"/g;
     transformed = transformed.replace(patternDHeader, (_, header) => {
         totalChanges++;
-        return `Use the \`ouroboros_confirm\` tool with:
+        return `Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -619,12 +628,12 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     // TYPE C2: Feature with question
     // python -c "print('question'); feature = input('prompt')"
-    // → Use ouroboros_ask tool with type: feature
+    // → Use ouroborosai_ask tool with type: feature
     // =========================================================================
     const patternC2 = /python -c "print\('([^']*)'\); feature = input\('([^']*)'\)"/g;
     transformed = transformed.replace(patternC2, (_, question, prompt) => {
         totalChanges++;
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -638,12 +647,12 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     // TYPE C: Feature input (no question)
     // python -c "feature = input('prompt')"
-    // → Use ouroboros_ask tool
+    // → Use ouroborosai_ask tool
     // =========================================================================
     const patternC = /python -c "feature = input\('([^']*)'\)"/g;
     transformed = transformed.replace(patternC, (_, prompt) => {
         totalChanges++;
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -657,12 +666,12 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     // TYPE E2: Question with question
     // python -c "print('question'); question = input('prompt')"
-    // → Use ouroboros_ask tool
+    // → Use ouroborosai_ask tool
     // =========================================================================
     const patternE2 = /python -c "print\('([^']*)'\); question = input\('([^']*)'\)"/g;
     transformed = transformed.replace(patternE2, (_, question, prompt) => {
         totalChanges++;
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -676,12 +685,12 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     // TYPE E: Question input
     // python -c "question = input('prompt')"
-    // → Use ouroboros_ask tool
+    // → Use ouroborosai_ask tool
     // =========================================================================
     const patternE = /python -c "question = input\('([^']*)'\)"/g;
     transformed = transformed.replace(patternE, (_, prompt) => {
         totalChanges++;
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -697,10 +706,11 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
 
     // Enhanced with --question
-    const patternEnhancedQ = /python \.ouroboros\/scripts\/ouroboros_input\.py --question "([^"]*)"/g;
+    const patternEnhancedQ =
+        /python \.ouroboros\/scripts\/ouroboros_input\.py --question "([^"]*)"/g;
     transformed = transformed.replace(patternEnhancedQ, (_, question) => {
         totalChanges++;
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -715,7 +725,7 @@ Use the appropriate Ouroboros LM Tool:
     const patternEnhancedStd = /python \.ouroboros\/scripts\/ouroboros_input\.py(?!\s+--)/g;
     transformed = transformed.replace(patternEnhancedStd, () => {
         totalChanges++;
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -726,12 +736,13 @@ Use the appropriate Ouroboros LM Tool:
     });
 
     // Enhanced with --header --prompt --var choice (menu)
-    const patternEnhancedMenu = /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var choice/g;
+    const patternEnhancedMenu =
+        /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var choice/g;
     transformed = transformed.replace(patternEnhancedMenu, (_, question, header, prompt) => {
         totalChanges++;
         const options = header ? header.split('\\n') : [];
         const q = question || 'Select an option';
-        return `Use the \`ouroboros_menu\` tool with:
+        return `Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -743,11 +754,12 @@ Use the appropriate Ouroboros LM Tool:
     });
 
     // Enhanced with --var confirm (confirmation)
-    const patternEnhancedConfirm = /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?(?:\s+--header "([^"]*)")?\s+--prompt "\[y\/n\]:"\s+--var confirm(?:\s+--no-ui)?/g;
+    const patternEnhancedConfirm =
+        /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?(?:\s+--header "([^"]*)")?\s+--prompt "\[y\/n\]:"\s+--var confirm(?:\s+--no-ui)?/g;
     transformed = transformed.replace(patternEnhancedConfirm, (_, question, header) => {
         totalChanges++;
         const q = question || header || 'Please confirm';
-        return `Use the \`ouroboros_confirm\` tool with:
+        return `Use the \`ouroborosai_confirm\` tool with:
 \`\`\`json
 {
   "agentName": "[current-agent]",
@@ -758,11 +770,12 @@ Use the appropriate Ouroboros LM Tool:
     });
 
     // Enhanced with --prompt --var feature
-    const patternEnhancedFeature = /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--prompt "([^"]*)"\s+--var feature/g;
+    const patternEnhancedFeature =
+        /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--prompt "([^"]*)"\s+--var feature/g;
     transformed = transformed.replace(patternEnhancedFeature, (_, question, prompt) => {
         totalChanges++;
         const q = question || prompt || 'Enter feature';
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -774,11 +787,12 @@ Use the appropriate Ouroboros LM Tool:
     });
 
     // Enhanced with --prompt --var question
-    const patternEnhancedQuestion = /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--prompt "([^"]*)"\s+--var question/g;
+    const patternEnhancedQuestion =
+        /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--prompt "([^"]*)"\s+--var question/g;
     transformed = transformed.replace(patternEnhancedQuestion, (_, question, prompt) => {
         totalChanges++;
         const q = question || prompt || 'Enter question';
-        return `Use the \`ouroboros_ask\` tool with:
+        return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
 {
   "type": "task",
@@ -797,11 +811,11 @@ Use the appropriate Ouroboros LM Tool:
         totalChanges++;
         return `\`\`\`
 Use the appropriate Ouroboros LM Tool:
-- ouroboros_ask: For text input
-- ouroboros_menu: For multiple choice selection
-- ouroboros_confirm: For yes/no confirmation
-- ouroboros_plan_review: For plan/spec review
-- ouroboros_phase_progress: For workflow progress updates
+- ouroborosai_ask: For text input
+- ouroborosai_menu: For multiple choice selection
+- ouroborosai_confirm: For yes/no confirmation
+- ouroborosai_plan_review: For plan/spec review
+- ouroborosai_phase_progress: For workflow progress updates
 \`\`\``;
     });
     // =========================================================================
@@ -815,10 +829,7 @@ Use the appropriate Ouroboros LM Tool:
     );
 
     // Replace "via `run_command`" with "via Ouroboros LM Tools"
-    transformed = transformed.replace(
-        /via\s+`run_command`/gi,
-        'via Ouroboros LM Tools'
-    );
+    transformed = transformed.replace(/via\s+`run_command`/gi, 'via Ouroboros LM Tools');
 
     // Replace "Execute CCL via run_command" or similar
     transformed = transformed.replace(
@@ -833,10 +844,7 @@ Use the appropriate Ouroboros LM Tool:
     );
 
     // Replace remaining "run_command" references in context
-    transformed = transformed.replace(
-        /`run_command`\s+tool/gi,
-        'Ouroboros LM Tools'
-    );
+    transformed = transformed.replace(/`run_command`\s+tool/gi, 'Ouroboros LM Tools');
 
     // Add Extension mode header
     transformed = addExtensionModeHeader(transformed);
@@ -856,24 +864,27 @@ export function transformWorkerForExtensionMode(content: string): string {
 
     // Only transform documentation-context CCL references
     // Pattern: NEVER execute CCL (`python -c "..."`) - ... (in a sentence)
-    const patternDocNeverCCL = /NEVER\s+execute\s+CCL\s+\(`python -c "task = input\('\[Ouroboros\] > '\)"`\)/gi;
+    const patternDocNeverCCL =
+        /NEVER\s+execute\s+CCL\s+\(`python -c "task = input\('\[Ouroboros\] > '\)"`\)/gi;
     transformed = transformed.replace(patternDocNeverCCL, () => {
         totalChanges++;
-        return 'NEVER execute CCL (orchestrators use `ouroboros_ask` LM Tool)';
+        return 'NEVER execute CCL (orchestrators use `ouroborosai_ask` LM Tool)';
     });
 
     // Pattern: NEVER** execute `python -c "..."` - ...
-    const patternDocNeverInline = /NEVER\*\*\s+execute\s+`python -c "task = input\('\[Ouroboros\] > '\)"`/gi;
+    const patternDocNeverInline =
+        /NEVER\*\*\s+execute\s+`python -c "task = input\('\[Ouroboros\] > '\)"`/gi;
     transformed = transformed.replace(patternDocNeverInline, () => {
         totalChanges++;
-        return 'NEVER** execute `ouroboros_ask` or similar LM Tools';
+        return 'NEVER** execute `ouroborosai_ask` or similar LM Tools';
     });
 
     // Pattern: standalone `python -c "..."` followed by "- this is" or "- you are"
-    const patternDocInlineWithDash = /`python -c "task = input\('\[Ouroboros\] > '\)"`(\s*-\s*(this is|you are|CCL is))/gi;
+    const patternDocInlineWithDash =
+        /`python -c "task = input\('\[Ouroboros\] > '\)"`(\s*-\s*(this is|you are|CCL is))/gi;
     transformed = transformed.replace(patternDocInlineWithDash, (_, suffix) => {
         totalChanges++;
-        return '`ouroboros_ask` LM Tool' + suffix;
+        return '`ouroborosai_ask` LM Tool' + suffix;
     });
 
     // Replace "Only Level 0/1 may execute CCL" type references
@@ -900,12 +911,12 @@ function escapeQuotes(str: string): string {
  * Ouroboros LM Tools to inject into agent files
  */
 const OUROBOROS_TOOLS = [
-    'ouroboros.ouroboros/ouroboros_ask',
-    'ouroboros.ouroboros/ouroboros_menu',
-    'ouroboros.ouroboros/ouroboros_confirm',
-    'ouroboros.ouroboros/ouroboros_plan_review',
-    'ouroboros.ouroboros/ouroboros_phase_progress',
-    'ouroboros.ouroboros/ouroboros_agent_handoff',
+    'ouroboros-ai.ouroboros-ai/ouroborosai_ask',
+    'ouroboros-ai.ouroboros-ai/ouroborosai_menu',
+    'ouroboros-ai.ouroboros-ai/ouroborosai_confirm',
+    'ouroboros-ai.ouroboros-ai/ouroborosai_plan_review',
+    'ouroboros-ai.ouroboros-ai/ouroborosai_phase_progress',
+    'ouroboros-ai.ouroboros-ai/ouroborosai_agent_handoff',
 ];
 
 /**
@@ -931,8 +942,8 @@ function injectOuroborosTools(content: string): string {
         const existingToolsStr = toolsMatch[2];
         const existingTools = existingToolsStr
             .split(',')
-            .map(t => t.trim().replace(/^['"]|['"]$/g, ''))
-            .filter(t => t.length > 0);
+            .map((t) => t.trim().replace(/^['"]|['"]$/g, ''))
+            .filter((t) => t.length > 0);
 
         // Add ouroboros tools (avoid duplicates)
         const allTools = [...existingTools];
@@ -943,14 +954,14 @@ function injectOuroborosTools(content: string): string {
         }
 
         // Rebuild tools line
-        const newToolsLine = `tools: [${allTools.map(t => `'${t}'`).join(', ')}]`;
+        const newToolsLine = `tools: [${allTools.map((t) => `'${t}'`).join(', ')}]`;
         const newYamlContent = yamlContent.replace(toolsLineRegex, newToolsLine);
 
         return startDelim + newYamlContent + endDelim + restOfContent;
     }
 
     // No tools: line found, add one before the closing ---
-    const toolsLine = `tools: [${OUROBOROS_TOOLS.map(t => `'${t}'`).join(', ')}]`;
+    const toolsLine = `tools: [${OUROBOROS_TOOLS.map((t) => `'${t}'`).join(', ')}]`;
     const newYamlContent = yamlContent.trimEnd() + '\n' + toolsLine;
 
     return startDelim + newYamlContent + endDelim + restOfContent;
@@ -972,12 +983,12 @@ function addExtensionModeHeader(content: string): string {
   
   This file uses Ouroboros LM Tools instead of Python CCL commands.
   Available tools:
-  - ouroboros_ask: Request text input from user
-  - ouroboros_menu: Show multiple choice menu
-  - ouroboros_confirm: Request yes/no confirmation
-  - ouroboros_plan_review: Request plan/spec review
-  - ouroboros_phase_progress: Update workflow progress
-  - ouroboros_agent_handoff: Track agent handoffs
+  - ouroborosai_ask: Request text input from user
+  - ouroborosai_menu: Show multiple choice menu
+  - ouroborosai_confirm: Request yes/no confirmation
+  - ouroborosai_plan_review: Request plan/spec review
+  - ouroborosai_phase_progress: Update workflow progress
+  - ouroborosai_agent_handoff: Track agent handoffs
 -->
 
 `;
@@ -1045,8 +1056,10 @@ async function mergeFileContent(
         const existingText = new TextDecoder().decode(existingContent);
 
         // Check if already contains Ouroboros content
-        if (existingText.includes('<!-- OUROBOROS EXTENSION MODE') ||
-            existingText.includes('OUROBOROS EXTENSION MODE')) {
+        if (
+            existingText.includes('<!-- OUROBOROS EXTENSION MODE') ||
+            existingText.includes('OUROBOROS EXTENSION MODE')
+        ) {
             logger.info(`File already contains Ouroboros content, skipping: ${destUri.fsPath}`);
             return 'skipped';
         }
@@ -1088,7 +1101,6 @@ async function fetchFromGitHub(path: string): Promise<string | null> {
     }
 }
 
-
 /**
  * Fetch and transform all prompts from GitHub
  */
@@ -1107,7 +1119,11 @@ export async function fetchAndTransformPrompts(
 
     let success = 0;
     let failed = 0;
-    const totalFiles = ORCHESTRATOR_AGENT_FILES.length + WORKER_AGENT_FILES.length + PROMPT_FILES.length + CORE_FILES.length;
+    const totalFiles =
+        ORCHESTRATOR_AGENT_FILES.length +
+        WORKER_AGENT_FILES.length +
+        PROMPT_FILES.length +
+        CORE_FILES.length;
 
     // Fetch and transform ORCHESTRATOR agent files (Level 0 + 1 - need full transformation with tools)
     for (const file of ORCHESTRATOR_AGENT_FILES) {
@@ -1227,9 +1243,7 @@ export async function fetchAndTransformPrompts(
 /**
  * Create .ouroboros directory structure
  */
-export async function createOuroborosStructure(
-    workspaceRoot: vscode.Uri
-): Promise<void> {
+export async function createOuroborosStructure(workspaceRoot: vscode.Uri): Promise<void> {
     const ouroborosDir = vscode.Uri.joinPath(workspaceRoot, '.ouroboros');
     const specsDir = vscode.Uri.joinPath(ouroborosDir, 'specs');
     const templatesDir = vscode.Uri.joinPath(ouroborosDir, 'templates');
@@ -1259,12 +1273,12 @@ Use the Ouroboros extension sidebar or type \`/ouroboros\` in Copilot Chat.
 
 | Tool | Description |
 |------|-------------|
-| \`ouroboros_ask\` | Request text input from user |
-| \`ouroboros_menu\` | Show multiple choice menu |
-| \`ouroboros_confirm\` | Request yes/no confirmation |
-| \`ouroboros_plan_review\` | Request plan/spec review |
-| \`ouroboros_phase_progress\` | Update workflow progress |
-| \`ouroboros_agent_handoff\` | Track agent handoffs |
+| \`ouroborosai_ask\` | Request text input from user |
+| \`ouroborosai_menu\` | Show multiple choice menu |
+| \`ouroborosai_confirm\` | Request yes/no confirmation |
+| \`ouroborosai_plan_review\` | Request plan/spec review |
+| \`ouroborosai_phase_progress\` | Update workflow progress |
+| \`ouroborosai_agent_handoff\` | Track agent handoffs |
 `;
 
     const readmeUri = vscode.Uri.joinPath(ouroborosDir, 'README.md');

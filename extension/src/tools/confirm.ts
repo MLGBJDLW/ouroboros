@@ -41,10 +41,7 @@ export function createConfirmTool(
 
             try {
                 // Create pending request
-                const result = await sidebarProvider.createConfirmRequest(
-                    validation.data,
-                    token
-                );
+                const result = await sidebarProvider.createConfirmRequest(validation.data, token);
 
                 // Store interaction
                 await stateManager.addInteraction({
@@ -52,16 +49,12 @@ export function createConfirmTool(
                     agentName: input.agentName ?? 'unknown',
                     agentLevel: (input.agentLevel as 0 | 1 | 2) ?? 0,
                     question: input.question,
-                    response: result.timeout
-                        ? ''
-                        : result.confirmed
-                            ? 'yes'
-                            : 'no',
+                    response: result.timeout ? '' : result.confirmed ? 'yes' : 'no',
                     status: result.timeout
                         ? 'timeout'
                         : result.cancelled
-                            ? 'cancelled'
-                            : 'responded',
+                          ? 'cancelled'
+                          : 'responded',
                 });
 
                 const output: ConfirmOutput = {

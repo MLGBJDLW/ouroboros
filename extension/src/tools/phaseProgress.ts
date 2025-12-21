@@ -96,9 +96,7 @@ export function createPhaseProgressTool(
 /**
  * Show progress in status bar when webview is not available
  */
-async function showProgressInStatusBar(
-    input: PhaseProgressInput
-): Promise<void> {
+async function showProgressInStatusBar(input: PhaseProgressInput): Promise<void> {
     const workflowIcon = input.workflow === 'spec' ? '$(checklist)' : '$(gear)';
     const progress = Math.round((input.currentPhase / input.totalPhases) * 100);
 

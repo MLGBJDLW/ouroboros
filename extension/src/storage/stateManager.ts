@@ -5,12 +5,7 @@
 import * as vscode from 'vscode';
 import { DisposableBase } from '../utils/disposable';
 import { createLogger } from '../utils/logger';
-import {
-    STORAGE_KEYS,
-    CONFIG,
-    type ExecutionMode,
-    type WorkflowType,
-} from '../constants';
+import { STORAGE_KEYS, CONFIG, type ExecutionMode, type WorkflowType } from '../constants';
 import type { StoredInteraction, WorkflowContext } from '../tools/types';
 
 const logger = createLogger('StateManager');
@@ -47,8 +42,7 @@ export class StateManager extends DisposableBase {
         interactionHistory: [],
     };
 
-    private readonly onStateChangeEmitter =
-        new vscode.EventEmitter<WorkspaceState>();
+    private readonly onStateChangeEmitter = new vscode.EventEmitter<WorkspaceState>();
     public readonly onStateChange = this.onStateChangeEmitter.event;
 
     constructor(private readonly context: vscode.ExtensionContext) {
@@ -102,9 +96,7 @@ export class StateManager extends DisposableBase {
     /**
      * Update workspace state
      */
-    async updateWorkspaceState(
-        updates: Partial<WorkspaceState>
-    ): Promise<void> {
+    async updateWorkspaceState(updates: Partial<WorkspaceState>): Promise<void> {
         this.workspaceState = { ...this.workspaceState, ...updates };
 
         await this.context.workspaceState.update(
@@ -126,9 +118,7 @@ export class StateManager extends DisposableBase {
     /**
      * Add a new interaction to history
      */
-    async addInteraction(
-        interaction: Omit<StoredInteraction, 'id' | 'timestamp'>
-    ): Promise<void> {
+    async addInteraction(interaction: Omit<StoredInteraction, 'id' | 'timestamp'>): Promise<void> {
         const historyLimit = vscode.workspace
             .getConfiguration()
             .get<number>(CONFIG.HISTORY_LIMIT, 100);
@@ -160,10 +150,7 @@ export class StateManager extends DisposableBase {
      */
     async clearHistory(): Promise<void> {
         this.globalState.interactionHistory = [];
-        await this.context.globalState.update(
-            STORAGE_KEYS.GLOBAL.INTERACTION_HISTORY,
-            []
-        );
+        await this.context.globalState.update(STORAGE_KEYS.GLOBAL.INTERACTION_HISTORY, []);
         logger.info('Interaction history cleared');
     }
 

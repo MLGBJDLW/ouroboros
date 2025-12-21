@@ -2,8 +2,8 @@
  * Extension constants
  */
 
-export const EXTENSION_ID = 'ouroboros';
-export const EXTENSION_DISPLAY_NAME = 'Ouroboros';
+export const EXTENSION_ID = 'ouroboros-ai';
+export const EXTENSION_DISPLAY_NAME = 'Ouroboros AI';
 
 // View IDs
 export const SIDEBAR_VIEW_ID = 'ouroboros.sidebarView';
@@ -19,12 +19,12 @@ export const COMMANDS = {
 
 // Tool Names
 export const TOOLS = {
-    ASK: 'ouroboros_ask',
-    MENU: 'ouroboros_menu',
-    CONFIRM: 'ouroboros_confirm',
-    PLAN_REVIEW: 'ouroboros_plan_review',
-    PHASE_PROGRESS: 'ouroboros_phase_progress',
-    AGENT_HANDOFF: 'ouroboros_agent_handoff',
+    ASK: 'ouroborosai_ask',
+    MENU: 'ouroborosai_menu',
+    CONFIRM: 'ouroborosai_confirm',
+    PLAN_REVIEW: 'ouroborosai_plan_review',
+    PHASE_PROGRESS: 'ouroborosai_phase_progress',
+    AGENT_HANDOFF: 'ouroborosai_agent_handoff',
 } as const;
 
 // Configuration Keys

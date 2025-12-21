@@ -1,18 +1,33 @@
 # Changelog
 
-All notable changes to the Ouroboros VS Code Extension will be documented in this file.
+All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
+
+## [3.2.1] - 2025-12-21
+
+### Changed
+
+- Renamed extension from `ouroboros` to `ouroboros-ai` (marketplace name conflict)
+- Renamed all tool names from `ouroboros_*` to `ouroborosai_*`
+- Changed publisher to `MLGBJDLW`
+
+### Fixed
+
+- Added `.vscodeignore` to reduce package size
+- Added `LICENSE.md` file
+
+---
 
 ## [3.2.0] - 2025-12-21
 
 ### Added
 
 - **6 LM Tools** for native Copilot integration:
-  - `ouroboros_ask` - Get user input (task, question, feature)
-  - `ouroboros_menu` - Present multiple choice options
-  - `ouroboros_confirm` - Yes/No confirmation dialogs
-  - `ouroboros_plan_review` - Document/plan review and approval
-  - `ouroboros_phase_progress` - Report workflow phase progress
-  - `ouroboros_agent_handoff` - Track agent level transitions
+  - `ouroborosai_ask` - Get user input (task, question, feature)
+  - `ouroborosai_menu` - Present multiple choice options
+  - `ouroborosai_confirm` - Yes/No confirmation dialogs
+  - `ouroborosai_plan_review` - Document/plan review and approval
+  - `ouroborosai_phase_progress` - Report workflow phase progress
+  - `ouroborosai_agent_handoff` - Track agent level transitions
 
 - **React Webview UI** with 4 views:
   - Pending Requests (key: 1)

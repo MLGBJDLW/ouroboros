@@ -33,11 +33,7 @@ async function checkInitializationStatus(): Promise<{
     let isInitialized = false;
     if (workspaceFolders && workspaceFolders.length > 0) {
         try {
-            const agentsDir = vscode.Uri.joinPath(
-                workspaceFolders[0].uri,
-                '.github',
-                'agents'
-            );
+            const agentsDir = vscode.Uri.joinPath(workspaceFolders[0].uri, '.github', 'agents');
             await vscode.workspace.fs.stat(agentsDir);
             isInitialized = true;
         } catch {
@@ -140,10 +136,7 @@ export async function handleMessage(
             logger.info('Executing command:', payload.command);
             try {
                 const vscode = await import('vscode');
-                await vscode.commands.executeCommand(
-                    payload.command,
-                    ...(payload.args || [])
-                );
+                await vscode.commands.executeCommand(payload.command, ...(payload.args || []));
             } catch (error) {
                 logger.error('Failed to execute command:', error);
             }
@@ -155,9 +148,7 @@ export async function handleMessage(
             try {
                 const vscode = await import('vscode');
                 // Try to open Copilot Chat with /ouroboros
-                await vscode.commands.executeCommand(
-                    'workbench.panel.chat.view.copilot.focus'
-                );
+                await vscode.commands.executeCommand('workbench.panel.chat.view.copilot.focus');
             } catch (error) {
                 logger.error('Failed to open Copilot Chat:', error);
             }

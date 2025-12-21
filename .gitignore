@@ -51,6 +51,22 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+
+# ===========================================
+# EXTENSION BUILD & TEST ARTIFACTS
+# ===========================================
+# Coverage reports (vitest/istanbul)
+coverage/
+extension/coverage/
+
+# Build output
+extension/dist/
+extension/out/
+*.vsix
+
+# TypeScript build info
+*.tsbuildinfo
 
 # ===========================================
 # IDE & EDITORS

@@ -41,10 +41,7 @@ export function createAskTool(
 
             try {
                 // Create pending request
-                const result = await sidebarProvider.createAskRequest(
-                    validation.data,
-                    token
-                );
+                const result = await sidebarProvider.createAskRequest(validation.data, token);
 
                 // Store interaction
                 await stateManager.addInteraction({
@@ -56,8 +53,8 @@ export function createAskTool(
                     status: result.timeout
                         ? 'timeout'
                         : result.cancelled
-                            ? 'cancelled'
-                            : 'responded',
+                          ? 'cancelled'
+                          : 'responded',
                 });
 
                 const output: AskOutput = {

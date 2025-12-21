@@ -41,10 +41,7 @@ export function createMenuTool(
 
             try {
                 // Create pending request
-                const result = await sidebarProvider.createMenuRequest(
-                    validation.data,
-                    token
-                );
+                const result = await sidebarProvider.createMenuRequest(validation.data, token);
 
                 // Store interaction
                 await stateManager.addInteraction({
@@ -56,8 +53,8 @@ export function createMenuTool(
                     status: result.timeout
                         ? 'timeout'
                         : result.cancelled
-                            ? 'cancelled'
-                            : 'responded',
+                          ? 'cancelled'
+                          : 'responded',
                 });
 
                 const output: MenuOutput = {
