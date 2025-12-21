@@ -4,13 +4,18 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Helper type for mocked tool result
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
 // Mock vscode
 vi.mock('vscode', () => ({
     LanguageModelToolResult: class {
-        constructor(public parts: unknown[]) {}
+        constructor(public parts: unknown[]) { }
     },
     LanguageModelTextPart: class {
-        constructor(public text: string) {}
+        constructor(public text: string) { }
     },
     window: {
         setStatusBarMessage: vi.fn(),
@@ -54,7 +59,7 @@ describe('createHandoffTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
     });
 
@@ -76,7 +81,7 @@ describe('createHandoffTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.acknowledged).toBe(true);
         expect(mockSidebarProvider.updateAgentHandoff).toHaveBeenCalled();
     });
@@ -98,7 +103,7 @@ describe('createHandoffTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.acknowledged).toBe(true);
     });
 
@@ -123,7 +128,7 @@ describe('createHandoffTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.acknowledged).toBe(true);
         expect(output.fallback).toBe(true);
         expect(vscode.window.setStatusBarMessage).toHaveBeenCalled();

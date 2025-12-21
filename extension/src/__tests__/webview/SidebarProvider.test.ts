@@ -15,23 +15,23 @@ vi.mock('vscode', () => ({
         private listeners: ((e: unknown) => void)[] = [];
         event = (listener: (e: unknown) => void) => {
             this.listeners.push(listener);
-            return { dispose: () => {} };
+            return { dispose: () => { } };
         };
         fire(data: unknown) {
             this.listeners.forEach((l) => l(data));
         }
-        dispose() {}
+        dispose() { }
     },
     Disposable: class {
         static from() {
-            return { dispose: () => {} };
+            return { dispose: () => { } };
         }
-        dispose() {}
+        dispose() { }
     },
     CancellationTokenSource: class {
         token = {
             isCancellationRequested: false,
-            onCancellationRequested: vi.fn().mockReturnValue({ dispose: () => {} }),
+            onCancellationRequested: vi.fn().mockReturnValue({ dispose: () => { } }),
         };
         cancel() {
             this.token.isCancellationRequested = true;
@@ -78,7 +78,7 @@ describe('SidebarProvider', () => {
         vi.useFakeTimers();
 
         mockStateManager = {
-            onStateChange: vi.fn().mockReturnValue({ dispose: () => {} }),
+            onStateChange: vi.fn().mockReturnValue({ dispose: () => { } }),
             getWorkspaceState: vi.fn().mockReturnValue({}),
             getInteractionHistory: vi.fn().mockReturnValue([]),
         };
@@ -186,7 +186,7 @@ describe('SidebarProvider', () => {
                 { isCancellationRequested: false } as never
             );
 
-            expect(mockWebviewView.webview.options.enableScripts).toBe(true);
+            expect((mockWebviewView.webview.options as { enableScripts?: boolean }).enableScripts).toBe(true);
             expect(mockWebviewView.webview.html).toBeDefined();
             expect(mockWebviewView.webview.postMessage).toHaveBeenCalled();
 

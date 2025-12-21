@@ -78,6 +78,10 @@ function App() {
         vscode.postMessage({ type: 'openCopilotChat' });
     }, [vscode]);
 
+    const handleUpdatePrompts = useCallback(() => {
+        vscode.postMessage({ type: 'command', payload: { command: 'ouroboros.updatePrompts' } });
+    }, [vscode]);
+
     if (state.isLoading) {
         return (
             <div className={styles.loading}>
@@ -94,6 +98,7 @@ function App() {
                     <Welcome
                         onInitialize={handleInitialize}
                         onOpenCopilot={handleOpenCopilot}
+                        onUpdatePrompts={handleUpdatePrompts}
                         isInitialized={state.workspaceState?.isInitialized}
                         projectName={state.workspaceState?.projectName}
                     />

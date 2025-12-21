@@ -2,7 +2,7 @@
     "name": "ouroboros-ai",
     "displayName": "Ouroboros AI",
     "description": "Structured AI agent workflow with spec-driven development",
-    "version": "3.2.1",
+    "version": "3.2.2",
     "publisher": "MLGBJDLW",
     "license": "MIT",
     "icon": "resources/icon.png",
@@ -68,6 +68,16 @@
             {
                 "command": "ouroboros.cancelCurrentRequest",
                 "title": "Cancel Current Request",
+                "category": "Ouroboros"
+            },
+            {
+                "command": "ouroboros.updatePrompts",
+                "title": "Update Prompts (Preserve Custom Tools)",
+                "category": "Ouroboros"
+            },
+            {
+                "command": "ouroboros.checkPromptsVersion",
+                "title": "Check for Prompt Updates",
                 "category": "Ouroboros"
             }
         ],

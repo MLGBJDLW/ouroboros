@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Copilot Compatible](https://img.shields.io/badge/GitHub%20Copilot-Compatible-blue)](https://github.com/features/copilot)
 [![GitHub Release](https://img.shields.io/github/v/release/MLGBJDLW/ouroboros?label=Version&color=green)](https://github.com/MLGBJDLW/ouroboros/releases)
+[![VS Code Extension](https://img.shields.io/visual-studio-marketplace/v/MLGBJDLW.ouroboros-ai?label=VS%20Code%20Extension&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=MLGBJDLW.ouroboros-ai)
 [![CI](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml/badge.svg)](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml)
 
 ---
@@ -102,7 +103,7 @@ Experience Ouroboros with a rich visual interface in VS Code.
 
 **From VS Code Marketplace:**
 1. Open VS Code Extensions (`Ctrl+Shift+X`)
-2. Search for **"Ouroboros"**
+2. Search for **"Ouroboros AI"**
 3. Click Install
 4. Run: **Ouroboros: Initialize Project** from Command Palette (`Ctrl+Shift+P`)
 

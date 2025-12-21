@@ -4,13 +4,18 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Helper type for mocked tool result
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
 // Mock vscode
 vi.mock('vscode', () => ({
     LanguageModelToolResult: class {
-        constructor(public parts: unknown[]) {}
+        constructor(public parts: unknown[]) { }
     },
     LanguageModelTextPart: class {
-        constructor(public text: string) {}
+        constructor(public text: string) { }
     },
     window: {
         setStatusBarMessage: vi.fn(),
@@ -63,7 +68,7 @@ describe('createPhaseProgressTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
     });
 
@@ -88,7 +93,7 @@ describe('createPhaseProgressTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.acknowledged).toBe(true);
         expect(mockStateManager.updateWorkspaceState).toHaveBeenCalled();
         expect(mockSidebarProvider.updatePhaseProgress).toHaveBeenCalled();
@@ -115,7 +120,7 @@ describe('createPhaseProgressTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.acknowledged).toBe(true);
     });
 
@@ -143,7 +148,7 @@ describe('createPhaseProgressTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.acknowledged).toBe(true);
         expect(output.fallback).toBe(true);
         expect(vscode.window.setStatusBarMessage).toHaveBeenCalled();

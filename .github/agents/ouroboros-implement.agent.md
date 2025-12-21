@@ -190,6 +190,7 @@ runSubagent(
 [Progress]: X/Y tasks
 [Mode]: Task-by-Task | Phase-by-Phase | Auto-Run
 [Related Files]: src/auth.py, src/utils/token.py
+[Skills]: .github/skills/[name]/SKILL.md (Active via task/spec)
 
 ## Task
 Implement Task 2.1: [Task description]
@@ -202,6 +203,7 @@ Implement Task 2.1: [Task description]
 ## Gates
 - typecheck: PASS required
 - unit tests: PASS required
+- skills: Validated against active SKILL.md rules
 
 ## Constraints
 - No new dependencies
@@ -316,7 +318,7 @@ python -c "print('🎉 All tasks complete! Select next action:'); print(); print
 |------------|----------|
 | "Delegating to coder" | Call runSubagent() |
 | "Processing task X" | Dispatch appropriate agent |
-| "Executing CCL" | Use run_command tool |
+| "Executing CCL" | Use run_command tool |\r\n| "Spec complete" | Check Skill Suggestion triggers |
 | "Updating task status" | Delegate to writer |
 | "Verifying implementation" | Delegate to analyst/qa |
 

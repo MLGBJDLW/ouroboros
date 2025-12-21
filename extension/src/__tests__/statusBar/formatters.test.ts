@@ -13,70 +13,73 @@ import {
 } from '../../statusBar/formatters';
 import type { WorkspaceState } from '../../storage/stateManager';
 
+// Type helper for test fixtures with partial state
+type TestWorkspaceState = Partial<WorkspaceState>;
+
 describe('formatters', () => {
     describe('formatStatusBarText', () => {
         it('should show basic label when no spec is active', () => {
-            const state: WorkspaceState = {
+            const state: TestWorkspaceState = {
                 currentSpec: undefined,
                 currentPhase: 0,
                 workflowType: undefined,
                 executionMode: 'task-by-task',
             };
-            expect(formatStatusBarText(state)).toBe('$(infinity) Ouroboros');
+            expect(formatStatusBarText(state as WorkspaceState)).toBe('$(infinity) Ouroboros');
         });
 
         it('should show spec name when active', () => {
-            const state: WorkspaceState = {
+            const state: TestWorkspaceState = {
                 currentSpec: 'my-feature',
                 currentPhase: 0,
                 workflowType: undefined,
                 executionMode: undefined,
             };
-            const result = formatStatusBarText(state);
+            const result = formatStatusBarText(state as WorkspaceState);
             expect(result).toContain('my-feature');
         });
 
         it('should show phase number when set', () => {
-            const state: WorkspaceState = {
+            const state: TestWorkspaceState = {
                 currentSpec: 'test-spec',
                 currentPhase: 3,
                 workflowType: undefined,
                 executionMode: undefined,
             };
-            const result = formatStatusBarText(state);
+            const result = formatStatusBarText(state as WorkspaceState);
             expect(result).toContain('(3)');
         });
 
         it('should show workflow type when set', () => {
-            const state: WorkspaceState = {
+            const state: TestWorkspaceState = {
                 currentSpec: 'test-spec',
                 currentPhase: 1,
                 workflowType: 'spec',
                 executionMode: undefined,
             };
-            const result = formatStatusBarText(state);
+            const result = formatStatusBarText(state as WorkspaceState);
             expect(result).toContain('Spec');
         });
 
         it('should show execution mode when set', () => {
-            const state: WorkspaceState = {
+            const state: TestWorkspaceState = {
                 currentSpec: 'test-spec',
                 currentPhase: 1,
                 workflowType: 'implement',
                 executionMode: 'auto-run',
             };
-            const result = formatStatusBarText(state);
+            const result = formatStatusBarText(state as WorkspaceState);
             expect(result).toContain('Auto-Run');
         });
 
         it('should truncate long spec names', () => {
-            const state: WorkspaceState = {
+            const state: TestWorkspaceState = {
                 currentSpec: 'very-long-specification-name-that-exceeds-limit',
                 currentPhase: 1,
                 workflowType: undefined,
                 executionMode: undefined,
             };
-            const result = formatStatusBarText(state);
+            const result = formatStatusBarText(state as WorkspaceState);
             expect(result.length).toBeLessThan(100);
         });
     });

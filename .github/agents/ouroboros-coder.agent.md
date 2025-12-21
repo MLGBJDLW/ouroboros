@@ -69,6 +69,7 @@ Full implementation: .ouroboros/subagent-docs/coder-auth-impl-2025-12-11.md
 ### Step 1: Understand the Task
 - Read the task description carefully
 - Identify the target file(s) and expected behavior
+- **Check [Skills] context**: If a skill is listed or implied, `read` its SKILL.md rules immediately
 - Ask clarifying questions if requirements are ambiguous
 
 ### Step 2: Investigate Existing Code
@@ -79,6 +80,7 @@ Full implementation: .ouroboros/subagent-docs/coder-auth-impl-2025-12-11.md
 
 ### Step 3: Plan the Implementation
 - Break down the task into small, testable steps
+- Identified SKILL rules must be explicitly listed in plan
 - Identify potential edge cases and error conditions
 - **If you say "I'll implement X"** → Complete code MUST follow
 

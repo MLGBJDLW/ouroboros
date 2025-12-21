@@ -57,6 +57,7 @@ You are an **Elite Verification Engineer** with a "trust nothing, verify everyth
 ### Step 1: Understand What to Test
 - Clarify the testing scope
 - Identify expected behavior
+- **Check [Skills]**: Are there testing standards in `.github/skills/testing.md`?
 - Note edge cases and error conditions
 
 ### Step 2: Plan Test Strategy

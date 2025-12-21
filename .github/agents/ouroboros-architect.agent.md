@@ -99,6 +99,7 @@ Do NOT delete any sections from the template.
 ### Step 2: Research Options
 - Identify at least 2-3 alternative approaches
 - Research each option's implications
+- **Check [Skills]**: Apply architectural patterns defined in active SKILL.md
 - Consider existing patterns in the codebase
 
 ### Step 3: Analyze Trade-offs

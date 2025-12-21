@@ -4,13 +4,18 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Helper type for mocked tool result
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
 // Mock vscode
 vi.mock('vscode', () => ({
     LanguageModelToolResult: class {
-        constructor(public parts: unknown[]) {}
+        constructor(public parts: unknown[]) { }
     },
     LanguageModelTextPart: class {
-        constructor(public text: string) {}
+        constructor(public text: string) { }
     },
     window: {
         showInformationMessage: vi.fn(),
@@ -58,7 +63,7 @@ describe('createConfirmTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
     });
 
@@ -81,7 +86,7 @@ describe('createConfirmTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.confirmed).toBe(true);
         expect(output.cancelled).toBe(false);
     });
@@ -106,7 +111,7 @@ describe('createConfirmTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.timeout).toBe(true);
     });
 
@@ -128,7 +133,7 @@ describe('createConfirmTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.confirmed).toBe(true);
     });
 
@@ -152,7 +157,7 @@ describe('createConfirmTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.cancelled).toBe(true);
     });
 
@@ -185,7 +190,7 @@ describe('createConfirmTool', () => {
             'Cancel'
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.confirmed).toBe(true);
     });
 });

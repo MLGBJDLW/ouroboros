@@ -17,13 +17,17 @@ describe('validateInput', () => {
     it('should return success for valid input', () => {
         const result = validateInput(AskInputSchema, { type: 'task' });
         expect(result.success).toBe(true);
-        expect(result.data).toBeDefined();
+        if (result.success) {
+            expect(result.data).toBeDefined();
+        }
     });
 
     it('should return error for invalid input', () => {
         const result = validateInput(MenuInputSchema, { question: 'test' });
         expect(result.success).toBe(false);
-        expect(result.error).toBeDefined();
+        if (!result.success) {
+            expect(result.error).toBeDefined();
+        }
     });
 });
 

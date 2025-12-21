@@ -210,6 +210,7 @@ runSubagent(
     ## Context
     [Relevant project state]
     [Related Files]: path/to/file1.ts, path/to/file2.ts
+    [Skills]: .github/skills/[skill-name]/SKILL.md (Check if applies)
     
     ## Task
     [Specific action required]
@@ -222,6 +223,7 @@ runSubagent(
     ## Gates
     - typecheck: PASS required
     - tests: PASS required (specify which)
+    - skills: Validated against .github/skills/[name] (if applicable)
     
     ## Constraints
     - [No new dependencies]
@@ -261,6 +263,7 @@ Every response MUST follow this structure:
 [🎯 Goal]: Current objective
 [🤖 Routing]: → ouroboros-[agent]
 [📦 Result]: Summary of what was done
+[💡 Skill?]: If pattern detected, trigger Skill Suggestion (CCL Type D)
 [📌 Status]: OK | PARTIAL | FAIL | BLOCKED
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -270,7 +273,21 @@ Every response MUST follow this structure:
 
 ---
 
-## 🔁 Initialization Sequence
+## � SKILL SUGGESTION (Auto-Learning)
+
+**After task completion, CHECK these triggers:**
+- Same problem type solved 2+ times → Suggest skill
+- Complex fix (5+ steps, multiple retries) → Suggest skill
+- User praises solution ("很好", "perfect") → Suggest skill
+
+**If triggered, use CCL Type D:**
+```python
+python -c "print('📦 Skill Suggestion: This pattern may be reusable'); print(); print('[y] Yes - Save as Skill'); print('[n] No - Continue'); confirm = input('[y/n]: ')"
+```
+
+**If y**: Ask name (CCL Type C) → Delegate to Writer with COPY-THEN-MODIFY
+
+## �🔁 Initialization Sequence
 
 1. Dispatch `ouroboros-analyst` to check project state (if new session)
 2. Announce: `♾️ Ouroboros Activated. Session is LIVE.`
