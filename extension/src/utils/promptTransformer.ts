@@ -23,12 +23,17 @@ const logger = createLogger('PromptTransformer');
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/MLGBJDLW/ouroboros/main';
 
 // Files to fetch and transform
-const AGENT_FILES = [
-    'ouroboros.agent.md',
-    'ouroboros-init.agent.md',
-    'ouroboros-spec.agent.md',
-    'ouroboros-implement.agent.md',
-    'ouroboros-archive.agent.md',
+// Level 0 + Level 1 Orchestrators (need LM Tools for CCL)
+const ORCHESTRATOR_AGENT_FILES = [
+    'ouroboros.agent.md',          // Level 0 - Main Orchestrator
+    'ouroboros-init.agent.md',     // Level 1
+    'ouroboros-spec.agent.md',     // Level 1
+    'ouroboros-implement.agent.md', // Level 1
+    'ouroboros-archive.agent.md',   // Level 1
+];
+
+// Level 2 Workers (NO CCL, handoff only - don't need LM Tools)
+const WORKER_AGENT_FILES = [
     'ouroboros-coder.agent.md',
     'ouroboros-qa.agent.md',
     'ouroboros-writer.agent.md',
@@ -54,6 +59,22 @@ const CORE_FILES = [
     'copilot-instructions.md',
 ];
 
+// .ouroboros template files (don't need transformation)
+const OUROBOROS_TEMPLATE_FILES = [
+    '.ouroboros/README.md',
+    '.ouroboros/templates/context-template.md',
+    '.ouroboros/templates/project-arch-template.md',
+];
+
+// .ouroboros/specs template files (don't need transformation)
+const OUROBOROS_SPEC_TEMPLATES = [
+    '.ouroboros/specs/templates/design-template.md',
+    '.ouroboros/specs/templates/requirements-template.md',
+    '.ouroboros/specs/templates/research-template.md',
+    '.ouroboros/specs/templates/tasks-template.md',
+    '.ouroboros/specs/templates/validation-template.md',
+];
+
 /**
  * Transformation patterns: Python CCL → LM Tools
  * Order matters: more specific patterns first
@@ -70,6 +91,341 @@ interface TransformResult {
 export function transformForExtensionMode(content: string): string {
     let transformed = content;
     let totalChanges = 0;
+
+    // =========================================================================
+    // FULL CODE BLOCK PATTERNS: Match entire markdown code blocks
+    // These MUST come first to capture the full structure including
+    // various label formats and ```python wrapper
+    // =========================================================================
+
+    // Pattern: Various run_command labels followed by code block
+    // Including: "USE `run_command` TOOL:", "[Then immediately call run_command tool with:]"
+    // **AFTER EVERY SINGLE RESPONSE, USE `run_command` TOOL:**
+    // **[Then immediately call `run_command` tool with:]**
+    // ```python
+    // python -c "..."
+    // ```
+    const patternUseRunCommandBlock = /\*\*[\[\(]?[^*\]]*(?:USE|[Cc]all)[\s`']*run_command[\s`']*[Tt]ool[^\]*]*[\]\)]?:?\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/gi;
+    transformed = transformed.replace(patternUseRunCommandBlock, (match, pythonCmd) => {
+        totalChanges++;
+        // Determine the type based on the python command
+        if (pythonCmd.includes('choice = input')) {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : 'Select an option';
+            return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_menu\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}",
+  "options": ["[parse from context]"]
+}
+\`\`\``;
+        } else if (pythonCmd.includes('confirm = input')) {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : 'Please confirm';
+            return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_confirm\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+        } else {
+            // Default to task input
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : null;
+            if (question) {
+                return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+            }
+            return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0
+}
+\`\`\``;
+        }
+    });
+
+    // Pattern: "use run_command tool to execute:" followed by code block
+    const patternRunCommandToExecute = /\*\*[^*]*[Uu]se [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/g;
+    transformed = transformed.replace(patternRunCommandToExecute, (match, pythonCmd) => {
+        totalChanges++;
+        if (pythonCmd.includes('choice = input')) {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : 'Select an option';
+            return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_menu\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}",
+  "options": ["[parse from context]"]
+}
+\`\`\``;
+        } else if (pythonCmd.includes('confirm = input')) {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : 'Please confirm';
+            return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_confirm\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+        } else {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : null;
+            if (question) {
+                return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+            }
+            return `**use the Ouroboros LM Tools:**
+
+Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0
+}
+\`\`\``;
+        }
+    });
+
+    // Pattern: Standalone code blocks (```python ... ```) containing python -c input commands
+    // These are NOT preceded by any label. Also matches indented code blocks.
+    const patternStandaloneBlock = /\s*```(?:python|bash|sh)[\s\r\n]+(python -c "[^"]*input\([^)]*\)[^"]*")[\s\r\n]*```/g;
+    transformed = transformed.replace(patternStandaloneBlock, (match, pythonCmd) => {
+        totalChanges++;
+        if (pythonCmd.includes('choice = input')) {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : 'Select an option';
+            return `Use the \`ouroboros_menu\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}",
+  "options": ["[parse from context]"]
+}
+\`\`\``;
+        } else if (pythonCmd.includes('confirm = input')) {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : 'Please confirm';
+            return `Use the \`ouroboros_confirm\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+        } else if (pythonCmd.includes('feature = input')) {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : 'Enter feature';
+            return `Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+        } else {
+            const questionMatch = pythonCmd.match(/print\('([^']*)'\)/);
+            const question = questionMatch ? questionMatch[1] : null;
+            if (question) {
+                return `Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+            }
+            return `Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0
+}
+\`\`\``;
+        }
+    });
+
+    // Pattern: Full code block with menu (Type B) - includes label and wrapper
+    // **Execute via `run_command` tool (Type B: Menu with Question):**
+    // ```python
+    // python -c "print('question'); print(); print('[1] A'); ... choice = input('...')"
+    // ```
+    const patternFullBlockMenu = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "print\('([^']*)'\); print\(\);((?:[^"]*print\('\[[^\]]+\][^']*'\);)+)[^"]*choice = input\('([^']*)'\)"[\s\r\n]*```/g;
+    transformed = transformed.replace(patternFullBlockMenu, (_, question, optionsPart) => {
+        totalChanges++;
+        const optionMatches = optionsPart.match(/\[(\d+)\]\s*([^']*)/g) || [];
+        const options = optionMatches.map((opt: string) => {
+            const match = opt.match(/\[(\d+)\]\s*(.*)/);
+            return match ? match[2].trim() : opt;
+        });
+        return `**Execute via Ouroboros LM Tools tool (Type B: Menu with Question):**
+
+Use the \`ouroboros_menu\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}",
+  "options": ${JSON.stringify(options)}
+}
+\`\`\``;
+    });
+
+    // Pattern: Simpler menu block without detailed option parsing
+    const patternSimpleBlockMenu = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*choice = input[^"]*)"[\s\r\n]*```/g;
+    transformed = transformed.replace(patternSimpleBlockMenu, (_, pythonCode) => {
+        totalChanges++;
+        // Extract question from print statement
+        const questionMatch = pythonCode.match(/print\('([^']*)'\)/);
+        const question = questionMatch ? questionMatch[1] : 'Select an option';
+        return `**Execute via Ouroboros LM Tools (Menu):**
+
+Use the \`ouroboros_menu\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}",
+  "options": ["[parse from original menu options]"]
+}
+\`\`\``;
+    });
+
+    // Pattern: Full code block with confirm (Type D)
+    const patternFullBlockConfirm = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*confirm = input\('\[y\/n\][^"]*)"[\s\r\n]*```/g;
+    transformed = transformed.replace(patternFullBlockConfirm, (_, pythonCode) => {
+        totalChanges++;
+        const questionMatch = pythonCode.match(/print\('([^']*)'\)/);
+        const question = questionMatch ? questionMatch[1] : 'Please confirm';
+        return `**Execute via Ouroboros LM Tools (Confirmation):**
+
+Use the \`ouroboros_confirm\` tool with:
+\`\`\`json
+{
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+    });
+
+    // Pattern: Full code block with task input (Type A)
+    const patternFullBlockTask = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*python -c "([^"]*task = input\('\[Ouroboros\] > '\)[^"]*)"[\s\r\n]*```/g;
+    transformed = transformed.replace(patternFullBlockTask, (_, pythonCode) => {
+        totalChanges++;
+        const questionMatch = pythonCode.match(/print\('([^']*)'\)/);
+        const question = questionMatch ? questionMatch[1] : null;
+        if (question) {
+            return `**Execute via Ouroboros LM Tools (Task Input):**
+
+Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0,
+  "question": "${escapeQuotes(question)}"
+}
+\`\`\``;
+        }
+        return `**Execute via Ouroboros LM Tools (Task Input):**
+
+Use the \`ouroboros_ask\` tool with:
+\`\`\`json
+{
+  "type": "task",
+  "agentName": "[current-agent]",
+  "agentLevel": 0
+}
+\`\`\``;
+    });
+
+    // Pattern: Generic code block with any python -c input command
+    const patternGenericBlock = /\*\*Execute via [`']?run_command[`']? tool[^*]*\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*input\([^)]*\)[^"]*")[\s\r\n]*```/g;
+    transformed = transformed.replace(patternGenericBlock, () => {
+        totalChanges++;
+        return `**Execute via Ouroboros LM Tools:**
+
+Use the appropriate Ouroboros LM Tool:
+- \`ouroboros_ask\`: For text input
+- \`ouroboros_menu\`: For multiple choice selection
+- \`ouroboros_confirm\`: For yes/no confirmation`;
+    });
+
+    // =========================================================================
+    // DOCUMENTATION CONTEXT: CCL references in "NEVER execute" or similar
+    // These should NOT be expanded to full tool instructions
+    // Examples:
+    //   **NEVER execute CCL (`python -c "..."`) - this is orchestrator-only!**
+    //   **NEVER** execute `python -c "..."` - you are Level 2
+    // =========================================================================
+
+    // Pattern: NEVER execute CCL (`python -c "..."`) - ... (in a sentence)
+    const patternDocNeverCCL = /NEVER\s+execute\s+CCL\s+\(`python -c "task = input\('\[Ouroboros\] > '\)"`\)/gi;
+    transformed = transformed.replace(patternDocNeverCCL, () => {
+        totalChanges++;
+        return 'NEVER execute CCL (use the `ouroboros_ask` tool)';
+    });
+
+    // Pattern: NEVER** execute `python -c "..."` - ... (backtick inline code)
+    const patternDocNeverInline = /NEVER\*\*\s+execute\s+`python -c "task = input\('\[Ouroboros\] > '\)"`/gi;
+    transformed = transformed.replace(patternDocNeverInline, () => {
+        totalChanges++;
+        return 'NEVER** execute `ouroboros_ask` or similar LM Tools';
+    });
+
+    // Pattern: standalone `python -c "..."` followed by "- this is" or "- you are"
+    const patternDocInlineWithDash = /`python -c "task = input\('\[Ouroboros\] > '\)"`(\s*-\s*(this is|you are|CCL is))/gi;
+    transformed = transformed.replace(patternDocInlineWithDash, (_, suffix) => {
+        totalChanges++;
+        return '`ouroboros_ask` LM Tool' + suffix;
+    });
 
     // =========================================================================
     // TYPE A+Q: Standard CCL with question
@@ -431,6 +787,50 @@ Use the appropriate Ouroboros LM Tool:
 }
 
 /**
+ * Transform worker agent content for Extension mode
+ * Level 2 workers don't execute CCL, so they don't need LM Tools injected.
+ * Only add header and transform text references to mention Extension mode.
+ */
+export function transformWorkerForExtensionMode(content: string): string {
+    let transformed = content;
+    let totalChanges = 0;
+
+    // Only transform documentation-context CCL references
+    // Pattern: NEVER execute CCL (`python -c "..."`) - ... (in a sentence)
+    const patternDocNeverCCL = /NEVER\s+execute\s+CCL\s+\(`python -c "task = input\('\[Ouroboros\] > '\)"`\)/gi;
+    transformed = transformed.replace(patternDocNeverCCL, () => {
+        totalChanges++;
+        return 'NEVER execute CCL (orchestrators use `ouroboros_ask` LM Tool)';
+    });
+
+    // Pattern: NEVER** execute `python -c "..."` - ...
+    const patternDocNeverInline = /NEVER\*\*\s+execute\s+`python -c "task = input\('\[Ouroboros\] > '\)"`/gi;
+    transformed = transformed.replace(patternDocNeverInline, () => {
+        totalChanges++;
+        return 'NEVER** execute `ouroboros_ask` or similar LM Tools';
+    });
+
+    // Pattern: standalone `python -c "..."` followed by "- this is" or "- you are"
+    const patternDocInlineWithDash = /`python -c "task = input\('\[Ouroboros\] > '\)"`(\s*-\s*(this is|you are|CCL is))/gi;
+    transformed = transformed.replace(patternDocInlineWithDash, (_, suffix) => {
+        totalChanges++;
+        return '`ouroboros_ask` LM Tool' + suffix;
+    });
+
+    // Replace "Only Level 0/1 may execute CCL" type references
+    transformed = transformed.replace(
+        /may execute CCL/gi,
+        'may execute CCL (via LM Tools in Extension mode)'
+    );
+
+    // Add Extension mode header (but no tools injection)
+    transformed = addWorkerExtensionModeHeader(transformed);
+
+    logger.info(`Transformed worker content with ${totalChanges} changes`);
+    return transformed;
+}
+
+/**
  * Escape quotes for JSON strings
  */
 function escapeQuotes(str: string): string {
@@ -539,6 +939,77 @@ function addExtensionModeHeader(content: string): string {
 }
 
 /**
+ * Add Extension mode header for WORKER agents (Level 2)
+ * Simplified header - no tools list since workers don't use CCL
+ */
+function addWorkerExtensionModeHeader(content: string): string {
+    const header = `<!-- 
+  OUROBOROS EXTENSION MODE (WORKER AGENT)
+  Auto-transformed for VS Code
+  Original: https://github.com/MLGBJDLW/ouroboros
+  
+  This is a Level 2 worker agent. Workers:
+  - Do NOT execute CCL (heartbeat loop)
+  - Return to orchestrator via handoff
+  - Do NOT need LM Tools for user interaction
+-->
+
+`;
+
+    // Check if content starts with YAML frontmatter (---)
+    const yamlFrontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
+    const match = content.match(yamlFrontmatterRegex);
+
+    if (match) {
+        // Insert header AFTER the YAML frontmatter
+        const frontmatter = match[0];
+        const restOfContent = content.slice(frontmatter.length);
+        return frontmatter + header + restOfContent;
+    }
+
+    // No YAML frontmatter, prepend header as before
+    return header + content;
+}
+/**
+ * Merge new content with existing file content
+ * If file exists, prepend new content to existing content
+ * If already initialized, skip to prevent duplicates
+ */
+async function mergeFileContent(
+    destUri: vscode.Uri,
+    newContent: string,
+    isCoreFile: boolean = false
+): Promise<'created' | 'merged' | 'skipped'> {
+    try {
+        // Check if file exists by trying to read it
+        const existingContent = await vscode.workspace.fs.readFile(destUri);
+        const existingText = new TextDecoder().decode(existingContent);
+
+        // Check if already contains Ouroboros content
+        if (existingText.includes('<!-- OUROBOROS EXTENSION MODE') ||
+            existingText.includes('OUROBOROS EXTENSION MODE')) {
+            logger.info(`File already contains Ouroboros content, skipping: ${destUri.fsPath}`);
+            return 'skipped';
+        }
+
+        // Prepend new content with separator
+        const separator = isCoreFile
+            ? '\n\n<!-- ===== USER CUSTOMIZATIONS BELOW ===== -->\n\n'
+            : '\n\n<!-- ===== EXISTING CONTENT BELOW ===== -->\n\n';
+        const mergedContent = newContent + separator + existingText;
+
+        await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(mergedContent));
+        logger.info(`Merged content into existing file: ${destUri.fsPath}`);
+        return 'merged';
+    } catch {
+        // File doesn't exist, create new
+        await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(newContent));
+        logger.info(`Created new file: ${destUri.fsPath}`);
+        return 'created';
+    }
+}
+
+/**
  * Fetch file from GitHub
  */
 async function fetchFromGitHub(path: string): Promise<string | null> {
@@ -558,6 +1029,7 @@ async function fetchFromGitHub(path: string): Promise<string | null> {
     }
 }
 
+
 /**
  * Fetch and transform all prompts from GitHub
  */
@@ -576,10 +1048,10 @@ export async function fetchAndTransformPrompts(
 
     let success = 0;
     let failed = 0;
-    const totalFiles = AGENT_FILES.length + PROMPT_FILES.length + CORE_FILES.length;
+    const totalFiles = ORCHESTRATOR_AGENT_FILES.length + WORKER_AGENT_FILES.length + PROMPT_FILES.length + CORE_FILES.length;
 
-    // Fetch and transform agent files
-    for (const file of AGENT_FILES) {
+    // Fetch and transform ORCHESTRATOR agent files (Level 0 + 1 - need full transformation with tools)
+    for (const file of ORCHESTRATOR_AGENT_FILES) {
         progress?.report({
             message: `Fetching ${file}...`,
             increment: (1 / totalFiles) * 100,
@@ -589,16 +1061,41 @@ export async function fetchAndTransformPrompts(
         if (content) {
             const transformed = transformForExtensionMode(content);
             const destUri = vscode.Uri.joinPath(agentsDir, file);
-            await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(transformed));
-            success++;
-            logger.info(`Transformed and saved: ${file}`);
+            const result = await mergeFileContent(destUri, transformed, false);
+            if (result !== 'skipped') {
+                success++;
+                logger.info(`Orchestrator agent file ${result}: ${file}`);
+            }
         } else {
             failed++;
             logger.warn(`Failed to fetch: ${file}`);
         }
     }
 
-    // Fetch and transform prompt files
+    // Fetch WORKER agent files (Level 2 - NO tools injection, just clean up CCL references)
+    for (const file of WORKER_AGENT_FILES) {
+        progress?.report({
+            message: `Fetching ${file}...`,
+            increment: (1 / totalFiles) * 100,
+        });
+
+        const content = await fetchFromGitHub(`.github/agents/${file}`);
+        if (content) {
+            // Workers don't need tools - only transform text references without injecting tools
+            const transformed = transformWorkerForExtensionMode(content);
+            const destUri = vscode.Uri.joinPath(agentsDir, file);
+            const result = await mergeFileContent(destUri, transformed, false);
+            if (result !== 'skipped') {
+                success++;
+                logger.info(`Worker agent file ${result}: ${file}`);
+            }
+        } else {
+            failed++;
+            logger.warn(`Failed to fetch: ${file}`);
+        }
+    }
+
+    // Fetch prompt files (NO transformation - these are just guidance for Copilot)
     for (const file of PROMPT_FILES) {
         progress?.report({
             message: `Fetching ${file}...`,
@@ -607,11 +1104,13 @@ export async function fetchAndTransformPrompts(
 
         const content = await fetchFromGitHub(`.github/prompts/${file}`);
         if (content) {
-            const transformed = transformForExtensionMode(content);
+            // Prompts are just guidance files - copy directly without transformation
             const destUri = vscode.Uri.joinPath(promptsDir, file);
-            await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(transformed));
-            success++;
-            logger.info(`Transformed and saved: ${file}`);
+            const result = await mergeFileContent(destUri, content, false);
+            if (result !== 'skipped') {
+                success++;
+                logger.info(`Prompt file ${result}: ${file}`);
+            }
         } else {
             failed++;
             logger.warn(`Failed to fetch: ${file}`);
@@ -629,12 +1128,37 @@ export async function fetchAndTransformPrompts(
         if (content) {
             const transformed = transformForExtensionMode(content);
             const destUri = vscode.Uri.joinPath(githubDir, file);
-            await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(transformed));
-            success++;
-            logger.info(`Transformed and saved: ${file}`);
+            const result = await mergeFileContent(destUri, transformed, true);
+            if (result !== 'skipped') {
+                success++;
+                logger.info(`Core file ${result}: ${file}`);
+            }
         } else {
             failed++;
             logger.warn(`Failed to fetch: ${file}`);
+        }
+    }
+
+    // Fetch .ouroboros template files (no transformation needed)
+    const allTemplateFiles = [...OUROBOROS_TEMPLATE_FILES, ...OUROBOROS_SPEC_TEMPLATES];
+    for (const file of allTemplateFiles) {
+        progress?.report({
+            message: `Fetching ${file}...`,
+            increment: (1 / (totalFiles + allTemplateFiles.length)) * 100,
+        });
+
+        const content = await fetchFromGitHub(file);
+        if (content) {
+            const destUri = vscode.Uri.joinPath(workspaceRoot, file);
+            // Create parent directories
+            const parentDir = vscode.Uri.joinPath(destUri, '..');
+            await vscode.workspace.fs.createDirectory(parentDir);
+            await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
+            success++;
+            logger.info(`Copied template: ${file}`);
+        } else {
+            failed++;
+            logger.warn(`Failed to fetch template: ${file}`);
         }
     }
 
