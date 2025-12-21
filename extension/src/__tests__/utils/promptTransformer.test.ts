@@ -6,6 +6,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     transformForExtensionMode,
     transformWorkerForExtensionMode,
+    extractYamlFrontmatter,
+    preserveYamlFrontmatter,
 } from '../../utils/promptTransformer';
 
 // Mock vscode for fetchAndTransformPrompts tests
@@ -342,5 +344,95 @@ description: Worker
     it('should handle empty input', () => {
         const result = transformWorkerForExtensionMode('');
         expect(result).toContain('WORKER AGENT');
+    });
+});
+
+describe('extractYamlFrontmatter', () => {
+    it('should extract YAML frontmatter from content', () => {
+        const content = `---
+description: Test agent
+tools: ['read', 'write']
+---
+# Content here`;
+        const result = extractYamlFrontmatter(content);
+        expect(result).not.toBeNull();
+        expect(result?.content).toContain('description: Test agent');
+        expect(result?.body).toContain('# Content here');
+    });
+
+    it('should return null for content without frontmatter', () => {
+        const content = '# No YAML here\nJust content';
+        const result = extractYamlFrontmatter(content);
+        expect(result).toBeNull();
+    });
+
+    it('should handle minimal YAML frontmatter', () => {
+        const content = `---
+description: ""
+---
+# Content`;
+        const result = extractYamlFrontmatter(content);
+        expect(result).not.toBeNull();
+        expect(result?.content).toBe('description: ""');
+    });
+});
+
+describe('preserveYamlFrontmatter', () => {
+    it('should preserve user YAML while updating body', () => {
+        const existingContent = `---
+description: My custom description
+tools: ['read', 'my-custom-tool']
+---
+# Old content`;
+
+        const newContent = `---
+description: Default description
+tools: ['read']
+---
+# New content`;
+
+        const result = preserveYamlFrontmatter(existingContent, newContent);
+        expect(result).toContain('My custom description');
+        expect(result).toContain('my-custom-tool');
+        expect(result).toContain('# New content');
+        expect(result).not.toContain('# Old content');
+    });
+
+    it('should use new content when existing has no YAML', () => {
+        const existingContent = '# Just content, no YAML';
+        const newContent = `---
+description: New
+---
+# New content`;
+
+        const result = preserveYamlFrontmatter(existingContent, newContent);
+        expect(result).toBe(newContent);
+    });
+
+    it('should keep existing when new content has no YAML', () => {
+        const existingContent = `---
+description: Existing
+---
+# Existing content`;
+        const newContent = '# New content without YAML';
+
+        const result = preserveYamlFrontmatter(existingContent, newContent);
+        expect(result).toBe(existingContent);
+    });
+
+    it('should inject Ouroboros tools for orchestrators', () => {
+        const existingContent = `---
+description: Orchestrator
+tools: ['agent']
+---
+# Content`;
+
+        const newContent = `---
+description: Default
+---
+# New content`;
+
+        const result = preserveYamlFrontmatter(existingContent, newContent, true);
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_ask');
     });
 });

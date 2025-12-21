@@ -4,13 +4,18 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Helper type for mocked tool result
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
 // Mock vscode
 vi.mock('vscode', () => ({
     LanguageModelToolResult: class {
-        constructor(public parts: unknown[]) {}
+        constructor(public parts: unknown[]) { }
     },
     LanguageModelTextPart: class {
-        constructor(public text: string) {}
+        constructor(public text: string) { }
     },
     workspace: {
         openTextDocument: vi.fn(),
@@ -63,7 +68,7 @@ describe('createPlanReviewTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
     });
 
@@ -88,7 +93,7 @@ describe('createPlanReviewTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.approved).toBe(true);
         expect(mockStateManager.addInteraction).toHaveBeenCalled();
     });
@@ -114,7 +119,7 @@ describe('createPlanReviewTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.approved).toBe(false);
         expect(output.feedback).toBe('Please add more details');
     });
@@ -139,7 +144,7 @@ describe('createPlanReviewTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.timeout).toBe(true);
     });
 
@@ -166,7 +171,7 @@ describe('createPlanReviewTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.approved).toBe(true);
     });
 
@@ -195,7 +200,7 @@ describe('createPlanReviewTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.approved).toBe(false);
         expect(output.feedback).toBe('Add more tests');
     });
@@ -222,7 +227,7 @@ describe('createPlanReviewTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.cancelled).toBe(true);
     });
 });

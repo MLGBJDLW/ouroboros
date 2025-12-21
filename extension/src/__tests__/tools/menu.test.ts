@@ -4,13 +4,18 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Helper type for mocked tool result
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
 // Mock vscode
 vi.mock('vscode', () => ({
     LanguageModelToolResult: class {
-        constructor(public parts: unknown[]) {}
+        constructor(public parts: unknown[]) { }
     },
     LanguageModelTextPart: class {
-        constructor(public text: string) {}
+        constructor(public text: string) { }
     },
     window: {
         showQuickPick: vi.fn(),
@@ -59,7 +64,7 @@ describe('createMenuTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
     });
 
@@ -85,7 +90,7 @@ describe('createMenuTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.selectedIndex).toBe(1);
         expect(output.selectedOption).toBe('Option B');
     });
@@ -113,7 +118,7 @@ describe('createMenuTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.timeout).toBe(true);
     });
 
@@ -143,7 +148,7 @@ describe('createMenuTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         // The fallback uses indexOf which may return -1 if the mock doesn't match exactly
         expect(output.cancelled).toBe(false);
     });
@@ -167,7 +172,7 @@ describe('createMenuTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.cancelled).toBe(true);
     });
 
@@ -194,7 +199,7 @@ describe('createMenuTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result.parts[0] as { text: string }).text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.isCustom).toBe(true);
         expect(output.selectedOption).toBe('custom value');
     });
