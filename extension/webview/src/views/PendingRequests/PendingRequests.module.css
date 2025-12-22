@@ -2,10 +2,10 @@
 .container {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     height: 100%;
-    position: relative;
-    padding-bottom: 70px;
-    /* Space for fixed input */
+    padding: var(--spacing-md);
 }
 
 /* Empty State */
@@ -16,22 +16,21 @@
     justify-content: center;
     text-align: center;
     color: var(--foreground-secondary);
-    margin-top: 20%;
     animation: fadeIn 0.4s var(--transition-normal);
 }
 
 .emptyIcon {
-    font-size: 48px;
-    margin-bottom: var(--spacing-md);
+    font-size: 32px;
+    margin-bottom: var(--spacing-sm);
     opacity: 0.3;
     color: var(--info);
 }
 
 .emptyHint {
-    font-size: 13px;
+    font-size: 12px;
     opacity: 0.7;
-    max-width: 250px;
-    line-height: 1.5;
+    max-width: 200px;
+    line-height: 1.4;
 }
 
 @keyframes fadeIn {
@@ -48,7 +47,8 @@
 
 /* Chat Messages (Request Items) */
 .listItem {
-    margin-bottom: var(--spacing-lg);
+    width: 100%;
+    max-width: 400px;
     animation: slideIn 0.3s var(--transition-normal);
 }
 
@@ -66,21 +66,16 @@
 
 /* Agent Message Bubble (Request) */
 .messageBubble {
-    background: linear-gradient(135deg, var(--background-secondary) 0%, rgba(37, 37, 38, 0.95) 100%);
+    background: var(--background-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    border-top-left-radius: 4px;
     padding: var(--spacing-lg);
-    max-width: 100%;
-    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    position: relative;
-    backdrop-filter: blur(8px);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 0.2s ease;
 }
 
 .messageBubble:hover {
-    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
 }
 
 .header {
@@ -239,9 +234,12 @@
     width: 100%;
     text-align: left;
     justify-content: flex-start;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 12px;
 }
 
 .confirmButtons {
     display: flex;
     gap: var(--spacing-sm);
+    flex-wrap: wrap;
 }

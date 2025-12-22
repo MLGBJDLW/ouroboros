@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { usePendingRequests } from '../../hooks/usePendingRequests';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
@@ -9,14 +9,6 @@ import styles from './PendingRequests.module.css';
 
 export function PendingRequests() {
     const { requests, respond, cancel } = usePendingRequests();
-    const bottomRef = useRef<HTMLDivElement>(null);
-
-    // Auto-scroll to bottom
-    useEffect(() => {
-        if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [requests.length]);
 
     if (requests.length === 0) {
         return (
@@ -24,24 +16,24 @@ export function PendingRequests() {
                 <Icon name="comment-discussion" className={styles.emptyIcon} />
                 <h3>No pending requests</h3>
                 <p className={styles.emptyHint}>
-                    Ouroboros is idle. Trigger an agent action to see requests here.
+                    Waiting for agent input...
                 </p>
             </div>
         );
     }
 
+    // Only show the most recent request (centered)
+    const currentRequest = requests[requests.length - 1];
+
     return (
         <div className={styles.container}>
-            {requests.map((request) => (
-                <div key={request.id} className={styles.listItem}>
-                    <RequestChatBubble
-                        request={request}
-                        onRespond={respond}
-                        onCancel={cancel}
-                    />
-                </div>
-            ))}
-            <div ref={bottomRef} />
+            <div className={styles.listItem}>
+                <RequestChatBubble
+                    request={currentRequest}
+                    onRespond={respond}
+                    onCancel={cancel}
+                />
+            </div>
         </div>
     );
 }
