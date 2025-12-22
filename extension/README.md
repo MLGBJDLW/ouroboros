@@ -2,7 +2,9 @@
 
 > Structured AI agent workflow with spec-driven development
 
-![Ouroboros Logo](resources/icon.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MLGBJDLW/ouroboros/main/extension/resources/icon.png" alt="Ouroboros Logo" width="128" />
+</p>
 
 ## Features
 

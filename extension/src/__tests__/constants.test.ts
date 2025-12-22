@@ -93,8 +93,8 @@ describe('constants', () => {
     });
 
     describe('TIMEOUTS', () => {
-        it('should have user confirmation timeout of 5 minutes', () => {
-            expect(TIMEOUTS.USER_CONFIRMATION).toBe(5 * 60 * 1000);
+        it('should have user confirmation timeout of 30 minutes', () => {
+            expect(TIMEOUTS.USER_CONFIRMATION).toBe(30 * 60 * 1000);
         });
 
         it('should have auto run task timeout of 30 seconds', () => {

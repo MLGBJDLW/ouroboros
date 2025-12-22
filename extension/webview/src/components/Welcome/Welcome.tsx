@@ -3,32 +3,52 @@ import { Button } from '../Button';
 import { Card, CardHeader, CardBody } from '../Card';
 import { Badge } from '../Badge';
 import { Logo } from '../Logo';
+import type { WorkspaceInfo } from '../../types/messages';
 import styles from './Welcome.module.css';
 
 interface WelcomeProps {
     onInitialize?: () => void;
     onOpenCopilot?: () => void;
     onUpdatePrompts?: () => void;
+    onSelectWorkspace?: (path: string) => void;
     isInitialized?: boolean;
     hasCopilotChatOpened?: boolean;
     hasUpdates?: boolean;
     projectName?: string;
+    workspaces?: WorkspaceInfo[];
+    selectedWorkspacePath?: string;
 }
 
 export function Welcome({
     onInitialize,
     onOpenCopilot,
     onUpdatePrompts,
+    onSelectWorkspace,
     isInitialized = false,
     hasCopilotChatOpened = false,
     hasUpdates = false,
     projectName,
+    workspaces = [],
+    selectedWorkspacePath,
 }: WelcomeProps) {
+    const showWorkspaceSelector = workspaces.length > 1;
+    const effectiveSelectedPath = selectedWorkspacePath || workspaces[0]?.path;
+
     return (
         <div className={styles.container}>
             {/* Logo and Title */}
             <div className={styles.header}>
-                <Logo size={64} className={styles.logo} />
+                <div className={styles.logoContainer}>
+                    {/* Particle effects */}
+                    <div className={styles.particles}>
+                        {[...Array(12)].map((_, i) => (
+                            <span key={i} className={styles.particle} style={{ '--i': i } as React.CSSProperties} />
+                        ))}
+                    </div>
+                    {/* Glow ring */}
+                    <div className={styles.glowRing} />
+                    <Logo size={64} className={styles.logo} />
+                </div>
                 <h1 className={styles.title}>Ouroboros</h1>
                 <p className={styles.subtitle}>Spec-Driven AI Workflow</p>
             </div>
@@ -77,6 +97,26 @@ export function Welcome({
                         <p className={styles.stepDesc}>
                             Copy agents, prompts, and templates to your workspace
                         </p>
+                        {/* Workspace Selector for multi-root workspaces */}
+                        {showWorkspaceSelector && (
+                            <div className={styles.workspaceSelector}>
+                                <label className={styles.workspaceLabel}>
+                                    <Icon name="folder" />
+                                    Target workspace:
+                                </label>
+                                <select
+                                    className={styles.workspaceSelect}
+                                    value={effectiveSelectedPath}
+                                    onChange={(e) => onSelectWorkspace?.(e.target.value)}
+                                >
+                                    {workspaces.map((ws) => (
+                                        <option key={ws.path} value={ws.path}>
+                                            {ws.name} {ws.isInitialized ? '✓' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <Button
                             variant={isInitialized ? 'secondary' : 'primary'}
                             className={styles.actionButton}

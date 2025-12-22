@@ -4,12 +4,34 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 
 ## [3.2.3] - 2025-12-21
 
+### Added
+
+- **Multi-Root Workspace Selector** — Choose which workspace to initialize in multi-root projects:
+  - Dropdown appears in Step 1 when multiple workspaces are open
+  - Shows initialization status (✓) for each workspace
+  - Selection persists across extension reloads
+
 ### Fixed
+
+- **Template Download on Update** — `.ouroboros/templates/` files now download during "Update Prompts"
+  - Previously only downloaded during initial setup via `fetchAndTransformPrompts()`
+  - Added template files loop to `smartUpdatePrompts()` in `promptTransformer.ts`
 
 - **Copilot Chat Step Detection** — "Start Ouroboros" step now shows ✓ after opening Copilot Chat
   - Added `hasCopilotChatOpened` state tracking
   - Step 2 badge updates from "2" to green "✓" after clicking "Open Copilot Chat"
   - State persists across extension reloads
+
+- **State Update Bug** — Fixed workspace detection breaking after clicking "Open Copilot Chat"
+  - `stateUpdate` message now includes `projectName` and `isInitialized`
+
+### Changed
+
+- **Modernized Chat UI** — Upgraded Pending Requests interface:
+  - Message bubbles with gradient backgrounds and hover lift effect
+  - Larger textarea (min-height 60px → 100px) with focus glow
+  - Added "Shift+Enter for new line" hint
+  - Improved shadows and animations
 
 ---
 

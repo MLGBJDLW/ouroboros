@@ -62,6 +62,7 @@ const OUROBOROS_TEMPLATE_FILES = [
     '.ouroboros/README.md',
     '.ouroboros/templates/context-template.md',
     '.ouroboros/templates/project-arch-template.md',
+    '.ouroboros/templates/skill-template.md',
 ];
 
 // .ouroboros/specs template files (don't need transformation)
@@ -1499,6 +1500,30 @@ export async function smartUpdatePrompts(
         } else {
             failed++;
             logger.warn(`Failed to fetch: ${file}`);
+        }
+    }
+
+    // Update .ouroboros template files (no transformation needed)
+    const allTemplateFiles = [...OUROBOROS_TEMPLATE_FILES, ...OUROBOROS_SPEC_TEMPLATES];
+    for (const file of allTemplateFiles) {
+        progress?.report({
+            message: `Updating ${file}...`,
+            increment: (1 / (totalFiles + allTemplateFiles.length)) * 100,
+        });
+
+        const content = await fetchFromGitHub(file);
+        if (content) {
+            const destUri = vscode.Uri.joinPath(workspaceRoot, file);
+            // Create parent directories
+            const parentDir = vscode.Uri.joinPath(destUri, '..');
+            await vscode.workspace.fs.createDirectory(parentDir);
+            // Always overwrite template files during update
+            await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
+            updated++;
+            logger.info(`Updated template: ${file}`);
+        } else {
+            failed++;
+            logger.warn(`Failed to fetch template: ${file}`);
         }
     }
 

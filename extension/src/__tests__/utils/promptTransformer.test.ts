@@ -436,3 +436,63 @@ description: Default
         expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_ask');
     });
 });
+
+import { fetchAndTransformPrompts, createOuroborosStructure } from '../../utils/promptTransformer';
+
+describe('fetchAndTransformPrompts', () => {
+    const mockWorkspaceRoot = { fsPath: '/mock/workspace' } as any;
+    const mockProgress = { report: vi.fn() };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        global.fetch = vi.fn();
+    });
+
+    it('should fetch and transform files successfully', async () => {
+        // Mock successful fetch
+        (global.fetch as any).mockResolvedValue({
+            ok: true,
+            text: () => Promise.resolve('# Mock Content\n\nSome content'),
+        });
+
+        // Mock conflicting file check (mergeFileContent calls readFile)
+        // We'll mock writeFile to succeed
+
+        const result = await fetchAndTransformPrompts(mockWorkspaceRoot, mockProgress);
+
+        // We expect success count to be > 0 because we have many files in the lists
+        // Even if some fail or are skipped, the mock fetch returns content for all
+        expect(result.success).toBeGreaterThan(0);
+        expect(mockProgress.report).toHaveBeenCalled();
+    });
+
+    it('should handle fetch failures', async () => {
+        // Mock failed fetch
+        (global.fetch as any).mockResolvedValue({
+            ok: false,
+            statusText: 'Not Found',
+        });
+
+        const result = await fetchAndTransformPrompts(mockWorkspaceRoot, mockProgress);
+
+        expect(result.failed).toBeGreaterThan(0);
+        expect(result.success).toBe(0);
+    });
+});
+
+import * as vscode from 'vscode';
+
+describe('createOuroborosStructure', () => {
+    const mockWorkspaceRoot = { fsPath: '/mock/workspace' } as any;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should create necessary directories and README', async () => {
+        await createOuroborosStructure(mockWorkspaceRoot);
+
+        expect(vscode.workspace.fs.createDirectory).toHaveBeenCalledTimes(4); // .ouroboros, specs, templates, history
+        expect(vscode.workspace.fs.writeFile).toHaveBeenCalled(); // README
+    });
+});

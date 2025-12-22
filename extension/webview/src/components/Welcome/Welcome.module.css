@@ -1,9 +1,11 @@
 .container {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
-    padding: var(--spacing-sm);
-    animation: fadeIn 0.3s ease;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl) var(--spacing-lg);
+    animation: fadeIn 0.4s var(--transition-normal);
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 @keyframes fadeIn {
@@ -21,56 +23,220 @@
 /* Header */
 .header {
     text-align: center;
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-xl) 0;
+    position: relative;
+}
+
+.header::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, var(--button-background) 0%, transparent 70%);
+    opacity: 0.1;
+    z-index: -1;
+    filter: blur(40px);
+}
+
+.logoContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
 }
 
 .logo {
     display: block;
-    margin: 0 auto;
-    width: 64px;
-    height: 64px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
+    animation: pulse 3s ease-in-out infinite;
+    box-shadow: var(--shadow-lg);
+    z-index: 2;
+    position: relative;
+}
+
+/* Glow ring around logo */
+.glowRing {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100px;
+    height: 100px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid rgba(33, 150, 243, 0.3);
+    box-shadow:
+        0 0 15px rgba(33, 150, 243, 0.4),
+        0 0 30px rgba(156, 39, 176, 0.2),
+        inset 0 0 15px rgba(0, 188, 212, 0.2);
+    animation: glowRotate 4s linear infinite, glowPulse 2s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes glowRotate {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+        border-color: rgba(33, 150, 243, 0.4);
+    }
+
+    33% {
+        border-color: rgba(156, 39, 176, 0.4);
+    }
+
+    66% {
+        border-color: rgba(0, 188, 212, 0.4);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+        border-color: rgba(33, 150, 243, 0.4);
+    }
+}
+
+@keyframes glowPulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 15px rgba(33, 150, 243, 0.4),
+            0 0 30px rgba(156, 39, 176, 0.2),
+            inset 0 0 15px rgba(0, 188, 212, 0.2);
+    }
+
+    50% {
+        box-shadow:
+            0 0 25px rgba(33, 150, 243, 0.6),
+            0 0 50px rgba(156, 39, 176, 0.4),
+            inset 0 0 25px rgba(0, 188, 212, 0.3);
+    }
+}
+
+/* Particles container */
+.particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    z-index: 3;
+}
+
+/* Individual particle */
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: linear-gradient(135deg, #2196F3, #9C27B0, #00BCD4);
+    border-radius: 50%;
+    animation: particleOrbit 6s linear infinite;
+    animation-delay: calc(var(--i) * -0.5s);
+    opacity: 0;
+}
+
+.particle::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    border-radius: 50%;
+    filter: blur(2px);
+}
+
+@keyframes particleOrbit {
+    0% {
+        transform: rotate(calc(var(--i) * 30deg)) translateX(55px) scale(0);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+        transform: rotate(calc(var(--i) * 30deg + 36deg)) translateX(55px) scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: rotate(calc(var(--i) * 30deg + 180deg)) translateX(60px) scale(0.8);
+    }
+
+    90% {
+        opacity: 1;
+        transform: rotate(calc(var(--i) * 30deg + 324deg)) translateX(55px) scale(1);
+    }
+
+    100% {
+        transform: rotate(calc(var(--i) * 30deg + 360deg)) translateX(55px) scale(0);
+        opacity: 0;
+    }
 }
 
 @keyframes pulse {
 
     0%,
     100% {
-        opacity: 1;
         transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(14, 99, 156, 0.4);
     }
 
     50% {
-        opacity: 0.8;
         transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(14, 99, 156, 0);
     }
 }
 
 .title {
-    margin: var(--spacing-xs) 0 0 0;
-    font-size: 18px;
-    font-weight: 600;
+    margin: var(--spacing-md) 0 0 0;
+    font-size: 24px;
+    font-weight: 700;
     color: var(--foreground);
+    background: var(--foreground);
+    -webkit-background-clip: text;
+    background-clip: text;
 }
 
 .subtitle {
-    margin: 2px 0 0 0;
-    font-size: 11px;
+    margin: var(--spacing-xs) 0 0 0;
+    font-size: 13px;
     color: var(--foreground-secondary);
+    letter-spacing: 0.5px;
 }
 
-/* Status Card */
-.statusCard {
+/* Cards */
+.statusCard,
+.actionsCard,
+.infoCard,
+.shortcutsCard {
     background: var(--background-secondary);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.statusCard:hover,
+.actionsCard:hover,
+.infoCard:hover,
+.shortcutsCard:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-focus);
 }
 
 .statusItem {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-xs) 0;
-    font-size: 11px;
+    padding: var(--spacing-sm) 0;
+    font-size: 12px;
 }
 
 .statusItem:not(:last-child) {
@@ -90,13 +256,11 @@
     color: var(--warning);
 }
 
-/* Actions Card */
-.actionsCard {
-    background: var(--background-secondary);
-}
-
+/* Steps */
 .step {
-    padding: var(--spacing-sm) 0;
+    padding: var(--spacing-md) 0;
+    position: relative;
+    transition: background-color var(--transition-fast);
 }
 
 .step:not(:last-child) {
@@ -107,104 +271,162 @@
 .stepHeader {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    font-size: 12px;
+    gap: var(--spacing-sm);
+    font-size: 13px;
     font-weight: 600;
     color: var(--foreground);
-    margin-bottom: 4px;
+    margin-bottom: var(--spacing-xs);
 }
 
 .stepDesc {
-    margin: 0 0 var(--spacing-sm) 0;
-    font-size: 11px;
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 12px;
     color: var(--foreground-secondary);
+    line-height: 1.5;
 }
 
 .stepDesc code {
-    background: var(--background);
+    background: var(--input-background);
     color: var(--info);
-    padding: 1px 4px;
+    padding: 2px 6px;
     border-radius: var(--radius-sm);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .actionButton {
     width: 100%;
     justify-content: center;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-sm);
+    padding: 8px 16px;
+    font-weight: 500;
 }
 
-/* Info Card */
-.infoCard {
-    background: var(--background-secondary);
-}
-
-.fileList {
+/* Workspace Selector */
+.workspaceSelector {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+}
+
+.workspaceLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 11px;
+    color: var(--foreground-secondary);
+}
+
+.workspaceSelect {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--foreground);
+    background: var(--input-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+}
+
+.workspaceSelect:hover {
+    border-color: var(--border-focus);
+}
+
+.workspaceSelect:focus {
+    outline: none;
+    border-color: var(--button-background);
+    box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.15);
+}
+
+.workspaceSelect option {
+    color: var(--foreground);
+    background: var(--background-secondary);
+    padding: 8px;
+}
+
+/* File List */
+.fileList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 .fileItem {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    font-size: 10px;
+    gap: var(--spacing-sm);
+    font-size: 11px;
     color: var(--foreground-secondary);
+    padding: 4px 8px;
+    background: var(--background);
+    border-radius: var(--radius-sm);
 }
 
 .fileItem code {
     color: var(--foreground);
     font-family: var(--font-mono);
+    font-weight: 500;
 }
 
 .fileDesc {
     margin-left: auto;
-    font-size: 9px;
-    opacity: 0.7;
+    font-size: 10px;
+    opacity: 0.8;
 }
 
-/* Shortcuts Card */
-.shortcutsCard {
-    background: var(--background-secondary);
-}
-
+/* Shortcuts */
 .shortcutGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-xs);
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--spacing-sm);
 }
 
 .shortcut {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 10px;
+    gap: 8px;
+    font-size: 11px;
     color: var(--foreground-secondary);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    background: var(--background);
 }
 
 .shortcut kbd {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
-    font-size: 9px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 10px;
     font-family: var(--font-mono);
     font-weight: 600;
     color: var(--foreground);
-    background: var(--background);
+    background: var(--background-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Footer */
 .footer {
     text-align: center;
-    padding: var(--spacing-sm) 0;
-    font-size: 10px;
+    padding: var(--spacing-lg) 0;
+    font-size: 11px;
     color: var(--foreground-secondary);
-    opacity: 0.6;
+    opacity: 0.5;
+    transition: opacity var(--transition-normal);
+}
+
+.footer:hover {
+    opacity: 1;
 }

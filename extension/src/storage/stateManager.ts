@@ -19,6 +19,7 @@ export interface WorkspaceState {
     taskProgress: Record<string, boolean>;
     executionMode: ExecutionMode;
     hasCopilotChatOpened?: boolean;
+    selectedWorkspacePath?: string;
 }
 
 export interface GlobalState {
