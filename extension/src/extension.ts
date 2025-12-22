@@ -63,21 +63,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (workspaceFolders && workspaceFolders.length > 0) {
             const savedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
             const workspacePath = savedPath ?? workspaceFolders[0].uri.fsPath;
-            logger.info('Starting spec watcher', {
-                savedPath,
-                workspacePath,
-                availableFolders: workspaceFolders.map(f => f.uri.fsPath),
-            });
+            logger.debug('Starting spec watcher', { savedPath, workspacePath });
             const initialSpecs = await specWatcher.start(workspacePath);
             // Ensure state is updated synchronously with initial scan results
             await stateManager.updateWorkspaceState({
                 activeSpecs: initialSpecs.active,
                 archivedSpecs: initialSpecs.archived,
             });
-            logger.info('Initial specs loaded into state', {
+            logger.debug('Initial specs loaded', {
                 activeCount: initialSpecs.active.length,
                 archivedCount: initialSpecs.archived.length,
-                archivedNames: initialSpecs.archived.map(s => s.name),
             });
         }
 

@@ -157,17 +157,16 @@ export async function handleMessage(
 
         case 'ready':
         case 'refresh': {
-            logger.info(message.type === 'ready' ? 'Webview ready' : 'Refreshing state');
+            logger.debug(message.type === 'ready' ? 'Webview ready' : 'Refreshing state');
 
             const workspaces = await getWorkspacesInfo();
             const selectedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
             const { isInitialized, projectName } = await checkInitializationStatus(selectedPath);
             const workspaceState = stateManager.getWorkspaceState();
 
-            logger.info('Sending init to webview', {
+            logger.debug('Sending init to webview', {
                 activeSpecs: workspaceState.activeSpecs?.length ?? 0,
                 archivedSpecs: workspaceState.archivedSpecs?.length ?? 0,
-                selectedPath,
             });
 
             sidebarProvider.postMessage({
