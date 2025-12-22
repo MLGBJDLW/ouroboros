@@ -55,7 +55,11 @@ export async function scanSpecsFolder(workspacePath: string): Promise<{
     archived: SpecInfo[];
 }> {
     const specsDir = path.join(workspacePath, '.ouroboros', 'specs');
+    // Support both spellings: "archived" (correct) and "archieved" (common typo)
     const archivedDir = path.join(specsDir, 'archived');
+    const archievedDir = path.join(specsDir, 'archieved'); // typo variant
+
+    logger.debug('Scanning specs folder', { specsDir });
 
     const active: SpecInfo[] = [];
     const archived: SpecInfo[] = [];
@@ -65,9 +69,13 @@ export async function scanSpecsFolder(workspacePath: string): Promise<{
         const activeSpecs = await scanDirectory(specsDir, 'active');
         active.push(...activeSpecs);
 
-        // Scan archived specs
+        // Scan archived specs (try both spellings)
         const archivedSpecs = await scanDirectory(archivedDir, 'archived');
         archived.push(...archivedSpecs);
+        
+        // Also check the typo variant
+        const archievedSpecs = await scanDirectory(archievedDir, 'archived');
+        archived.push(...archievedSpecs);
 
         logger.debug('Scanned specs', {
             activeCount: active.length,
@@ -93,6 +101,9 @@ async function scanDirectory(
 ): Promise<SpecInfo[]> {
     const results: SpecInfo[] = [];
 
+    // Folders to skip (not spec folders)
+    const SKIP_FOLDERS = ['templates', 'archived', 'archieved', 'subagent-docs', 'docs'];
+
     try {
         const dirUri = vscode.Uri.file(dirPath);
         const entries = await vscode.workspace.fs.readDirectory(dirUri);
@@ -100,19 +111,34 @@ async function scanDirectory(
         for (const [name, type] of entries) {
             // Skip non-directories and special folders
             if (type !== vscode.FileType.Directory) continue;
-            if (name === 'templates' || name === 'archived' || name.startsWith('.')) continue;
+            if (SKIP_FOLDERS.includes(name) || name.startsWith('.')) continue;
 
             const specPath = path.join(dirPath, name);
             const specInfo = await analyzeSpecFolder(specPath, name, status);
+            
+            // For active specs, verify it's a real spec folder (has spec files)
+            // For archived specs, always include them
             if (specInfo) {
-                results.push(specInfo);
+                if (status === 'archived' || isValidSpecFolder(specInfo)) {
+                    results.push(specInfo);
+                }
             }
         }
     } catch {
-        // Directory doesn't exist
+        // Directory doesn't exist - this is expected for non-existent archived folders
     }
 
     return results;
+}
+
+/**
+ * Check if a folder is a valid spec folder (has at least one spec file)
+ */
+function isValidSpecFolder(spec: SpecInfo): boolean {
+    // A valid spec should have at least one completed phase or have tasks
+    const hasCompletedPhase = spec.phases.some(p => p.status === 'completed');
+    const hasTasks = spec.taskSummary && spec.taskSummary.total > 0;
+    return hasCompletedPhase || hasTasks;
 }
 
 /**

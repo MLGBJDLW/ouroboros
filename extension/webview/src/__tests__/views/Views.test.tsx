@@ -6,13 +6,13 @@ import { WorkflowProgress } from '../../views/WorkflowProgress/WorkflowProgress'
 import * as AppContext from '../../context/AppContext';
 import * as VSCodeContext from '../../context/VSCodeContext';
 import * as useHistoryHook from '../../hooks/useHistory';
-import * as useWorkflowHook from '../../hooks/useWorkflow';
+import * as useSpecsHook from '../../hooks/useSpecs';
 
 // Mock contexts and hooks
 vi.mock('../../context/AppContext');
 vi.mock('../../context/VSCodeContext');
 vi.mock('../../hooks/useHistory');
-vi.mock('../../hooks/useWorkflow');
+vi.mock('../../hooks/useSpecs');
 
 describe('AgentHierarchy View', () => {
     beforeEach(() => {
@@ -154,123 +154,146 @@ describe('History View', () => {
 });
 
 describe('WorkflowProgress View', () => {
-    const mockPostMessage = vi.fn();
-
     beforeEach(() => {
         vi.clearAllMocks();
-        (VSCodeContext.useVSCode as any).mockReturnValue({
-            postMessage: mockPostMessage,
-        });
     });
 
-    it('renders empty state when no workflow', () => {
-        (useWorkflowHook.useWorkflow as any).mockReturnValue({
-            type: null,
-            specName: null,
-            currentPhase: 0,
-            totalPhases: 0,
-            status: '',
-            phases: [],
-            executionMode: 'task-by-task',
+    it('renders empty state when no specs', () => {
+        (useSpecsHook.useSpecs as any).mockReturnValue({
+            activeSpecs: [],
+            archivedSpecs: [],
+            isLoading: false,
         });
 
         render(<WorkflowProgress />);
-        expect(screen.getByText('No active workflow')).toBeInTheDocument();
+        expect(screen.getByText('No specs yet')).toBeInTheDocument();
     });
 
-    it('renders spec workflow', () => {
-        (useWorkflowHook.useWorkflow as any).mockReturnValue({
-            type: 'spec',
-            specName: 'my-feature',
-            currentPhase: 2,
-            totalPhases: 4,
-            status: 'Processing requirements',
-            phases: [
-                { number: 1, name: 'Requirements', status: 'completed' },
-                { number: 2, name: 'Design', status: 'current' },
-                { number: 3, name: 'Tasks', status: 'pending' },
-            ],
-            executionMode: 'task-by-task',
+    it('renders loading state', () => {
+        (useSpecsHook.useSpecs as any).mockReturnValue({
+            activeSpecs: [],
+            archivedSpecs: [],
+            isLoading: true,
+        });
+
+        render(<WorkflowProgress />);
+        expect(screen.getByText('Scanning specs...')).toBeInTheDocument();
+    });
+
+    it('renders active spec workflow', () => {
+        (useSpecsHook.useSpecs as any).mockReturnValue({
+            activeSpecs: [{
+                name: 'my-feature',
+                path: '/test/my-feature',
+                type: 'spec',
+                status: 'active',
+                createdAt: Date.now(),
+                modifiedAt: Date.now(),
+                phases: [
+                    { name: 'Research', file: 'research.md', status: 'completed' },
+                    { name: 'Requirements', file: 'requirements.md', status: 'current' },
+                    { name: 'Design', file: 'design.md', status: 'pending' },
+                ],
+                progress: 40,
+            }],
+            archivedSpecs: [],
+            isLoading: false,
         });
 
         render(<WorkflowProgress />);
         expect(screen.getByText('SPEC')).toBeInTheDocument();
         expect(screen.getByText('my-feature')).toBeInTheDocument();
-        expect(screen.getByText('Processing requirements')).toBeInTheDocument();
-        expect(screen.getByText('50%')).toBeInTheDocument();
+        expect(screen.getByText('Active Workflows')).toBeInTheDocument();
     });
 
-    it('renders implement workflow', () => {
-        (useWorkflowHook.useWorkflow as any).mockReturnValue({
-            type: 'implement',
-            specName: 'my-feature',
-            currentPhase: 1,
-            totalPhases: 3,
-            status: 'Implementing',
-            phases: [],
-            executionMode: 'auto-run',
+    it('renders implement workflow type', () => {
+        (useSpecsHook.useSpecs as any).mockReturnValue({
+            activeSpecs: [{
+                name: 'my-task',
+                path: '/test/my-task',
+                type: 'implement',
+                status: 'active',
+                createdAt: Date.now(),
+                modifiedAt: Date.now(),
+                phases: [],
+                progress: 50,
+            }],
+            archivedSpecs: [],
+            isLoading: false,
         });
 
         render(<WorkflowProgress />);
         expect(screen.getByText('IMPLEMENT')).toBeInTheDocument();
     });
 
-    it('handles execution mode change', () => {
-        (useWorkflowHook.useWorkflow as any).mockReturnValue({
-            type: 'spec',
-            specName: 'test',
-            currentPhase: 1,
-            totalPhases: 2,
-            status: '',
-            phases: [],
-            executionMode: 'task-by-task',
+    it('renders archived specs section', () => {
+        (useSpecsHook.useSpecs as any).mockReturnValue({
+            activeSpecs: [],
+            archivedSpecs: [{
+                name: 'old-feature',
+                path: '/test/archived/old-feature',
+                type: 'spec',
+                status: 'archived',
+                createdAt: Date.now() - 86400000,
+                modifiedAt: Date.now() - 86400000,
+                phases: [],
+                progress: 100,
+            }],
+            isLoading: false,
         });
 
         render(<WorkflowProgress />);
-        
-        const select = screen.getByRole('combobox');
-        fireEvent.change(select, { target: { value: 'auto-run' } });
-        
-        expect(mockPostMessage).toHaveBeenCalledWith({
-            type: 'updateExecutionMode',
-            payload: { mode: 'auto-run' },
-        });
+        expect(screen.getByText('Archived')).toBeInTheDocument();
+        expect(screen.getByText('old-feature')).toBeInTheDocument();
     });
 
-    it('renders phases with different statuses', () => {
-        (useWorkflowHook.useWorkflow as any).mockReturnValue({
-            type: 'spec',
-            specName: 'test',
-            currentPhase: 2,
-            totalPhases: 3,
-            status: '',
-            phases: [
-                { number: 1, name: 'Done', status: 'completed' },
-                { number: 2, name: 'Active', status: 'current' },
-                { number: 3, name: '', status: 'pending' },
-            ],
-            executionMode: 'task-by-task',
+    it('renders task summary when available', () => {
+        (useSpecsHook.useSpecs as any).mockReturnValue({
+            activeSpecs: [{
+                name: 'task-spec',
+                path: '/test/task-spec',
+                type: 'spec',
+                status: 'active',
+                createdAt: Date.now(),
+                modifiedAt: Date.now(),
+                phases: [],
+                progress: 60,
+                taskSummary: {
+                    total: 10,
+                    completed: 6,
+                    inProgress: 2,
+                },
+            }],
+            archivedSpecs: [],
+            isLoading: false,
         });
 
         render(<WorkflowProgress />);
-        expect(screen.getByText('Phase 1: Done')).toBeInTheDocument();
-        expect(screen.getByText('Phase 2: Active')).toBeInTheDocument();
-        expect(screen.getByText('Phase 3')).toBeInTheDocument();
+        expect(screen.getByText('6/10 tasks')).toBeInTheDocument();
+        expect(screen.getByText('(2 in progress)')).toBeInTheDocument();
     });
 
-    it('truncates long spec names', () => {
-        (useWorkflowHook.useWorkflow as any).mockReturnValue({
-            type: 'spec',
-            specName: 'this-is-a-very-long-spec-name-that-should-be-truncated',
-            currentPhase: 1,
-            totalPhases: 2,
-            status: '',
-            phases: [],
-            executionMode: 'task-by-task',
+    it('truncates long spec names in archived list', () => {
+        (useSpecsHook.useSpecs as any).mockReturnValue({
+            activeSpecs: [],
+            archivedSpecs: [{
+                name: 'this-is-a-very-long-spec-name-that-should-be-truncated',
+                path: '/test/long-name',
+                type: 'spec',
+                status: 'archived',
+                createdAt: Date.now(),
+                modifiedAt: Date.now(),
+                phases: [],
+                progress: 100,
+            }],
+            isLoading: false,
         });
 
         render(<WorkflowProgress />);
-        // The truncate function should shorten the name
-        expect(screen.getByText(/this-is-a-very-long-spec-name/)).toBeInTheDocument();
+        // truncate(name, 24) shortens to "this-is-a-very-long-spe…"
+        // The full name should be in the title attribute
+        const specNameElement = screen.getByTitle('this-is-a-very-long-spec-name-that-should-be-truncated');
+        expect(specNameElement).toBeInTheDocument();
+        expect(specNameElement.textContent).toContain('…');
     });
 });

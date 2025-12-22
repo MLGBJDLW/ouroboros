@@ -45,6 +45,7 @@ vi.mock('../storage/stateManager', () => ({
         onStateChange: vi.fn().mockReturnValue({ dispose: vi.fn() }),
         getWorkspaceState: vi.fn().mockReturnValue({}),
         getInteractionHistory: vi.fn().mockReturnValue([]),
+        updateWorkspaceState: vi.fn().mockResolvedValue(undefined),
     })),
 }));
 
@@ -76,7 +77,7 @@ vi.mock('../commands', () => ({
 // Mock SpecWatcher
 vi.mock('../services/specWatcher', () => ({
     SpecWatcher: vi.fn().mockImplementation(() => ({
-        start: vi.fn().mockResolvedValue(undefined),
+        start: vi.fn().mockResolvedValue({ active: [], archived: [] }),
         onSpecChange: vi.fn().mockReturnValue({ dispose: vi.fn() }),
         forceRescan: vi.fn().mockResolvedValue(null),
         dispose: vi.fn(),

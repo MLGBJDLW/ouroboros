@@ -2,7 +2,18 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
-## [3.2.6] - 2025-12-22
+## [3.2.7] - 2025-12-22
+
+### Added
+
+- **Sent Message Confirmation** — Chat-style bubble shows what you sent to Copilot:
+  - Right-aligned bubble with tail (chat style)
+  - Color variants based on request type (blue/green/yellow)
+  - Shows timestamp (HH:MM) and type badge (Response/Selection/Confirmation/Review)
+  - Slide-in animation from right with bounce effect
+  - Check icon pop animation
+  - Fades out after 4 seconds
+  - 4-line text clamp with ellipsis for long messages
 
 ### Fixed
 
@@ -10,6 +21,10 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
   - Fixed "No specs yet" showing despite specs existing in selected workspace
   - `selectWorkspace` message handler now calls `specWatcher.start()` with new path
   - Added `setSpecWatcher()` method to SidebarProvider for workspace switching
+
+- **WorkflowProgress Tests** — Updated tests to match new `useSpecs` hook:
+  - Replaced `useWorkflow` mock with `useSpecs` mock
+  - Updated test cases for file-based spec data structure
 
 ---
 

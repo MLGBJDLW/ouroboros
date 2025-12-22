@@ -39,8 +39,9 @@ export class SpecWatcher extends DisposableBase {
 
     /**
      * Start watching a workspace folder
+     * Returns the initial scan results
      */
-    async start(workspacePath: string): Promise<void> {
+    async start(workspacePath: string): Promise<SpecChangeEvent> {
         this.workspacePath = workspacePath;
 
         // Stop existing watcher if any
@@ -62,8 +63,14 @@ export class SpecWatcher extends DisposableBase {
 
         logger.info('Started watching specs folder', { workspacePath });
 
-        // Initial scan
-        await this.rescan();
+        // Initial scan - return results directly instead of just firing event
+        const specs = await scanSpecsFolder(this.workspacePath);
+        this.onSpecChangeEmitter.fire(specs);
+        logger.debug('Initial specs scan completed', {
+            active: specs.active.length,
+            archived: specs.archived.length,
+        });
+        return specs;
     }
 
     /**

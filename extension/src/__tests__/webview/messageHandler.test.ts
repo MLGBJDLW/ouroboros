@@ -341,7 +341,7 @@ describe('messageHandler', () => {
             );
 
             const mockSpecWatcher = {
-                start: vi.fn().mockResolvedValue(undefined),
+                start: vi.fn().mockResolvedValue({ active: [], archived: [] }),
             };
 
             await handleMessage(
@@ -358,6 +358,11 @@ describe('messageHandler', () => {
                 selectedWorkspacePath: '/new-workspace',
             });
             expect(mockSpecWatcher.start).toHaveBeenCalledWith('/new-workspace');
+            // Should also update state with specs from the scan
+            expect(mockStateManager.updateWorkspaceState).toHaveBeenCalledWith({
+                activeSpecs: [],
+                archivedSpecs: [],
+            });
             expect(mockSidebarProvider.postMessage).toHaveBeenCalledWith({
                 type: 'stateUpdate',
                 payload: expect.any(Object),

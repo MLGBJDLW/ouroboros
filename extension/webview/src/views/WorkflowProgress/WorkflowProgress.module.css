@@ -3,7 +3,7 @@
 .container {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
 }
 
 .loading {
@@ -21,13 +21,8 @@
 }
 
 @keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* Section Styles */
@@ -59,25 +54,171 @@
     font-weight: 600;
 }
 
+.activeBadge {
+    background: color-mix(in srgb, var(--info) 20%, transparent);
+    color: var(--info);
+}
+
+.divider {
+    height: 1px;
+    background: var(--border);
+    margin: var(--spacing-xs) 0;
+}
+
 .emptySection {
-    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-lg);
     text-align: center;
     font-size: 12px;
     color: var(--foreground-secondary);
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    gap: var(--spacing-xs);
+}
+
+.emptyIcon {
+    font-size: 24px;
+    opacity: 0.5;
+    margin-bottom: var(--spacing-xs);
+}
+
+.emptyHint {
+    font-size: 11px;
     opacity: 0.7;
 }
 
-/* Spec Lists */
-.specList {
+/* Archived List */
+.archivedList {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.archivedCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    cursor: default;
+}
+
+.archivedCard:hover {
+    background: var(--list-hover);
+}
+
+.archivedInfo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 0;
+}
+
+.archivedIcon {
+    font-size: 12px;
+    color: var(--foreground-secondary);
+    flex-shrink: 0;
+}
+
+.archivedName {
+    font-size: 12px;
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.archivedMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.archivedDate {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+}
+
+.completeBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    color: var(--success);
+    font-size: 10px;
+}
+
+/* Show More Button */
+.showMoreBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-top: var(--spacing-xs);
+}
+
+.showMoreBtn:hover {
+    background: var(--list-hover);
+    border-color: var(--foreground-secondary);
+    color: var(--foreground);
+}
+
+/* Active Section */
+.activeSection {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
-.archivedList {
+/* Spec Selector Tabs */
+.specSelector {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+    padding: var(--spacing-xs);
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+
+.specTab {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.specTab:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.specTab.selected {
+    background: var(--button-background);
+    color: var(--button-foreground);
 }
 
 /* Active Spec Card */
@@ -92,11 +233,10 @@
     inset: 0;
     padding: 1px;
     border-radius: var(--radius-md);
-    /* Brand colors: subtle blue gradient */
     background: linear-gradient(135deg,
-            var(--button-background) 0%,
-            var(--info) 50%,
-            var(--button-hover) 100%);
+        var(--button-background) 0%,
+        var(--info) 50%,
+        var(--button-hover) 100%);
     -webkit-mask:
         linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
@@ -133,67 +273,154 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .progressSection {
     margin-bottom: var(--spacing-md);
 }
 
-/* Phase Indicators */
-.phaseIndicators {
+/* Phase Timeline */
+.timeline {
     display: flex;
     justify-content: space-between;
-    gap: var(--spacing-xs);
-    margin-bottom: var(--spacing-sm);
-    padding: var(--spacing-sm) 0;
+    align-items: flex-start;
+    padding: var(--spacing-md) 0;
+    position: relative;
 }
 
-.phaseCircle {
+.timelineItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+}
+
+/* Connector line between phases */
+.connector {
+    position: absolute;
+    top: 16px;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+
+.connectorCompleted {
+    background: linear-gradient(90deg, var(--success), var(--success));
+}
+
+/* Phase node */
+.phaseNode {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    position: relative;
+    z-index: 1;
+    background: var(--background);
     transition: all var(--transition-normal);
 }
 
-.phaseCircle.completed {
-    background: color-mix(in srgb, var(--success) 20%, transparent);
-    color: var(--success);
+.phaseNode.completed {
+    background: color-mix(in srgb, var(--success) 15%, var(--background));
 }
 
-.phaseCircle.current {
-    background: color-mix(in srgb, var(--info) 20%, transparent);
-    color: var(--info);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--info) 40%, transparent);
-    animation: pulse 2s ease-in-out infinite;
+.phaseNode.current {
+    background: color-mix(in srgb, var(--info) 15%, var(--background));
+    transform: scale(1.1);
 }
 
-.phaseCircle.pending {
-    background: var(--list-hover);
-    color: var(--foreground-secondary);
+.phaseNode.pending {
+    background: var(--background-secondary);
+    opacity: 0.6;
+}
+
+/* SVG styling */
+.phaseSvg {
+    width: 24px;
+    height: 24px;
+}
+
+.phaseIconPath {
+    fill: var(--foreground-secondary);
+    transition: fill var(--transition-fast);
+}
+
+.phaseNode.completed .phaseIconPath {
+    fill: var(--success);
+}
+
+.phaseNode.current .phaseIconPath {
+    fill: var(--info);
+}
+
+.phaseNode.pending .phaseIconPath {
+    fill: var(--foreground-secondary);
     opacity: 0.5;
 }
 
-.phaseIcon {
-    font-size: 14px;
+/* Rings */
+.completedRing {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 2;
+    opacity: 0.3;
 }
 
-.phaseCircle.current .phaseIcon {
-    animation: spin 2s linear infinite;
+.currentRing {
+    fill: none;
+    stroke: var(--info);
+    stroke-width: 2;
+    opacity: 0.5;
 }
 
-@keyframes pulse {
+.pulseRing {
+    fill: none;
+    stroke: var(--info);
+    stroke-width: 2;
+    opacity: 0;
+    animation: pulse-ring 2s ease-out infinite;
+}
 
-    0%,
+@keyframes pulse-ring {
+    0% {
+        opacity: 0.6;
+        r: 11;
+    }
     100% {
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--info) 40%, transparent);
+        opacity: 0;
+        r: 16;
     }
+}
 
-    50% {
-        box-shadow: 0 0 0 4px color-mix(in srgb, var(--info) 20%, transparent);
-    }
+/* Phase label */
+.phaseLabel {
+    font-size: 9px;
+    font-weight: 500;
+    margin-top: 6px;
+    text-align: center;
+    color: var(--foreground-secondary);
+    transition: color var(--transition-fast);
+}
+
+.phaseLabel.completed {
+    color: var(--success);
+}
+
+.phaseLabel.current {
+    color: var(--info);
+    font-weight: 600;
+}
+
+.phaseLabel.pending {
+    opacity: 0.5;
 }
 
 /* Task Summary */
@@ -209,56 +436,4 @@
 
 .inProgress {
     color: var(--info);
-}
-
-/* Archived Card */
-.archivedCard {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-sm);
-    background: var(--background-secondary);
-    border-radius: var(--radius-sm);
-    opacity: 0.7;
-    transition: opacity var(--transition-fast);
-}
-
-.archivedCard:hover {
-    opacity: 1;
-}
-
-.archivedInfo {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
-.archivedIcon {
-    font-size: 14px;
-    color: var(--foreground-secondary);
-}
-
-.archivedName {
-    font-size: 12px;
-    color: var(--foreground);
-}
-
-.archivedMeta {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
-.archivedDate {
-    font-size: 10px;
-    color: var(--foreground-secondary);
-}
-
-.completeBadge {
-    font-size: 9px;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--success) 20%, transparent);
-    color: var(--success);
 }

@@ -7,17 +7,58 @@ import { formatRelativeTime, formatRequestType } from '../../utils/formatters';
 import type { PendingRequest, AskRequestData, MenuRequestData, ConfirmRequestData, PlanReviewRequestData } from '../../types/requests';
 import styles from './PendingRequests.module.css';
 
+interface SentMessage {
+    id: string;
+    text: string;
+    type: 'ask' | 'menu' | 'confirm' | 'plan_review';
+    timestamp: number;
+}
+
 export function PendingRequests() {
     const { requests, respond, cancel } = usePendingRequests();
+    const [sentMessage, setSentMessage] = useState<SentMessage | null>(null);
 
+    // Clear sent message after fade out animation
+    useEffect(() => {
+        if (sentMessage) {
+            const timer = setTimeout(() => {
+                setSentMessage(null);
+            }, 4000); // 4 seconds total (includes fade animation)
+            return () => clearTimeout(timer);
+        }
+    }, [sentMessage]);
+
+    // Wrap respond to capture the sent message
+    const handleRespond = useCallback((id: string, response: unknown) => {
+        // Find the request to get its type
+        const request = requests.find(r => r.id === id);
+        const displayText = extractDisplayText(response);
+        if (displayText && request) {
+            setSentMessage({
+                id: `sent-${Date.now()}`,
+                text: displayText,
+                type: request.type,
+                timestamp: Date.now(),
+            });
+        }
+        respond(id, response);
+    }, [requests, respond]);
+
+    // Show sent message bubble if no pending requests
     if (requests.length === 0) {
         return (
             <div className={styles.empty}>
-                <Icon name="comment-discussion" className={styles.emptyIcon} />
-                <h3>No pending requests</h3>
-                <p className={styles.emptyHint}>
-                    Waiting for agent input...
-                </p>
+                {sentMessage ? (
+                    <SentMessageBubble message={sentMessage} />
+                ) : (
+                    <>
+                        <Icon name="comment-discussion" className={styles.emptyIcon} />
+                        <h3>No pending requests</h3>
+                        <p className={styles.emptyHint}>
+                            Waiting for agent input...
+                        </p>
+                    </>
+                )}
             </div>
         );
     }
@@ -30,9 +71,104 @@ export function PendingRequests() {
             <div className={styles.listItem}>
                 <RequestChatBubble
                     request={currentRequest}
-                    onRespond={respond}
+                    onRespond={handleRespond}
                     onCancel={cancel}
                 />
+            </div>
+        </div>
+    );
+}
+
+/** Extract human-readable text from response object */
+function extractDisplayText(response: unknown): string | null {
+    if (!response || typeof response !== 'object') return null;
+    
+    const r = response as Record<string, unknown>;
+    
+    // Ask response
+    if (typeof r.response === 'string') {
+        return r.response;
+    }
+    
+    // Menu response
+    if (typeof r.selectedOption === 'string') {
+        return r.isCustom ? r.selectedOption : `Selected: ${r.selectedOption}`;
+    }
+    
+    // Confirm response
+    if (typeof r.confirmed === 'boolean') {
+        if (r.isCustom && typeof r.customResponse === 'string') {
+            return r.customResponse;
+        }
+        return r.confirmed ? 'Yes' : 'No';
+    }
+    
+    // Plan review response
+    if (typeof r.approved === 'boolean') {
+        if (r.isCustom && typeof r.customResponse === 'string') {
+            return r.customResponse;
+        }
+        if (r.approved) return 'Approved';
+        if (typeof r.feedback === 'string' && r.feedback) {
+            return `Rejected: ${r.feedback}`;
+        }
+        return 'Rejected';
+    }
+    
+    return null;
+}
+
+interface SentMessageBubbleProps {
+    message: SentMessage;
+}
+
+function SentMessageBubble({ message }: SentMessageBubbleProps) {
+    const getTypeInfo = () => {
+        switch (message.type) {
+            case 'ask':
+                return { icon: 'comment', label: 'Response', color: 'info' };
+            case 'menu':
+                return { icon: 'list-selection', label: 'Selection', color: 'success' };
+            case 'confirm':
+                return { icon: 'check', label: 'Confirmation', color: 'warning' };
+            case 'plan_review':
+                return { icon: 'file-text', label: 'Review', color: 'info' };
+            default:
+                return { icon: 'send', label: 'Sent', color: 'info' };
+        }
+    };
+
+    const typeInfo = getTypeInfo();
+    const timeStr = new Date(message.timestamp).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+
+    return (
+        <div className={styles.sentContainer}>
+            <div className={`${styles.sentBubble} ${styles[`sent${typeInfo.color.charAt(0).toUpperCase() + typeInfo.color.slice(1)}`]}`}>
+                {/* Bubble tail */}
+                <div className={styles.sentTail} />
+                
+                {/* Header with icon and status */}
+                <div className={styles.sentHeader}>
+                    <div className={styles.sentStatus}>
+                        <Icon name="check-all" className={styles.sentCheckIcon} />
+                        <span>Sent to Copilot</span>
+                    </div>
+                    <span className={styles.sentTime}>{timeStr}</span>
+                </div>
+
+                {/* Message content */}
+                <p className={styles.sentText}>{message.text}</p>
+
+                {/* Footer with type badge */}
+                <div className={styles.sentFooter}>
+                    <div className={styles.sentTypeBadge}>
+                        <Icon name={typeInfo.icon} />
+                        <span>{typeInfo.label}</span>
+                    </div>
+                </div>
             </div>
         </div>
     );
