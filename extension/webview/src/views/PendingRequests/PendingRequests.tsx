@@ -177,21 +177,20 @@ function MenuContent({ request, data, onRespond }: { request: PendingRequest; da
                         </Button>
                     ))}
                 </div>
-                {data.allowCustom && (
-                    <div className={styles.customInputRow}>
-                        <input
-                            type="text"
-                            className={styles.input}
-                            placeholder="Or type custom response..."
-                            value={customValue}
-                            onChange={(e) => setCustomValue(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
-                        />
-                        <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
-                            Send
-                        </Button>
-                    </div>
-                )}
+                {/* Always show custom input option */}
+                <div className={styles.customInputRow}>
+                    <input
+                        type="text"
+                        className={styles.input}
+                        placeholder="Or type custom response..."
+                        value={customValue}
+                        onChange={(e) => setCustomValue(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
+                    />
+                    <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
+                        Send
+                    </Button>
+                </div>
             </div>
         </div>
     );

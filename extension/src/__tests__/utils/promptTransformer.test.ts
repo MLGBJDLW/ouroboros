@@ -440,7 +440,7 @@ description: Default
 import { fetchAndTransformPrompts, createOuroborosStructure } from '../../utils/promptTransformer';
 
 describe('fetchAndTransformPrompts', () => {
-    const mockWorkspaceRoot = { fsPath: '/mock/workspace' } as any;
+    const mockWorkspaceRoot = { fsPath: '/mock/workspace' } as vscode.Uri;
     const mockProgress = { report: vi.fn() };
 
     beforeEach(() => {
@@ -450,7 +450,7 @@ describe('fetchAndTransformPrompts', () => {
 
     it('should fetch and transform files successfully', async () => {
         // Mock successful fetch
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
             ok: true,
             text: () => Promise.resolve('# Mock Content\n\nSome content'),
         });
@@ -468,7 +468,7 @@ describe('fetchAndTransformPrompts', () => {
 
     it('should handle fetch failures', async () => {
         // Mock failed fetch
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
             ok: false,
             statusText: 'Not Found',
         });
@@ -483,7 +483,7 @@ describe('fetchAndTransformPrompts', () => {
 import * as vscode from 'vscode';
 
 describe('createOuroborosStructure', () => {
-    const mockWorkspaceRoot = { fsPath: '/mock/workspace' } as any;
+    const mockWorkspaceRoot = { fsPath: '/mock/workspace' } as vscode.Uri;
 
     beforeEach(() => {
         vi.clearAllMocks();

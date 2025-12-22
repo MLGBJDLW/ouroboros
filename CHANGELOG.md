@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.4] - 2025-12-21
+
+### 🎨 Menu UI Improvements
+
+#### Changed
+- **Menu Options Layout** — Options now display vertically (stacked) instead of horizontally wrapping
+- **Custom Input Always Visible** — Custom input field now always shows in menu requests, no longer requires `allowCustom` flag
+
+#### Fixed
+- **ESLint Warnings** — Fixed unused `prompt` parameters in `promptTransformer.ts` (changed to `_prompt`)
+- **Test Type Safety** — Replaced `as any` with proper types in `promptTransformer.test.ts`
+
+---
+
 ## [3.2.3] - 2025-12-21
 
 ### 🎨 Extension UI Modernization & Multi-Root Support
