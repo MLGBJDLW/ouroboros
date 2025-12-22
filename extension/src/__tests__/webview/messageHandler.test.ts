@@ -330,6 +330,62 @@ describe('messageHandler', () => {
         });
     });
 
+    describe('selectWorkspace message', () => {
+        it('should update selected workspace and restart spec watcher', async () => {
+            const { handleMessage } = await import('../../webview/messageHandler');
+            const vscode = await import('vscode');
+
+            // Mock workspace as not initialized
+            (vscode.workspace.fs.stat as ReturnType<typeof vi.fn>).mockRejectedValue(
+                new Error('Not found')
+            );
+
+            const mockSpecWatcher = {
+                start: vi.fn().mockResolvedValue(undefined),
+            };
+
+            await handleMessage(
+                {
+                    type: 'selectWorkspace',
+                    payload: { path: '/new-workspace' },
+                },
+                mockSidebarProvider as never,
+                mockStateManager as never,
+                mockSpecWatcher as never
+            );
+
+            expect(mockStateManager.updateWorkspaceState).toHaveBeenCalledWith({
+                selectedWorkspacePath: '/new-workspace',
+            });
+            expect(mockSpecWatcher.start).toHaveBeenCalledWith('/new-workspace');
+            expect(mockSidebarProvider.postMessage).toHaveBeenCalledWith({
+                type: 'stateUpdate',
+                payload: expect.any(Object),
+            });
+        });
+
+        it('should work without spec watcher', async () => {
+            const { handleMessage } = await import('../../webview/messageHandler');
+            const vscode = await import('vscode');
+
+            (vscode.workspace.fs.stat as ReturnType<typeof vi.fn>).mockRejectedValue(
+                new Error('Not found')
+            );
+
+            // Should not throw when specWatcher is undefined
+            await expect(
+                handleMessage(
+                    {
+                        type: 'selectWorkspace',
+                        payload: { path: '/new-workspace' },
+                    },
+                    mockSidebarProvider as never,
+                    mockStateManager as never
+                )
+            ).resolves.not.toThrow();
+        });
+    });
+
     describe('unknown message', () => {
         it('should handle unknown message types gracefully', async () => {
             const { handleMessage } = await import('../../webview/messageHandler');

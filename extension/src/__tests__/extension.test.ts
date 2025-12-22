@@ -52,6 +52,7 @@ vi.mock('../storage/stateManager', () => ({
 vi.mock('../webview/SidebarProvider', () => ({
     SidebarProvider: vi.fn().mockImplementation(() => ({
         dispose: vi.fn(),
+        setSpecWatcher: vi.fn(),
     })),
 }));
 

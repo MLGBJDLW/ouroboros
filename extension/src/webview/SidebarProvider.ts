@@ -9,6 +9,7 @@ import { handleMessage } from './messageHandler';
 import { generateHtml } from './htmlGenerator';
 import { TIMEOUTS } from '../constants';
 import type { StateManager } from '../storage/stateManager';
+import type { SpecWatcher } from '../services/specWatcher';
 import type {
     AskInput,
     AskOutput,
@@ -35,6 +36,7 @@ type PendingRequestWithTimeout = PendingRequest & {
 export class SidebarProvider extends DisposableBase implements vscode.WebviewViewProvider {
     private webviewView: vscode.WebviewView | undefined;
     private pendingRequests: Map<string, PendingRequestWithTimeout> = new Map();
+    private specWatcher: SpecWatcher | undefined;
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -48,6 +50,13 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
                 this.postMessage({ type: 'stateUpdate', payload: state });
             })
         );
+    }
+
+    /**
+     * Set the spec watcher reference for workspace switching
+     */
+    setSpecWatcher(watcher: SpecWatcher): void {
+        this.specWatcher = watcher;
     }
 
     /**
@@ -76,7 +85,7 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
         // Handle messages from webview
         this.register(
             webviewView.webview.onDidReceiveMessage(async (message) => {
-                await handleMessage(message, this, this.stateManager);
+                await handleMessage(message, this, this.stateManager, this.specWatcher);
             })
         );
 

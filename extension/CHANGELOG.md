@@ -2,6 +2,17 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.6] - 2025-12-22
+
+### Fixed
+
+- **Multi-Workspace Spec Detection** — SpecWatcher now restarts when switching workspaces:
+  - Fixed "No specs yet" showing despite specs existing in selected workspace
+  - `selectWorkspace` message handler now calls `specWatcher.start()` with new path
+  - Added `setSpecWatcher()` method to SidebarProvider for workspace switching
+
+---
+
 ## [3.2.5] - 2025-12-22
 
 ### Added

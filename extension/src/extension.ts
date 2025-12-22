@@ -39,6 +39,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         specWatcher = new SpecWatcher();
         context.subscriptions.push(specWatcher);
 
+        // Set spec watcher reference in sidebar provider for workspace switching
+        sidebarProvider.setSpecWatcher(specWatcher);
+
         // Start watching the first workspace folder
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders && workspaceFolders.length > 0) {

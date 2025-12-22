@@ -6,6 +6,7 @@ import { createLogger } from '../utils/logger';
 import { CONFIG } from '../constants';
 import type { SidebarProvider } from './SidebarProvider';
 import type { StateManager } from '../storage/stateManager';
+import type { SpecWatcher } from '../services/specWatcher';
 
 const logger = createLogger('MessageHandler');
 
@@ -94,7 +95,8 @@ async function checkInitializationStatus(selectedPath?: string): Promise<{
 export async function handleMessage(
     message: WebviewMessage,
     sidebarProvider: SidebarProvider,
-    stateManager: StateManager
+    stateManager: StateManager,
+    specWatcher?: SpecWatcher
 ): Promise<void> {
     logger.debug('Received message from webview:', message.type);
 
@@ -224,6 +226,11 @@ export async function handleMessage(
             await stateManager.updateWorkspaceState({
                 selectedWorkspacePath: payload.path,
             });
+
+            // Restart spec watcher for the new workspace
+            if (specWatcher) {
+                await specWatcher.start(payload.path);
+            }
 
             // Re-check initialization status for the selected workspace
             const { isInitialized, projectName } = await checkInitializationStatus(payload.path);
