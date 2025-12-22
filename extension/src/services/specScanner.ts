@@ -96,6 +96,9 @@ async function scanDirectory(
 ): Promise<SpecInfo[]> {
     const results: SpecInfo[] = [];
 
+    // Folders to skip (not spec folders)
+    const SKIP_FOLDERS = ['templates', 'archived', 'subagent-docs', 'docs'];
+
     try {
         const dirUri = vscode.Uri.file(dirPath);
         const entries = await vscode.workspace.fs.readDirectory(dirUri);
@@ -103,14 +106,17 @@ async function scanDirectory(
         for (const [name, type] of entries) {
             // Skip non-directories and special folders
             if (type !== vscode.FileType.Directory) continue;
-            if (name === 'templates' || name === 'archived' || name.startsWith('.')) continue;
+            if (SKIP_FOLDERS.includes(name) || name.startsWith('.')) continue;
 
             const specPath = path.join(dirPath, name);
-            
-            // Verify this is actually a spec folder by checking for spec files
             const specInfo = await analyzeSpecFolder(specPath, name, status);
-            if (specInfo && isValidSpecFolder(specInfo)) {
-                results.push(specInfo);
+            
+            // For active specs, verify it's a real spec folder (has spec files)
+            // For archived specs, always include them
+            if (specInfo) {
+                if (status === 'archived' || isValidSpecFolder(specInfo)) {
+                    results.push(specInfo);
+                }
             }
         }
     } catch {
