@@ -53,7 +53,7 @@ export type RequestStatus = 'pending' | 'responded' | 'cancelled' | 'timeout';
 
 // Timeouts (in milliseconds)
 export const TIMEOUTS = {
-    USER_CONFIRMATION: 5 * 60 * 1000, // 5 minutes
+    USER_CONFIRMATION: 30 * 60 * 1000, // 30 minutes
     AUTO_RUN_TASK: 30 * 1000, // 30 seconds
 } as const;
 

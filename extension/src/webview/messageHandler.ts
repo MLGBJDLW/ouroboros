@@ -20,26 +20,69 @@ interface ResponsePayload {
 }
 
 /**
+ * Workspace info for multi-root workspace support
+ */
+export interface WorkspaceInfo {
+    name: string;
+    path: string;
+    isInitialized: boolean;
+}
+
+/**
+ * Get info for all workspace folders
+ */
+async function getWorkspacesInfo(): Promise<WorkspaceInfo[]> {
+    const vscode = await import('vscode');
+    const folders = vscode.workspace.workspaceFolders || [];
+
+    return Promise.all(
+        folders.map(async (folder) => {
+            let isInitialized = false;
+            try {
+                const agentsDir = vscode.Uri.joinPath(folder.uri, '.github', 'agents');
+                await vscode.workspace.fs.stat(agentsDir);
+                isInitialized = true;
+            } catch {
+                // Directory doesn't exist
+            }
+
+            return {
+                name: folder.name,
+                path: folder.uri.fsPath,
+                isInitialized,
+            };
+        })
+    );
+}
+
+/**
  * Check if Ouroboros is initialized in the workspace
  */
-async function checkInitializationStatus(): Promise<{
+async function checkInitializationStatus(selectedPath?: string): Promise<{
     isInitialized: boolean;
     projectName: string | undefined;
 }> {
     const vscode = await import('vscode');
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    const projectName = workspaceFolders?.[0]?.name || undefined;
+
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        return { isInitialized: false, projectName: undefined };
+    }
+
+    // Find the selected workspace or use first one
+    const targetFolder = selectedPath
+        ? workspaceFolders.find((f) => f.uri.fsPath === selectedPath) || workspaceFolders[0]
+        : workspaceFolders[0];
+
+    const projectName = targetFolder.name;
 
     let isInitialized = false;
-    if (workspaceFolders && workspaceFolders.length > 0) {
-        try {
-            const agentsDir = vscode.Uri.joinPath(workspaceFolders[0].uri, '.github', 'agents');
-            await vscode.workspace.fs.stat(agentsDir);
-            isInitialized = true;
-        } catch {
-            // Directory doesn't exist, not initialized
-            isInitialized = false;
-        }
+    try {
+        const agentsDir = vscode.Uri.joinPath(targetFolder.uri, '.github', 'agents');
+        await vscode.workspace.fs.stat(agentsDir);
+        isInitialized = true;
+    } catch {
+        // Directory doesn't exist, not initialized
     }
 
     return { isInitialized, projectName };
@@ -114,7 +157,9 @@ export async function handleMessage(
         case 'refresh': {
             logger.info(message.type === 'ready' ? 'Webview ready' : 'Refreshing state');
 
-            const { isInitialized, projectName } = await checkInitializationStatus();
+            const workspaces = await getWorkspacesInfo();
+            const selectedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
+            const { isInitialized, projectName } = await checkInitializationStatus(selectedPath);
             const workspaceState = stateManager.getWorkspaceState();
 
             sidebarProvider.postMessage({
@@ -125,6 +170,7 @@ export async function handleMessage(
                         projectName,
                         isInitialized,
                     },
+                    workspaces,
                     history: stateManager.getInteractionHistory(),
                 },
             });
@@ -149,9 +195,48 @@ export async function handleMessage(
                 const vscode = await import('vscode');
                 // Try to open Copilot Chat with /ouroboros
                 await vscode.commands.executeCommand('workbench.panel.chat.view.copilot.focus');
+                // Update state to mark step as completed
+                await stateManager.updateWorkspaceState({
+                    hasCopilotChatOpened: true,
+                });
+                // Get full initialization status to include in update
+                const selectedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
+                const { isInitialized, projectName } = await checkInitializationStatus(selectedPath);
+                const workspaceState = stateManager.getWorkspaceState();
+                sidebarProvider.postMessage({
+                    type: 'stateUpdate',
+                    payload: {
+                        ...workspaceState,
+                        projectName,
+                        isInitialized,
+                    },
+                });
             } catch (error) {
                 logger.error('Failed to open Copilot Chat:', error);
             }
+            break;
+        }
+
+        case 'selectWorkspace': {
+            const payload = message.payload as { path: string };
+            logger.info('Selecting workspace:', payload.path);
+
+            await stateManager.updateWorkspaceState({
+                selectedWorkspacePath: payload.path,
+            });
+
+            // Re-check initialization status for the selected workspace
+            const { isInitialized, projectName } = await checkInitializationStatus(payload.path);
+            const workspaceState = stateManager.getWorkspaceState();
+
+            sidebarProvider.postMessage({
+                type: 'stateUpdate',
+                payload: {
+                    ...workspaceState,
+                    projectName,
+                    isInitialized,
+                },
+            });
             break;
         }
 

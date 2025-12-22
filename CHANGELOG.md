@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.3] - 2025-12-21
+
+### 🎨 Extension UI Modernization & Multi-Root Support
+
+#### Added
+- **Multi-Root Workspace Selector** — Choose which workspace to initialize in multi-root projects:
+  - Dropdown appears in Step 1 when multiple workspaces are open
+  - Shows initialization status (✓) for each workspace
+  - Selection persists across extension reloads
+
+#### Fixed
+- **Template Download on Update** — `.ouroboros/templates/` files (including `skill-template.md`) now download during "Update Prompts" operation
+  - Previously only downloaded during initial setup
+  - Added template files loop to `smartUpdatePrompts()` function
+
+- **Copilot Chat Step Detection** — "Start Ouroboros" step (Step 2) now shows ✓ after clicking "Open Copilot Chat" button
+  - Added `hasCopilotChatOpened` state tracking in `WorkspaceState`
+  - Step 2 badge updates from "2" to green "✓" when Copilot Chat is opened via our button
+  - State persists across extension reloads
+
+- **State Update Bug** — Fixed workspace detection breaking after clicking "Open Copilot Chat"
+  - `stateUpdate` message now correctly includes `projectName` and `isInitialized`
+
+#### Changed
+- **Modernized Chat UI** — Upgraded Pending Requests interface:
+  - Message bubbles: Gradient backgrounds, hover lift effect, modern shadows
+  - Textarea: Larger input area (60px → 100px min-height), focus glow effect
+  - Added "Shift+Enter for new line" hint below input
+  - Improved visual hierarchy with better spacing and animations
+
+---
+
 ## [3.2.2] - 2025-12-21
 
 ### 🛠️ Agent Skills Integration

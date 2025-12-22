@@ -9,6 +9,7 @@ import type {
     StoredInteraction,
     WorkspaceStatePayload,
     PhaseProgressPayload,
+    WorkspaceInfo,
 } from '../types/messages';
 import type { AgentHandoff } from '../types/agent';
 import { useVSCodeMessage } from '../hooks/useVSCodeMessage';
@@ -17,6 +18,7 @@ interface AppState {
     pendingRequests: PendingRequest[];
     history: StoredInteraction[];
     workspaceState: WorkspaceStatePayload | null;
+    workspaces: WorkspaceInfo[];
     currentAgent: { name: string; level: 0 | 1 | 2 } | null;
     handoffHistory: AgentHandoff[];
     isLoading: boolean;
@@ -32,12 +34,13 @@ type AppAction =
     | { type: 'SET_CURRENT_AGENT'; payload: { name: string; level: 0 | 1 | 2 } }
     | { type: 'ADD_HANDOFF'; payload: AgentHandoff }
     | { type: 'SET_LOADING'; payload: boolean }
-    | { type: 'INIT'; payload: { workspaceState: WorkspaceStatePayload; history: StoredInteraction[]; pendingRequests?: PendingRequest[] } };
+    | { type: 'INIT'; payload: { workspaceState: WorkspaceStatePayload; history: StoredInteraction[]; pendingRequests?: PendingRequest[]; workspaces?: WorkspaceInfo[] } };
 
 const initialState: AppState = {
     pendingRequests: [],
     history: [],
     workspaceState: null,
+    workspaces: [],
     currentAgent: null,
     handoffHistory: [],
     isLoading: true,
@@ -49,6 +52,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
             return {
                 ...state,
                 workspaceState: action.payload.workspaceState,
+                workspaces: action.payload.workspaces ?? [],
                 history: action.payload.history,
                 pendingRequests: action.payload.pendingRequests ?? [],
                 isLoading: false,

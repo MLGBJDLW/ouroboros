@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { EXTENSION_ID, COMMANDS } from './constants';
+import { EXTENSION_ID } from './constants';
 import { registerTools } from './tools';
 import { SidebarProvider } from './webview/SidebarProvider';
 import { registerCommands } from './commands';

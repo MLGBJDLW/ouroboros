@@ -82,6 +82,10 @@ function App() {
         vscode.postMessage({ type: 'command', payload: { command: 'ouroboros.updatePrompts' } });
     }, [vscode]);
 
+    const handleSelectWorkspace = useCallback((path: string) => {
+        vscode.postMessage({ type: 'selectWorkspace', payload: { path } });
+    }, [vscode]);
+
     if (state.isLoading) {
         return (
             <div className={styles.loading}>
@@ -99,8 +103,12 @@ function App() {
                         onInitialize={handleInitialize}
                         onOpenCopilot={handleOpenCopilot}
                         onUpdatePrompts={handleUpdatePrompts}
+                        onSelectWorkspace={handleSelectWorkspace}
                         isInitialized={state.workspaceState?.isInitialized}
+                        hasCopilotChatOpened={state.workspaceState?.hasCopilotChatOpened}
                         projectName={state.workspaceState?.projectName}
+                        workspaces={state.workspaces}
+                        selectedWorkspacePath={state.workspaceState?.selectedWorkspacePath}
                     />
                 );
             case 'pending':

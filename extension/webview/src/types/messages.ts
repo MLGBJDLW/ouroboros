@@ -16,14 +16,22 @@ export type ExtensionMessage =
     | { type: 'agentHandoff'; payload: AgentHandoff }
     | { type: 'refresh' };
 
+export interface WorkspaceInfo {
+    name: string;
+    path: string;
+    isInitialized: boolean;
+}
+
 export interface InitPayload {
     workspaceState: WorkspaceStatePayload;
     history: StoredInteraction[];
     pendingRequests?: PendingRequest[];
+    workspaces?: WorkspaceInfo[];
 }
 
 export interface WorkspaceStatePayload {
     isInitialized?: boolean;
+    hasCopilotChatOpened?: boolean;
     projectName?: string;
     currentSpec?: string;
     currentPhase: number;
@@ -32,6 +40,7 @@ export interface WorkspaceStatePayload {
     phaseStatus?: string;
     taskProgress: Record<string, boolean>;
     executionMode: 'task-by-task' | 'phase-by-phase' | 'auto-run';
+    selectedWorkspacePath?: string;
 }
 
 export interface PhaseProgressPayload {
@@ -66,7 +75,8 @@ export type WebviewMessage =
     | { type: 'getState' }
     | { type: 'getHistory' }
     | { type: 'clearHistory' }
-    | { type: 'updateExecutionMode'; payload: { mode: 'task-by-task' | 'phase-by-phase' | 'auto-run' } };
+    | { type: 'updateExecutionMode'; payload: { mode: 'task-by-task' | 'phase-by-phase' | 'auto-run' } }
+    | { type: 'selectWorkspace'; payload: { path: string } };
 
 export interface ResponsePayload {
     requestId: string;

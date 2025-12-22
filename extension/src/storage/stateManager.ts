@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { DisposableBase } from '../utils/disposable';
 import { createLogger } from '../utils/logger';
 import { STORAGE_KEYS, CONFIG, type ExecutionMode, type WorkflowType } from '../constants';
-import type { StoredInteraction, WorkflowContext } from '../tools/types';
+import type { StoredInteraction } from '../tools/types';
 
 const logger = createLogger('StateManager');
 
@@ -18,6 +18,8 @@ export interface WorkspaceState {
     phaseStatus?: string;
     taskProgress: Record<string, boolean>;
     executionMode: ExecutionMode;
+    hasCopilotChatOpened?: boolean;
+    selectedWorkspacePath?: string;
 }
 
 export interface GlobalState {

@@ -1,71 +1,80 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { usePendingRequests } from '../../hooks/usePendingRequests';
-import { Card, CardHeader, CardBody, CardFooter } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
-import { EmptyState } from '../../components/EmptyState';
-import { List, ListItem } from '../../components/List';
+import { Icon } from '../../components/Icon';
 import { formatRelativeTime, formatRequestType } from '../../utils/formatters';
 import type { PendingRequest, AskRequestData, MenuRequestData, ConfirmRequestData, PlanReviewRequestData } from '../../types/requests';
 import styles from './PendingRequests.module.css';
 
 export function PendingRequests() {
     const { requests, respond, cancel } = usePendingRequests();
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom
+    useEffect(() => {
+        if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [requests.length]);
 
     if (requests.length === 0) {
         return (
-            <EmptyState
-                icon="bell"
-                title="No pending requests"
-                description="Waiting for agent interactions..."
-            />
+            <div className={styles.empty}>
+                <Icon name="comment-discussion" className={styles.emptyIcon} />
+                <h3>No pending requests</h3>
+                <p className={styles.emptyHint}>
+                    Ouroboros is idle. Trigger an agent action to see requests here.
+                </p>
+            </div>
         );
     }
 
     return (
-        <List className={styles.container}>
+        <div className={styles.container}>
             {requests.map((request) => (
-                <ListItem key={request.id} className={styles.listItem}>
-                    <RequestCard
+                <div key={request.id} className={styles.listItem}>
+                    <RequestChatBubble
                         request={request}
                         onRespond={respond}
                         onCancel={cancel}
                     />
-                </ListItem>
+                </div>
             ))}
-        </List>
+            <div ref={bottomRef} />
+        </div>
     );
 }
 
-interface RequestCardProps {
+interface RequestChatBubbleProps {
     request: PendingRequest;
     onRespond: (id: string, response: unknown) => void;
     onCancel: (id: string) => void;
 }
 
-function RequestCard({ request, onRespond, onCancel }: RequestCardProps) {
+function RequestChatBubble({ request, onRespond, onCancel }: RequestChatBubbleProps) {
     return (
-        <Card highlighted>
-            <CardHeader>
-                <div className={styles.header}>
-                    <Badge variant="info">{formatRequestType(request.type)}</Badge>
-                    <span className={styles.agent}>
-                        {request.agentName} (L{request.agentLevel})
-                    </span>
-                    <span className={styles.time}>
-                        {formatRelativeTime(request.timestamp)}
-                    </span>
-                </div>
-            </CardHeader>
-            <CardBody>
+        <div className={styles.messageBubble}>
+            <div className={styles.header}>
+                <Badge variant="info" size="small">{formatRequestType(request.type)}</Badge>
+                <span className={styles.agentName}>
+                    {request.agentName} (L{request.agentLevel})
+                </span>
+                <span className={styles.time}>
+                    {formatRelativeTime(request.timestamp)}
+                </span>
+            </div>
+
+            <div className={styles.content}>
                 <RequestContent request={request} onRespond={onRespond} />
-            </CardBody>
-            <CardFooter>
+            </div>
+
+            <div className={styles.footer}>
                 <Button variant="ghost" size="small" onClick={() => onCancel(request.id)}>
                     Cancel
                 </Button>
-            </CardFooter>
-        </Card>
+            </div>
+        </div>
     );
 }
 
@@ -99,17 +108,28 @@ function AskContent({ request, data, onRespond }: { request: PendingRequest; dat
     return (
         <div className={styles.askContent}>
             {data.question && <p className={styles.question}>{data.question}</p>}
-            <input
-                type="text"
-                className={styles.input}
-                placeholder={data.inputLabel ?? 'Enter your response...'}
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            />
-            <Button size="small" onClick={handleSubmit} disabled={!value.trim()}>
-                Submit
-            </Button>
+            <div className={styles.actions}>
+                <textarea
+                    className={styles.textarea}
+                    placeholder={data.inputLabel ?? 'Type your answer...'}
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmit();
+                        }
+                    }}
+                    rows={3}
+                    autoFocus
+                />
+                <div className={styles.inputFooter}>
+                    <span className={styles.inputHint}>Shift+Enter for new line</span>
+                    <Button size="small" onClick={handleSubmit} disabled={!value.trim()}>
+                        Send
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }
@@ -144,33 +164,35 @@ function MenuContent({ request, data, onRespond }: { request: PendingRequest; da
     return (
         <div className={styles.menuContent}>
             <p className={styles.question}>{data.question}</p>
-            <div className={styles.options}>
-                {data.options.map((option, index) => (
-                    <Button
-                        key={index}
-                        variant="secondary"
-                        size="small"
-                        onClick={() => handleSelect(index, option)}
-                    >
-                        {option}
-                    </Button>
-                ))}
-            </div>
-            {data.allowCustom && (
-                <div className={styles.customInputRow}>
-                    <input
-                        type="text"
-                        className={styles.input}
-                        placeholder="Custom response..."
-                        value={customValue}
-                        onChange={(e) => setCustomValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
-                    />
-                    <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
-                        Submit
-                    </Button>
+            <div className={styles.actions}>
+                <div className={styles.options}>
+                    {data.options.map((option, index) => (
+                        <Button
+                            key={index}
+                            variant="secondary"
+                            size="small"
+                            onClick={() => handleSelect(index, option)}
+                        >
+                            {option}
+                        </Button>
+                    ))}
                 </div>
-            )}
+                {data.allowCustom && (
+                    <div className={styles.customInputRow}>
+                        <input
+                            type="text"
+                            className={styles.input}
+                            placeholder="Or type custom response..."
+                            value={customValue}
+                            onChange={(e) => setCustomValue(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
+                        />
+                        <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
+                            Send
+                        </Button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -183,11 +205,11 @@ function ConfirmContent({ request, data, onRespond }: { request: PendingRequest;
     return (
         <div className={styles.confirmContent}>
             <p className={styles.question}>{data.question}</p>
-            <div className={styles.confirmButtons}>
-                <Button size="small" onClick={() => handleConfirm(true)}>
+            <div className={styles.actions}>
+                <Button onClick={() => handleConfirm(true)}>
                     {data.yesLabel ?? 'Yes'}
                 </Button>
-                <Button variant="secondary" size="small" onClick={() => handleConfirm(false)}>
+                <Button variant="secondary" onClick={() => handleConfirm(false)}>
                     {data.noLabel ?? 'No'}
                 </Button>
             </div>
@@ -232,28 +254,32 @@ function PlanReviewContent({ request, data, onRespond }: { request: PendingReque
                 </div>
             )}
             <pre className={styles.planText}>{data.plan}</pre>
-            <textarea
-                className={styles.textarea}
-                rows={3}
-                placeholder="Optional feedback..."
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-            />
-            <div className={styles.confirmButtons}>
-                <Button size="small" onClick={() => handleApprove(true)}>
-                    Approve
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="small"
-                    onClick={handleRequestChanges}
-                    disabled={!feedback.trim()}
-                >
-                    Request Changes
-                </Button>
-                <Button variant="ghost" size="small" onClick={() => handleApprove(false)}>
-                    Reject
-                </Button>
+            <div className={styles.actions}>
+                <div className={styles.customInputRow}>
+                    <textarea
+                        className={styles.textarea}
+                        rows={2}
+                        placeholder="Feedback (required for changes)..."
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                    />
+                </div>
+                <div className={styles.confirmButtons}>
+                    <Button size="small" onClick={() => handleApprove(true)}>
+                        Approve
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="small"
+                        onClick={handleRequestChanges}
+                        disabled={!feedback.trim()}
+                    >
+                        Request Changes
+                    </Button>
+                    <Button variant="ghost" size="small" onClick={() => handleApprove(false)}>
+                        Reject
+                    </Button>
+                </div>
             </div>
         </div>
     );
