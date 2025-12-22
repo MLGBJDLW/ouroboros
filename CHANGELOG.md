@@ -7,11 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.2.4] - 2025-12-21
 
-### 🎨 Menu UI Improvements
+### 🎨 Pending Requests UI Overhaul
+
+#### Added
+- **Keyboard Shortcuts** — Full keyboard navigation support:
+  - Menu: Press 1-9 to select options, C for custom input
+  - Confirm: Y for yes, N for no
+  - All types: Esc to cancel
+  - Plan Review: Ctrl+Enter to approve
+- **Numbered Menu Options** — Each option displays its number for quick keyboard selection
+- **Request Type Visual Distinction** — Color-coded left border indicates request type:
+  - Ask: Blue | Menu: Green | Confirm: Yellow | Plan Review: Blue
+- **Empty State Animation** — Breathing animation on idle icon indicates waiting state
+- **Shortcut Hints** — Inline hints show available keyboard shortcuts for each request type
 
 #### Changed
-- **Menu Options Layout** — Options now display vertically (stacked) instead of horizontally wrapping
-- **Custom Input Always Visible** — Custom input field now always shows in menu requests, no longer requires `allowCustom` flag
+- **Centered Layout** — Request card now displays centered in the panel (single request focus)
+- **Menu Options Layout** — Options display vertically (stacked) instead of horizontally wrapping
+- **Custom Input Toggle** — Custom input now collapsed by default, expands on click or 'C' key
+- **Cancel Button Redesign** — Moved to header as subtle X icon instead of footer button
 
 #### Fixed
 - **ESLint Warnings** — Fixed unused `prompt` parameters in `promptTransformer.ts` (changed to `_prompt`)
