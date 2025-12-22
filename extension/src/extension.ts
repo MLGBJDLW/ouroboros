@@ -42,21 +42,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // Set spec watcher reference in sidebar provider for workspace switching
         sidebarProvider.setSpecWatcher(specWatcher);
 
-        // Start watching the first workspace folder
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders && workspaceFolders.length > 0) {
-            const workspacePath = stateManager.getWorkspaceState().selectedWorkspacePath
-                ?? workspaceFolders[0].uri.fsPath;
-            await specWatcher.start(workspacePath);
-        }
-
-        // Update state when specs change
+        // Register spec change listener BEFORE starting the watcher
+        // This ensures we capture the initial scan results
         specWatcher.onSpecChange(async (specs) => {
             await stateManager?.updateWorkspaceState({
                 activeSpecs: specs.active,
                 archivedSpecs: specs.archived,
             });
         });
+
+        // Start watching the first workspace folder (triggers initial scan)
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders && workspaceFolders.length > 0) {
+            const workspacePath = stateManager.getWorkspaceState().selectedWorkspacePath
+                ?? workspaceFolders[0].uri.fsPath;
+            await specWatcher.start(workspacePath);
+        }
 
         // Register LM Tools
         const toolDisposables = registerTools(stateManager, sidebarProvider);
