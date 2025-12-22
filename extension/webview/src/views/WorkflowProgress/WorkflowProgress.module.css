@@ -282,73 +282,132 @@
     margin-bottom: var(--spacing-md);
 }
 
-/* Phase Indicators */
-.phaseIndicators {
+/* Phase Timeline */
+.timeline {
     display: flex;
     justify-content: space-between;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-sm) 0;
+    align-items: flex-start;
+    padding: var(--spacing-md) 0;
+    position: relative;
 }
 
-.phaseCircle {
+.timelineItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+}
+
+/* Connector line between phases */
+.connector {
+    position: absolute;
+    top: 16px;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+
+.connectorCompleted {
+    background: linear-gradient(90deg, var(--success), var(--success));
+}
+
+/* Phase node */
+.phaseNode {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    position: relative;
+    z-index: 1;
+    background: var(--background);
     transition: all var(--transition-normal);
 }
 
-.phaseCircle.completed {
-    background: color-mix(in srgb, var(--success) 20%, transparent);
-    color: var(--success);
+.phaseNode.completed {
+    background: color-mix(in srgb, var(--success) 15%, var(--background));
 }
 
-.phaseCircle.current {
-    background: color-mix(in srgb, var(--info) 20%, transparent);
-    color: var(--info);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--info) 40%, transparent);
-    animation: pulse 2s ease-in-out infinite;
+.phaseNode.current {
+    background: color-mix(in srgb, var(--info) 15%, var(--background));
+    transform: scale(1.1);
 }
 
-.phaseCircle.pending {
-    background: var(--list-hover);
-    color: var(--foreground-secondary);
+.phaseNode.pending {
+    background: var(--background-secondary);
+    opacity: 0.6;
+}
+
+/* SVG styling */
+.phaseSvg {
+    width: 24px;
+    height: 24px;
+}
+
+.phaseIconPath {
+    fill: var(--foreground-secondary);
+    transition: fill var(--transition-fast);
+}
+
+.phaseNode.completed .phaseIconPath {
+    fill: var(--success);
+}
+
+.phaseNode.current .phaseIconPath {
+    fill: var(--info);
+}
+
+.phaseNode.pending .phaseIconPath {
+    fill: var(--foreground-secondary);
     opacity: 0.5;
 }
 
-.phaseIcon {
-    font-size: 14px;
+/* Rings */
+.completedRing {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 2;
+    opacity: 0.3;
 }
 
-.phaseCircle.current .phaseIcon {
-    animation: spin 2s linear infinite;
+.currentRing {
+    fill: none;
+    stroke: var(--info);
+    stroke-width: 2;
+    opacity: 0.5;
 }
 
-@keyframes pulse {
-    0%, 100% {
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--info) 40%, transparent);
+.pulseRing {
+    fill: none;
+    stroke: var(--info);
+    stroke-width: 2;
+    opacity: 0;
+    animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        opacity: 0.6;
+        r: 11;
     }
-    50% {
-        box-shadow: 0 0 0 4px color-mix(in srgb, var(--info) 20%, transparent);
+    100% {
+        opacity: 0;
+        r: 16;
     }
 }
 
-/* Phase Legend */
-.phaseLegend {
-    display: flex;
-    justify-content: space-between;
-    padding: 0 4px;
-    margin-bottom: var(--spacing-sm);
-}
-
+/* Phase label */
 .phaseLabel {
     font-size: 9px;
-    font-weight: 600;
-    color: var(--foreground-secondary);
-    width: 28px;
+    font-weight: 500;
+    margin-top: 6px;
     text-align: center;
+    color: var(--foreground-secondary);
+    transition: color var(--transition-fast);
 }
 
 .phaseLabel.completed {
@@ -357,6 +416,7 @@
 
 .phaseLabel.current {
     color: var(--info);
+    font-weight: 600;
 }
 
 .phaseLabel.pending {
