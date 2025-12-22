@@ -78,10 +78,11 @@ const OUROBOROS_SPEC_TEMPLATES = [
  * Transformation patterns: Python CCL → LM Tools
  * Order matters: more specific patterns first
  */
-interface TransformResult {
-    content: string;
-    changes: number;
-}
+// TransformResult interface is defined but can be used in future for more detailed transform tracking
+// interface TransformResult {
+//     content: string;
+//     changes: number;
+// }
 
 /**
  * Transform prompt content for Extension mode
@@ -99,7 +100,7 @@ export function transformForExtensionMode(content: string): string {
     // Pattern: Table cell with MENU command (choice = input)
     transformed = transformed.replace(
         /\|\s*`python -c "print\('[^']*'\);[^"]*choice = input\([^)]*\)"`\s*\|/g,
-        (match) => {
+        (_match) => {
             totalChanges++;
             return '| `Use the ouroborosai_menu tool with: { "question": "📋 Question", "options": ["A","B"] }` |';
         }
@@ -108,7 +109,7 @@ export function transformForExtensionMode(content: string): string {
     // Pattern: Table cell with CONFIRM command (confirm = input)
     transformed = transformed.replace(
         /\|\s*`python -c "print\('[^']*'\);[^"]*confirm = input\([^)]*\)"`\s*\|/g,
-        (match) => {
+        (_match) => {
             totalChanges++;
             return '| `Use the ouroborosai_confirm tool with: { "question": "⚠️ Question" }` |';
         }
@@ -117,7 +118,7 @@ export function transformForExtensionMode(content: string): string {
     // Pattern: Table cell with FEATURE command (feature = input)
     transformed = transformed.replace(
         /\|\s*`python -c "print\('[^']*'\); feature = input\([^)]*\)"`\s*\|/g,
-        (match) => {
+        (_match) => {
             totalChanges++;
             return '| `Use the ouroborosai_ask tool with: { "type": "task", "question": "🔧 Question" }` |';
         }
@@ -126,7 +127,7 @@ export function transformForExtensionMode(content: string): string {
     // Pattern: Table cell with QUESTION command (question = input)
     transformed = transformed.replace(
         /\|\s*`python -c "print\('[^']*'\); question = input\([^)]*\)"`\s*\|/g,
-        (match) => {
+        (_match) => {
             totalChanges++;
             return '| `Use the ouroborosai_ask tool with: { "type": "task", "question": "❓ Question" }` |';
         }
@@ -164,7 +165,7 @@ export function transformForExtensionMode(content: string): string {
     // python -c "..."
     // ```
     const patternUseRunCommandBlock =
-        /\*\*[\[\(]?[^*\]]*(?:USE|[Cc]all)[\s`']*run_command[\s`']*[Tt]ool[^\]*]*[\]\)]?:?\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/gi;
+        /\*\*[[(]?[^*\]]*(?:USE|[Cc]all)[\s`']*run_command[\s`']*[Tt]ool[^\]*]*[\])]?:?\*\*[\s\r\n]*```(?:python|bash|sh)?[\s\r\n]*(python -c "[^"]*")[\s\r\n]*```/gi;
     transformed = transformed.replace(patternUseRunCommandBlock, (match, pythonCmd) => {
         totalChanges++;
         // Determine the type based on the python command
@@ -977,7 +978,7 @@ function injectOuroborosTools(content: string): string {
  */
 function addExtensionModeHeader(content: string): string {
     // First, inject ouroboros tools into YAML frontmatter
-    let processedContent = injectOuroborosTools(content);
+    const processedContent = injectOuroborosTools(content);
 
     const header = `<!-- 
   OUROBOROS EXTENSION MODE

@@ -91,7 +91,7 @@ export function createUpdatePromptsCommand(
  * Create the check prompts version command handler
  */
 export function createCheckPromptsVersionCommand(
-    context: vscode.ExtensionContext
+    _context: vscode.ExtensionContext
 ): () => Promise<void> {
     return async () => {
         logger.info('Checking prompts version...');
