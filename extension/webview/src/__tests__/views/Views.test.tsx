@@ -203,7 +203,7 @@ describe('WorkflowProgress View', () => {
         render(<WorkflowProgress />);
         expect(screen.getByText('SPEC')).toBeInTheDocument();
         expect(screen.getByText('my-feature')).toBeInTheDocument();
-        expect(screen.getByText('Active Specs')).toBeInTheDocument();
+        expect(screen.getByText('Active Workflows')).toBeInTheDocument();
     });
 
     it('renders implement workflow type', () => {
@@ -243,9 +243,8 @@ describe('WorkflowProgress View', () => {
         });
 
         render(<WorkflowProgress />);
-        expect(screen.getByText('Recent Archives')).toBeInTheDocument();
+        expect(screen.getByText('Archived')).toBeInTheDocument();
         expect(screen.getByText('old-feature')).toBeInTheDocument();
-        expect(screen.getByText('100%')).toBeInTheDocument();
     });
 
     it('renders task summary when available', () => {
@@ -274,19 +273,19 @@ describe('WorkflowProgress View', () => {
         expect(screen.getByText('(2 in progress)')).toBeInTheDocument();
     });
 
-    it('truncates long spec names', () => {
+    it('truncates long spec names in archived list', () => {
         (useSpecsHook.useSpecs as any).mockReturnValue({
-            activeSpecs: [{
+            activeSpecs: [],
+            archivedSpecs: [{
                 name: 'this-is-a-very-long-spec-name-that-should-be-truncated',
                 path: '/test/long-name',
                 type: 'spec',
-                status: 'active',
+                status: 'archived',
                 createdAt: Date.now(),
                 modifiedAt: Date.now(),
                 phases: [],
-                progress: 50,
+                progress: 100,
             }],
-            archivedSpecs: [],
             isLoading: false,
         });
 

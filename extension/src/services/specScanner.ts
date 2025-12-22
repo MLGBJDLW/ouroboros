@@ -106,8 +106,10 @@ async function scanDirectory(
             if (name === 'templates' || name === 'archived' || name.startsWith('.')) continue;
 
             const specPath = path.join(dirPath, name);
+            
+            // Verify this is actually a spec folder by checking for spec files
             const specInfo = await analyzeSpecFolder(specPath, name, status);
-            if (specInfo) {
+            if (specInfo && isValidSpecFolder(specInfo)) {
                 results.push(specInfo);
             }
         }
@@ -116,6 +118,16 @@ async function scanDirectory(
     }
 
     return results;
+}
+
+/**
+ * Check if a folder is a valid spec folder (has at least one spec file)
+ */
+function isValidSpecFolder(spec: SpecInfo): boolean {
+    // A valid spec should have at least one completed phase or have tasks
+    const hasCompletedPhase = spec.phases.some(p => p.status === 'completed');
+    const hasTasks = spec.taskSummary && spec.taskSummary.total > 0;
+    return hasCompletedPhase || hasTasks;
 }
 
 /**

@@ -1,8 +1,10 @@
 /**
  * Redesigned WorkflowProgress component
  * Reads spec data from .ouroboros/specs folder
+ * Layout: Archived on top (collapsible), Active on bottom (selectable)
  */
 
+import { useState } from 'react';
 import { useSpecs } from '../../hooks/useSpecs';
 import { Card, CardHeader, CardBody } from '../../components/Card';
 import { ProgressBar } from '../../components/ProgressBar';
@@ -12,8 +14,12 @@ import type { SpecInfo, SpecPhase } from '../../types/specs';
 import { truncate } from '../../utils/formatters';
 import styles from './WorkflowProgress.module.css';
 
+const ARCHIVED_PREVIEW_COUNT = 3;
+
 export function WorkflowProgress() {
     const { activeSpecs, archivedSpecs, isLoading } = useSpecs();
+    const [showAllArchived, setShowAllArchived] = useState(false);
+    const [selectedSpecPath, setSelectedSpecPath] = useState<string | null>(null);
 
     if (isLoading) {
         return (
@@ -36,44 +42,104 @@ export function WorkflowProgress() {
         );
     }
 
+    // Get selected spec for detail view
+    const selectedSpec = selectedSpecPath
+        ? activeSpecs.find(s => s.path === selectedSpecPath)
+        : activeSpecs[0];
+
+    // Archived specs to display
+    const displayedArchived = showAllArchived
+        ? archivedSpecs
+        : archivedSpecs.slice(0, ARCHIVED_PREVIEW_COUNT);
+    const hasMoreArchived = archivedSpecs.length > ARCHIVED_PREVIEW_COUNT;
+
     return (
         <div className={styles.container}>
-            {/* Active Specs Section */}
+            {/* Archived Specs Section - Top */}
+            <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>
+                    <Icon name="archive" />
+                    <span>Archived</span>
+                    {archivedSpecs.length > 0 && (
+                        <span className={styles.badge}>{archivedSpecs.length}</span>
+                    )}
+                </h2>
+                {archivedSpecs.length === 0 ? (
+                    <div className={styles.emptySection}>
+                        <span>No archived specs</span>
+                    </div>
+                ) : (
+                    <>
+                        <div className={styles.archivedList}>
+                            {displayedArchived.map((spec) => (
+                                <ArchivedSpecCard key={spec.path} spec={spec} />
+                            ))}
+                        </div>
+                        {hasMoreArchived && (
+                            <button
+                                className={styles.showMoreBtn}
+                                onClick={() => setShowAllArchived(!showAllArchived)}
+                            >
+                                <Icon name={showAllArchived ? 'chevron-up' : 'chevron-down'} />
+                                <span>
+                                    {showAllArchived
+                                        ? 'Show less'
+                                        : `Show ${archivedSpecs.length - ARCHIVED_PREVIEW_COUNT} more`}
+                                </span>
+                            </button>
+                        )}
+                    </>
+                )}
+            </section>
+
+            {/* Divider */}
+            <div className={styles.divider} />
+
+            {/* Active Specs Section - Bottom */}
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>
                     <Icon name="play-circle" />
-                    <span>Active Specs</span>
+                    <span>Active Workflows</span>
                     {activeSpecs.length > 0 && (
-                        <span className={styles.badge}>{activeSpecs.length}</span>
+                        <span className={`${styles.badge} ${styles.activeBadge}`}>
+                            {activeSpecs.length}
+                        </span>
                     )}
                 </h2>
                 {activeSpecs.length === 0 ? (
                     <div className={styles.emptySection}>
+                        <Icon name="inbox" className={styles.emptyIcon} />
                         <span>No active workflows</span>
+                        <span className={styles.emptyHint}>
+                            Start a new spec or implement workflow
+                        </span>
                     </div>
                 ) : (
-                    <div className={styles.specList}>
-                        {activeSpecs.map((spec) => (
-                            <ActiveSpecCard key={spec.path} spec={spec} />
-                        ))}
+                    <div className={styles.activeSection}>
+                        {/* Spec Selector - if multiple active specs */}
+                        {activeSpecs.length > 1 && (
+                            <div className={styles.specSelector}>
+                                {activeSpecs.map((spec) => (
+                                    <button
+                                        key={spec.path}
+                                        className={`${styles.specTab} ${
+                                            spec.path === selectedSpec?.path ? styles.selected : ''
+                                        }`}
+                                        onClick={() => setSelectedSpecPath(spec.path)}
+                                        title={spec.name}
+                                    >
+                                        <Icon name={spec.type === 'spec' ? 'checklist' : 'gear'} />
+                                        <span>{truncate(spec.name, 16)}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Selected Spec Detail */}
+                        {selectedSpec && <ActiveSpecCard spec={selectedSpec} />}
                     </div>
                 )}
             </section>
-
-            {/* Archived Specs Section */}
-            {archivedSpecs.length > 0 && (
-                <section className={styles.section}>
-                    <h2 className={styles.sectionTitle}>
-                        <Icon name="archive" />
-                        <span>Recent Archives</span>
-                    </h2>
-                    <div className={styles.archivedList}>
-                        {archivedSpecs.slice(0, 5).map((spec) => (
-                            <ArchivedSpecCard key={spec.path} spec={spec} />
-                        ))}
-                    </div>
-                </section>
-            )}
         </div>
     );
 }
@@ -83,7 +149,6 @@ interface SpecCardProps {
 }
 
 function ActiveSpecCard({ spec }: SpecCardProps) {
-    const specName = truncate(spec.name, 24);
     const typeIcon = spec.type === 'spec' ? 'checklist' : 'gear';
     const typeLabel = spec.type.toUpperCase();
 
@@ -96,7 +161,7 @@ function ActiveSpecCard({ spec }: SpecCardProps) {
                         <span>{typeLabel}</span>
                     </div>
                     <span className={styles.specName} title={spec.name}>
-                        {specName}
+                        {spec.name}
                     </span>
                 </div>
             </CardHeader>
@@ -109,6 +174,18 @@ function ActiveSpecCard({ spec }: SpecCardProps) {
                 <div className={styles.phaseIndicators}>
                     {spec.phases.map((phase) => (
                         <PhaseCircle key={phase.name} phase={phase} />
+                    ))}
+                </div>
+
+                {/* Phase Legend */}
+                <div className={styles.phaseLegend}>
+                    {spec.phases.map((phase) => (
+                        <span
+                            key={phase.name}
+                            className={`${styles.phaseLabel} ${styles[phase.status]}`}
+                        >
+                            {phase.name.charAt(0)}
+                        </span>
                     ))}
                 </div>
 
@@ -132,20 +209,23 @@ function ActiveSpecCard({ spec }: SpecCardProps) {
 }
 
 function ArchivedSpecCard({ spec }: SpecCardProps) {
-    const specName = truncate(spec.name, 20);
+    const specName = truncate(spec.name, 24);
     const date = new Date(spec.modifiedAt).toLocaleDateString();
+    const typeIcon = spec.type === 'spec' ? 'checklist' : 'gear';
 
     return (
         <div className={styles.archivedCard}>
             <div className={styles.archivedInfo}>
-                <Icon name="archive" className={styles.archivedIcon} />
+                <Icon name={typeIcon} className={styles.archivedIcon} />
                 <span className={styles.archivedName} title={spec.name}>
                     {specName}
                 </span>
             </div>
             <div className={styles.archivedMeta}>
                 <span className={styles.archivedDate}>{date}</span>
-                <span className={styles.completeBadge}>100%</span>
+                <span className={styles.completeBadge}>
+                    <Icon name="check" />
+                </span>
             </div>
         </div>
     );
