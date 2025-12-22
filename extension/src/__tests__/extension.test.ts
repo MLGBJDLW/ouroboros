@@ -11,6 +11,9 @@ vi.mock('vscode', () => ({
     window: {
         registerWebviewViewProvider: mockRegisterWebviewViewProvider,
     },
+    workspace: {
+        workspaceFolders: [{ uri: { fsPath: '/test-workspace' }, name: 'test', index: 0 }],
+    },
 }));
 
 // Mock logger
@@ -69,6 +72,16 @@ vi.mock('../commands', () => ({
     registerCommands: vi.fn().mockReturnValue([{ dispose: vi.fn() }]),
 }));
 
+// Mock SpecWatcher
+vi.mock('../services/specWatcher', () => ({
+    SpecWatcher: vi.fn().mockImplementation(() => ({
+        start: vi.fn().mockResolvedValue(undefined),
+        onSpecChange: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        forceRescan: vi.fn().mockResolvedValue(null),
+        dispose: vi.fn(),
+    })),
+}));
+
 describe('extension', () => {
     let mockContext: {
         extensionUri: { fsPath: string };
@@ -120,6 +133,9 @@ describe('extension', () => {
         vi.doMock('vscode', () => ({
             window: {
                 registerWebviewViewProvider: mockRegisterWebviewViewProvider,
+            },
+            workspace: {
+                workspaceFolders: [{ uri: { fsPath: '/test-workspace' }, name: 'test', index: 0 }],
             },
         }));
 

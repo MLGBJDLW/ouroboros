@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.5] - 2025-12-22
+
+### 🎨 Extension UI Redesign
+
+#### Added
+- **File-Based Workflow Progress** — Workflow tab now reads from file system instead of tool state:
+  - Scans `.ouroboros/specs/` for active specs
+  - Scans `.ouroboros/specs/archived/` for archived specs
+  - Parses `tasks.md` checkboxes for progress calculation
+  - Real-time updates via `vscode.FileSystemWatcher`
+
+#### Changed
+- **Welcome Logo Effect** — Replaced CSS pseudo-elements with SVG arc paths:
+  - Left arc: Purple (`#9C6ADE`) matching infinity logo color
+  - Right arc: Blue (`#3794ff`) brand color
+  - Breathing scale animation synchronized with glow
+  - Flowing particle dots with color-shifting effect
+- **Workflow Card Border** — Updated to brand blue gradient (removed rainbow AI effect)
+
+#### Technical
+- Added 3 new backend services: `specScanner.ts`, `tasksParser.ts`, `specWatcher.ts`
+- 29 new unit tests (323 total tests passing)
+- All services include comprehensive mocks for testing
+
+---
+
 ## [3.2.4] - 2025-12-21
 
 ### 🎨 Pending Requests UI Overhaul

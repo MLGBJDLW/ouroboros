@@ -7,6 +7,7 @@ import { DisposableBase } from '../utils/disposable';
 import { createLogger } from '../utils/logger';
 import { STORAGE_KEYS, CONFIG, type ExecutionMode, type WorkflowType } from '../constants';
 import type { StoredInteraction } from '../tools/types';
+import type { SpecInfo } from '../services/specScanner';
 
 const logger = createLogger('StateManager');
 
@@ -20,6 +21,9 @@ export interface WorkspaceState {
     executionMode: ExecutionMode;
     hasCopilotChatOpened?: boolean;
     selectedWorkspacePath?: string;
+    // File-based specs data
+    activeSpecs?: SpecInfo[];
+    archivedSpecs?: SpecInfo[];
 }
 
 export interface GlobalState {

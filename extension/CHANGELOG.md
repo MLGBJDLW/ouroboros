@@ -2,6 +2,31 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.5] - 2025-12-22
+
+### Added
+
+- **File-Based Workflow Progress** — Redesigned Workflow tab reads directly from `.ouroboros/specs/` folder:
+  - Active specs shown with phase indicators and progress bars
+  - Archived specs shown in "Recent Archives" section
+  - Real-time updates via FileSystemWatcher
+- **New Backend Services**:
+  - `specScanner.ts` — Scans specs folders for active/archived workflows
+  - `tasksParser.ts` — Parses `tasks.md` checkboxes for progress calculation
+  - `specWatcher.ts` — Watches file changes for live updates
+- **29 New Unit Tests** — Full test coverage for new services (323 total tests)
+
+### Changed
+
+- **Welcome Logo Effect** — Replaced CSS-based effects with clean SVG arc paths:
+  - Left arc: Purple (`#9C6ADE`) matching logo color
+  - Right arc: Blue (`#3794ff`) brand color
+  - Breathing scale animation (0.88 → 1.12)
+  - Flowing particle dots with color-shifting animation
+- **Workflow Card Border** — Updated gradient to use brand blue colors instead of rainbow
+
+---
+
 ## [3.2.4] - 2025-12-21
 
 ### Changed
