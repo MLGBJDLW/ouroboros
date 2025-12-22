@@ -7,17 +7,55 @@ import { formatRelativeTime, formatRequestType } from '../../utils/formatters';
 import type { PendingRequest, AskRequestData, MenuRequestData, ConfirmRequestData, PlanReviewRequestData } from '../../types/requests';
 import styles from './PendingRequests.module.css';
 
+interface SentMessage {
+    id: string;
+    text: string;
+    timestamp: number;
+}
+
 export function PendingRequests() {
     const { requests, respond, cancel } = usePendingRequests();
+    const [sentMessage, setSentMessage] = useState<SentMessage | null>(null);
 
+    // Clear sent message after fade out animation
+    useEffect(() => {
+        if (sentMessage) {
+            const timer = setTimeout(() => {
+                setSentMessage(null);
+            }, 3000); // 3 seconds total (includes fade animation)
+            return () => clearTimeout(timer);
+        }
+    }, [sentMessage]);
+
+    // Wrap respond to capture the sent message
+    const handleRespond = useCallback((id: string, response: unknown) => {
+        // Extract display text from response
+        const displayText = extractDisplayText(response);
+        if (displayText) {
+            setSentMessage({
+                id: `sent-${Date.now()}`,
+                text: displayText,
+                timestamp: Date.now(),
+            });
+        }
+        respond(id, response);
+    }, [respond]);
+
+    // Show sent message bubble if no pending requests
     if (requests.length === 0) {
         return (
             <div className={styles.empty}>
-                <Icon name="comment-discussion" className={styles.emptyIcon} />
-                <h3>No pending requests</h3>
-                <p className={styles.emptyHint}>
-                    Waiting for agent input...
-                </p>
+                {sentMessage ? (
+                    <SentMessageBubble message={sentMessage} />
+                ) : (
+                    <>
+                        <Icon name="comment-discussion" className={styles.emptyIcon} />
+                        <h3>No pending requests</h3>
+                        <p className={styles.emptyHint}>
+                            Waiting for agent input...
+                        </p>
+                    </>
+                )}
             </div>
         );
     }
@@ -30,10 +68,65 @@ export function PendingRequests() {
             <div className={styles.listItem}>
                 <RequestChatBubble
                     request={currentRequest}
-                    onRespond={respond}
+                    onRespond={handleRespond}
                     onCancel={cancel}
                 />
             </div>
+        </div>
+    );
+}
+
+/** Extract human-readable text from response object */
+function extractDisplayText(response: unknown): string | null {
+    if (!response || typeof response !== 'object') return null;
+    
+    const r = response as Record<string, unknown>;
+    
+    // Ask response
+    if (typeof r.response === 'string') {
+        return r.response;
+    }
+    
+    // Menu response
+    if (typeof r.selectedOption === 'string') {
+        return r.isCustom ? r.selectedOption : `Selected: ${r.selectedOption}`;
+    }
+    
+    // Confirm response
+    if (typeof r.confirmed === 'boolean') {
+        if (r.isCustom && typeof r.customResponse === 'string') {
+            return r.customResponse;
+        }
+        return r.confirmed ? 'Yes' : 'No';
+    }
+    
+    // Plan review response
+    if (typeof r.approved === 'boolean') {
+        if (r.isCustom && typeof r.customResponse === 'string') {
+            return r.customResponse;
+        }
+        if (r.approved) return 'Approved';
+        if (typeof r.feedback === 'string' && r.feedback) {
+            return `Rejected: ${r.feedback}`;
+        }
+        return 'Rejected';
+    }
+    
+    return null;
+}
+
+interface SentMessageBubbleProps {
+    message: SentMessage;
+}
+
+function SentMessageBubble({ message }: SentMessageBubbleProps) {
+    return (
+        <div className={styles.sentBubble}>
+            <div className={styles.sentHeader}>
+                <Icon name="check" className={styles.sentIcon} />
+                <span>Sent to Copilot</span>
+            </div>
+            <p className={styles.sentText}>{message.text}</p>
         </div>
     );
 }

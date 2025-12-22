@@ -4,6 +4,14 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 
 ## [3.2.6] - 2025-12-22
 
+### Added
+
+- **Sent Message Confirmation** — Shows what you sent to Copilot after responding:
+  - Green bubble appears with "Sent to Copilot" header
+  - Displays your response text (truncated if too long)
+  - Smoothly fades out after 3 seconds
+  - Works for all request types (ask, menu, confirm, plan review)
+
 ### Fixed
 
 - **Multi-Workspace Spec Detection** — SpecWatcher now restarts when switching workspaces:
