@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { PendingRequests } from './views/PendingRequests';
 import { WorkflowProgress } from './views/WorkflowProgress';
-import { AgentHierarchy } from './views/AgentHierarchy';
 import { History } from './views/History';
 import { Icon } from './components/Icon';
 import { Tooltip } from './components/Tooltip';
@@ -11,7 +10,7 @@ import { useAppContext } from './context/AppContext';
 import { useVSCode } from './context/VSCodeContext';
 import styles from './App.module.css';
 
-type ViewType = 'home' | 'pending' | 'workflow' | 'agents' | 'history';
+type ViewType = 'home' | 'pending' | 'workflow' | 'history';
 
 interface TabConfig {
     id: ViewType;
@@ -24,8 +23,7 @@ const TABS: TabConfig[] = [
     { id: 'home', icon: 'home', label: 'Home', shortcut: '0' },
     { id: 'pending', icon: 'bell', label: 'Pending Requests', shortcut: '1' },
     { id: 'workflow', icon: 'pulse', label: 'Workflow Progress', shortcut: '2' },
-    { id: 'agents', icon: 'organization', label: 'Agent Hierarchy', shortcut: '3' },
-    { id: 'history', icon: 'history', label: 'History', shortcut: '4' },
+    { id: 'history', icon: 'history', label: 'History', shortcut: '3' },
 ];
 
 function App() {
@@ -35,28 +33,20 @@ function App() {
 
     // Keyboard navigation
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // Number keys for tab switching
-        if (e.key >= '0' && e.key <= '4' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        // Don't capture if typing in input/textarea
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+            return;
+        }
+
+        // Number keys for tab switching (only with Alt modifier to avoid conflicts)
+        if (e.key >= '0' && e.key <= '3' && e.altKey && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
             const index = parseInt(e.key);
             if (TABS[index]) {
                 setActiveView(TABS[index].id);
             }
         }
-
-        // Arrow keys for navigation
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            const currentIndex = TABS.findIndex((tab) => tab.id === activeView);
-            let newIndex: number;
-
-            if (e.key === 'ArrowLeft') {
-                newIndex = currentIndex > 0 ? currentIndex - 1 : TABS.length - 1;
-            } else {
-                newIndex = currentIndex < TABS.length - 1 ? currentIndex + 1 : 0;
-            }
-
-            setActiveView(TABS[newIndex].id);
-        }
-    }, [activeView]);
+    }, []);
 
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
@@ -115,8 +105,6 @@ function App() {
                 return <PendingRequests />;
             case 'workflow':
                 return <WorkflowProgress />;
-            case 'agents':
-                return <AgentHierarchy />;
             case 'history':
                 return <History />;
             default:

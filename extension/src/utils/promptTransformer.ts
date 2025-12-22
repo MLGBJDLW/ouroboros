@@ -817,7 +817,6 @@ Use the appropriate Ouroboros LM Tool:
 - ouroborosai_menu: For multiple choice selection
 - ouroborosai_confirm: For yes/no confirmation
 - ouroborosai_plan_review: For plan/spec review
-- ouroborosai_phase_progress: For workflow progress updates
 \`\`\``;
     });
     // =========================================================================
@@ -919,7 +918,6 @@ const OUROBOROS_TOOLS = [
     'mlgbjdlw.ouroboros-ai/ouroborosai_menu',
     'mlgbjdlw.ouroboros-ai/ouroborosai_confirm',
     'mlgbjdlw.ouroboros-ai/ouroborosai_plan_review',
-    'mlgbjdlw.ouroboros-ai/ouroborosai_phase_progress',
     'mlgbjdlw.ouroboros-ai/ouroborosai_agent_handoff',
 ];
 
@@ -991,7 +989,6 @@ function addExtensionModeHeader(content: string): string {
   - ouroborosai_menu: Show multiple choice menu
   - ouroborosai_confirm: Request yes/no confirmation
   - ouroborosai_plan_review: Request plan/spec review
-  - ouroborosai_phase_progress: Update workflow progress
   - ouroborosai_agent_handoff: Track agent handoffs
 -->
 

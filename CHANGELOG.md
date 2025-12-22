@@ -11,10 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Changed
 - **Sent Message Bubble Size** — Increased width from 320px to 420px (matches request card)
-- **Sent Message Text** — Increased max height and line clamp for longer messages
+- **Progress Bar** — Now shows tasks completion only; phases displayed in timeline below
+- **Tab Shortcuts** — Changed to Alt+0-3 to avoid conflicts with text input
+- **Send Button** — Replaced generic icon with Ouroboros logo
+- **Tabs Reduced** — 4 tabs now (removed Agent Hierarchy, merged into Pending Requests)
+
+#### Added
+- **Agent Activity Box** — Collapsible panel in Pending Requests showing:
+  - Current active agent with level badge
+  - Last 3 handoff transitions (expandable)
+
+#### Removed
+- **`ouroborosai_phase_progress` Tool** — Removed redundant tool; progress tracked via file system
+- **Agent Hierarchy Tab** — Functionality merged into Agent Activity box
 
 #### Fixed
-- **Newline Parsing** — Question text now correctly renders `\n` as line breaks
+- **Newline Parsing** — Question text correctly renders `\n` as line breaks
+- **Keyboard Conflicts** — Arrow keys and number keys no longer interfere with textarea/input
+
+### 📝 Agent Improvements
+
+#### Changed
+- **Implement Agent** — Strengthened task update constraints:
+  - Task status must be updated IMMEDIATELY after each task completes
+  - Update step now comes BEFORE verification step
+  - Added critical warnings about delayed updates breaking UI
 
 ---
 

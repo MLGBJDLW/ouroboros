@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePendingRequests } from '../../hooks/usePendingRequests';
+import { useAppContext } from '../../context/AppContext';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
+import { Logo } from '../../components/Logo';
 import { formatRelativeTime, formatRequestType } from '../../utils/formatters';
+import { AGENT_DISPLAY_NAMES } from '../../types/agent';
 import type { PendingRequest, AskRequestData, MenuRequestData, ConfirmRequestData, PlanReviewRequestData } from '../../types/requests';
 import styles from './PendingRequests.module.css';
 
@@ -16,7 +19,9 @@ interface SentMessage {
 
 export function PendingRequests() {
     const { requests, respond, cancel } = usePendingRequests();
+    const { state } = useAppContext();
     const [sentMessage, setSentMessage] = useState<SentMessage | null>(null);
+    const [showAllActivity, setShowAllActivity] = useState(false);
 
     // Clear sent message after fade out animation
     useEffect(() => {
@@ -66,8 +71,49 @@ export function PendingRequests() {
     // Only show the most recent request (centered)
     const currentRequest = requests[requests.length - 1];
 
+    // Get recent handoffs for activity display
+    const recentHandoffs = state.handoffHistory.slice(-3).reverse();
+    const hasActivity = state.currentAgent || recentHandoffs.length > 0;
+
     return (
         <div className={styles.container}>
+            {/* Agent Activity Box */}
+            {hasActivity && (
+                <div className={styles.activityBox}>
+                    <button 
+                        className={styles.activityHeader}
+                        onClick={() => setShowAllActivity(!showAllActivity)}
+                    >
+                        <Icon name="organization" />
+                        <span>Agent Activity</span>
+                        {state.currentAgent && (
+                            <Badge variant="info" size="small">
+                                {getDisplayName(state.currentAgent.name)}
+                            </Badge>
+                        )}
+                        <Icon 
+                            name={showAllActivity ? 'chevron-up' : 'chevron-down'} 
+                            className={styles.activityToggle}
+                        />
+                    </button>
+                    {showAllActivity && recentHandoffs.length > 0 && (
+                        <div className={styles.activityList}>
+                            {recentHandoffs.map((handoff, index) => (
+                                <div key={index} className={styles.activityItem}>
+                                    <span className={styles.activityFrom}>
+                                        {getDisplayName(handoff.from.name)}
+                                    </span>
+                                    <Icon name="arrow-right" className={styles.activityArrow} />
+                                    <span className={styles.activityTo}>
+                                        {getDisplayName(handoff.to.name)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className={styles.listItem}>
                 <RequestChatBubble
                     request={currentRequest}
@@ -77,6 +123,10 @@ export function PendingRequests() {
             </div>
         </div>
     );
+}
+
+function getDisplayName(agentName: string): string {
+    return AGENT_DISPLAY_NAMES[agentName] ?? agentName;
 }
 
 /** Extract human-readable text from response object */
@@ -397,7 +447,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                             disabled={!customValue.trim()}
                             title="Send"
                         >
-                            <Icon name="send" />
+                            <Logo size={18} />
                         </button>
                     </div>
                 )}
@@ -501,7 +551,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                             disabled={!customValue.trim()}
                             title="Send"
                         >
-                            <Icon name="send" />
+                            <Logo size={18} />
                         </button>
                     </div>
                 )}
@@ -643,7 +693,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                             disabled={!customValue.trim()}
                             title="Send"
                         >
-                            <Icon name="send" />
+                            <Logo size={18} />
                         </button>
                     </div>
                 )}

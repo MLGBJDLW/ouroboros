@@ -25,7 +25,6 @@ export const TOOLS = {
     MENU: 'ouroborosai_menu',
     CONFIRM: 'ouroborosai_confirm',
     PLAN_REVIEW: 'ouroborosai_plan_review',
-    PHASE_PROGRESS: 'ouroborosai_phase_progress',
     AGENT_HANDOFF: 'ouroborosai_agent_handoff',
 } as const;
 

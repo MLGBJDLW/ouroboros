@@ -19,7 +19,6 @@ import type {
     ConfirmOutput,
     PlanReviewInput,
     PlanReviewOutput,
-    PhaseProgressInput,
     HandoffInput,
     PendingRequest,
 } from '../tools/types';
@@ -151,16 +150,6 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
         token: vscode.CancellationToken
     ): Promise<PlanReviewOutput> {
         return this.createRequest<PlanReviewInput, PlanReviewOutput>('plan_review', input, token);
-    }
-
-    /**
-     * Update phase progress
-     */
-    async updatePhaseProgress(input: PhaseProgressInput): Promise<void> {
-        this.postMessage({
-            type: 'phaseProgress',
-            payload: input,
-        });
     }
 
     /**

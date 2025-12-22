@@ -12,7 +12,6 @@ export type ExtensionMessage =
     | { type: 'newRequest'; payload: PendingRequest }
     | { type: 'pendingRequestsUpdate'; payload: PendingRequest[] }
     | { type: 'historyUpdate'; payload: StoredInteraction[] }
-    | { type: 'phaseProgress'; payload: PhaseProgressPayload }
     | { type: 'agentHandoff'; payload: AgentHandoff }
     | { type: 'refresh' };
 
@@ -44,14 +43,6 @@ export interface WorkspaceStatePayload {
     // File-based specs data
     activeSpecs?: import('./specs').SpecInfo[];
     archivedSpecs?: import('./specs').SpecInfo[];
-}
-
-export interface PhaseProgressPayload {
-    workflow: 'spec' | 'implement';
-    specName: string;
-    currentPhase: number;
-    totalPhases: number;
-    status: string;
 }
 
 export interface StoredInteraction {

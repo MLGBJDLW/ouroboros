@@ -59,20 +59,6 @@ export const PlanReviewInputSchema = z.object({
 });
 
 // ============================================================================
-// Phase Progress Tool Schema
-// ============================================================================
-
-export const PhaseProgressInputSchema = z.object({
-    workflow: z.enum(['spec', 'implement']),
-    specName: z.string().min(1, 'Spec name is required'),
-    currentPhase: z.number().min(1, 'Phase must be at least 1'),
-    totalPhases: z.number().min(1, 'Total phases must be at least 1'),
-    status: z.string().min(1, 'Status is required'),
-    agentName: z.string().optional(),
-    agentLevel: AgentLevelSchema.optional(),
-});
-
-// ============================================================================
 // Agent Handoff Tool Schema
 // ============================================================================
 

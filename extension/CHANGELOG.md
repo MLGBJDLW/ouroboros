@@ -8,10 +8,23 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 
 - **Sent Message Bubble Size** — Increased width from 320px to 420px to match request card size
 - **Sent Message Text** — Increased max height from 120px to 180px, line clamp from 4 to 6 lines
+- **Progress Bar** — Now shows tasks completion only (phases shown in timeline)
+- **Tab Shortcuts** — Changed from number keys to Alt+number to avoid input conflicts
+- **Send Button** — Replaced icon with Ouroboros logo
+- **Tabs Reduced** — Removed Agent Hierarchy tab (merged into Pending Requests)
+
+### Added
+
+- **Agent Activity Box** — Collapsible box in Pending Requests showing current agent and recent handoffs
+
+### Removed
+
+- **`ouroborosai_phase_progress` Tool** — Removed redundant tool; progress now tracked via file system
 
 ### Fixed
 
-- **Newline Parsing** — Question text now correctly renders `\n` as line breaks using `white-space: pre-wrap`
+- **Newline Parsing** — Question text now correctly renders `\n` as line breaks
+- **Keyboard Conflicts** — Arrow keys and number keys no longer interfere with text input
 
 ---
 
