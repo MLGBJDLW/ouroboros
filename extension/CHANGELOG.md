@@ -6,8 +6,10 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 
 ### Changed
 
-- **Sent Message Bubble Size** — Increased width from 320px to 420px to match request card size
-- **Sent Message Text** — Increased max height from 120px to 180px, line clamp from 4 to 6 lines
+- **Chat-Style Request Cards** — All request types now use chat bubble layout with agent avatar
+- **Agent Avatar** — Ouroboros logo in semi-transparent bubble (replaces solid blue circle)
+- **Sent Message Bubble Size** — Increased to 520px width, 280px max height, 10 line clamp
+- **Request Cards Centered** — Cards now vertically centered instead of top-aligned
 - **Progress Bar** — Now shows tasks completion only (phases shown in timeline)
 - **Tab Shortcuts** — Changed from number keys to Alt+number to avoid input conflicts
 - **Send Button** — Replaced icon with Ouroboros logo
@@ -16,6 +18,7 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 ### Added
 
 - **Agent Activity Box** — Collapsible box in Pending Requests showing current agent and recent handoffs
+- **Test Coverage** — Improved coverage for updatePrompts.ts (100%) and SidebarProvider.ts (95%)
 
 ### Removed
 
