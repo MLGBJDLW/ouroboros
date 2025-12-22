@@ -28,7 +28,6 @@ vi.mock('../../constants', () => ({
         MENU: 'ouroboros_menu',
         CONFIRM: 'ouroboros_confirm',
         PLAN_REVIEW: 'ouroboros_plan_review',
-        PHASE_PROGRESS: 'ouroboros_phase_progress',
         AGENT_HANDOFF: 'ouroboros_agent_handoff',
     },
 }));
@@ -48,10 +47,6 @@ vi.mock('../../tools/confirm', () => ({
 
 vi.mock('../../tools/planReview', () => ({
     createPlanReviewTool: vi.fn().mockReturnValue({}),
-}));
-
-vi.mock('../../tools/phaseProgress', () => ({
-    createPhaseProgressTool: vi.fn().mockReturnValue({}),
 }));
 
 vi.mock('../../tools/handoff', () => ({
@@ -75,8 +70,8 @@ describe('registerTools', () => {
 
         const disposables = registerTools(mockStateManager as never, mockSidebarProvider as never);
 
-        expect(vscode.lm.registerTool).toHaveBeenCalledTimes(6);
-        expect(disposables).toHaveLength(6);
+        expect(vscode.lm.registerTool).toHaveBeenCalledTimes(5);
+        expect(disposables).toHaveLength(5);
     });
 
     it('should register tools with correct names', async () => {
@@ -92,7 +87,6 @@ describe('registerTools', () => {
         expect(toolNames).toContain('ouroboros_menu');
         expect(toolNames).toContain('ouroboros_confirm');
         expect(toolNames).toContain('ouroboros_plan_review');
-        expect(toolNames).toContain('ouroboros_phase_progress');
         expect(toolNames).toContain('ouroboros_agent_handoff');
     });
 });

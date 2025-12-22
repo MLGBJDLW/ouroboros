@@ -194,50 +194,6 @@ describe('SidebarProvider', () => {
         });
     });
 
-    describe('updatePhaseProgress', () => {
-        it('should post phase progress message', async () => {
-            const { SidebarProvider } = await import('../../webview/SidebarProvider');
-
-            const provider = new SidebarProvider(
-                { fsPath: '/test' } as never,
-                mockStateManager as never
-            );
-
-            const mockWebviewView = {
-                webview: {
-                    options: {},
-                    html: '',
-                    postMessage: vi.fn(),
-                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-                },
-            };
-
-            provider.resolveWebviewView(
-                mockWebviewView as never,
-                {} as never,
-                { isCancellationRequested: false } as never
-            );
-
-            await provider.updatePhaseProgress({
-                workflow: 'spec',
-                specName: 'test',
-                currentPhase: 1,
-                totalPhases: 3,
-                status: 'In progress',
-            });
-
-            expect(mockWebviewView.webview.postMessage).toHaveBeenCalledWith({
-                type: 'phaseProgress',
-                payload: expect.objectContaining({
-                    workflow: 'spec',
-                    specName: 'test',
-                }),
-            });
-
-            provider.dispose();
-        });
-    });
-
     describe('updateAgentHandoff', () => {
         it('should post agent handoff message', async () => {
             const { SidebarProvider } = await import('../../webview/SidebarProvider');

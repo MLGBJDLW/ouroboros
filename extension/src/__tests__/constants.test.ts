@@ -69,10 +69,6 @@ describe('constants', () => {
             expect(TOOLS.PLAN_REVIEW).toBe('ouroborosai_plan_review');
         });
 
-        it('should have phase progress tool', () => {
-            expect(TOOLS.PHASE_PROGRESS).toBe('ouroborosai_phase_progress');
-        });
-
         it('should have agent handoff tool', () => {
             expect(TOOLS.AGENT_HANDOFF).toBe('ouroborosai_agent_handoff');
         });
