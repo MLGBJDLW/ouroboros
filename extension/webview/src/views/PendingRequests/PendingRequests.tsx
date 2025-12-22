@@ -10,6 +10,7 @@ import styles from './PendingRequests.module.css';
 interface SentMessage {
     id: string;
     text: string;
+    type: 'ask' | 'menu' | 'confirm' | 'plan_review';
     timestamp: number;
 }
 
@@ -22,24 +23,26 @@ export function PendingRequests() {
         if (sentMessage) {
             const timer = setTimeout(() => {
                 setSentMessage(null);
-            }, 3000); // 3 seconds total (includes fade animation)
+            }, 4000); // 4 seconds total (includes fade animation)
             return () => clearTimeout(timer);
         }
     }, [sentMessage]);
 
     // Wrap respond to capture the sent message
     const handleRespond = useCallback((id: string, response: unknown) => {
-        // Extract display text from response
+        // Find the request to get its type
+        const request = requests.find(r => r.id === id);
         const displayText = extractDisplayText(response);
-        if (displayText) {
+        if (displayText && request) {
             setSentMessage({
                 id: `sent-${Date.now()}`,
                 text: displayText,
+                type: request.type,
                 timestamp: Date.now(),
             });
         }
         respond(id, response);
-    }, [respond]);
+    }, [requests, respond]);
 
     // Show sent message bubble if no pending requests
     if (requests.length === 0) {
@@ -120,13 +123,53 @@ interface SentMessageBubbleProps {
 }
 
 function SentMessageBubble({ message }: SentMessageBubbleProps) {
+    const getTypeInfo = () => {
+        switch (message.type) {
+            case 'ask':
+                return { icon: 'comment', label: 'Response', color: 'info' };
+            case 'menu':
+                return { icon: 'list-selection', label: 'Selection', color: 'success' };
+            case 'confirm':
+                return { icon: 'check', label: 'Confirmation', color: 'warning' };
+            case 'plan_review':
+                return { icon: 'file-text', label: 'Review', color: 'info' };
+            default:
+                return { icon: 'send', label: 'Sent', color: 'info' };
+        }
+    };
+
+    const typeInfo = getTypeInfo();
+    const timeStr = new Date(message.timestamp).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+
     return (
-        <div className={styles.sentBubble}>
-            <div className={styles.sentHeader}>
-                <Icon name="check" className={styles.sentIcon} />
-                <span>Sent to Copilot</span>
+        <div className={styles.sentContainer}>
+            <div className={`${styles.sentBubble} ${styles[`sent${typeInfo.color.charAt(0).toUpperCase() + typeInfo.color.slice(1)}`]}`}>
+                {/* Bubble tail */}
+                <div className={styles.sentTail} />
+                
+                {/* Header with icon and status */}
+                <div className={styles.sentHeader}>
+                    <div className={styles.sentStatus}>
+                        <Icon name="check-all" className={styles.sentCheckIcon} />
+                        <span>Sent to Copilot</span>
+                    </div>
+                    <span className={styles.sentTime}>{timeStr}</span>
+                </div>
+
+                {/* Message content */}
+                <p className={styles.sentText}>{message.text}</p>
+
+                {/* Footer with type badge */}
+                <div className={styles.sentFooter}>
+                    <div className={styles.sentTypeBadge}>
+                        <Icon name={typeInfo.icon} />
+                        <span>{typeInfo.label}</span>
+                    </div>
+                </div>
             </div>
-            <p className={styles.sentText}>{message.text}</p>
         </div>
     );
 }
