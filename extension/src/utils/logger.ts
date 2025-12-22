@@ -52,12 +52,14 @@ export function createLogger(prefix: string): Logger {
         warn(message: string, ...args: unknown[]): void {
             const formatted = formatMessage('WARN', message) + formatArgs(args);
             outputChannel.appendLine(formatted);
+            // eslint-disable-next-line no-console
             console.warn(formatted);
         },
 
         error(message: string, ...args: unknown[]): void {
             const formatted = formatMessage('ERROR', message) + formatArgs(args);
             outputChannel.appendLine(formatted);
+            // eslint-disable-next-line no-console
             console.error(formatted);
         },
 
