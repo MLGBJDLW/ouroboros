@@ -61,8 +61,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // specs are available before webview sends 'ready' message
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders && workspaceFolders.length > 0) {
-            const workspacePath = stateManager.getWorkspaceState().selectedWorkspacePath
-                ?? workspaceFolders[0].uri.fsPath;
+            const savedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
+            const workspacePath = savedPath ?? workspaceFolders[0].uri.fsPath;
+            logger.info('Starting spec watcher', {
+                savedPath,
+                workspacePath,
+                availableFolders: workspaceFolders.map(f => f.uri.fsPath),
+            });
             const initialSpecs = await specWatcher.start(workspacePath);
             // Ensure state is updated synchronously with initial scan results
             await stateManager.updateWorkspaceState({
@@ -72,6 +77,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             logger.info('Initial specs loaded into state', {
                 activeCount: initialSpecs.active.length,
                 archivedCount: initialSpecs.archived.length,
+                archivedNames: initialSpecs.archived.map(s => s.name),
             });
         }
 

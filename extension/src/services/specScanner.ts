@@ -55,9 +55,11 @@ export async function scanSpecsFolder(workspacePath: string): Promise<{
     archived: SpecInfo[];
 }> {
     const specsDir = path.join(workspacePath, '.ouroboros', 'specs');
+    // Support both spellings: "archived" (correct) and "archieved" (common typo)
     const archivedDir = path.join(specsDir, 'archived');
+    const archievedDir = path.join(specsDir, 'archieved'); // typo variant
 
-    logger.info('Scanning specs folder', { specsDir, archivedDir });
+    logger.info('Scanning specs folder', { specsDir, archivedDir, archievedDir });
 
     const active: SpecInfo[] = [];
     const archived: SpecInfo[] = [];
@@ -67,14 +69,19 @@ export async function scanSpecsFolder(workspacePath: string): Promise<{
         const activeSpecs = await scanDirectory(specsDir, 'active');
         active.push(...activeSpecs);
 
-        // Scan archived specs
+        // Scan archived specs (try both spellings)
         const archivedSpecs = await scanDirectory(archivedDir, 'archived');
         archived.push(...archivedSpecs);
+        
+        // Also check the typo variant
+        const archievedSpecs = await scanDirectory(archievedDir, 'archived');
+        archived.push(...archievedSpecs);
 
         logger.info('Scanned specs', {
             activeCount: active.length,
             archivedCount: archived.length,
             activeNames: active.map(s => s.name),
+            archivedNames: archived.map(s => s.name),
         });
     } catch (error) {
         logger.info('Specs folder not found or inaccessible', { workspacePath, error });
@@ -97,11 +104,17 @@ async function scanDirectory(
     const results: SpecInfo[] = [];
 
     // Folders to skip (not spec folders)
-    const SKIP_FOLDERS = ['templates', 'archived', 'subagent-docs', 'docs'];
+    const SKIP_FOLDERS = ['templates', 'archived', 'archieved', 'subagent-docs', 'docs'];
 
     try {
         const dirUri = vscode.Uri.file(dirPath);
         const entries = await vscode.workspace.fs.readDirectory(dirUri);
+        
+        logger.info(`Scanning ${status} directory`, {
+            dirPath,
+            entriesCount: entries.length,
+            entries: entries.map(([name, type]) => ({ name, isDir: type === vscode.FileType.Directory })),
+        });
 
         for (const [name, type] of entries) {
             // Skip non-directories and special folders
@@ -116,11 +129,12 @@ async function scanDirectory(
             if (specInfo) {
                 if (status === 'archived' || isValidSpecFolder(specInfo)) {
                     results.push(specInfo);
+                    logger.info(`Found ${status} spec`, { name, path: specPath });
                 }
             }
         }
-    } catch {
-        // Directory doesn't exist
+    } catch (error) {
+        logger.info(`Directory not found: ${dirPath}`, { error });
     }
 
     return results;
