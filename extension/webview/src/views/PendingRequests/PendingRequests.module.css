@@ -285,6 +285,78 @@
     align-items: center;
 }
 
+.customInputWrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--input-background);
+    border: 1px solid var(--input-border);
+    border-radius: 20px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    animation: expandIn 0.2s ease;
+}
+
+.customInputWrapper:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.15);
+}
+
+@keyframes expandIn {
+    from { opacity: 0; transform: scaleY(0.8); }
+    to { opacity: 1; transform: scaleY(1); }
+}
+
+.customInput {
+    flex: 1;
+    min-width: 0;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: transparent;
+    border: none;
+    color: var(--input-foreground);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.customInput:focus {
+    outline: none;
+}
+
+.customInput::placeholder {
+    color: var(--input-placeholder);
+    font-style: italic;
+}
+
+.sendButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: var(--button-background);
+    border: none;
+    border-radius: 50%;
+    color: var(--button-foreground);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.sendButton:hover:not(:disabled) {
+    background: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.sendButton:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.sendButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* Shortcut hints */
 .shortcutHint {
     margin-left: auto;

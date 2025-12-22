@@ -243,11 +243,11 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                         <span className={styles.shortcutHint}>C</span>
                     </button>
                 ) : (
-                    <div className={styles.customInputRow}>
+                    <div className={styles.customInputWrapper}>
                         <input
                             type="text"
-                            className={styles.input}
-                            placeholder="Type custom response..."
+                            className={styles.customInput}
+                            placeholder="Type your message..."
                             value={customValue}
                             onChange={(e) => setCustomValue(e.target.value)}
                             onKeyDown={(e) => {
@@ -255,9 +255,14 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                             }}
                             autoFocus
                         />
-                        <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
-                            Send
-                        </Button>
+                        <button 
+                            className={styles.sendButton} 
+                            onClick={handleCustomSubmit} 
+                            disabled={!customValue.trim()}
+                            title="Send"
+                        >
+                            <Icon name="send" />
+                        </button>
                     </div>
                 )}
                 
@@ -342,11 +347,11 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                         <span className={styles.shortcutHint}>C</span>
                     </button>
                 ) : (
-                    <div className={styles.customInputRow}>
+                    <div className={styles.customInputWrapper}>
                         <input
                             type="text"
-                            className={styles.input}
-                            placeholder="Type custom response..."
+                            className={styles.customInput}
+                            placeholder="Type your message..."
                             value={customValue}
                             onChange={(e) => setCustomValue(e.target.value)}
                             onKeyDown={(e) => {
@@ -354,9 +359,14 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                             }}
                             autoFocus
                         />
-                        <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
-                            Send
-                        </Button>
+                        <button 
+                            className={styles.sendButton} 
+                            onClick={handleCustomSubmit} 
+                            disabled={!customValue.trim()}
+                            title="Send"
+                        >
+                            <Icon name="send" />
+                        </button>
                     </div>
                 )}
                 
@@ -479,11 +489,11 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                         <span className={styles.shortcutHint}>C</span>
                     </button>
                 ) : (
-                    <div className={styles.customInputRow}>
+                    <div className={styles.customInputWrapper}>
                         <input
                             type="text"
-                            className={styles.input}
-                            placeholder="Type custom response..."
+                            className={styles.customInput}
+                            placeholder="Type your message..."
                             value={customValue}
                             onChange={(e) => setCustomValue(e.target.value)}
                             onKeyDown={(e) => {
@@ -491,9 +501,14 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                             }}
                             autoFocus
                         />
-                        <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
-                            Send
-                        </Button>
+                        <button 
+                            className={styles.sendButton} 
+                            onClick={handleCustomSubmit} 
+                            disabled={!customValue.trim()}
+                            title="Send"
+                        >
+                            <Icon name="send" />
+                        </button>
                     </div>
                 )}
                 

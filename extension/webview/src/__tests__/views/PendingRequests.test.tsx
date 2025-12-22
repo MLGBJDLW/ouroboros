@@ -187,7 +187,7 @@ describe('PendingRequests Component', () => {
         fireEvent.click(screen.getByText('Custom response'));
         
         // Now the input should be visible
-        expect(screen.getByPlaceholderText('Type custom response...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
     });
 
     it('handles MENU custom input submission', () => {
@@ -215,9 +215,9 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type custom response...');
+        const input = screen.getByPlaceholderText('Type your message...');
         fireEvent.change(input, { target: { value: 'Custom Value' } });
-        fireEvent.click(screen.getByText('Send'));
+        fireEvent.click(screen.getByTitle('Send'));
 
         expect(mockRespond).toHaveBeenCalledWith('2', expect.objectContaining({
             selectedIndex: -1,
@@ -385,9 +385,9 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type custom response...');
+        const input = screen.getByPlaceholderText('Type your message...');
         fireEvent.change(input, { target: { value: 'Maybe later' } });
-        fireEvent.click(screen.getByText('Send'));
+        fireEvent.click(screen.getByTitle('Send'));
 
         expect(mockRespond).toHaveBeenCalledWith('3', expect.objectContaining({
             customResponse: 'Maybe later',
@@ -539,9 +539,9 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type custom response...');
+        const input = screen.getByPlaceholderText('Type your message...');
         fireEvent.change(input, { target: { value: 'Let me think about it' } });
-        fireEvent.click(screen.getByText('Send'));
+        fireEvent.click(screen.getByTitle('Send'));
 
         expect(mockRespond).toHaveBeenCalledWith('4', expect.objectContaining({
             customResponse: 'Let me think about it',
@@ -713,7 +713,7 @@ describe('PendingRequests Component', () => {
         // Press 'C' to show custom input
         fireEvent.keyDown(window, { key: 'C' });
 
-        expect(screen.getByPlaceholderText('Type custom response...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
     });
 
     it('handles CONFIRM Y key for yes', () => {
@@ -821,7 +821,7 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type custom response...');
+        const input = screen.getByPlaceholderText('Type your message...');
         fireEvent.change(input, { target: { value: 'Custom Value' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -856,7 +856,7 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type custom response...');
+        const input = screen.getByPlaceholderText('Type your message...');
         fireEvent.change(input, { target: { value: 'Maybe' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -890,7 +890,7 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type custom response...');
+        const input = screen.getByPlaceholderText('Type your message...');
         fireEvent.change(input, { target: { value: 'Need more time' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
