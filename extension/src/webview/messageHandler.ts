@@ -164,6 +164,12 @@ export async function handleMessage(
             const { isInitialized, projectName } = await checkInitializationStatus(selectedPath);
             const workspaceState = stateManager.getWorkspaceState();
 
+            logger.info('Sending init to webview', {
+                activeSpecs: workspaceState.activeSpecs?.length ?? 0,
+                archivedSpecs: workspaceState.archivedSpecs?.length ?? 0,
+                selectedPath,
+            });
+
             sidebarProvider.postMessage({
                 type: 'init',
                 payload: {
@@ -227,9 +233,14 @@ export async function handleMessage(
                 selectedWorkspacePath: payload.path,
             });
 
-            // Restart spec watcher for the new workspace
+            // Restart spec watcher for the new workspace and wait for initial scan
             if (specWatcher) {
-                await specWatcher.start(payload.path);
+                const specs = await specWatcher.start(payload.path);
+                // Update state with new specs synchronously
+                await stateManager.updateWorkspaceState({
+                    activeSpecs: specs.active,
+                    archivedSpecs: specs.archived,
+                });
             }
 
             // Re-check initialization status for the selected workspace

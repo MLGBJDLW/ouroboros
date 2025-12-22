@@ -57,6 +57,8 @@ export async function scanSpecsFolder(workspacePath: string): Promise<{
     const specsDir = path.join(workspacePath, '.ouroboros', 'specs');
     const archivedDir = path.join(specsDir, 'archived');
 
+    logger.info('Scanning specs folder', { specsDir, archivedDir });
+
     const active: SpecInfo[] = [];
     const archived: SpecInfo[] = [];
 
@@ -69,12 +71,13 @@ export async function scanSpecsFolder(workspacePath: string): Promise<{
         const archivedSpecs = await scanDirectory(archivedDir, 'archived');
         archived.push(...archivedSpecs);
 
-        logger.debug('Scanned specs', {
+        logger.info('Scanned specs', {
             activeCount: active.length,
             archivedCount: archived.length,
+            activeNames: active.map(s => s.name),
         });
     } catch (error) {
-        logger.debug('Specs folder not found or inaccessible', { workspacePath });
+        logger.info('Specs folder not found or inaccessible', { workspacePath, error });
     }
 
     // Sort by modified date (most recent first)

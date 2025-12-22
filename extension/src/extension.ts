@@ -43,20 +43,36 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         sidebarProvider.setSpecWatcher(specWatcher);
 
         // Register spec change listener BEFORE starting the watcher
-        // This ensures we capture the initial scan results
+        // This ensures we capture subsequent changes (not initial scan)
         specWatcher.onSpecChange(async (specs) => {
+            logger.info('SpecWatcher fired onSpecChange', {
+                activeCount: specs.active.length,
+                archivedCount: specs.archived.length,
+            });
             await stateManager?.updateWorkspaceState({
                 activeSpecs: specs.active,
                 archivedSpecs: specs.archived,
             });
+            logger.info('StateManager updated with specs');
         });
 
         // Start watching the first workspace folder (triggers initial scan)
+        // We await the initial scan and update state synchronously to ensure
+        // specs are available before webview sends 'ready' message
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders && workspaceFolders.length > 0) {
             const workspacePath = stateManager.getWorkspaceState().selectedWorkspacePath
                 ?? workspaceFolders[0].uri.fsPath;
-            await specWatcher.start(workspacePath);
+            const initialSpecs = await specWatcher.start(workspacePath);
+            // Ensure state is updated synchronously with initial scan results
+            await stateManager.updateWorkspaceState({
+                activeSpecs: initialSpecs.active,
+                archivedSpecs: initialSpecs.archived,
+            });
+            logger.info('Initial specs loaded into state', {
+                activeCount: initialSpecs.active.length,
+                archivedCount: initialSpecs.archived.length,
+            });
         }
 
         // Register LM Tools
