@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.7] - 2025-12-22
+
+### 🎨 Extension UI Enhancements
+
+#### Added
+- **Sent Message Confirmation** — Chat-style bubble shows what you sent to Copilot:
+  - Right-aligned bubble with tail (chat style)
+  - Color variants based on request type (blue/green/yellow)
+  - Shows timestamp and type badge (Response/Selection/Confirmation/Review)
+  - Slide-in animation with bounce, fades out after 4 seconds
+
+#### Fixed
+- **Multi-Workspace Spec Detection** — SpecWatcher now restarts when switching workspaces
+  - Fixed "No specs yet" showing despite specs existing in selected workspace
+- **WorkflowProgress Tests** — Updated tests to match new `useSpecs` hook implementation
+
+---
+
 ## [3.2.5] - 2025-12-22
 
 ### 🎨 Extension UI Redesign
