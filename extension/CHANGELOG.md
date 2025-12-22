@@ -2,6 +2,19 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.8] - 2025-12-22
+
+### Changed
+
+- **Sent Message Bubble Size** — Increased width from 320px to 420px to match request card size
+- **Sent Message Text** — Increased max height from 120px to 180px, line clamp from 4 to 6 lines
+
+### Fixed
+
+- **Newline Parsing** — Question text now correctly renders `\n` as line breaks using `white-space: pre-wrap`
+
+---
+
 ## [3.2.7] - 2025-12-22
 
 ### Added

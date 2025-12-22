@@ -267,7 +267,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 
     return (
         <div className={styles.askContent}>
-            {data.question && <p className={styles.question}>{data.question}</p>}
+            {data.question && <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{data.question}</p>}
             <div className={styles.actions}>
                 <textarea
                     className={styles.textarea}
@@ -353,7 +353,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
 
     return (
         <div className={styles.menuContent}>
-            <p className={styles.question}>{data.question}</p>
+            <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{data.question}</p>
             <div className={styles.actions}>
                 <div className={styles.options}>
                     {data.options.map((option, index) => (
@@ -459,7 +459,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
 
     return (
         <div className={styles.confirmContent}>
-            <p className={styles.question}>{data.question}</p>
+            <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{data.question}</p>
             <div className={styles.actions}>
                 <div className={styles.confirmButtons}>
                     <Button onClick={() => handleConfirm(true)}>
