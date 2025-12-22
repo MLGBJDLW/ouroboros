@@ -153,7 +153,7 @@ describe('htmlGenerator', () => {
 
             const nonceMatch = html.match(/nonce="([A-Za-z0-9]+)"/);
             expect(nonceMatch).toBeTruthy();
-            expect(nonceMatch![1]).toMatch(/^[A-Za-z0-9]+$/);
+            expect(nonceMatch?.[1]).toMatch(/^[A-Za-z0-9]+$/);
         });
     });
 });

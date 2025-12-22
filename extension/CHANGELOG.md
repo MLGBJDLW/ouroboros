@@ -2,6 +2,34 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.4] - 2025-12-21
+
+### Changed
+
+- **Menu Options Layout** — Options now display vertically instead of horizontally wrapping
+- **Custom Input Always Visible** — Custom input field always shows in menu requests
+- **Pending Request Centered** — Request card now displays centered in the panel
+- **Cancel Button Redesign** — Moved to header as X icon, more subtle
+
+### Added
+
+- **Keyboard Shortcuts** — Full keyboard navigation support:
+  - Menu: Press 1-9 to select options, C for custom input
+  - Confirm: Y for yes, N for no
+  - All types: Esc to cancel
+  - Plan Review: Ctrl+Enter to approve
+- **Numbered Menu Options** — Each option shows its number for quick keyboard selection
+- **Request Type Visual Distinction** — Color-coded left border by type (blue/green/yellow)
+- **Empty State Animation** — Breathing animation on idle icon indicates waiting state
+- **Shortcut Hints** — Inline hints show available keyboard shortcuts
+
+### Fixed
+
+- **ESLint Warnings** — Fixed unused `prompt` parameters in `promptTransformer.ts`
+- **Test Type Safety** — Replaced `as any` with proper types in `promptTransformer.test.ts`
+
+---
+
 ## [3.2.3] - 2025-12-21
 
 ### Added

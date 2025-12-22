@@ -111,8 +111,10 @@ describe('registerCommands', () => {
         expect(cancelCall).toBeDefined();
 
         // Execute the handler
-        const handler = cancelCall![1];
-        handler();
+        const handler = cancelCall?.[1];
+        if (handler) {
+            handler();
+        }
 
         expect(mockSidebarProvider.cancelCurrentRequest).toHaveBeenCalled();
         expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(

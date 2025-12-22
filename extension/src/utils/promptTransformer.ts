@@ -543,7 +543,7 @@ Use the appropriate Ouroboros LM Tool:
     // =========================================================================
     const patternBFull =
         /python -c "print\('([^']*)'\); print\(\);((?:\s*print\('\[[^\]]+\][^']*'\);)+)\s*choice = input\('([^']*)'\)"/g;
-    transformed = transformed.replace(patternBFull, (_, question, optionsPart, prompt) => {
+    transformed = transformed.replace(patternBFull, (_, question, optionsPart, _prompt) => {
         totalChanges++;
         // Extract options from print statements
         const optionMatches = optionsPart.match(/\[(\d+)\]\s*([^']*)/g) || [];
@@ -565,7 +565,7 @@ Use the appropriate Ouroboros LM Tool:
     // TYPE B (simple): Menu without question
     // python -c "print('header'); choice = input('prompt')"
     const patternBSimple = /python -c "print\('([^']*)'\); choice = input\('([^']*)'\)"/g;
-    transformed = transformed.replace(patternBSimple, (_, header, prompt) => {
+    transformed = transformed.replace(patternBSimple, (_, header, _prompt) => {
         totalChanges++;
         return `Use the \`ouroborosai_menu\` tool with:
 \`\`\`json
@@ -633,7 +633,7 @@ Use the appropriate Ouroboros LM Tool:
     // → Use ouroborosai_ask tool with type: feature
     // =========================================================================
     const patternC2 = /python -c "print\('([^']*)'\); feature = input\('([^']*)'\)"/g;
-    transformed = transformed.replace(patternC2, (_, question, prompt) => {
+    transformed = transformed.replace(patternC2, (_, question, _prompt) => {
         totalChanges++;
         return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
@@ -671,7 +671,7 @@ Use the appropriate Ouroboros LM Tool:
     // → Use ouroborosai_ask tool
     // =========================================================================
     const patternE2 = /python -c "print\('([^']*)'\); question = input\('([^']*)'\)"/g;
-    transformed = transformed.replace(patternE2, (_, question, prompt) => {
+    transformed = transformed.replace(patternE2, (_, question, _prompt) => {
         totalChanges++;
         return `Use the \`ouroborosai_ask\` tool with:
 \`\`\`json
@@ -740,7 +740,7 @@ Use the appropriate Ouroboros LM Tool:
     // Enhanced with --header --prompt --var choice (menu)
     const patternEnhancedMenu =
         /python \.ouroboros\/scripts\/ouroboros_input\.py(?:\s+--question "([^"]*)")?\s+--header "([^"]*)"\s+--prompt "([^"]*)"\s+--var choice/g;
-    transformed = transformed.replace(patternEnhancedMenu, (_, question, header, prompt) => {
+    transformed = transformed.replace(patternEnhancedMenu, (_, question, header, _prompt) => {
         totalChanges++;
         const options = header ? header.split('\\n') : [];
         const q = question || 'Select an option';

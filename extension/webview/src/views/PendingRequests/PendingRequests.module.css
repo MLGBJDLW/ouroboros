@@ -1,14 +1,14 @@
-/* Chat Container */
+/* Container - centered layout */
 .container {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     height: 100%;
-    position: relative;
-    padding-bottom: 70px;
-    /* Space for fixed input */
+    padding: var(--spacing-md);
 }
 
-/* Empty State */
+/* Empty State with breathing animation */
 .empty {
     display: flex;
     flex-direction: column;
@@ -16,73 +16,77 @@
     justify-content: center;
     text-align: center;
     color: var(--foreground-secondary);
-    margin-top: 20%;
-    animation: fadeIn 0.4s var(--transition-normal);
+    animation: fadeIn 0.4s ease;
+    height: 100%;
+    padding: var(--spacing-lg);
 }
 
 .emptyIcon {
-    font-size: 48px;
-    margin-bottom: var(--spacing-md);
-    opacity: 0.3;
+    font-size: 32px;
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.4;
     color: var(--info);
+    animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.05); }
 }
 
 .emptyHint {
-    font-size: 13px;
+    font-size: 12px;
     opacity: 0.7;
-    max-width: 250px;
-    line-height: 1.5;
+    max-width: 200px;
+    line-height: 1.4;
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Chat Messages (Request Items) */
+/* Request Card */
 .listItem {
-    margin-bottom: var(--spacing-lg);
-    animation: slideIn 0.3s var(--transition-normal);
+    width: 100%;
+    max-width: 420px;
+    animation: slideIn 0.3s ease;
 }
 
 @keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
-/* Agent Message Bubble (Request) */
+/* Message Bubble - base styles */
 .messageBubble {
-    background: linear-gradient(135deg, var(--background-secondary) 0%, rgba(37, 37, 38, 0.95) 100%);
+    background: var(--background-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    border-top-left-radius: 4px;
     padding: var(--spacing-lg);
-    max-width: 100%;
-    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    position: relative;
-    backdrop-filter: blur(8px);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.messageBubble:hover {
-    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    transform: translateY(-1px);
+/* Type-specific accent colors */
+.askType {
+    border-left: 3px solid var(--info);
 }
 
+.menuType {
+    border-left: 3px solid var(--success);
+}
+
+.confirmType {
+    border-left: 3px solid var(--warning);
+}
+
+.planType {
+    border-left: 3px solid var(--info);
+}
+
+
+/* Header with close button */
 .header {
     display: flex;
     align-items: center;
@@ -106,31 +110,53 @@
     margin-left: auto;
 }
 
-.question {
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--foreground);
-    margin-bottom: var(--spacing-md);
+.closeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s, background 0.15s;
 }
 
+.closeButton:hover {
+    opacity: 1;
+    background: var(--list-hover);
+}
+
+/* Content area */
 .content {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
 }
 
+.question {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--foreground);
+    margin-bottom: var(--spacing-sm);
+}
+
 /* Actions Area */
 .actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-sm);
+    width: 100%;
 }
 
-/* Inputs */
+/* Text inputs */
 .textarea {
     width: 100%;
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     background: var(--input-background);
     border: 1px solid var(--input-border);
     border-radius: var(--radius-md);
@@ -139,15 +165,15 @@
     font-size: 13px;
     line-height: 1.5;
     resize: vertical;
-    min-height: 100px;
-    max-height: 300px;
+    min-height: 80px;
+    max-height: 200px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .textarea:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.2);
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.15);
 }
 
 .textarea::placeholder {
@@ -155,38 +181,223 @@
 }
 
 .input {
+    flex: 1;
     padding: var(--spacing-sm);
     background: var(--input-background);
     border: 1px solid var(--input-border);
     border-radius: var(--radius-md);
     color: var(--input-foreground);
+    font-size: 12px;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}
+
+/* Input footer */
+.inputFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.inputHint {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    opacity: 0.6;
+}
+
+/* Menu Options with numbers */
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.optionButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
     width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--button-secondary-background);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--button-secondary-foreground);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.optionButton:hover {
+    background: var(--button-secondary-hover);
+    border-color: var(--border);
+}
+
+.optionButton:active {
+    transform: scale(0.98);
+}
+
+.optionNumber {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: var(--background);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--foreground-secondary);
+}
+
+.optionText {
+    flex: 1;
+}
+
+/* Custom input toggle */
+.customToggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    color: var(--foreground-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.customToggle:hover {
+    background: var(--list-hover);
+    border-color: var(--foreground-secondary);
 }
 
 .customInputRow {
     display: flex;
     gap: var(--spacing-sm);
-    width: 100%;
-    margin-top: var(--spacing-sm);
-    flex-direction: column;
+    align-items: center;
 }
 
-/* Input footer with hint and button */
-.inputFooter {
+.customInputWrapper {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--input-background);
+    border: 1px solid var(--input-border);
+    border-radius: 20px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    animation: expandIn 0.2s ease;
+}
+
+.customInputWrapper:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.15);
+}
+
+@keyframes expandIn {
+    from { opacity: 0; transform: scaleY(0.8); }
+    to { opacity: 1; transform: scaleY(1); }
+}
+
+.customInput {
+    flex: 1;
+    min-width: 0;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: transparent;
+    border: none;
+    color: var(--input-foreground);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.customInput:focus {
+    outline: none;
+}
+
+.customInput::placeholder {
+    color: var(--input-placeholder);
+    font-style: italic;
+}
+
+.sendButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: var(--button-background);
+    border: none;
+    border-radius: 50%;
+    color: var(--button-foreground);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.sendButton:hover:not(:disabled) {
+    background: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.sendButton:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.sendButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Shortcut hints */
+.shortcutHint {
+    margin-left: auto;
+    padding: 2px 6px;
+    background: var(--background);
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--foreground-secondary);
+}
+
+.shortcutHintText {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    opacity: 0.6;
+    text-align: center;
     margin-top: var(--spacing-xs);
 }
 
-/* Input hint for Shift+Enter */
-.inputHint {
+/* Button shortcut indicator */
+.buttonShortcut {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-right: var(--spacing-xs);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
     font-size: 10px;
-    color: var(--foreground-secondary);
-    opacity: 0.7;
+    font-weight: 600;
 }
 
-/* Plan Review Styles */
+/* Confirm buttons */
+.confirmButtons {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+/* Plan Review */
 .planHeader {
     display: flex;
     justify-content: space-between;
@@ -212,28 +423,10 @@
     padding: var(--spacing-sm);
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, monospace);
     font-size: 11px;
     white-space: pre-wrap;
     max-height: 200px;
     overflow-y: auto;
     margin-bottom: var(--spacing-sm);
-}
-
-/* Footer / Cancel Action */
-.footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: var(--spacing-xs);
-}
-
-.options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs);
-}
-
-.confirmButtons {
-    display: flex;
-    gap: var(--spacing-sm);
 }
