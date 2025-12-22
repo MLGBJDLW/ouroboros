@@ -5,6 +5,7 @@ import { SidebarProvider } from './webview/SidebarProvider';
 import { registerCommands } from './commands';
 import { StateManager } from './storage/stateManager';
 import { StatusBarManager } from './statusBar/StatusBarManager';
+import { SpecWatcher } from './services/specWatcher';
 import { createLogger } from './utils/logger';
 
 const logger = createLogger('Extension');
@@ -12,6 +13,7 @@ const logger = createLogger('Extension');
 let stateManager: StateManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
 let sidebarProvider: SidebarProvider | undefined;
+let specWatcher: SpecWatcher | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     logger.info(`Activating ${EXTENSION_ID} extension...`);
@@ -32,6 +34,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 },
             })
         );
+
+        // Initialize spec watcher for file-based workflow tracking
+        specWatcher = new SpecWatcher();
+        context.subscriptions.push(specWatcher);
+
+        // Start watching the first workspace folder
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders && workspaceFolders.length > 0) {
+            const workspacePath = stateManager.getWorkspaceState().selectedWorkspacePath
+                ?? workspaceFolders[0].uri.fsPath;
+            await specWatcher.start(workspacePath);
+        }
+
+        // Update state when specs change
+        specWatcher.onSpecChange(async (specs) => {
+            await stateManager?.updateWorkspaceState({
+                activeSpecs: specs.active,
+                archivedSpecs: specs.archived,
+            });
+        });
 
         // Register LM Tools
         const toolDisposables = registerTools(stateManager, sidebarProvider);
@@ -56,6 +78,7 @@ export function deactivate(): void {
     logger.info(`Deactivating ${EXTENSION_ID} extension...`);
 
     statusBarManager?.dispose();
+    specWatcher?.dispose();
     sidebarProvider?.dispose();
     stateManager?.dispose();
 

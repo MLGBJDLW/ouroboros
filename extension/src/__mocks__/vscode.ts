@@ -20,6 +20,7 @@ export const workspace = {
         writeFile: vi.fn().mockResolvedValue(undefined),
         createDirectory: vi.fn().mockResolvedValue(undefined),
         stat: vi.fn().mockRejectedValue(new Error('File not found')),
+        readDirectory: vi.fn().mockResolvedValue([]),
     },
     workspaceFolders: [{ uri: Uri.file('/test-workspace'), name: 'test', index: 0 }],
     getConfiguration: vi.fn().mockReturnValue({
@@ -27,7 +28,17 @@ export const workspace = {
         update: vi.fn().mockResolvedValue(undefined),
     }),
     onDidChangeConfiguration: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+    createFileSystemWatcher: vi.fn().mockReturnValue({
+        onDidCreate: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        onDidChange: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        onDidDelete: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        dispose: vi.fn(),
+    }),
 };
+
+export class RelativePattern {
+    constructor(public base: unknown, public pattern: string) { }
+}
 
 export const window = {
     showInformationMessage: vi.fn().mockResolvedValue(undefined),
@@ -67,7 +78,7 @@ export class Disposable {
             dispose: () => disposables.forEach((d) => d.dispose()),
         };
     }
-    dispose() {}
+    dispose() { }
 }
 
 export class EventEmitter<T> {
@@ -95,15 +106,15 @@ export class CancellationTokenSource {
     cancel() {
         this.token.isCancellationRequested = true;
     }
-    dispose() {}
+    dispose() { }
 }
 
 export class LanguageModelToolResult {
-    constructor(public parts: LanguageModelTextPart[]) {}
+    constructor(public parts: LanguageModelTextPart[]) { }
 }
 
 export class LanguageModelTextPart {
-    constructor(public value: string) {}
+    constructor(public value: string) { }
 }
 
 export const ProgressLocation = {
@@ -121,6 +132,13 @@ export const lm = {
     registerTool: vi.fn().mockReturnValue({ dispose: vi.fn() }),
 };
 
+export const FileType = {
+    Unknown: 0,
+    File: 1,
+    Directory: 2,
+    SymbolicLink: 64,
+};
+
 export default {
     Uri,
     workspace,
@@ -134,4 +152,6 @@ export default {
     ProgressLocation,
     StatusBarAlignment,
     lm,
+    RelativePattern,
+    FileType,
 };

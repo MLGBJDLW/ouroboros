@@ -41,6 +41,9 @@ export interface WorkspaceStatePayload {
     taskProgress: Record<string, boolean>;
     executionMode: 'task-by-task' | 'phase-by-phase' | 'auto-run';
     selectedWorkspacePath?: string;
+    // File-based specs data
+    activeSpecs?: import('./specs').SpecInfo[];
+    archivedSpecs?: import('./specs').SpecInfo[];
 }
 
 export interface PhaseProgressPayload {

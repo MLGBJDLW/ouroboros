@@ -45,8 +45,25 @@ export function Welcome({
                             <span key={i} className={styles.particle} style={{ '--i': i } as React.CSSProperties} />
                         ))}
                     </div>
-                    {/* Glow ring */}
-                    <div className={styles.glowRing} />
+                    {/* SVG Arc effects - left purple, right blue */}
+                    <svg className={styles.arcSvg} viewBox="0 0 120 120" fill="none">
+                        {/* Left arc - purple */}
+                        <path
+                            d="M 28 38 Q 0 60 28 82"
+                            stroke="#9C6ADE"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            className={styles.arcLeft}
+                        />
+                        {/* Right arc - blue */}
+                        <path
+                            d="M 92 38 Q 120 60 92 82"
+                            stroke="#3794ff"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            className={styles.arcRight}
+                        />
+                    </svg>
                     <Logo size={64} className={styles.logo} />
                 </div>
                 <h1 className={styles.title}>Ouroboros</h1>

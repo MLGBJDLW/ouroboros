@@ -55,71 +55,77 @@
     display: block;
     width: 80px;
     height: 80px;
-    border-radius: 50%;
-    animation: pulse 3s ease-in-out infinite;
-    box-shadow: var(--shadow-lg);
     z-index: 2;
     position: relative;
 }
 
-/* Glow ring around logo */
-.glowRing {
+/* SVG Arc container */
+.arcSvg {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: transparent;
-    border: 2px solid rgba(33, 150, 243, 0.3);
-    box-shadow:
-        0 0 15px rgba(33, 150, 243, 0.4),
-        0 0 30px rgba(156, 39, 176, 0.2),
-        inset 0 0 15px rgba(0, 188, 212, 0.2);
-    animation: glowRotate 4s linear infinite, glowPulse 2s ease-in-out infinite;
     z-index: 1;
+    pointer-events: none;
+    animation: arcBreathe 2.5s ease-in-out infinite;
 }
 
-@keyframes glowRotate {
-    0% {
-        transform: translate(-50%, -50%) rotate(0deg);
-        border-color: rgba(33, 150, 243, 0.4);
-    }
-
-    33% {
-        border-color: rgba(156, 39, 176, 0.4);
-    }
-
-    66% {
-        border-color: rgba(0, 188, 212, 0.4);
-    }
-
-    100% {
-        transform: translate(-50%, -50%) rotate(360deg);
-        border-color: rgba(33, 150, 243, 0.4);
-    }
+/* Left arc path - purple */
+.arcLeft {
+    filter: drop-shadow(0 0 6px #9C6ADE);
+    animation: arcGlowLeft 2.5s ease-in-out infinite;
 }
 
-@keyframes glowPulse {
+/* Right arc path - blue */
+.arcRight {
+    filter: drop-shadow(0 0 6px #3794ff);
+    animation: arcGlow 2.5s ease-in-out infinite;
+    animation-delay: 0.15s;
+}
+
+@keyframes arcBreathe {
 
     0%,
     100% {
-        box-shadow:
-            0 0 15px rgba(33, 150, 243, 0.4),
-            0 0 30px rgba(156, 39, 176, 0.2),
-            inset 0 0 15px rgba(0, 188, 212, 0.2);
+        transform: translate(-50%, -50%) scale(0.88);
     }
 
     50% {
-        box-shadow:
-            0 0 25px rgba(33, 150, 243, 0.6),
-            0 0 50px rgba(156, 39, 176, 0.4),
-            inset 0 0 25px rgba(0, 188, 212, 0.3);
+        transform: translate(-50%, -50%) scale(1.12);
     }
 }
 
-/* Particles container */
+@keyframes arcGlowLeft {
+
+    0%,
+    100% {
+        opacity: 0.4;
+        box-shadow: 0 0 6px #7C3AED;
+    }
+
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 14px #9C6ADE, 0 0 20px #7C3AED;
+    }
+}
+
+@keyframes arcGlow {
+
+    0%,
+    100% {
+        opacity: 0.4;
+        box-shadow: 0 0 6px var(--button-background);
+    }
+
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 12px var(--info), 0 0 18px var(--button-background);
+    }
+}
+
+/* Particles container - flowing dots */
 .particles {
     position: absolute;
     top: 50%;
@@ -129,53 +135,51 @@
     z-index: 3;
 }
 
-/* Individual particle */
+/* Individual particle - flowing dots with color shift */
 .particle {
     position: absolute;
-    width: 4px;
-    height: 4px;
-    background: linear-gradient(135deg, #2196F3, #9C27B0, #00BCD4);
+    width: 3px;
+    height: 3px;
+    background: var(--info);
     border-radius: 50%;
-    animation: particleOrbit 6s linear infinite;
-    animation-delay: calc(var(--i) * -0.5s);
+    animation:
+        particleFlow 5s ease-in-out infinite,
+        particleColor 3s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -0.42s);
     opacity: 0;
+    box-shadow: 0 0 4px var(--button-background);
 }
 
-.particle::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: inherit;
-    border-radius: 50%;
-    filter: blur(2px);
-}
+@keyframes particleColor {
 
-@keyframes particleOrbit {
-    0% {
-        transform: rotate(calc(var(--i) * 30deg)) translateX(55px) scale(0);
-        opacity: 0;
-    }
-
-    10% {
-        opacity: 1;
-        transform: rotate(calc(var(--i) * 30deg + 36deg)) translateX(55px) scale(1);
+    0%,
+    100% {
+        background: var(--info);
+        box-shadow: 0 0 4px var(--info);
     }
 
     50% {
-        opacity: 0.8;
-        transform: rotate(calc(var(--i) * 30deg + 180deg)) translateX(60px) scale(0.8);
+        background: var(--button-hover);
+        box-shadow: 0 0 6px var(--button-hover);
+    }
+}
+
+@keyframes particleFlow {
+    0% {
+        transform: rotate(calc(var(--i) * 30deg)) translateX(50px);
+        opacity: 0;
     }
 
-    90% {
-        opacity: 1;
-        transform: rotate(calc(var(--i) * 30deg + 324deg)) translateX(55px) scale(1);
+    15% {
+        opacity: 0.7;
+    }
+
+    85% {
+        opacity: 0.7;
     }
 
     100% {
-        transform: rotate(calc(var(--i) * 30deg + 360deg)) translateX(55px) scale(0);
+        transform: rotate(calc(var(--i) * 30deg + 360deg)) translateX(50px);
         opacity: 0;
     }
 }
