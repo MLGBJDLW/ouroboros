@@ -17,6 +17,8 @@
     text-align: center;
     color: var(--foreground-secondary);
     animation: fadeIn 0.4s ease;
+    height: 100%;
+    padding: var(--spacing-lg);
 }
 
 .emptyIcon {

@@ -268,13 +268,36 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
 }
 
 function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & { data: ConfirmRequestData }) {
+    const [customValue, setCustomValue] = useState('');
+    const [showCustomInput, setShowCustomInput] = useState(false);
+
     const handleConfirm = useCallback((confirmed: boolean) => {
         onRespond(request.id, { confirmed, cancelled: false });
     }, [request.id, onRespond]);
 
-    // Keyboard shortcuts: Y for yes, N for no, Esc to cancel
+    const handleCustomSubmit = useCallback(() => {
+        const trimmed = customValue.trim();
+        if (!trimmed) return;
+        onRespond(request.id, {
+            confirmed: false,
+            customResponse: trimmed,
+            isCustom: true,
+            cancelled: false,
+        });
+    }, [request.id, customValue, onRespond]);
+
+    // Keyboard shortcuts: Y for yes, N for no, C for custom, Esc to cancel
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't capture if typing in input
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                if (e.key === 'Escape') {
+                    setShowCustomInput(false);
+                    (e.target as HTMLElement).blur();
+                }
+                return;
+            }
+
             if (e.key === 'Escape') {
                 onCancel(request.id);
                 return;
@@ -284,6 +307,9 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
             }
             if (e.key === 'n' || e.key === 'N') {
                 handleConfirm(false);
+            }
+            if (e.key === 'c' || e.key === 'C') {
+                setShowCustomInput(true);
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -304,7 +330,37 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                         {data.noLabel ?? 'No'}
                     </Button>
                 </div>
-                <p className={styles.shortcutHintText}>Press Y for yes · N for no · Esc to cancel</p>
+                
+                {/* Custom input toggle */}
+                {!showCustomInput ? (
+                    <button 
+                        className={styles.customToggle}
+                        onClick={() => setShowCustomInput(true)}
+                    >
+                        <Icon name="edit" />
+                        <span>Custom response</span>
+                        <span className={styles.shortcutHint}>C</span>
+                    </button>
+                ) : (
+                    <div className={styles.customInputRow}>
+                        <input
+                            type="text"
+                            className={styles.input}
+                            placeholder="Type custom response..."
+                            value={customValue}
+                            onChange={(e) => setCustomValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleCustomSubmit();
+                            }}
+                            autoFocus
+                        />
+                        <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
+                            Send
+                        </Button>
+                    </div>
+                )}
+                
+                <p className={styles.shortcutHintText}>Press Y for yes · N for no · C for custom · Esc to cancel</p>
             </div>
         </div>
     );
@@ -312,6 +368,8 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
 
 function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps & { data: PlanReviewRequestData }) {
     const [feedback, setFeedback] = useState('');
+    const [customValue, setCustomValue] = useState('');
+    const [showCustomInput, setShowCustomInput] = useState(false);
     const showHeader = Boolean(data.title || data.mode);
 
     const handleApprove = useCallback((approved: boolean) => {
@@ -332,11 +390,28 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
         });
     }, [request.id, feedback, onRespond]);
 
+    const handleCustomSubmit = useCallback(() => {
+        const trimmed = customValue.trim();
+        if (!trimmed) return;
+        onRespond(request.id, {
+            approved: false,
+            customResponse: trimmed,
+            isCustom: true,
+            cancelled: false,
+        });
+    }, [request.id, customValue, onRespond]);
+
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Don't capture if typing in textarea
-            if (e.target instanceof HTMLTextAreaElement) return;
+            // Don't capture if typing in textarea or input
+            if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
+                if (e.key === 'Escape') {
+                    setShowCustomInput(false);
+                    (e.target as HTMLElement).blur();
+                }
+                return;
+            }
 
             if (e.key === 'Escape') {
                 onCancel(request.id);
@@ -345,6 +420,10 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
             // Ctrl+Enter to approve
             if (e.key === 'Enter' && e.ctrlKey) {
                 handleApprove(true);
+            }
+            // C for custom input
+            if (e.key === 'c' || e.key === 'C') {
+                setShowCustomInput(true);
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -388,7 +467,37 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                         Reject
                     </Button>
                 </div>
-                <p className={styles.shortcutHintText}>Ctrl+Enter to approve · Esc to cancel</p>
+                
+                {/* Custom input toggle */}
+                {!showCustomInput ? (
+                    <button 
+                        className={styles.customToggle}
+                        onClick={() => setShowCustomInput(true)}
+                    >
+                        <Icon name="edit" />
+                        <span>Custom response</span>
+                        <span className={styles.shortcutHint}>C</span>
+                    </button>
+                ) : (
+                    <div className={styles.customInputRow}>
+                        <input
+                            type="text"
+                            className={styles.input}
+                            placeholder="Type custom response..."
+                            value={customValue}
+                            onChange={(e) => setCustomValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleCustomSubmit();
+                            }}
+                            autoFocus
+                        />
+                        <Button size="small" onClick={handleCustomSubmit} disabled={!customValue.trim()}>
+                            Send
+                        </Button>
+                    </div>
+                )}
+                
+                <p className={styles.shortcutHintText}>Ctrl+Enter to approve · C for custom · Esc to cancel</p>
             </div>
         </div>
     );
