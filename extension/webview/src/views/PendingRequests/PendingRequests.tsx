@@ -10,6 +10,13 @@ import { AGENT_DISPLAY_NAMES } from '../../types/agent';
 import type { PendingRequest, AskRequestData, MenuRequestData, ConfirmRequestData, PlanReviewRequestData } from '../../types/requests';
 import styles from './PendingRequests.module.css';
 
+/** Parse escaped newlines in text (handles both \n and \\n) */
+function parseNewlines(text: string): string {
+    // First replace \\n (escaped backslash + n) with actual newline
+    // Then replace \n (backslash + n literal) with actual newline
+    return text.replace(/\\n/g, '\n');
+}
+
 interface SentMessage {
     id: string;
     text: string;
@@ -53,16 +60,24 @@ export function PendingRequests() {
     if (requests.length === 0) {
         return (
             <div className={styles.empty}>
+                {/* Agent Activity Box - Always visible */}
+                <AgentActivityBox 
+                    currentAgent={state.currentAgent}
+                    handoffHistory={state.handoffHistory}
+                    showAllActivity={showAllActivity}
+                    onToggle={() => setShowAllActivity(!showAllActivity)}
+                />
+                
                 {sentMessage ? (
                     <SentMessageBubble message={sentMessage} />
                 ) : (
-                    <>
+                    <div className={styles.emptyContent}>
                         <Icon name="comment-discussion" className={styles.emptyIcon} />
                         <h3>No pending requests</h3>
                         <p className={styles.emptyHint}>
                             Waiting for agent input...
                         </p>
-                    </>
+                    </div>
                 )}
             </div>
         );
@@ -71,48 +86,15 @@ export function PendingRequests() {
     // Only show the most recent request (centered)
     const currentRequest = requests[requests.length - 1];
 
-    // Get recent handoffs for activity display
-    const recentHandoffs = state.handoffHistory.slice(-3).reverse();
-    const hasActivity = state.currentAgent || recentHandoffs.length > 0;
-
     return (
         <div className={styles.container}>
-            {/* Agent Activity Box */}
-            {hasActivity && (
-                <div className={styles.activityBox}>
-                    <button 
-                        className={styles.activityHeader}
-                        onClick={() => setShowAllActivity(!showAllActivity)}
-                    >
-                        <Icon name="organization" />
-                        <span>Agent Activity</span>
-                        {state.currentAgent && (
-                            <Badge variant="info" size="small">
-                                {getDisplayName(state.currentAgent.name)}
-                            </Badge>
-                        )}
-                        <Icon 
-                            name={showAllActivity ? 'chevron-up' : 'chevron-down'} 
-                            className={styles.activityToggle}
-                        />
-                    </button>
-                    {showAllActivity && recentHandoffs.length > 0 && (
-                        <div className={styles.activityList}>
-                            {recentHandoffs.map((handoff, index) => (
-                                <div key={index} className={styles.activityItem}>
-                                    <span className={styles.activityFrom}>
-                                        {getDisplayName(handoff.from.name)}
-                                    </span>
-                                    <Icon name="arrow-right" className={styles.activityArrow} />
-                                    <span className={styles.activityTo}>
-                                        {getDisplayName(handoff.to.name)}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* Agent Activity Box - Always visible */}
+            <AgentActivityBox 
+                currentAgent={state.currentAgent}
+                handoffHistory={state.handoffHistory}
+                showAllActivity={showAllActivity}
+                onToggle={() => setShowAllActivity(!showAllActivity)}
+            />
 
             <div className={styles.listItem}>
                 <RequestChatBubble
@@ -121,6 +103,74 @@ export function PendingRequests() {
                     onCancel={cancel}
                 />
             </div>
+        </div>
+    );
+}
+
+/** Agent Activity Box Component */
+interface AgentActivityBoxProps {
+    currentAgent: { name: string; level: 0 | 1 | 2 } | null;
+    handoffHistory: Array<{ from: { name: string; level: 0 | 1 | 2 }; to: { name: string; level: 0 | 1 | 2 }; reason?: string }>;
+    showAllActivity: boolean;
+    onToggle: () => void;
+}
+
+function AgentActivityBox({ currentAgent, handoffHistory, showAllActivity, onToggle }: AgentActivityBoxProps) {
+    const recentHandoffs = handoffHistory.slice(-5).reverse();
+    const hasHandoffs = recentHandoffs.length > 0;
+
+    return (
+        <div className={styles.activityBox}>
+            <button className={styles.activityHeader} onClick={onToggle}>
+                <div className={styles.activityLeft}>
+                    <div className={styles.activityIcon}>
+                        <Icon name="organization" />
+                    </div>
+                    <div className={styles.activityInfo}>
+                        <span className={styles.activityLabel}>Current Agent</span>
+                        <span className={styles.activityAgent}>
+                            {currentAgent ? (
+                                <>
+                                    <span className={styles.agentName}>{getDisplayName(currentAgent.name)}</span>
+                                    <span className={styles.agentLevel}>L{currentAgent.level}</span>
+                                </>
+                            ) : (
+                                <span className={styles.agentIdle}>Idle</span>
+                            )}
+                        </span>
+                    </div>
+                </div>
+                {hasHandoffs && (
+                    <Icon 
+                        name={showAllActivity ? 'chevron-up' : 'chevron-down'} 
+                        className={styles.activityToggle}
+                    />
+                )}
+            </button>
+            
+            {showAllActivity && hasHandoffs && (
+                <div className={styles.activityList}>
+                    <div className={styles.activityListHeader}>Recent Handoffs</div>
+                    {recentHandoffs.map((handoff, index) => (
+                        <div key={index} className={styles.activityItem}>
+                            <div className={styles.handoffFlow}>
+                                <span className={styles.activityFrom}>
+                                    {getDisplayName(handoff.from.name)}
+                                    <span className={styles.levelBadge}>L{handoff.from.level}</span>
+                                </span>
+                                <Icon name="arrow-right" className={styles.activityArrow} />
+                                <span className={styles.activityTo}>
+                                    {getDisplayName(handoff.to.name)}
+                                    <span className={styles.levelBadge}>L{handoff.to.level}</span>
+                                </span>
+                            </div>
+                            {handoff.reason && (
+                                <span className={styles.handoffReason}>{handoff.reason}</span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -331,7 +381,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                         <Logo size={18} />
                     </div>
                     <div className={styles.questionContent}>
-                        <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{data.question}</p>
+                        <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{parseNewlines(data.question)}</p>
                     </div>
                 </div>
             )}
@@ -393,6 +443,13 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
         });
     }, [request.id, customValue, onRespond]);
 
+    // Auto-resize textarea
+    const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setCustomValue(e.target.value);
+        e.target.style.height = 'auto';
+        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+    };
+
     // Keyboard shortcuts: 1-9 for options, Esc to cancel
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -433,7 +490,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                     <Logo size={18} />
                 </div>
                 <div className={styles.questionContent}>
-                    <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{data.question}</p>
+                    <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{parseNewlines(data.question)}</p>
                 </div>
             </div>
 
@@ -464,15 +521,18 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                     </button>
                 ) : (
                     <div className={styles.customInputWrapper}>
-                        <input
-                            type="text"
+                        <textarea
                             className={styles.customInput}
                             placeholder="Type your message..."
                             value={customValue}
-                            onChange={(e) => setCustomValue(e.target.value)}
+                            onChange={handleTextareaChange}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleCustomSubmit();
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleCustomSubmit();
+                                }
                             }}
+                            rows={1}
                             autoFocus
                         />
                         <button 
@@ -486,7 +546,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                     </div>
                 )}
                 
-                <p className={styles.shortcutHintText}>Press 1-{Math.min(data.options.length, 9)} to select · C for custom</p>
+                <p className={styles.shortcutHintText}>Press 1-{Math.min(data.options.length, 9)} to select · C for custom · Shift+Enter for new line</p>
             </div>
         </div>
     );
@@ -510,6 +570,13 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
             cancelled: false,
         });
     }, [request.id, customValue, onRespond]);
+
+    // Auto-resize textarea
+    const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setCustomValue(e.target.value);
+        e.target.style.height = 'auto';
+        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+    };
 
     // Keyboard shortcuts: Y for yes, N for no, C for custom, Esc to cancel
     useEffect(() => {
@@ -549,7 +616,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                     <Logo size={18} />
                 </div>
                 <div className={styles.questionContent}>
-                    <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{data.question}</p>
+                    <p className={styles.question} style={{ whiteSpace: 'pre-wrap' }}>{parseNewlines(data.question)}</p>
                 </div>
             </div>
 
@@ -578,15 +645,18 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                     </button>
                 ) : (
                     <div className={styles.customInputWrapper}>
-                        <input
-                            type="text"
+                        <textarea
                             className={styles.customInput}
                             placeholder="Type your message..."
                             value={customValue}
-                            onChange={(e) => setCustomValue(e.target.value)}
+                            onChange={handleTextareaChange}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleCustomSubmit();
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleCustomSubmit();
+                                }
                             }}
+                            rows={1}
                             autoFocus
                         />
                         <button 
@@ -600,7 +670,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                     </div>
                 )}
                 
-                <p className={styles.shortcutHintText}>Press Y for yes · N for no · C for custom</p>
+                <p className={styles.shortcutHintText}>Press Y for yes · N for no · C for custom · Shift+Enter for new line</p>
             </div>
         </div>
     );
@@ -688,7 +758,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                             )}
                         </div>
                     )}
-                    <pre className={styles.planText}>{data.plan}</pre>
+                    <pre className={styles.planText}>{parseNewlines(data.plan)}</pre>
                 </div>
             </div>
 
@@ -730,15 +800,22 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                     </button>
                 ) : (
                     <div className={styles.customInputWrapper}>
-                        <input
-                            type="text"
+                        <textarea
                             className={styles.customInput}
                             placeholder="Type your message..."
                             value={customValue}
-                            onChange={(e) => setCustomValue(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleCustomSubmit();
+                            onChange={(e) => {
+                                setCustomValue(e.target.value);
+                                e.target.style.height = 'auto';
+                                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                             }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleCustomSubmit();
+                                }
+                            }}
+                            rows={1}
                             autoFocus
                         />
                         <button 
@@ -752,7 +829,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                     </div>
                 )}
                 
-                <p className={styles.shortcutHintText}>Ctrl+Enter to approve · C for custom</p>
+                <p className={styles.shortcutHintText}>Ctrl+Enter to approve · C for custom · Shift+Enter for new line</p>
             </div>
         </div>
     );

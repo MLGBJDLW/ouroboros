@@ -156,9 +156,15 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
      * Update agent handoff
      */
     async updateAgentHandoff(input: HandoffInput): Promise<void> {
+        // Transform HandoffInput to AgentHandoff format expected by webview
         this.postMessage({
             type: 'agentHandoff',
-            payload: input,
+            payload: {
+                from: { name: input.from, level: input.fromLevel as 0 | 1 | 2 },
+                to: { name: input.to, level: input.toLevel as 0 | 1 | 2 },
+                reason: input.reason,
+                timestamp: Date.now(),
+            },
         });
     }
 
