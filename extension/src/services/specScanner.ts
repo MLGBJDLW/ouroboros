@@ -178,11 +178,10 @@ async function analyzeSpecFolder(
             });
         }
 
-        // Calculate progress for spec workflow
-        const completedPhases = phases.filter(p => p.status === 'completed').length;
-        let progress = Math.round((completedPhases / SPEC_PHASES.length) * 100);
+        // Calculate progress based on tasks only (phases shown in timeline)
+        let progress = 0;
 
-        // If tasks.md exists, try to parse it for more detailed progress
+        // If tasks.md exists, parse it for progress
         let taskSummary: SpecInfo['taskSummary'];
         if (fileNames.includes('tasks.md')) {
             try {
@@ -191,7 +190,7 @@ async function analyzeSpecFolder(
                 const parsed = parseTasksMarkdown(Buffer.from(tasksContent).toString('utf-8'));
                 taskSummary = parsed.summary;
 
-                // For implement workflow, use tasks progress
+                // Progress is based on tasks completion
                 if (parsed.summary.total > 0) {
                     progress = calculateProgress(parsed);
                 }

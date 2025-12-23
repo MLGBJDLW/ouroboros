@@ -8,7 +8,6 @@ import {
     MenuInputSchema,
     ConfirmInputSchema,
     PlanReviewInputSchema,
-    PhaseProgressInputSchema,
     HandoffInputSchema,
     validateInput,
 } from '../../tools/schemas';
@@ -155,37 +154,6 @@ describe('PlanReviewInputSchema', () => {
         const result = PlanReviewInputSchema.safeParse({
             plan: 'content',
             mode: 'invalid',
-        });
-        expect(result.success).toBe(false);
-    });
-});
-
-describe('PhaseProgressInputSchema', () => {
-    it('should validate valid phase progress', () => {
-        const result = PhaseProgressInputSchema.safeParse({
-            workflow: 'spec',
-            specName: 'my-feature',
-            currentPhase: 2,
-            totalPhases: 5,
-            status: 'Analyzing requirements',
-        });
-        expect(result.success).toBe(true);
-    });
-
-    it('should require all fields', () => {
-        const result = PhaseProgressInputSchema.safeParse({
-            workflow: 'spec',
-        });
-        expect(result.success).toBe(false);
-    });
-
-    it('should reject invalid workflow', () => {
-        const result = PhaseProgressInputSchema.safeParse({
-            workflow: 'invalid',
-            specName: 'test',
-            currentPhase: 1,
-            totalPhases: 3,
-            status: 'Running',
         });
         expect(result.success).toBe(false);
     });

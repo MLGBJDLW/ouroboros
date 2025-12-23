@@ -2,6 +2,35 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.8] - 2025-12-22
+
+### Changed
+
+- **Chat-Style Request Cards** — All request types now use chat bubble layout with agent avatar
+- **Agent Avatar** — Ouroboros logo in semi-transparent bubble (replaces solid blue circle)
+- **Sent Message Bubble Size** — Increased to 520px width, 280px max height, 10 line clamp
+- **Request Cards Centered** — Cards now vertically centered instead of top-aligned
+- **Progress Bar** — Now shows tasks completion only (phases shown in timeline)
+- **Tab Shortcuts** — Changed from number keys to Alt+number to avoid input conflicts
+- **Send Button** — Replaced icon with Ouroboros logo
+- **Tabs Reduced** — Removed Agent Hierarchy tab (merged into Pending Requests)
+
+### Added
+
+- **Agent Activity Box** — Collapsible box in Pending Requests showing current agent and recent handoffs
+- **Test Coverage** — Improved coverage for updatePrompts.ts (100%) and SidebarProvider.ts (95%)
+
+### Removed
+
+- **`ouroborosai_phase_progress` Tool** — Removed redundant tool; progress now tracked via file system
+
+### Fixed
+
+- **Newline Parsing** — Question text now correctly renders `\n` as line breaks
+- **Keyboard Conflicts** — Arrow keys and number keys no longer interfere with text input
+
+---
+
 ## [3.2.7] - 2025-12-22
 
 ### Added

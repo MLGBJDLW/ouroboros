@@ -80,24 +80,6 @@ export interface PlanReviewOutput {
 }
 
 // ============================================================================
-// Phase Progress Tool Types
-// ============================================================================
-
-export interface PhaseProgressInput {
-    workflow: WorkflowType;
-    specName: string;
-    currentPhase: number;
-    totalPhases: number;
-    status: string;
-    agentName?: string;
-    agentLevel?: AgentLevel;
-}
-
-export interface PhaseProgressOutput {
-    acknowledged: boolean;
-}
-
-// ============================================================================
 // Agent Handoff Tool Types
 // ============================================================================
 

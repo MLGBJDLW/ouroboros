@@ -8,7 +8,6 @@ import type { PendingRequest } from '../types/requests';
 import type {
     StoredInteraction,
     WorkspaceStatePayload,
-    PhaseProgressPayload,
     WorkspaceInfo,
 } from '../types/messages';
 import type { AgentHandoff } from '../types/agent';
@@ -30,7 +29,6 @@ type AppAction =
     | { type: 'REMOVE_PENDING_REQUEST'; payload: string }
     | { type: 'SET_HISTORY'; payload: StoredInteraction[] }
     | { type: 'SET_WORKSPACE_STATE'; payload: WorkspaceStatePayload }
-    | { type: 'UPDATE_PHASE_PROGRESS'; payload: PhaseProgressPayload }
     | { type: 'SET_CURRENT_AGENT'; payload: { name: string; level: 0 | 1 | 2 } }
     | { type: 'ADD_HANDOFF'; payload: AgentHandoff }
     | { type: 'SET_LOADING'; payload: boolean }
@@ -75,26 +73,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
             return { ...state, history: action.payload };
         case 'SET_WORKSPACE_STATE':
             return { ...state, workspaceState: action.payload };
-        case 'UPDATE_PHASE_PROGRESS': {
-            const baseState =
-                state.workspaceState ?? {
-                    currentPhase: 0,
-                    taskProgress: {},
-                    executionMode: 'task-by-task',
-                };
-
-            return {
-                ...state,
-                workspaceState: {
-                    ...baseState,
-                    currentSpec: action.payload.specName,
-                    currentPhase: action.payload.currentPhase,
-                    workflowType: action.payload.workflow,
-                    totalPhases: action.payload.totalPhases,
-                    phaseStatus: action.payload.status,
-                },
-            };
-        }
         case 'SET_CURRENT_AGENT':
             return { ...state, currentAgent: action.payload };
         case 'ADD_HANDOFF':
@@ -137,9 +115,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 break;
             case 'historyUpdate':
                 dispatch({ type: 'SET_HISTORY', payload: message.payload });
-                break;
-            case 'phaseProgress':
-                dispatch({ type: 'UPDATE_PHASE_PROGRESS', payload: message.payload });
                 break;
             case 'agentHandoff':
                 dispatch({ type: 'ADD_HANDOFF', payload: message.payload });

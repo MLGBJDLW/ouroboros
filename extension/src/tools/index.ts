@@ -10,7 +10,6 @@ import { createAskTool } from './ask';
 import { createMenuTool } from './menu';
 import { createConfirmTool } from './confirm';
 import { createPlanReviewTool } from './planReview';
-import { createPhaseProgressTool } from './phaseProgress';
 import { createHandoffTool } from './handoff';
 import { createLogger } from '../utils/logger';
 
@@ -46,11 +45,6 @@ export function registerTools(
     const planReviewTool = createPlanReviewTool(stateManager, sidebarProvider);
     disposables.push(vscode.lm.registerTool(TOOLS.PLAN_REVIEW, planReviewTool));
     logger.info(`Registered tool: ${TOOLS.PLAN_REVIEW}`);
-
-    // Register ouroboros_phase_progress
-    const phaseProgressTool = createPhaseProgressTool(stateManager, sidebarProvider);
-    disposables.push(vscode.lm.registerTool(TOOLS.PHASE_PROGRESS, phaseProgressTool));
-    logger.info(`Registered tool: ${TOOLS.PHASE_PROGRESS}`);
 
     // Register ouroboros_agent_handoff
     const handoffTool = createHandoffTool(stateManager, sidebarProvider);

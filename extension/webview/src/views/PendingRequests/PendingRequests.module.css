@@ -6,6 +6,73 @@
     justify-content: center;
     height: 100%;
     padding: var(--spacing-md);
+    gap: var(--spacing-md);
+}
+
+/* Agent Activity Box */
+.activityBox {
+    width: 100%;
+    max-width: 420px;
+    background: var(--background-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.activityHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: none;
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.activityHeader:hover {
+    background: var(--list-hover);
+}
+
+.activityToggle {
+    margin-left: auto;
+    opacity: 0.5;
+}
+
+.activityList {
+    padding: var(--spacing-xs) var(--spacing-md) var(--spacing-sm);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.activityItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 11px;
+    color: var(--foreground-secondary);
+}
+
+.activityFrom {
+    color: var(--foreground);
+}
+
+.activityArrow {
+    font-size: 10px;
+    opacity: 0.5;
+}
+
+.activityTo {
+    color: var(--info);
+    font-weight: 500;
 }
 
 /* Empty State with breathing animation */
@@ -46,7 +113,7 @@
     display: flex;
     justify-content: flex-end;
     width: 100%;
-    max-width: 320px;
+    max-width: 520px;
     animation: sentSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -55,7 +122,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
-    padding: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    min-width: 280px;
+    max-width: 100%;
     background: linear-gradient(135deg, 
         rgba(35, 134, 54, 0.12) 0%, 
         rgba(35, 134, 54, 0.06) 100%);
@@ -143,17 +212,18 @@
 }
 
 .sentText {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--foreground);
-    line-height: 1.5;
-    margin: var(--spacing-xs) 0;
+    line-height: 1.6;
+    margin: var(--spacing-sm) 0;
     word-break: break-word;
-    max-height: 120px;
+    max-height: 280px;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 10;
     -webkit-box-orient: vertical;
+    white-space: pre-wrap;
 }
 
 .sentFooter {
@@ -310,11 +380,156 @@
     gap: var(--spacing-sm);
 }
 
+/* Ask Content - Chat style */
+.askContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Agent message bubble (left side) */
+.questionBubble {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+}
+
+.questionAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, 
+        rgba(0, 127, 212, 0.15) 0%, 
+        rgba(0, 127, 212, 0.08) 100%);
+    border: 1px solid rgba(0, 127, 212, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.questionContent {
+    position: relative;
+    max-width: 85%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.questionContent::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 10px;
+    width: 12px;
+    height: 12px;
+    background: var(--background);
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    transform: rotate(45deg);
+}
+
+/* Plan bubble content (wider for code) */
+.planBubbleContent {
+    position: relative;
+    max-width: 100%;
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.planBubbleContent::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 10px;
+    width: 12px;
+    height: 12px;
+    background: var(--background);
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    transform: rotate(45deg);
+}
+
 .question {
     font-size: 13px;
     line-height: 1.5;
     color: var(--foreground);
-    margin-bottom: var(--spacing-sm);
+    margin: 0;
+}
+
+/* User input area (right aligned feel) */
+.userInputArea {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding-left: 36px; /* Align with message content */
+}
+
+.chatTextarea {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--input-background);
+    border: 1px solid var(--input-border);
+    border-radius: 18px;
+    color: var(--input-foreground);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chatTextarea:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.15);
+}
+
+.chatTextarea::placeholder {
+    color: var(--input-placeholder);
+}
+
+.chatInputFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 var(--spacing-xs);
+}
+
+.chatSendButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: var(--button-background);
+    border: none;
+    border-radius: 50%;
+    color: var(--button-foreground);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.chatSendButton:hover:not(:disabled) {
+    background: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.chatSendButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 /* Actions Area */

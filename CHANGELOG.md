@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.8] - 2025-12-22
+
+### 🎨 Extension UI Improvements
+
+#### Changed
+- **Chat-Style Request Cards** — All request types (Ask, Menu, Confirm, Plan Review) now use chat bubble layout:
+  - Agent question appears in left-aligned bubble with avatar
+  - User input area below with rounded styling
+  - More conversational feel vs form-like appearance
+- **Agent Avatar** — Ouroboros logo in semi-transparent bubble (replaces solid blue circle)
+- **Sent Message Bubble Size** — Increased to 520px width, 280px max height, 10 line clamp
+- **Request Cards Centered** — Cards now vertically centered instead of top-aligned
+- **Progress Bar** — Now shows tasks completion only; phases displayed in timeline below
+- **Tab Shortcuts** — Changed to Alt+0-3 to avoid conflicts with text input
+- **Send Button** — Replaced generic icon with Ouroboros logo
+- **Tabs Reduced** — 4 tabs now (removed Agent Hierarchy, merged into Pending Requests)
+
+#### Added
+- **Agent Activity Box** — Collapsible panel in Pending Requests showing:
+  - Current active agent with level badge
+  - Last 3 handoff transitions (expandable)
+
+#### Removed
+- **`ouroborosai_phase_progress` Tool** — Removed redundant tool; progress tracked via file system
+- **Agent Hierarchy Tab** — Functionality merged into Agent Activity box
+
+#### Fixed
+- **Newline Parsing** — Question text correctly renders `\n` as line breaks
+- **Keyboard Conflicts** — Arrow keys and number keys no longer interfere with textarea/input
+
+### 📝 Agent Improvements
+
+#### Changed
+- **Implement Agent** — Strengthened task update constraints:
+  - Task status must be updated IMMEDIATELY after each task completes
+  - Update step now comes BEFORE verification step
+  - Added critical warnings about delayed updates breaking UI
+
+### 🧪 Test Coverage
+
+#### Added
+- **updatePrompts.ts** — Full test coverage (21% → 100%)
+- **SidebarProvider.ts** — Improved coverage (60% → 95%)
+
+---
+
 ## [3.2.7] - 2025-12-22
 
 ### 🎨 Extension UI Enhancements

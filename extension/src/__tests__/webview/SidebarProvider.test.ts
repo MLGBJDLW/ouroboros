@@ -194,50 +194,6 @@ describe('SidebarProvider', () => {
         });
     });
 
-    describe('updatePhaseProgress', () => {
-        it('should post phase progress message', async () => {
-            const { SidebarProvider } = await import('../../webview/SidebarProvider');
-
-            const provider = new SidebarProvider(
-                { fsPath: '/test' } as never,
-                mockStateManager as never
-            );
-
-            const mockWebviewView = {
-                webview: {
-                    options: {},
-                    html: '',
-                    postMessage: vi.fn(),
-                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-                },
-            };
-
-            provider.resolveWebviewView(
-                mockWebviewView as never,
-                {} as never,
-                { isCancellationRequested: false } as never
-            );
-
-            await provider.updatePhaseProgress({
-                workflow: 'spec',
-                specName: 'test',
-                currentPhase: 1,
-                totalPhases: 3,
-                status: 'In progress',
-            });
-
-            expect(mockWebviewView.webview.postMessage).toHaveBeenCalledWith({
-                type: 'phaseProgress',
-                payload: expect.objectContaining({
-                    workflow: 'spec',
-                    specName: 'test',
-                }),
-            });
-
-            provider.dispose();
-        });
-    });
-
     describe('updateAgentHandoff', () => {
         it('should post agent handoff message', async () => {
             const { SidebarProvider } = await import('../../webview/SidebarProvider');
@@ -394,6 +350,377 @@ describe('SidebarProvider', () => {
             expect(mockResolve1).not.toHaveBeenCalled();
 
             provider.dispose();
+        });
+    });
+
+    describe('setSpecWatcher', () => {
+        it('should set the spec watcher reference', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const mockSpecWatcher = { start: vi.fn(), stop: vi.fn() };
+            provider.setSpecWatcher(mockSpecWatcher as never);
+
+            // Access private specWatcher to verify
+            const specWatcher = (provider as unknown as { specWatcher: unknown }).specWatcher;
+            expect(specWatcher).toBe(mockSpecWatcher);
+
+            provider.dispose();
+        });
+    });
+
+    describe('createAskRequest', () => {
+        it('should create ask request and post to webview', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const mockWebviewView = {
+                webview: {
+                    options: {},
+                    html: '',
+                    postMessage: vi.fn(),
+                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                },
+                show: vi.fn(),
+            };
+
+            provider.resolveWebviewView(
+                mockWebviewView as never,
+                {} as never,
+                { isCancellationRequested: false } as never
+            );
+
+            const mockToken = {
+                isCancellationRequested: false,
+                onCancellationRequested: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+            };
+
+            // Start the request (don't await - it will wait for response)
+            const requestPromise = provider.createAskRequest(
+                { question: 'Test question?', agentName: 'test-agent', agentLevel: 1 },
+                mockToken as never
+            );
+
+            // Verify newRequest was posted
+            expect(mockWebviewView.webview.postMessage).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'newRequest',
+                    payload: expect.objectContaining({
+                        type: 'ask',
+                        agentName: 'test-agent',
+                    }),
+                })
+            );
+
+            // Get the request ID from the posted message
+            const postedMessage = mockWebviewView.webview.postMessage.mock.calls.find(
+                (call: unknown[]) => (call[0] as { type: string }).type === 'newRequest'
+            );
+            const requestId = (postedMessage?.[0] as { payload: { id: string } })?.payload?.id;
+
+            // Resolve the request
+            provider.resolveRequest(requestId, { response: 'Test answer', cancelled: false });
+
+            const result = await requestPromise;
+            expect(result).toEqual({ response: 'Test answer', cancelled: false });
+
+            provider.dispose();
+        });
+    });
+
+    describe('createMenuRequest', () => {
+        it('should create menu request', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const mockWebviewView = {
+                webview: {
+                    options: {},
+                    html: '',
+                    postMessage: vi.fn(),
+                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                },
+                show: vi.fn(),
+            };
+
+            provider.resolveWebviewView(
+                mockWebviewView as never,
+                {} as never,
+                { isCancellationRequested: false } as never
+            );
+
+            const mockToken = {
+                isCancellationRequested: false,
+                onCancellationRequested: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+            };
+
+            const requestPromise = provider.createMenuRequest(
+                { question: 'Choose one', options: ['A', 'B'], agentName: 'test', agentLevel: 0 },
+                mockToken as never
+            );
+
+            // Get request ID and resolve
+            const postedMessage = mockWebviewView.webview.postMessage.mock.calls.find(
+                (call: unknown[]) => (call[0] as { type: string }).type === 'newRequest'
+            );
+            const requestId = (postedMessage?.[0] as { payload: { id: string } })?.payload?.id;
+
+            provider.resolveRequest(requestId, { selectedIndex: 0, selectedOption: 'A' });
+
+            const result = await requestPromise;
+            expect(result).toEqual({ selectedIndex: 0, selectedOption: 'A' });
+
+            provider.dispose();
+        });
+    });
+
+    describe('createConfirmRequest', () => {
+        it('should create confirm request', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const mockWebviewView = {
+                webview: {
+                    options: {},
+                    html: '',
+                    postMessage: vi.fn(),
+                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                },
+                show: vi.fn(),
+            };
+
+            provider.resolveWebviewView(
+                mockWebviewView as never,
+                {} as never,
+                { isCancellationRequested: false } as never
+            );
+
+            const mockToken = {
+                isCancellationRequested: false,
+                onCancellationRequested: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+            };
+
+            const requestPromise = provider.createConfirmRequest(
+                { question: 'Are you sure?', agentName: 'test', agentLevel: 0 },
+                mockToken as never
+            );
+
+            const postedMessage = mockWebviewView.webview.postMessage.mock.calls.find(
+                (call: unknown[]) => (call[0] as { type: string }).type === 'newRequest'
+            );
+            const requestId = (postedMessage?.[0] as { payload: { id: string } })?.payload?.id;
+
+            provider.resolveRequest(requestId, { confirmed: true });
+
+            const result = await requestPromise;
+            expect(result).toEqual({ confirmed: true });
+
+            provider.dispose();
+        });
+    });
+
+    describe('createPlanReviewRequest', () => {
+        it('should create plan review request', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const mockWebviewView = {
+                webview: {
+                    options: {},
+                    html: '',
+                    postMessage: vi.fn(),
+                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                },
+                show: vi.fn(),
+            };
+
+            provider.resolveWebviewView(
+                mockWebviewView as never,
+                {} as never,
+                { isCancellationRequested: false } as never
+            );
+
+            const mockToken = {
+                isCancellationRequested: false,
+                onCancellationRequested: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+            };
+
+            const requestPromise = provider.createPlanReviewRequest(
+                { plan: '# Plan\n- Step 1', agentName: 'test', agentLevel: 0 },
+                mockToken as never
+            );
+
+            const postedMessage = mockWebviewView.webview.postMessage.mock.calls.find(
+                (call: unknown[]) => (call[0] as { type: string }).type === 'newRequest'
+            );
+            const requestId = (postedMessage?.[0] as { payload: { id: string } })?.payload?.id;
+
+            provider.resolveRequest(requestId, { approved: true });
+
+            const result = await requestPromise;
+            expect(result).toEqual({ approved: true });
+
+            provider.dispose();
+        });
+    });
+
+    describe('request timeout', () => {
+        it('should timeout request after configured duration', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const mockWebviewView = {
+                webview: {
+                    options: {},
+                    html: '',
+                    postMessage: vi.fn(),
+                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                },
+                show: vi.fn(),
+            };
+
+            provider.resolveWebviewView(
+                mockWebviewView as never,
+                {} as never,
+                { isCancellationRequested: false } as never
+            );
+
+            const mockToken = {
+                isCancellationRequested: false,
+                onCancellationRequested: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+            };
+
+            const requestPromise = provider.createAskRequest(
+                { question: 'Test?', agentName: 'test', agentLevel: 0 },
+                mockToken as never
+            );
+
+            // Fast-forward past timeout
+            vi.advanceTimersByTime(60001);
+
+            const result = await requestPromise;
+            expect(result).toEqual({ cancelled: true, timeout: true });
+
+            provider.dispose();
+        });
+    });
+
+    describe('request cancellation via token', () => {
+        it('should cancel request when token is cancelled', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const mockWebviewView = {
+                webview: {
+                    options: {},
+                    html: '',
+                    postMessage: vi.fn(),
+                    onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                },
+                show: vi.fn(),
+            };
+
+            provider.resolveWebviewView(
+                mockWebviewView as never,
+                {} as never,
+                { isCancellationRequested: false } as never
+            );
+
+            let cancellationCallback: () => void = () => {};
+            const mockToken = {
+                isCancellationRequested: false,
+                onCancellationRequested: vi.fn((callback: () => void) => {
+                    cancellationCallback = callback;
+                    return { dispose: vi.fn() };
+                }),
+            };
+
+            const requestPromise = provider.createAskRequest(
+                { question: 'Test?', agentName: 'test', agentLevel: 0 },
+                mockToken as never
+            );
+
+            // Trigger cancellation
+            cancellationCallback();
+
+            const result = await requestPromise;
+            expect(result).toEqual({ cancelled: true });
+
+            provider.dispose();
+        });
+    });
+
+    describe('dispose with pending requests', () => {
+        it('should cancel all pending requests on dispose', async () => {
+            const { SidebarProvider } = await import('../../webview/SidebarProvider');
+
+            const provider = new SidebarProvider(
+                { fsPath: '/test' } as never,
+                mockStateManager as never
+            );
+
+            const pendingRequests = (
+                provider as unknown as { pendingRequests: Map<string, unknown> }
+            ).pendingRequests;
+            const mockResolve1 = vi.fn();
+            const mockResolve2 = vi.fn();
+
+            pendingRequests.set('req-1', {
+                id: 'req-1',
+                timestamp: 1000,
+                type: 'ask',
+                agentName: 'test',
+                agentLevel: 0,
+                data: {},
+                resolve: mockResolve1,
+                reject: vi.fn(),
+                timeoutHandle: setTimeout(() => {}, 60000),
+            });
+
+            pendingRequests.set('req-2', {
+                id: 'req-2',
+                timestamp: 2000,
+                type: 'menu',
+                agentName: 'test',
+                agentLevel: 0,
+                data: {},
+                resolve: mockResolve2,
+                reject: vi.fn(),
+            });
+
+            provider.dispose();
+
+            expect(mockResolve1).toHaveBeenCalledWith({ cancelled: true });
+            expect(mockResolve2).toHaveBeenCalledWith({ cancelled: true });
+            expect(pendingRequests.size).toBe(0);
         });
     });
 });
