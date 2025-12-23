@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.9] - 2025-12-23
+
+### 🎨 Extension UI Improvements
+
+#### Fixed
+- **Custom Input Multiline Support** — Menu, Confirm, and Plan Review custom inputs now support Shift+Enter for new lines:
+  - Changed `<input type="text">` to `<textarea>` for all custom input fields
+  - Enter sends message, Shift+Enter inserts new line (consistent with Ask input)
+  - Auto-resize up to 120px height
+  - Updated shortcut hints to include "Shift+Enter for new line"
+
+- **Newline Escape Parsing** — Fixed `\n` literal strings not rendering as actual line breaks in question text:
+  - Added `parseNewlines()` utility function to convert `\n` to real newlines
+  - Applied to all question displays (Ask, Menu, Confirm) and plan text (Plan Review)
+
+---
+
 ## [3.2.8] - 2025-12-22
 
 ### 🎨 Extension UI Improvements

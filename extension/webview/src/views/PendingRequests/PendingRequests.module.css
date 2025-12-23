@@ -3,76 +3,193 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     height: 100%;
     padding: var(--spacing-md);
     gap: var(--spacing-md);
 }
 
-/* Agent Activity Box */
+/* Agent Activity Box - Redesigned */
 .activityBox {
     width: 100%;
     max-width: 420px;
-    background: var(--background-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, 
+        rgba(33, 150, 243, 0.08) 0%, 
+        rgba(156, 39, 176, 0.06) 50%,
+        rgba(0, 188, 212, 0.04) 100%);
+    border: 1px solid rgba(156, 39, 176, 0.2);
+    border-radius: var(--radius-lg);
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .activityHeader {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    justify-content: space-between;
     width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-md);
     background: transparent;
     border: none;
-    color: var(--foreground-secondary);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     cursor: pointer;
     transition: background 0.15s;
 }
 
 .activityHeader:hover {
-    background: var(--list-hover);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.activityLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.activityIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, 
+        rgba(33, 150, 243, 0.25) 0%, 
+        rgba(156, 39, 176, 0.2) 100%);
+    border-radius: 50%;
+    color: #9C27B0;
+    font-size: 16px;
+}
+
+.activityInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.activityLabel {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--foreground-secondary);
+    opacity: 0.7;
+}
+
+.activityAgent {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.agentName {
+    color: #9C27B0;
+}
+
+.agentLevel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 6px;
+    background: rgba(156, 39, 176, 0.15);
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #9C27B0;
+}
+
+.agentIdle {
+    color: var(--foreground-secondary);
+    font-style: italic;
+    font-weight: 400;
 }
 
 .activityToggle {
-    margin-left: auto;
     opacity: 0.5;
+    transition: opacity 0.15s, transform 0.2s;
+}
+
+.activityHeader:hover .activityToggle {
+    opacity: 0.8;
 }
 
 .activityList {
-    padding: var(--spacing-xs) var(--spacing-md) var(--spacing-sm);
-    border-top: 1px solid var(--border);
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+    border-top: 1px solid rgba(156, 39, 176, 0.15);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.activityListHeader {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--foreground-secondary);
+    opacity: 0.6;
+    margin-bottom: var(--spacing-xs);
 }
 
 .activityItem {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-sm);
+    border-left: 2px solid rgba(156, 39, 176, 0.4);
+}
+
+.handoffFlow {
+    display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    font-size: 11px;
-    color: var(--foreground-secondary);
+    font-size: 12px;
 }
 
 .activityFrom {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     color: var(--foreground);
 }
 
 .activityArrow {
     font-size: 10px;
-    opacity: 0.5;
+    color: #00BCD4;
+    opacity: 0.8;
 }
 
 .activityTo {
-    color: var(--info);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #2196F3;
     font-weight: 500;
+}
+
+.levelBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--foreground-secondary);
+}
+
+.handoffReason {
+    font-size: 11px;
+    color: var(--foreground-secondary);
+    opacity: 0.7;
+    font-style: italic;
+    padding-left: var(--spacing-xs);
 }
 
 /* Empty State with breathing animation */
@@ -80,12 +197,21 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
     color: var(--foreground-secondary);
     animation: fadeIn 0.4s ease;
     height: 100%;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
+    gap: var(--spacing-lg);
+}
+
+.emptyContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
 }
 
 .emptyIcon {
@@ -703,6 +829,10 @@
     color: var(--input-foreground);
     font-size: 13px;
     line-height: 1.4;
+    resize: none;
+    font-family: inherit;
+    min-height: 24px;
+    max-height: 120px;
 }
 
 .customInput:focus {

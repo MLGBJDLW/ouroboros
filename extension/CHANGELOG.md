@@ -2,6 +2,22 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.9] - 2025-12-23
+
+### Fixed
+
+- **Custom Input Multiline Support** — Menu, Confirm, and Plan Review custom inputs now support Shift+Enter for new lines:
+  - Changed `<input type="text">` to `<textarea>` for all custom input fields
+  - Enter sends message, Shift+Enter inserts new line (consistent with Ask input)
+  - Auto-resize up to 120px height
+  - Updated shortcut hints to include "Shift+Enter for new line"
+
+- **Newline Escape Parsing** — Fixed `\n` literal strings not rendering as actual line breaks:
+  - Added `parseNewlines()` utility to convert `\n` to real newlines
+  - Applied to all question displays and plan text
+
+---
+
 ## [3.2.8] - 2025-12-22
 
 ### Changed
