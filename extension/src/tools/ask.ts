@@ -8,6 +8,7 @@ import type { StateManager } from '../storage/stateManager';
 import type { SidebarProvider } from '../webview/SidebarProvider';
 import type { AskInput, AskOutput } from './types';
 import { AskInputSchema, validateInput } from './schemas';
+import { buildToolResult } from './attachmentHelper';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('AskTool');
@@ -43,6 +44,12 @@ export function createAskTool(
                 // Create pending request
                 const result = await sidebarProvider.createAskRequest(validation.data, token);
 
+                logger.debug('Ask result received:', JSON.stringify({
+                    response: result.response,
+                    attachmentsCount: result.attachments?.length ?? 0,
+                    attachments: result.attachments?.map(a => ({ name: a.name, type: a.type, size: a.size })),
+                }));
+
                 // Store interaction
                 await stateManager.addInteraction({
                     type: 'ask',
@@ -58,14 +65,13 @@ export function createAskTool(
                 });
 
                 const output: AskOutput = {
-                    response: result.response ?? '',
+                    response: result.response || (result.attachments?.length ? '[See attached image(s)]' : ''),
                     cancelled: result.cancelled ?? false,
                     timeout: result.timeout,
+                    attachments: result.attachments,
                 };
 
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(JSON.stringify(output)),
-                ]);
+                return buildToolResult(output, result.attachments);
             } catch (error) {
                 logger.error('Ask tool error:', error);
 

@@ -2,9 +2,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PendingRequests } from '../../views/PendingRequests/PendingRequests';
 import * as usePendingRequestsHook from '../../hooks/usePendingRequests';
+import * as useAppContextHook from '../../context/AppContext';
 
-// Mock the hook
+// Mock the hooks
 vi.mock('../../hooks/usePendingRequests');
+vi.mock('../../context/AppContext', async () => {
+    const actual = await vi.importActual('../../context/AppContext');
+    return {
+        ...actual,
+        useAppContext: vi.fn(),
+    };
+});
 
 describe('PendingRequests Component', () => {
     const mockRespond = vi.fn();
@@ -17,6 +25,15 @@ describe('PendingRequests Component', () => {
             requests: [],
             respond: mockRespond,
             cancel: mockCancel,
+        });
+        // Mock useAppContext
+        (useAppContextHook.useAppContext as any).mockReturnValue({
+            state: {
+                currentAgent: null,
+                handoffHistory: [],
+                pendingRequests: [],
+            },
+            dispatch: vi.fn(),
         });
         // Mock scrollIntoView
         window.HTMLElement.prototype.scrollIntoView = vi.fn();
@@ -73,11 +90,11 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const input = screen.getByPlaceholderText('Type your answer...');
+        const input = screen.getByPlaceholderText('Type your reply... (Ctrl+V to paste images)');
         fireEvent.change(input, { target: { value: 'My Answer' } });
-        fireEvent.click(screen.getByText('Send'));
+        fireEvent.click(screen.getByTitle('Send'));
 
-        expect(mockRespond).toHaveBeenCalledWith('1', { response: 'My Answer', cancelled: false });
+        expect(mockRespond).toHaveBeenCalledWith('1', { response: 'My Answer', cancelled: false, attachments: [] });
     });
 
     it('handles ASK submission via Enter key', () => {
@@ -98,11 +115,11 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const input = screen.getByPlaceholderText('Type your answer...');
+        const input = screen.getByPlaceholderText('Type your reply... (Ctrl+V to paste images)');
         fireEvent.change(input, { target: { value: 'My Answer' } });
         fireEvent.keyDown(input, { key: 'Enter', shiftKey: false });
 
-        expect(mockRespond).toHaveBeenCalledWith('1', { response: 'My Answer', cancelled: false });
+        expect(mockRespond).toHaveBeenCalledWith('1', { response: 'My Answer', cancelled: false, attachments: [] });
     });
 
     it('does not submit ASK on Shift+Enter', () => {
@@ -123,7 +140,7 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const input = screen.getByPlaceholderText('Type your answer...');
+        const input = screen.getByPlaceholderText('Type your reply... (Ctrl+V to paste images)');
         fireEvent.change(input, { target: { value: 'My Answer' } });
         fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
 
@@ -187,7 +204,7 @@ describe('PendingRequests Component', () => {
         fireEvent.click(screen.getByText('Custom response'));
         
         // Now the input should be visible
-        expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Type your message... (Ctrl+V to paste)')).toBeInTheDocument();
     });
 
     it('handles MENU custom input submission', () => {
@@ -215,7 +232,7 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type your message...');
+        const input = screen.getByPlaceholderText('Type your message... (Ctrl+V to paste)');
         fireEvent.change(input, { target: { value: 'Custom Value' } });
         fireEvent.click(screen.getByTitle('Send'));
 
@@ -223,6 +240,7 @@ describe('PendingRequests Component', () => {
             selectedIndex: -1,
             selectedOption: 'Custom Value',
             isCustom: true,
+            attachments: [],
         }));
     });
 
@@ -385,13 +403,14 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type your message...');
+        const input = screen.getByPlaceholderText('Type your message... (Ctrl+V to paste)');
         fireEvent.change(input, { target: { value: 'Maybe later' } });
         fireEvent.click(screen.getByTitle('Send'));
 
         expect(mockRespond).toHaveBeenCalledWith('3', expect.objectContaining({
             customResponse: 'Maybe later',
             isCustom: true,
+            attachments: [],
         }));
     });
 
@@ -505,7 +524,7 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const feedbackInput = screen.getByPlaceholderText('Feedback (required for changes)...');
+        const feedbackInput = screen.getByPlaceholderText('Feedback (required for changes)... Ctrl+V to paste');
         fireEvent.change(feedbackInput, { target: { value: 'Please add more details' } });
         fireEvent.click(screen.getByText('Request Changes'));
 
@@ -713,7 +732,7 @@ describe('PendingRequests Component', () => {
         // Press 'C' to show custom input
         fireEvent.keyDown(window, { key: 'C' });
 
-        expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Type your message... (Ctrl+V to paste)')).toBeInTheDocument();
     });
 
     it('handles CONFIRM Y key for yes', () => {
@@ -821,7 +840,7 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type your message...');
+        const input = screen.getByPlaceholderText('Type your message... (Ctrl+V to paste)');
         fireEvent.change(input, { target: { value: 'Custom Value' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -829,6 +848,7 @@ describe('PendingRequests Component', () => {
             selectedIndex: -1,
             selectedOption: 'Custom Value',
             isCustom: true,
+            attachments: [],
         }));
     });
 
@@ -856,13 +876,14 @@ describe('PendingRequests Component', () => {
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
         
-        const input = screen.getByPlaceholderText('Type your message...');
+        const input = screen.getByPlaceholderText('Type your message... (Ctrl+V to paste)');
         fireEvent.change(input, { target: { value: 'Maybe' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
         expect(mockRespond).toHaveBeenCalledWith('3', expect.objectContaining({
             customResponse: 'Maybe',
             isCustom: true,
+            attachments: [],
         }));
     });
 

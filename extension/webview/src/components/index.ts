@@ -10,3 +10,10 @@ export { EmptyState } from './EmptyState';
 export { Tooltip } from './Tooltip';
 export { Welcome } from './Welcome';
 export { Logo } from './Logo';
+export { 
+    AttachmentInput, 
+    AttachmentBadge, 
+    AttachmentsList, 
+    DragOverlay,
+    AttachmentActions,
+} from './AttachmentInput';

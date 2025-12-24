@@ -1,0 +1,310 @@
+/* Attachment Input Styles - Copilot-inspired design */
+
+/* Attachment Badge */
+.badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 6px;
+    background: linear-gradient(135deg, 
+        rgba(0, 127, 212, 0.12) 0%, 
+        rgba(0, 127, 212, 0.06) 100%);
+    border: 1px solid rgba(0, 127, 212, 0.25);
+    border-radius: 16px;
+    font-size: 12px;
+    color: var(--foreground);
+    max-width: 200px;
+    transition: all 0.15s ease;
+    cursor: default;
+}
+
+.badge:hover {
+    background: linear-gradient(135deg, 
+        rgba(0, 127, 212, 0.18) 0%, 
+        rgba(0, 127, 212, 0.1) 100%);
+    border-color: rgba(0, 127, 212, 0.4);
+}
+
+.badgeCompact {
+    padding: 2px 6px 2px 4px;
+    font-size: 11px;
+    max-width: 150px;
+}
+
+.badgeThumbnail {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.badgeCompact .badgeThumbnail {
+    width: 16px;
+    height: 16px;
+}
+
+.badgeIcon {
+    font-size: 14px;
+    color: var(--info);
+    flex-shrink: 0;
+}
+
+.badgeCompact .badgeIcon {
+    font-size: 12px;
+}
+
+.badgeName {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.badgeSize {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.badgeRemove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.badgeRemove:hover {
+    opacity: 1;
+    background: rgba(255, 80, 80, 0.2);
+    color: var(--error);
+}
+
+.badgeRemove i {
+    font-size: 10px;
+}
+
+/* Image Preview Tooltip */
+.previewTooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    animation: fadeIn 0.15s ease;
+}
+
+.previewTooltip img {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: var(--radius-sm);
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Attachments List */
+.list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 0;
+}
+
+.listCompact {
+    gap: 4px;
+    padding: 4px 0;
+}
+
+/* Drag Overlay */
+.dragOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(0, 127, 212, 0.1);
+    border: 2px dashed var(--info);
+    border-radius: var(--radius-md);
+    color: var(--info);
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 10;
+    animation: pulseIn 0.2s ease;
+    backdrop-filter: blur(2px);
+}
+
+.dragIcon {
+    font-size: 32px;
+    animation: bounce 0.6s ease infinite;
+}
+
+@keyframes pulseIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.actionButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.15s ease;
+}
+
+.actionButton:hover:not(:disabled) {
+    opacity: 1;
+    background: var(--list-hover);
+    color: var(--info);
+}
+
+.actionButton:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.actionButton i {
+    font-size: 16px;
+}
+
+/* Error Message */
+.error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(255, 80, 80, 0.1);
+    border: 1px solid rgba(255, 80, 80, 0.3);
+    border-radius: var(--radius-sm);
+    color: var(--error);
+    font-size: 11px;
+    animation: shakeIn 0.3s ease;
+}
+
+@keyframes shakeIn {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* Input Container with drag support */
+.inputContainer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.inputWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    background: var(--input-background);
+    border: 1px solid var(--input-border);
+    border-radius: 18px;
+    transition: all 0.2s ease;
+}
+
+.inputWrapper:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.15);
+}
+
+.inputWrapper.dragOver {
+    border-color: var(--info);
+    background: rgba(0, 127, 212, 0.05);
+}
+
+.textarea {
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: none;
+    color: var(--input-foreground);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: none;
+    min-height: 24px;
+    max-height: 120px;
+}
+
+.textarea:focus {
+    outline: none;
+}
+
+.textarea::placeholder {
+    color: var(--input-placeholder);
+}
+
+.inputFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 4px;
+    border-top: 1px solid transparent;
+}
+
+.inputFooter.hasAttachments {
+    border-top-color: var(--border);
+    margin-top: 4px;
+}
+
+.inputHint {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    opacity: 0.6;
+}
+
+/* Hidden file input */
+.hiddenInput {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}

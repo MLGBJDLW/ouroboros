@@ -228,8 +228,8 @@ describe('SidebarProvider', () => {
             expect(mockWebviewView.webview.postMessage).toHaveBeenCalledWith({
                 type: 'agentHandoff',
                 payload: expect.objectContaining({
-                    from: 'agent1',
-                    to: 'agent2',
+                    from: { name: 'agent1', level: 0 },
+                    to: { name: 'agent2', level: 1 },
                 }),
             });
 

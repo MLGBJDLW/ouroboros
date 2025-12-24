@@ -2,6 +2,40 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.10] - 2025-12-24
+
+### Added
+
+- **Copilot-Style Attachment System** — Full support for file and image attachments in all input types:
+  - **Paste Images** — Ctrl+V to paste clipboard images directly
+  - **Drag & Drop** — Drop files onto any input area
+  - **File Picker** — Click attach button to browse files
+  - **Badge Display** — Images show thumbnails, files show icons with names
+  - **Preview Tooltip** — Hover over image badges for larger preview
+  - **Size Limits** — Max 5MB per file, up to 10 attachments
+  - **Type Detection** — Auto-detects image/code/file types
+  - **Send Confirmation** — Shows attachment count in sent message bubble
+
+- **Attachment Helper Module** — New `attachmentHelper.ts` for processing attachments:
+  - Converts image attachments to `LanguageModelDataPart` for Copilot vision support
+  - Converts code/file attachments to formatted markdown text blocks
+  - Handles base64 data URL decoding
+
+### Changed
+
+- **Input Areas** — All textarea inputs now support drag-over visual feedback
+- **Textarea Max Height** — Increased from 120px to 240px (~10-12 lines)
+- **Type Definitions** — Extended all response types to include `attachments` field
+
+### Fixed
+
+- **Attachment Passthrough** — Fixed attachments not being passed from webview to Copilot:
+  - All tools (ask, menu, confirm, planReview) now include attachments in output
+  - Image-only responses now show `[See attached image(s)]` instead of empty string
+  - Added debug logging for attachment processing
+
+---
+
 ## [3.2.9] - 2025-12-23
 
 ### Fixed

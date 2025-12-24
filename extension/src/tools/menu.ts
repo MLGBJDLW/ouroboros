@@ -8,6 +8,7 @@ import type { StateManager } from '../storage/stateManager';
 import type { SidebarProvider } from '../webview/SidebarProvider';
 import type { MenuInput, MenuOutput } from './types';
 import { MenuInputSchema, validateInput } from './schemas';
+import { buildToolResult } from './attachmentHelper';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('MenuTool');
@@ -59,15 +60,14 @@ export function createMenuTool(
 
                 const output: MenuOutput = {
                     selectedIndex: result.selectedIndex ?? -1,
-                    selectedOption: result.selectedOption ?? '',
+                    selectedOption: result.selectedOption || (result.attachments?.length ? '[See attached image(s)]' : ''),
                     isCustom: result.isCustom ?? false,
                     cancelled: result.cancelled ?? false,
                     timeout: result.timeout,
+                    attachments: result.attachments,
                 };
 
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(JSON.stringify(output)),
-                ]);
+                return buildToolResult(output, result.attachments);
             } catch (error) {
                 logger.error('Menu tool error:', error);
 

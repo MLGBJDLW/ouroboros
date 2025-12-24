@@ -5,6 +5,23 @@
 import type { AgentLevel, WorkflowType, RequestType, RequestStatus } from '../constants';
 
 // ============================================================================
+// Attachment Types
+// ============================================================================
+
+export type AttachmentType = 'image' | 'file' | 'code';
+
+export interface SerializedAttachment {
+    id: string;
+    type: AttachmentType;
+    name: string;
+    /** Base64 encoded data */
+    data: string;
+    mimeType?: string;
+    size?: number;
+    language?: string;
+}
+
+// ============================================================================
 // Ask Tool Types
 // ============================================================================
 
@@ -14,12 +31,16 @@ export interface AskInput {
     inputLabel?: string;
     agentName?: string;
     agentLevel?: AgentLevel;
+    /** Whether to allow attachments in the response */
+    allowAttachments?: boolean;
 }
 
 export interface AskOutput {
     response: string;
     cancelled: boolean;
     timeout?: boolean;
+    /** Attached files/images */
+    attachments?: SerializedAttachment[];
 }
 
 // ============================================================================
@@ -32,6 +53,8 @@ export interface MenuInput {
     allowCustom?: boolean;
     agentName?: string;
     agentLevel?: AgentLevel;
+    /** Whether to allow attachments in custom response */
+    allowAttachments?: boolean;
 }
 
 export interface MenuOutput {
@@ -40,6 +63,8 @@ export interface MenuOutput {
     isCustom: boolean;
     cancelled: boolean;
     timeout?: boolean;
+    /** Attached files/images (only for custom responses) */
+    attachments?: SerializedAttachment[];
 }
 
 // ============================================================================
@@ -52,12 +77,18 @@ export interface ConfirmInput {
     noLabel?: string;
     agentName?: string;
     agentLevel?: AgentLevel;
+    /** Whether to allow attachments in custom response */
+    allowAttachments?: boolean;
 }
 
 export interface ConfirmOutput {
     confirmed: boolean;
     cancelled: boolean;
     timeout?: boolean;
+    customResponse?: string;
+    isCustom?: boolean;
+    /** Attached files/images (only for custom responses) */
+    attachments?: SerializedAttachment[];
 }
 
 // ============================================================================
@@ -70,6 +101,8 @@ export interface PlanReviewInput {
     mode?: 'review' | 'walkthrough';
     agentName?: string;
     agentLevel?: AgentLevel;
+    /** Whether to allow attachments in feedback */
+    allowAttachments?: boolean;
 }
 
 export interface PlanReviewOutput {
@@ -77,6 +110,10 @@ export interface PlanReviewOutput {
     feedback?: string;
     cancelled: boolean;
     timeout?: boolean;
+    customResponse?: string;
+    isCustom?: boolean;
+    /** Attached files/images */
+    attachments?: SerializedAttachment[];
 }
 
 // ============================================================================

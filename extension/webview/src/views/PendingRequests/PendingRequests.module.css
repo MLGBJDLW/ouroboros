@@ -1,18 +1,18 @@
 /* Container - centered layout */
 .container {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
     height: 100%;
     padding: var(--spacing-md);
-    gap: var(--spacing-md);
 }
 
-/* Agent Activity Box - Redesigned */
+/* Agent Activity Box - At top */
 .activityBox {
     width: 100%;
     max-width: 420px;
+    margin-bottom: var(--spacing-md);
     background: linear-gradient(135deg, 
         rgba(33, 150, 243, 0.08) 0%, 
         rgba(156, 39, 176, 0.06) 50%,
@@ -21,6 +21,7 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
 }
 
 .activityHeader {
@@ -414,11 +415,19 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Request Card */
+/* Request Card - centered in remaining space */
 .listItem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    width: 100%;
+    animation: slideIn 0.3s ease;
+}
+
+.listItem > .messageBubble {
     width: 100%;
     max-width: 420px;
-    animation: slideIn 0.3s ease;
 }
 
 @keyframes slideIn {
@@ -594,6 +603,7 @@
 
 /* User input area (right aligned feel) */
 .userInputArea {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
@@ -946,4 +956,148 @@
     max-height: 200px;
     overflow-y: auto;
     margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================================================
+   Attachment Support Styles
+   ============================================================================ */
+
+/* Input wrapper with drag support */
+.inputWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+/* Textarea wrapper for drag/drop */
+.textareaWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.textareaWrapper.dragOver .chatTextarea {
+    border-color: var(--info);
+    border-style: dashed;
+    background: rgba(0, 127, 212, 0.05);
+}
+
+/* Drop indicator inside textarea */
+.dropIndicator {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(0, 127, 212, 0.1);
+    border-radius: 18px;
+    color: var(--info);
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.dropIndicator i {
+    font-size: 20px;
+}
+
+/* Custom input container with drag support */
+.customInputContainer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--input-background);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    animation: expandIn 0.2s ease;
+}
+
+.customInputContainer:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.15);
+}
+
+.customInputContainer.dragOver {
+    border-color: var(--info);
+    background: rgba(0, 127, 212, 0.05);
+    border-style: dashed;
+}
+
+/* Feedback input wrapper for plan review */
+.feedbackInputWrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+}
+
+.feedbackInputWrapper .chatTextarea {
+    flex: 1;
+}
+
+/* Footer layout */
+.chatInputFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0 0;
+    margin-top: var(--spacing-xs);
+}
+
+.footerLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* Hidden file input */
+.hiddenInput {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Error message */
+.errorMessage {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(255, 80, 80, 0.1);
+    border: 1px solid rgba(255, 80, 80, 0.3);
+    border-radius: var(--radius-sm);
+    color: var(--error);
+    font-size: 11px;
+    animation: shakeIn 0.3s ease;
+}
+
+@keyframes shakeIn {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* Sent message attachment badge */
+.sentAttachmentBadge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(0, 127, 212, 0.15);
+    border-radius: 10px;
+    font-size: 10px;
+    color: var(--info);
+    margin-right: auto;
+}
+
+.sentAttachmentBadge i {
+    font-size: 11px;
 }

@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.10] - 2025-12-24
+
+### 🎨 Extension UI Improvements
+
+#### Added
+- **Copilot-Style Attachment System** — Full support for file and image attachments in all input types:
+  - **Paste Images** — Ctrl+V to paste clipboard images directly into any input
+  - **Drag & Drop** — Drop files onto any input area with visual feedback
+  - **File Picker** — Click attach button to browse and select files
+  - **Badge Display** — Images show thumbnails, files show type icons with names
+  - **Preview Tooltip** — Hover over image badges for larger preview
+  - **Size Limits** — Max 5MB per file, up to 10 attachments per message
+  - **Type Detection** — Auto-detects image/code/file types with language hints
+  - **Send Confirmation** — Shows attachment count in sent message bubble
+
+- **Attachment Helper Module** — New `attachmentHelper.ts` for processing attachments:
+  - Converts image attachments to `LanguageModelDataPart` for Copilot vision support
+  - Converts code/file attachments to formatted markdown text blocks
+  - Handles base64 data URL decoding
+
+#### Changed
+- **Input Areas** — All textarea inputs now support drag-over visual feedback
+- **Textarea Max Height** — Increased from 120px to 240px (~10-12 lines)
+- **Type Definitions** — Extended all response types (`AskOutput`, `MenuOutput`, `ConfirmOutput`, `PlanReviewOutput`) to include optional `attachments` field
+
+#### Fixed
+- **Attachment Passthrough** — Fixed attachments not being passed from webview to Copilot:
+  - All tools (ask, menu, confirm, planReview) now include attachments in output
+  - Image-only responses now show `[See attached image(s)]` instead of empty string
+  - Added debug logging for attachment processing
+
+---
+
 ## [3.2.9] - 2025-12-23
 
 ### 🎨 Extension UI Improvements

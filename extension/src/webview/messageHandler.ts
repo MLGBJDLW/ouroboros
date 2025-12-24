@@ -103,6 +103,7 @@ export async function handleMessage(
     switch (message.type) {
         case 'response': {
             const payload = message.payload as ResponsePayload;
+            logger.debug('Response payload received:', JSON.stringify(payload.response));
             sidebarProvider.resolveRequest(payload.requestId, payload.response);
             break;
         }

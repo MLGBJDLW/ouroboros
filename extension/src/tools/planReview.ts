@@ -8,6 +8,7 @@ import type { StateManager } from '../storage/stateManager';
 import type { SidebarProvider } from '../webview/SidebarProvider';
 import type { PlanReviewInput, PlanReviewOutput } from './types';
 import { PlanReviewInputSchema, validateInput } from './schemas';
+import { buildToolResult } from './attachmentHelper';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('PlanReviewTool');
@@ -72,11 +73,12 @@ export function createPlanReviewTool(
                     feedback: result.feedback,
                     cancelled: result.cancelled ?? false,
                     timeout: result.timeout,
+                    customResponse: result.customResponse,
+                    isCustom: result.isCustom,
+                    attachments: result.attachments,
                 };
 
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(JSON.stringify(output)),
-                ]);
+                return buildToolResult(output, result.attachments);
             } catch (error) {
                 logger.error('Plan review tool error:', error);
 
