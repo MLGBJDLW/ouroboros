@@ -8,6 +8,7 @@ import type { StateManager } from '../storage/stateManager';
 import type { SidebarProvider } from '../webview/SidebarProvider';
 import type { ConfirmInput, ConfirmOutput } from './types';
 import { ConfirmInputSchema, validateInput } from './schemas';
+import { buildToolResult } from './attachmentHelper';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ConfirmTool');
@@ -61,11 +62,12 @@ export function createConfirmTool(
                     confirmed: result.confirmed ?? false,
                     cancelled: result.cancelled ?? false,
                     timeout: result.timeout,
+                    customResponse: result.customResponse,
+                    isCustom: result.isCustom,
+                    attachments: result.attachments,
                 };
 
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(JSON.stringify(output)),
-                ]);
+                return buildToolResult(output, result.attachments);
             } catch (error) {
                 logger.error('Confirm tool error:', error);
 

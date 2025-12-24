@@ -110,11 +110,18 @@ export class CancellationTokenSource {
 }
 
 export class LanguageModelToolResult {
-    constructor(public parts: LanguageModelTextPart[]) { }
+    constructor(public parts: (LanguageModelTextPart | LanguageModelDataPart)[]) { }
 }
 
 export class LanguageModelTextPart {
     constructor(public value: string) { }
+}
+
+export class LanguageModelDataPart {
+    static image(data: Uint8Array, mimeType: string) {
+        return new LanguageModelDataPart(data, mimeType);
+    }
+    constructor(public data: Uint8Array, public mimeType: string) { }
 }
 
 export const ProgressLocation = {
@@ -149,6 +156,7 @@ export default {
     CancellationTokenSource,
     LanguageModelToolResult,
     LanguageModelTextPart,
+    LanguageModelDataPart,
     ProgressLocation,
     StatusBarAlignment,
     lm,
