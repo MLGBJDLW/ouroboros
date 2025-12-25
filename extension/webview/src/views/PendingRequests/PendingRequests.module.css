@@ -1101,3 +1101,199 @@
 .sentAttachmentBadge i {
     font-size: 11px;
 }
+
+
+/* ============================================================================
+   Plan Review - Large Panel Styles
+   ============================================================================ */
+
+/* Plan review uses a larger bubble */
+.planReviewBubble {
+    max-width: 100% !important;
+    width: 100%;
+}
+
+/* Plan review container - full height layout */
+.planReviewContainer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    min-height: 300px;
+    max-height: calc(100vh - 280px);
+}
+
+/* Plan content area - scrollable */
+.planContentArea {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+/* Plan review header */
+.planReviewHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, 
+        rgba(0, 127, 212, 0.08) 0%, 
+        rgba(0, 127, 212, 0.04) 100%);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.planTitleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.planIcon {
+    font-size: 16px;
+    color: var(--info);
+}
+
+.planReviewTitle {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.planModeBadge {
+    padding: 2px 8px;
+    background: rgba(0, 127, 212, 0.15);
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--info);
+}
+
+.expandToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.expandToggle:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+/* Markdown wrapper */
+.planMarkdownWrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    transition: max-height 0.3s ease;
+}
+
+.planMarkdownWrapper.expanded {
+    max-height: none;
+}
+
+.planMarkdownWrapper.collapsed {
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+}
+
+.planMarkdownWrapper.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, var(--background));
+    pointer-events: none;
+}
+
+.planMarkdown {
+    /* Markdown component styles applied here */
+}
+
+/* Plan actions area - fixed at bottom */
+.planActionsArea {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0 0;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.planActionsArea.dragOver {
+    background: rgba(0, 127, 212, 0.05);
+}
+
+/* Action buttons row */
+.planActionButtons {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.planActionButtons button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Confirm content styles */
+.confirmContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Plan content (legacy - keep for backwards compat) */
+.planContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Menu content styles */
+.menuContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+
+/* Full width container for plan review */
+.containerFullWidth {
+    max-width: 100%;
+    padding: var(--spacing-sm);
+}
+
+.containerFullWidth .activityBox {
+    max-width: 100%;
+}
+
+/* Full width list item for plan review */
+.listItemFullWidth {
+    width: 100%;
+}
+
+.listItemFullWidth > .messageBubble {
+    max-width: 100%;
+}

@@ -5,6 +5,7 @@ import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
 import { Logo } from '../../components/Logo';
+import { Markdown } from '../../components/Markdown';
 import { AttachmentsList, DragOverlay, AttachmentActions } from '../../components/AttachmentInput';
 import { formatRelativeTime, formatRequestType } from '../../utils/formatters';
 import { AGENT_DISPLAY_NAMES } from '../../types/agent';
@@ -82,16 +83,17 @@ export function PendingRequests() {
     }
 
     const currentRequest = requests[requests.length - 1];
+    const isPlanReview = currentRequest.type === 'plan_review';
 
     return (
-        <div className={styles.container}>
+        <div className={`${styles.container} ${isPlanReview ? styles.containerFullWidth : ''}`}>
             <AgentActivityBox 
                 currentAgent={state.currentAgent}
                 handoffHistory={state.handoffHistory}
                 showAllActivity={showAllActivity}
                 onToggle={() => setShowAllActivity(!showAllActivity)}
             />
-            <div className={styles.listItem}>
+            <div className={`${styles.listItem} ${isPlanReview ? styles.listItemFullWidth : ''}`}>
                 <RequestChatBubble
                     request={currentRequest}
                     onRespond={handleRespond}
@@ -253,6 +255,8 @@ interface RequestChatBubbleProps {
 }
 
 function RequestChatBubble({ request, onRespond, onCancel }: RequestChatBubbleProps) {
+    const isPlanReview = request.type === 'plan_review';
+    
     const getTypeVariant = () => {
         switch (request.type) {
             case 'confirm': return styles.confirmType;
@@ -263,7 +267,7 @@ function RequestChatBubble({ request, onRespond, onCancel }: RequestChatBubblePr
     };
 
     return (
-        <div className={`${styles.messageBubble} ${getTypeVariant()}`}>
+        <div className={`${styles.messageBubble} ${getTypeVariant()} ${isPlanReview ? styles.planReviewBubble : ''}`}>
             <div className={styles.header}>
                 <Badge variant="info" size="small">{formatRequestType(request.type)}</Badge>
                 <span className={styles.agentName}>{request.agentName} (L{request.agentLevel})</span>
@@ -898,6 +902,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
     const [feedback, setFeedback] = useState('');
     const [customValue, setCustomValue] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
     const showHeader = Boolean(data.title || data.mode);
     const {
         attachments, isDragOver, error, fileInputRef,
@@ -958,26 +963,38 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
     }, [request.id, handleApprove, onCancel]);
 
     return (
-        <div className={styles.planContent}>
-            <div className={styles.questionBubble}>
-                <div className={styles.questionAvatar}><Logo size={18} /></div>
-                <div className={styles.planBubbleContent}>
-                    {showHeader && (
-                        <div className={styles.planHeader}>
-                            <h4 className={styles.planTitle}>{data.title ?? 'Plan Review'}</h4>
+        <div className={styles.planReviewContainer}>
+            {/* Plan Content Area - Large scrollable */}
+            <div className={styles.planContentArea}>
+                {showHeader && (
+                    <div className={styles.planReviewHeader}>
+                        <div className={styles.planTitleRow}>
+                            <Icon name="file-text" className={styles.planIcon} />
+                            <h3 className={styles.planReviewTitle}>{data.title ?? 'Plan Review'}</h3>
                             {data.mode && (
-                                <span className={styles.planMode}>
+                                <span className={styles.planModeBadge}>
                                     {data.mode === 'walkthrough' ? 'Walkthrough' : 'Review'}
                                 </span>
                             )}
                         </div>
-                    )}
-                    <pre className={styles.planText}>{parseNewlines(data.plan)}</pre>
+                        <button 
+                            className={styles.expandToggle}
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            title={isExpanded ? 'Collapse' : 'Expand'}
+                        >
+                            <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} />
+                        </button>
+                    </div>
+                )}
+                
+                <div className={`${styles.planMarkdownWrapper} ${isExpanded ? styles.expanded : styles.collapsed}`}>
+                    <Markdown content={parseNewlines(data.plan)} className={styles.planMarkdown} />
                 </div>
             </div>
 
+            {/* Actions Area - Fixed at bottom */}
             <div 
-                className={`${styles.userInputArea} ${isDragOver ? styles.dragOver : ''}`}
+                className={`${styles.planActionsArea} ${isDragOver ? styles.dragOver : ''}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -1012,17 +1029,21 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                     onChange={handleFileSelect}
                 />
                 
-                <div className={styles.confirmButtons}>
-                    <Button size="small" onClick={() => handleApprove(true)}>Approve</Button>
+                <div className={styles.planActionButtons}>
+                    <Button size="small" onClick={() => handleApprove(true)}>
+                        <Icon name="check" /> Approve
+                    </Button>
                     <Button
                         variant="secondary"
                         size="small"
                         onClick={handleRequestChanges}
                         disabled={!feedback.trim() && attachments.length === 0}
                     >
-                        Request Changes
+                        <Icon name="edit" /> Request Changes
                     </Button>
-                    <Button variant="ghost" size="small" onClick={() => handleApprove(false)}>Reject</Button>
+                    <Button variant="ghost" size="small" onClick={() => handleApprove(false)}>
+                        <Icon name="close" /> Reject
+                    </Button>
                 </div>
                 
                 {!showCustomInput ? (

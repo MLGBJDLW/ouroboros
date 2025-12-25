@@ -2,6 +2,35 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.11] - 2025-12-25
+
+### Added
+
+- **Markdown Rendering** — Plan review content now renders as formatted Markdown:
+  - Headings, lists, code blocks with syntax highlighting
+  - Tables, blockquotes, links with external link handling
+  - GFM (GitHub Flavored Markdown) support via `remark-gfm`
+  - New `Markdown` component (`components/Markdown/`)
+
+- **Larger Plan Review Panel** — Full-width layout for better readability:
+  - Scrollable content area for long plans
+  - Expand/collapse toggle button
+  - Fixed action buttons at bottom
+
+### Changed
+
+- **Plan Review Layout** — Redesigned from chat bubble to dedicated panel:
+  - Header with title, mode badge, and collapse toggle
+  - Scrollable markdown content area with custom styling
+  - Action buttons with icons (Approve, Request Changes, Reject)
+
+### Dependencies
+
+- Added `react-markdown@^9.0.1` for markdown rendering
+- Added `remark-gfm@^4.0.0` for GitHub Flavored Markdown support
+
+---
+
 ## [3.2.10] - 2025-12-24
 
 ### Added
