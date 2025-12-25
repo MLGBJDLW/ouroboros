@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.11] - 2025-12-25
+
+### 🎨 Plan Review UI Improvements
+
+#### Added
+- **Markdown Rendering** — Plan review content now renders as formatted Markdown:
+  - Headings, lists, code blocks with syntax highlighting
+  - Tables, blockquotes, links
+  - GFM (GitHub Flavored Markdown) support via `remark-gfm`
+  - New `Markdown` component with custom styling
+
+- **Larger Panel** — Plan review uses full-width layout instead of 420px max:
+  - Scrollable content area for long plans
+  - Expand/collapse toggle for content area
+  - Fixed action buttons at bottom
+
+#### Changed
+- **Plan Review Layout** — Redesigned from chat bubble to dedicated panel:
+  - Header with title, mode badge, and collapse toggle
+  - Scrollable markdown content area
+  - Action buttons with icons (Approve, Request Changes, Reject)
+
+#### Tests
+- Added 14 new tests for `Markdown` component
+- Updated `PendingRequests` tests for new markdown rendering
+
+---
+
 ## [3.2.10] - 2025-12-24
 
 ### 🎨 Extension UI Improvements

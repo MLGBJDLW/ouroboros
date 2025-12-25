@@ -438,10 +438,10 @@ describe('PendingRequests Component', () => {
         render(<PendingRequests />);
 
         expect(screen.getByText('Implementation Plan')).toBeInTheDocument();
-        // Use a function matcher for multiline text in pre element
-        expect(screen.getByText((content, element) => {
-            return element?.tagName === 'PRE' && content.includes('# Plan');
-        })).toBeInTheDocument();
+        // Markdown renders # Plan as h1, and list items as li elements
+        expect(screen.getByRole('heading', { name: 'Plan' })).toBeInTheDocument();
+        expect(screen.getByText('Step 1')).toBeInTheDocument();
+        expect(screen.getByText('Step 2')).toBeInTheDocument();
         expect(screen.getByText('Approve')).toBeInTheDocument();
         expect(screen.getByText('Request Changes')).toBeInTheDocument();
         expect(screen.getByText('Reject')).toBeInTheDocument();

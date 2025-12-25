@@ -1,0 +1,219 @@
+/* Markdown Renderer Styles */
+
+.markdown {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--foreground);
+    word-wrap: break-word;
+}
+
+/* Headings */
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+    margin: 1em 0 0.5em;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--foreground);
+}
+
+.markdown h1 { font-size: 1.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+.markdown h2 { font-size: 1.3em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+.markdown h3 { font-size: 1.15em; }
+.markdown h4 { font-size: 1em; }
+.markdown h5 { font-size: 0.9em; }
+.markdown h6 { font-size: 0.85em; color: var(--foreground-secondary); }
+
+.markdown h1:first-child,
+.markdown h2:first-child,
+.markdown h3:first-child {
+    margin-top: 0;
+}
+
+/* Paragraphs */
+.markdown p {
+    margin: 0.75em 0;
+}
+
+.markdown p:first-child {
+    margin-top: 0;
+}
+
+.markdown p:last-child {
+    margin-bottom: 0;
+}
+
+/* Lists */
+.markdown ul,
+.markdown ol {
+    margin: 0.75em 0;
+    padding-left: 1.5em;
+}
+
+.markdown li {
+    margin: 0.25em 0;
+}
+
+.markdown li > ul,
+.markdown li > ol {
+    margin: 0.25em 0;
+}
+
+/* Task lists (GFM) */
+.markdown ul:has(input[type="checkbox"]) {
+    list-style: none;
+    padding-left: 0.5em;
+}
+
+.markdown input[type="checkbox"] {
+    margin-right: 0.5em;
+    vertical-align: middle;
+}
+
+/* Inline code */
+.inlineCode {
+    padding: 0.15em 0.4em;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--font-mono, 'Consolas', 'Monaco', monospace);
+    font-size: 0.9em;
+    color: var(--info);
+}
+
+/* Code blocks */
+.codeBlock {
+    position: relative;
+    margin: 0.75em 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--background);
+    border: 1px solid var(--border);
+}
+
+.codeLanguage {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 2px 8px;
+    background: rgba(0, 127, 212, 0.15);
+    border-bottom-left-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--info);
+    letter-spacing: 0.5px;
+}
+
+.pre {
+    margin: 0;
+    padding: var(--spacing-md);
+    overflow-x: auto;
+    font-family: var(--font-mono, 'Consolas', 'Monaco', monospace);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+}
+
+/* Blockquotes */
+.markdown blockquote {
+    margin: 0.75em 0;
+    padding: 0.5em 1em;
+    border-left: 3px solid var(--info);
+    background: rgba(0, 127, 212, 0.05);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: var(--foreground-secondary);
+}
+
+.markdown blockquote p {
+    margin: 0;
+}
+
+/* Tables */
+.tableWrapper {
+    margin: 0.75em 0;
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.table th,
+.table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.table th {
+    background: var(--background);
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover td {
+    background: var(--list-hover);
+}
+
+/* Horizontal rule */
+.markdown hr {
+    margin: 1.5em 0;
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* Links */
+.link {
+    color: var(--info);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+}
+
+.link:hover {
+    border-bottom-color: var(--info);
+}
+
+/* Images */
+.markdown img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    margin: 0.5em 0;
+}
+
+/* Strong and emphasis */
+.markdown strong {
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.markdown em {
+    font-style: italic;
+}
+
+/* Strikethrough (GFM) */
+.markdown del {
+    text-decoration: line-through;
+    color: var(--foreground-secondary);
+}
