@@ -37,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Fixed
 - **Effort Estimation Guide** — Fixed corrupted emoji/typo `## � Effkort Estimation Guide` → `## 📏 Effort Estimation Guide`
 
+### 🐛 Extension Bug Fixes
+
+#### Fixed
+- **Multi-Workspace Command Bug** — Initialize and Update Prompts commands now correctly use the workspace selected in Welcome page:
+  - Commands accept optional `targetPath` parameter from Welcome page
+  - No longer shows workspace picker when called from Welcome page with selection
+  - Updates `selectedWorkspacePath` state after successful operation
+  - Fixes UI showing "Not Initialized" after Update Prompts in multi-root workspaces
+
 ---
 
 ## [3.2.11] - 2025-12-25

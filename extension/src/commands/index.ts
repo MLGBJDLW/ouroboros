@@ -30,7 +30,13 @@ export function registerCommands(
     disposables.push(
         vscode.commands.registerCommand(
             COMMANDS.INITIALIZE_PROJECT,
-            createInitializeProjectCommand(context, () => {
+            createInitializeProjectCommand(context, async (workspacePath?: string) => {
+                // Update selected workspace path if provided
+                if (workspacePath) {
+                    await stateManager.updateWorkspaceState({
+                        selectedWorkspacePath: workspacePath,
+                    });
+                }
                 // Trigger UI refresh after successful initialization
                 sidebarProvider.postMessage({ type: 'refresh' });
             })
@@ -68,7 +74,13 @@ export function registerCommands(
     disposables.push(
         vscode.commands.registerCommand(
             COMMANDS.UPDATE_PROMPTS,
-            createUpdatePromptsCommand(context, () => {
+            createUpdatePromptsCommand(context, async (workspacePath?: string) => {
+                // Update selected workspace path if provided
+                if (workspacePath) {
+                    await stateManager.updateWorkspaceState({
+                        selectedWorkspacePath: workspacePath,
+                    });
+                }
                 // Trigger UI refresh after successful update
                 sidebarProvider.postMessage({ type: 'refresh' });
             })

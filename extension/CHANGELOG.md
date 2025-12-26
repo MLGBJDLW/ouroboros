@@ -13,6 +13,14 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
   - Fixed workflow steps from "Read Template" to "Copy Template"
   - Removed duplicate format example sections
 
+### Fixed
+
+- **Multi-Workspace Command Bug** — Initialize and Update Prompts commands now correctly use the workspace selected in Welcome page:
+  - Commands accept optional `targetPath` parameter from Welcome page
+  - No longer shows workspace picker when called from Welcome page with selection
+  - Updates `selectedWorkspacePath` state after successful operation
+  - Fixes UI showing "Not Initialized" after Update Prompts in multi-root workspaces
+
 ---
 
 ## [3.2.11] - 2025-12-25
