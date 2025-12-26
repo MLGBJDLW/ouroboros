@@ -69,6 +69,81 @@ Do NOT delete any sections from the template.
 
 ---
 
+## 🔒 FORMAT LOCK (IMMUTABLE)
+
+> [!CRITICAL]
+> **THE FOLLOWING FORMATS ARE LOCKED AND MUST NOT BE MODIFIED.**
+
+| Element | Required Format | ❌ FORBIDDEN Variations |
+|---------|-----------------|------------------------|
+| Issue IDs | `CRT-001`, `WRN-001`, `INF-001` | `Critical-1`, `C001`, `Issue-001`, `#1` |
+| Severity Emojis | `🔴 CRITICAL`, `🟡 WARNING`, `🟢 INFO` | Text-only `CRITICAL`, `HIGH`, `BLOCKER` |
+| Coverage Status | `✅`, `⚠️`, `❌` emojis | `Yes/No`, `Covered/Not Covered`, `[x]/[ ]` |
+| Verdict Format | `✅ **PASS**` or `❌ **FAIL**` | `PASSED`, `Approved`, `Ready`, `OK` |
+| Confidence Level | `🟢 High`, `🟡 Medium`, `🔴 Low` | `High/Medium/Low` without emoji |
+| REQ References | `REQ-001`, `REQ-002`... | Must match requirements.md exactly |
+| Task References | `T001`, `T002`... | Must match tasks.md exactly |
+
+### Validation-Specific Locked Formats
+
+| Element | Required Format | Example |
+|---------|-----------------|---------|
+| Traceability Matrix | `\| REQ ID \| Priority \| Requirement \| Design Coverage \| Task Coverage \| Test Coverage \| Status \|` | All 7 columns required |
+| Issue Table | `\| ID \| Severity \| Document \| Section \| Issue \| Suggested Fix \|` | All 6 columns required |
+| Document Checklist | `✅/❌` for Exists, `✅/⚠️/❌` for Complete/Quality | NOT text descriptions |
+| Automated Checks | `✅/❌` with `{{Found N valid, M invalid}}` details | NOT just pass/fail |
+| Risk Score Table | `🔴 High × 3`, `🟡 Medium × 2`, `🟢 Low × 1` weights | Fixed scoring system |
+
+**VIOLATION = TASK FAILURE. NO EXCEPTIONS.**
+
+---
+
+## ✅ POST-CREATION VALIDATION (MANDATORY)
+
+After modifying the copied file, you MUST verify:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ VALIDATION FORMAT VALIDATION                                │
+├─────────────────────────────────────────────────────────────┤
+│ ☐ All Issue IDs follow pattern: CRT-XXX, WRN-XXX, INF-XXX  │
+│ ☐ Issue IDs are sequential within each severity            │
+│ ☐ All severities use emoji prefix (🔴/🟡/🟢)               │
+│ ☐ Traceability Matrix has all 7 columns                    │
+│ ☐ Every REQ from requirements.md appears in matrix         │
+│ ☐ REQ IDs match exactly with requirements.md               │
+│ ☐ Task IDs match exactly with tasks.md (T001, T002...)     │
+│ ☐ Verdict is exactly `✅ **PASS**` or `❌ **FAIL**`        │
+│ ☐ Confidence Level uses emoji format                       │
+│ ☐ All template sections are PRESERVED (not deleted)        │
+│ ☐ Coverage percentages are calculated correctly            │
+│ ☐ All {{placeholders}} replaced with real content          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**If ANY format differs from template → FIX IMMEDIATELY before returning.**
+
+---
+
+## ❌ FORMAT VIOLATIONS (REDO REQUIRED)
+
+| Violation | Example | Consequence |
+|-----------|---------|-------------|
+| Changed Issue ID format | `Critical-1` instead of `CRT-001` | **REDO: Re-copy template, start over** |
+| Missing severity emoji | `CRITICAL` instead of `🔴 CRITICAL` | **FIX: Add emoji prefix** |
+| Wrong verdict format | `PASSED` instead of `✅ **PASS**` | **FIX: Use exact format** |
+| Mismatched REQ IDs | `REQ-1` when requirements.md has `REQ-001` | **FIX: Match source document exactly** |
+| Mismatched Task IDs | `task-001` when tasks.md has `T001` | **FIX: Match source document exactly** |
+| Deleted template section | Removed "Risk Assessment" | **REDO: Re-copy template, start over** |
+| Incomplete traceability | Missing columns in matrix | **FIX: Include all 7 columns** |
+
+> [!WARNING]
+> **"I prefer this format" is NOT a valid reason to change template formats.**
+> **"This section is not applicable" → Keep section, write "N/A - [reason]"**
+> **REQ and Task IDs MUST match the source documents EXACTLY.**
+
+---
+
 ## ⚠️ MANDATORY FILE CREATION
 
 > [!CRITICAL]
@@ -95,8 +170,9 @@ Do NOT delete any sections from the template.
 - Read design.md
 - Read tasks.md
 
-### Step 2: Read Template
-- **MANDATORY**: Read `.ouroboros/specs/templates/validation-template.md`
+### Step 2: Copy Template
+- **MANDATORY**: Copy `.ouroboros/specs/templates/validation-template.md` to target path
+- Use `execute` tool to copy (NOT read then write from scratch)
 
 ### Step 3: Build Coverage Matrix
 - Map each REQ-XXX to design coverage
@@ -147,20 +223,6 @@ Before completing, verify:
 
 ---
 
-## 📊 Coverage Matrix Format
-
-```markdown
-## Traceability Matrix
-
-| REQ ID | Requirement | Design | Task | Status |
-|--------|-------------|--------|------|--------|
-| REQ-001 | User login | ✅ DES-001 | ✅ TASK-1.1 | COVERED |
-| REQ-002 | Password reset | ✅ DES-002 | ❌ Missing | GAP |
-| REQ-003 | Session timeout | ❌ Missing | ❌ Missing | CRITICAL GAP |
-```
-
----
-
 ## 📋 Issue Severity Levels
 
 | Level | Code | Criteria | Action |
@@ -168,19 +230,6 @@ Before completing, verify:
 | **CRITICAL** | CRT-XXX | Requirement has no coverage, blocker for implementation | Must fix before implementation |
 | **WARNING** | WRN-XXX | Inconsistency or partial coverage | Should fix before implementation |
 | **INFO** | INF-XXX | Minor improvement suggestion | Can fix later |
-
----
-
-## 📝 Issue Format
-
-```markdown
-### [CRT/WRN/INF]-001: [Issue Title]
-
-**Location:** [document.md] > Section X
-**Description:** [What is wrong]
-**Impact:** [Why this matters]
-**Recommendation:** [How to fix it]
-```
 
 ---
 

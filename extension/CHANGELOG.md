@@ -2,6 +2,19 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.12] - 2025-12-25
+
+### Changed
+
+- **Spec Agent Format Enforcement** — All 5 spec phase agents now have stronger format constraints to prevent template format changes:
+  - Added `FORMAT LOCK (IMMUTABLE)` sections with exact required formats
+  - Added `POST-CREATION VALIDATION` checklists
+  - Added `FORMAT VIOLATIONS (REDO REQUIRED)` consequence tables
+  - Fixed workflow steps from "Read Template" to "Copy Template"
+  - Removed duplicate format example sections
+
+---
+
 ## [3.2.11] - 2025-12-25
 
 ### Added

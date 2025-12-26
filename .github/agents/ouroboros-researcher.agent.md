@@ -71,6 +71,68 @@ Do NOT delete any sections from the template.
 
 ---
 
+## 🔒 FORMAT LOCK (IMMUTABLE)
+
+> [!CRITICAL]
+> **THE FOLLOWING FORMATS ARE LOCKED AND MUST NOT BE MODIFIED.**
+
+| Element | Required Format | ❌ FORBIDDEN Variations |
+|---------|-----------------|------------------------|
+| Section Headers | `## Executive Summary`, `## Project Context`, etc. | Custom headers, reordered sections |
+| Tech Stack Table | `\| Layer \| Technology \| Version \| Config File \|` | Different columns, merged cells |
+| Constraint Checkboxes | `- [ ] {{Constraint N: ...}}` | `- {{N}}. ...`, `* [ ]`, numbered lists |
+| File Path Format | Backticks: \`path/to/file.ts\` | No backticks, relative descriptions |
+| Placeholder Format | `{{description}}` | `[description]`, `<description>`, `PLACEHOLDER` |
+
+### Research-Specific Locked Formats
+
+| Element | Required Format | Example |
+|---------|-----------------|---------|
+| Version Numbers | Semantic: `X.Y.Z` | `18.2.0`, `5.3.0` |
+| Risk Levels | Emoji prefix: `🟢 Low`, `🟡 Medium`, `🔴 High` | NOT `Low`, `Medium`, `High` |
+| Evidence Citations | `Found in \`file.ts\`` | NOT "exists in the codebase" |
+
+**VIOLATION = TASK FAILURE. NO EXCEPTIONS.**
+
+---
+
+## ✅ POST-CREATION VALIDATION (MANDATORY)
+
+After modifying the copied file, you MUST verify:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ RESEARCH FORMAT VALIDATION                                  │
+├─────────────────────────────────────────────────────────────┤
+│ ☐ All template sections are PRESERVED (not deleted)        │
+│ ☐ Tech Stack table has 4 columns (Layer/Tech/Version/File) │
+│ ☐ All versions are actual numbers from config files        │
+│ ☐ All {{placeholders}} replaced with real content          │
+│ ☐ File paths use backtick format                           │
+│ ☐ Risk levels use emoji prefix format                      │
+│ ☐ No custom sections added outside template structure      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**If ANY format differs from template → FIX IMMEDIATELY before returning.**
+
+---
+
+## ❌ FORMAT VIOLATIONS (REDO REQUIRED)
+
+| Violation | Example | Consequence |
+|-----------|---------|-------------|
+| Deleted template section | Removed "Performance Baseline" | **REDO: Re-copy template, start over** |
+| Changed table structure | Added/removed columns | **REDO: Re-copy template, start over** |
+| Custom section headers | `## My Analysis` | **REDO: Re-copy template, start over** |
+| Missing version numbers | "Uses React" without version | **FIX: Add actual version from package.json** |
+
+> [!WARNING]
+> **"I prefer this format" is NOT a valid reason to change template formats.**
+> **"This section is not applicable" → Keep section, write "N/A - [reason]"**
+
+---
+
 ## ⚠️ MANDATORY FILE CREATION
 
 > [!CRITICAL]
@@ -118,28 +180,32 @@ After completing research, suggest relevant next steps:
 - Identify key questions to answer
 - Determine exploration boundaries
 
-### Step 2: Survey Project Structure
+### Step 2: Copy Template
+- **MANDATORY**: Copy `.ouroboros/specs/templates/research-template.md` to target path
+- Use `execute` tool to copy (NOT read then write from scratch)
+
+### Step 3: Survey Project Structure
 - Read root configuration files (package.json, tsconfig.json, etc.)
 - Map directory structure
 - Identify entry points
 
-### Step 3: Analyze Tech Stack
+### Step 4: Analyze Tech Stack
 - List all dependencies with versions
 - Categorize: Framework, Library, Tool, DevDep
 - Note any outdated or deprecated packages
 
-### Step 4: Discover Patterns
+### Step 5: Discover Patterns
 - Identify architectural patterns (MVC, Clean Architecture, etc.)
 - Note coding conventions (naming, folder structure)
 - Document state management approach
 - Identify testing patterns
 
-### Step 5: Map Key Components
+### Step 6: Map Key Components
 - List main modules and their purposes
 - Identify shared utilities
 - Note integration points (APIs, databases)
 
-### Step 6: Document Findings
+### Step 7: Document Findings
 - Create structured research document
 - Include evidence for all claims
 - Provide recommendations if applicable
@@ -181,21 +247,6 @@ Your responsibilities:
 3. **DON'T GUESS** framework patterns — read actual config files
 
 If documentation is needed, fetch it. You have web search capabilities.
-
----
-
-## 📊 Tech Stack Evaluation Format
-
-```markdown
-## Tech Stack Summary
-
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| Framework | React | 18.2.0 | UI rendering |
-| Build | Vite | 5.0.0 | Build tooling |
-| State | Zustand | 4.4.0 | Global state |
-| Testing | Vitest | 1.0.0 | Unit tests |
-```
 
 ---
 

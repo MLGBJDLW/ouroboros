@@ -69,6 +69,82 @@ Do NOT delete any sections from the template.
 
 ---
 
+## 🔒 FORMAT LOCK (IMMUTABLE)
+
+> [!CRITICAL]
+> **THE FOLLOWING FORMATS ARE LOCKED AND MUST NOT BE MODIFIED.**
+
+| Element | Required Format | ❌ FORBIDDEN Variations |
+|---------|-----------------|------------------------|
+| Task IDs | `T001`, `T002`, `T003`... | `task-001`, `TASK-1`, `Task_001`, `t001`, `T1`, `T-001` |
+| Phase Headers | `## Phase N: [Name]` | `### Phase N`, `Phase-N`, `PHASE N`, `# Phase N` |
+| Checkboxes | `- [ ] **TXXX**` | `- [] TXXX`, `* [ ]`, `[ ] TXXX`, `- [x]` (unchecked only) |
+| Parallel Marker | `[P]` | `(P)`, `[parallel]`, `*P*`, `PARALLEL` |
+| REQ Link | `[REQ-XXX]` | `(REQ-XXX)`, `REQ-XXX`, `for REQ-XXX` |
+| Effort Size | `Effort: S`, `Effort: M`, `Effort: L` | `Size: S`, `Est: Small`, `~30min` |
+| Checkpoint | `🔍 **CHECKPOINT**:` | `CHECKPOINT:`, `--- Checkpoint ---`, `## Checkpoint` |
+
+### Tasks-Specific Locked Formats
+
+| Element | Required Format | Example |
+|---------|-----------------|---------|
+| Task Line | `- [ ] **TXXX** [P] [REQ-XXX] Description` | Markers in this exact order |
+| File Reference | `  - File: \`path/to/file.ts\`` | Indented with 2 spaces, backticks required |
+| Done When | `  - Done When: {{criteria}}` | NOT `Completion:`, `Finished when:` |
+| Depends | `  - Depends: TXXX` | NOT `Requires:`, `After:`, `Blocked by:` |
+| Effort | `  - Effort: S` or `M` or `L` | NOT `Size:`, `Est:`, time estimates |
+| Progress Table | `\| Phase \| Tasks \| Effort \| Status \|` | 4 columns required |
+
+**VIOLATION = TASK FAILURE. NO EXCEPTIONS.**
+
+---
+
+## ✅ POST-CREATION VALIDATION (MANDATORY)
+
+After modifying the copied file, you MUST verify:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ TASKS FORMAT VALIDATION                                     │
+├─────────────────────────────────────────────────────────────┤
+│ ☐ All Task IDs follow pattern: T001, T002, T003...         │
+│ ☐ Task IDs are sequential (no gaps: T001, T002, T003...)   │
+│ ☐ All tasks have checkbox format: - [ ] **TXXX**           │
+│ ☐ All tasks have File: with backtick path                  │
+│ ☐ All tasks have Effort: S/M/L                             │
+│ ☐ All tasks have Done When: criteria                       │
+│ ☐ All tasks have [REQ-XXX] traceability (except Setup)     │
+│ ☐ Parallel tasks marked with [P]                           │
+│ ☐ Phase headers use ## Phase N: format                     │
+│ ☐ Checkpoints exist between phases with 🔍 emoji           │
+│ ☐ All template sections are PRESERVED (not deleted)        │
+│ ☐ Progress Summary table is filled with actual counts      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**If ANY format differs from template → FIX IMMEDIATELY before returning.**
+
+---
+
+## ❌ FORMAT VIOLATIONS (REDO REQUIRED)
+
+| Violation | Example | Consequence |
+|-----------|---------|-------------|
+| Changed Task ID format | `task-001` instead of `T001` | **REDO: Re-copy template, start over** |
+| Non-sequential Task IDs | `T001, T003, T005` (skipped T002, T004) | **FIX: Renumber sequentially** |
+| Wrong checkbox format | `- [] T001` or `* [ ] T001` | **FIX: Use `- [ ] **T001**`** |
+| Missing backticks in File | `File: src/main.ts` | **FIX: Use `File: \`src/main.ts\``** |
+| Wrong effort format | `Size: Small` instead of `Effort: S` | **FIX: Use `Effort: S/M/L`** |
+| Deleted template section | Removed "Rollback Plan" | **REDO: Re-copy template, start over** |
+| Missing checkpoint | No 🔍 between phases | **FIX: Add checkpoint after each phase** |
+
+> [!WARNING]
+> **"I prefer this format" is NOT a valid reason to change template formats.**
+> **"This section is not applicable" → Keep section, write "N/A - [reason]"**
+> **Task IDs MUST be T001, T002, T003... NEVER T-001, task-001, or T1.**
+
+---
+
 ## ⚠️ MANDATORY FILE CREATION
 
 > [!CRITICAL]
@@ -94,9 +170,9 @@ Do NOT delete any sections from the template.
 - Understand the full scope
 - Identify technical constraints
 
-### Step 2: Read Template
-- **MANDATORY**: Read `.ouroboros/specs/templates/tasks-template.md`
-- Ensure output follows template structure
+### Step 2: Copy Template
+- **MANDATORY**: Copy `.ouroboros/specs/templates/tasks-template.md` to target path
+- Use `execute` tool to copy (NOT read then write from scratch)
 
 ### Step 3: Identify Phases
 - Group related work into logical phases
@@ -143,26 +219,6 @@ Before completing, verify:
 4. **Be Realistic**: Effort estimates should be honest
 5. **Be Complete**: Don't leave gaps between tasks
 6. **Be Traceable**: Link tasks to requirements
-
----
-
-## 📊 Task Format
-
-```markdown
-## Phase N: [Phase Name]
-
-- [ ] **TASK-N.1**: [Action verb] [specific thing] → `path/to/file.ts`
-  - Effort: S/M/L
-  - Depends: TASK-X.Y (or none)
-  - Links: REQ-001
-  
-- [ ] **TASK-N.2**: [Action verb] [specific thing] → `path/to/file.ts`
-  - Effort: S/M/L
-  - Depends: TASK-N.1
-  - Links: REQ-002
-
-- [ ] 🔍 **CHECKPOINT**: Verify Phase N (run tests, review changes)
-```
 
 ---
 
