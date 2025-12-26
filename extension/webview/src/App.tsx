@@ -61,16 +61,32 @@ function App() {
     }, [state.pendingRequests.length]);
 
     const handleInitialize = useCallback(() => {
-        vscode.postMessage({ type: 'command', payload: { command: 'ouroboros.initializeProject' } });
-    }, [vscode]);
+        // Pass the selected workspace path as argument
+        const targetPath = state.workspaceState?.selectedWorkspacePath;
+        vscode.postMessage({ 
+            type: 'command', 
+            payload: { 
+                command: 'ouroboros.initializeProject',
+                args: targetPath ? [targetPath] : []
+            } 
+        });
+    }, [vscode, state.workspaceState?.selectedWorkspacePath]);
 
     const handleOpenCopilot = useCallback(() => {
         vscode.postMessage({ type: 'openCopilotChat' });
     }, [vscode]);
 
     const handleUpdatePrompts = useCallback(() => {
-        vscode.postMessage({ type: 'command', payload: { command: 'ouroboros.updatePrompts' } });
-    }, [vscode]);
+        // Pass the selected workspace path as argument
+        const targetPath = state.workspaceState?.selectedWorkspacePath;
+        vscode.postMessage({ 
+            type: 'command', 
+            payload: { 
+                command: 'ouroboros.updatePrompts',
+                args: targetPath ? [targetPath] : []
+            } 
+        });
+    }, [vscode, state.workspaceState?.selectedWorkspacePath]);
 
     const handleSelectWorkspace = useCallback((path: string) => {
         vscode.postMessage({ type: 'selectWorkspace', payload: { path } });

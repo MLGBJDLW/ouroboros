@@ -69,6 +69,79 @@ Do NOT delete any sections from the template.
 
 ---
 
+## 🔒 FORMAT LOCK (IMMUTABLE)
+
+> [!CRITICAL]
+> **THE FOLLOWING FORMATS ARE LOCKED AND MUST NOT BE MODIFIED.**
+
+| Element | Required Format | ❌ FORBIDDEN Variations |
+|---------|-----------------|------------------------|
+| Requirement IDs | `REQ-001`, `REQ-002`, `REQ-003`... | `R001`, `req-1`, `Requirement-1`, `REQ_001`, `REQ1` |
+| Acceptance Criteria IDs | Numbered list: `1. WHEN...`, `2. IF...` | `AC-001-1`, `AC1`, custom IDs |
+| Priority Format | `(Priority: P1)`, `(Priority: P2)`, `(Priority: P3)` | `[P1]`, `Priority 1`, `High/Medium/Low`, `Must/Should/Could` |
+| Section Headers | `### REQ-XXX: {{Title}} (Priority: PX)` | Different header levels, missing priority |
+| Edge Case IDs | `EC-001`, `EC-002`... | `Edge-1`, `EC1`, `EdgeCase-001` |
+| Clarification Tags | `[NEEDS CLARIFICATION: ...]` | `TODO:`, `TBD`, `???`, `UNCLEAR` |
+
+### Requirements-Specific Locked Formats
+
+| Element | Required Format | Example |
+|---------|-----------------|---------|
+| User Story | `As a {{role}}, I want {{capability}}, so that {{benefit}}.` | NOT free-form descriptions |
+| EARS Notation | `WHEN/WHILE/IF-THEN/SHALL` keywords | NOT "should", "must", "will" |
+| Dependency Declaration | `**Depends On**: REQ-XXX` or `None` | NOT "requires REQ-XXX", "after REQ-XXX" |
+| Verification Method | `**Verified By**: Unit Test \| Integration Test \| Manual QA \| User Acceptance` | NOT custom verification types |
+
+**VIOLATION = TASK FAILURE. NO EXCEPTIONS.**
+
+---
+
+## ✅ POST-CREATION VALIDATION (MANDATORY)
+
+After modifying the copied file, you MUST verify:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ REQUIREMENTS FORMAT VALIDATION                              │
+├─────────────────────────────────────────────────────────────┤
+│ ☐ All REQ IDs follow pattern: REQ-001, REQ-002, REQ-003... │
+│ ☐ All REQ IDs are sequential (no gaps, no duplicates)      │
+│ ☐ All REQs have (Priority: P1/P2/P3) in header             │
+│ ☐ All REQs have User Story in correct format               │
+│ ☐ All REQs have EARS notation (WHEN/SHALL keywords)        │
+│ ☐ All REQs have Acceptance Criteria as numbered list       │
+│ ☐ All REQs have "Depends On" field                         │
+│ ☐ All REQs have "Verified By" field                        │
+│ ☐ All REQs have "Independent Test" field                   │
+│ ☐ All REQs have "Why PX" explanation                       │
+│ ☐ All template sections are PRESERVED (not deleted)        │
+│ ☐ All {{placeholders}} replaced with real content          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**If ANY format differs from template → FIX IMMEDIATELY before returning.**
+
+---
+
+## ❌ FORMAT VIOLATIONS (REDO REQUIRED)
+
+| Violation | Example | Consequence |
+|-----------|---------|-------------|
+| Changed REQ ID format | `R001` instead of `REQ-001` | **REDO: Re-copy template, start over** |
+| Wrong AC format | `AC-001-1:` instead of numbered list | **FIX: Use `1. WHEN...` format** |
+| Missing priority in header | `### REQ-001: Title` (no Priority) | **FIX: Add `(Priority: PX)`** |
+| Deleted template section | Removed "Edge Cases" | **REDO: Re-copy template, start over** |
+| Custom priority format | `[Must Have]` instead of `(Priority: P1)` | **REDO: Use P1/P2/P3 format** |
+| Non-EARS acceptance criteria | "User can login" | **FIX: Rewrite with WHEN/SHALL** |
+| Missing "Why PX" field | No explanation for priority | **FIX: Add Why P1/P2/P3 explanation** |
+
+> [!WARNING]
+> **"I prefer this format" is NOT a valid reason to change template formats.**
+> **"This section is not applicable" → Keep section, write "N/A - [reason]"**
+> **REQ IDs MUST be sequential: REQ-001, REQ-002, REQ-003... NEVER skip numbers.**
+
+---
+
 ## ⚠️ MANDATORY FILE CREATION
 
 > [!CRITICAL]
@@ -94,9 +167,9 @@ Do NOT delete any sections from the template.
 - Understand the feature scope
 - Identify stakeholders and users
 
-### Step 2: Read Template
-- **MANDATORY**: Read `.ouroboros/specs/templates/requirements-template.md`
-- Ensure output follows template structure
+### Step 2: Copy Template
+- **MANDATORY**: Copy `.ouroboros/specs/templates/requirements-template.md` to target path
+- Use `execute` tool to copy (NOT read then write from scratch)
 
 ### Step 3: Elicit Requirements
 - Identify functional requirements (what system does)
@@ -108,11 +181,10 @@ Do NOT delete any sections from the template.
 - Each requirement must be testable
 - Each requirement must be unambiguous
 
-### Step 5: Prioritize (MoSCoW)
-- **Must**: Required for minimum viability
-- **Should**: Important but not critical
-- **Could**: Nice to have if time permits
-- **Won't**: Out of scope for this iteration
+### Step 5: Prioritize (P1/P2/P3)
+- **P1 (Must)**: Required for minimum viability (MVP)
+- **P2 (Should)**: Important but not MVP-critical
+- **P3 (Could)**: Nice to have if time permits
 
 ### Step 6: Define Acceptance Criteria
 - Use Given/When/Then format
@@ -127,7 +199,7 @@ Before completing, verify:
 - [ ] I read the template before writing
 - [ ] All requirements have IDs (REQ-001, REQ-002)
 - [ ] All requirements use EARS notation
-- [ ] All requirements have MoSCoW priority
+- [ ] All requirements have P1/P2/P3 priority
 - [ ] All requirements have acceptance criteria
 - [ ] NO ambiguous language (fast, easy, better)
 - [ ] All requirements are TESTABLE
@@ -155,29 +227,6 @@ Before completing, verify:
 | **State-Driven** | WHILE [state], the system shall [action] | State-dependent behavior |
 | **Optional** | WHERE [condition], the system shall [action] | Conditional requirements |
 | **Unwanted** | IF [condition], THEN the system shall [prevent action] | Error handling |
-
----
-
-## 📝 Requirement Format
-
-```markdown
-### REQ-001: [Requirement Title] [Must/Should/Could]
-
-**Type:** Functional | Non-Functional | Constraint
-
-**Statement:**
-WHEN [user action or event triggers],
-the system SHALL [perform specific action]
-SO THAT [benefit or outcome is achieved].
-
-**Acceptance Criteria:**
-- **AC-001-1**: Given [context], when [action], then [expected result]
-- **AC-001-2**: Given [context], when [action], then [expected result]
-
-**Notes:**
-- [Any additional context]
-- Links to: research.md Section X
-```
 
 ---
 
@@ -210,7 +259,7 @@ REQ-003: Users can log in.
 Your work is complete when:
 1. All requirements have unique IDs
 2. All requirements use EARS notation
-3. All requirements have MoSCoW priority
+3. All requirements have P1/P2/P3 priority
 4. All requirements have acceptance criteria
 5. No ambiguous language exists
 6. Requirements are traceable to research
@@ -225,7 +274,7 @@ Your work is complete when:
 📋 OUROBOROS REQUIREMENTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Feature: [feature name]
-📌 Template: ✅ Read
+📌 Template: ✅ Copied
 📌 Status: OK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -255,7 +304,7 @@ Your work is complete when:
 📋 OUROBOROS REQUIREMENTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Feature: [feature name]
-📌 Template: ✅ Read
+📌 Template: ✅ Copied
 📌 Status: CLARIFICATION NEEDED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -71,6 +71,80 @@ Do NOT delete any sections from the template.
 
 ---
 
+## 🔒 FORMAT LOCK (IMMUTABLE)
+
+> [!CRITICAL]
+> **THE FOLLOWING FORMATS ARE LOCKED AND MUST NOT BE MODIFIED.**
+
+| Element | Required Format | ❌ FORBIDDEN Variations |
+|---------|-----------------|------------------------|
+| Component Headers | `### 1. {{Component Name}} (NEW)` or `(MODIFY)` | Different numbering, missing NEW/MODIFY tag |
+| Consequence IDs | Bullet points: `- **POS-001**:`, `- **NEG-001**:` | `Pro-1`, `Con-1`, unnumbered bullets |
+| Alternative IDs | `### ALT-001: [Name]` headers | `Option A`, `Alternative 1` |
+| ADR Status | `Proposed \| Accepted \| Deprecated \| Superseded` | Custom statuses |
+| Error Codes | HTTP codes + `ERROR_CODE` format | Free-form error descriptions |
+| File Tables | `\| File \| Component \| Purpose \| Est. Lines \|` | Different columns |
+| REQ Traceability | `Covers: REQ-001, REQ-002` | `For REQ-001`, `Related to REQ-001` |
+
+### Design-Specific Locked Formats
+
+| Element | Required Format | Example |
+|---------|-----------------|---------|
+| Mermaid Diagrams | ` ```mermaid ` code blocks | NOT ASCII art, NOT external images |
+| Interface Definitions | TypeScript/Python with types | NOT pseudocode |
+| API Endpoints | `\| Method \| Endpoint \| Request \| Response \| Auth \|` | NOT prose descriptions |
+| Risk Levels | `🟢/🟡/🔴` emoji prefix | NOT `Low/Medium/High` text only |
+| Decision Rationale | `**Why This Design**:` section | NOT inline comments only |
+
+**VIOLATION = TASK FAILURE. NO EXCEPTIONS.**
+
+---
+
+## ✅ POST-CREATION VALIDATION (MANDATORY)
+
+After modifying the copied file, you MUST verify:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ DESIGN FORMAT VALIDATION                                    │
+├─────────────────────────────────────────────────────────────┤
+│ ☐ All template sections are PRESERVED (not deleted)        │
+│ ☐ All components have (NEW) or (MODIFY) tag                │
+│ ☐ All components have "**Why This Design**:" section       │
+│ ☐ All components have "**Covers**: REQ-XXX" traceability   │
+│ ☐ All Mermaid diagrams are valid and render correctly      │
+│ ☐ All API endpoints use table format with 5 columns        │
+│ ☐ Design Decisions section has alternatives table          │
+│ ☐ At least 2 alternatives documented with rejection reason │
+│ ☐ All {{placeholders}} replaced with real content          │
+│ ☐ Interface definitions use actual TypeScript/Python types │
+│ ☐ Integration Architecture section is complete             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**If ANY format differs from template → FIX IMMEDIATELY before returning.**
+
+---
+
+## ❌ FORMAT VIOLATIONS (REDO REQUIRED)
+
+| Violation | Example | Consequence |
+|-----------|---------|-------------|
+| Missing NEW/MODIFY tag | `### 1. Component Name` | **FIX: Add `(NEW)` or `(MODIFY)`** |
+| Missing "Why This Design" | Component without rationale | **FIX: Add `**Why This Design**:` section** |
+| Deleted template section | Removed "Security Considerations" | **REDO: Re-copy template, start over** |
+| No Mermaid diagrams | Text-only architecture description | **FIX: Add required diagrams** |
+| Missing REQ traceability | Component without `**Covers**: REQ-XXX` | **FIX: Add traceability** |
+| Less than 2 alternatives | Only 1 alternative considered | **FIX: Document at least 2 alternatives** |
+| Missing alternatives table | No rejection reasons | **FIX: Add `Alternatives Rejected` table** |
+
+> [!WARNING]
+> **"I prefer this format" is NOT a valid reason to change template formats.**
+> **"This section is not applicable" → Keep section, write "N/A - [reason]"**
+> **Every design decision MUST have at least 2 alternatives with rejection reasons.**
+
+---
+
 ## ⚠️ MANDATORY FILE CREATION
 
 > [!CRITICAL]
@@ -96,28 +170,32 @@ Do NOT delete any sections from the template.
 - Identify stakeholders and their concerns
 - Note constraints (technical, business, timeline)
 
-### Step 2: Research Options
+### Step 2: Copy Template
+- **MANDATORY**: Copy `.ouroboros/specs/templates/design-template.md` to target path
+- Use `execute` tool to copy (NOT read then write from scratch)
+
+### Step 3: Research Options
 - Identify at least 2-3 alternative approaches
 - Research each option's implications
 - **Check [Skills]**: Apply architectural patterns defined in active SKILL.md
 - Consider existing patterns in the codebase
 
-### Step 3: Analyze Trade-offs
+### Step 4: Analyze Trade-offs
 - Create a comparison matrix
 - Evaluate: Performance, Scalability, Security, Complexity, Cost
 - Document pros and cons for each option
 
-### Step 4: Make Decision
+### Step 5: Make Decision
 - Select the best option based on analysis
 - Document clear rationale
 - Explicitly state why alternatives were rejected
 
-### Step 5: Document (ADR Format)
-- Create ADR with all required sections
-- Use consequence codes (POS-001, NEG-001)
-- Include implementation notes
+### Step 6: Document Design
+- Modify copied template with design content
+- Include "**Why This Design**:" rationale for each component
+- Add "**Covers**: REQ-XXX" traceability
 
-### Step 6: Create Diagrams
+### Step 7: Create Diagrams
 - Add Mermaid diagrams for complex flows
 - Include component diagrams if applicable
 - Show data flow and interactions
@@ -136,7 +214,7 @@ Before completing, verify:
 - [ ] I addressed Scalability concerns
 - [ ] I included implementation notes
 - [ ] I added diagrams for complex flows
-- [ ] I used consequence codes (POS-001, NEG-001, ALT-001)
+- [ ] All components have "**Why This Design**:" rationale
 
 ---
 

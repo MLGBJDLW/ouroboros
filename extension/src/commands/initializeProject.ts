@@ -11,13 +11,15 @@ const logger = createLogger('InitializeProject');
 
 /**
  * Create the initialize project command handler
+ * @param context Extension context
+ * @param onSuccess Callback when initialization succeeds, receives the workspace path
  */
 export function createInitializeProjectCommand(
     context: vscode.ExtensionContext,
-    onSuccess?: () => void
-): () => Promise<void> {
-    return async () => {
-        logger.info('Initializing Ouroboros project...');
+    onSuccess?: (workspacePath?: string) => void
+): (targetPath?: string) => Promise<void> {
+    return async (targetPath?: string) => {
+        logger.info('Initializing Ouroboros project...', { targetPath });
 
         // Check if workspace is open
         const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -28,9 +30,20 @@ export function createInitializeProjectCommand(
             return;
         }
 
-        // If multiple workspaces, let user choose
+        // Determine workspace root
         let workspaceRoot: vscode.Uri;
-        if (workspaceFolders.length > 1) {
+        
+        if (targetPath) {
+            // Use provided path (from Welcome page selection)
+            const targetFolder = workspaceFolders.find(f => f.uri.fsPath === targetPath);
+            if (targetFolder) {
+                workspaceRoot = targetFolder.uri;
+            } else {
+                // Fallback to first workspace if path not found
+                workspaceRoot = workspaceFolders[0].uri;
+            }
+        } else if (workspaceFolders.length > 1) {
+            // No path provided and multiple workspaces - let user choose
             const selected = await vscode.window.showWorkspaceFolderPick({
                 placeHolder: 'Select workspace folder to initialize Ouroboros',
             });
@@ -39,6 +52,7 @@ export function createInitializeProjectCommand(
             }
             workspaceRoot = selected.uri;
         } else {
+            // Single workspace
             workspaceRoot = workspaceFolders[0].uri;
         }
 
@@ -77,8 +91,8 @@ export function createInitializeProjectCommand(
                         `Project initialization complete: ${success} success, ${failed} failed`
                     );
 
-                    // Notify callback of success to refresh UI
-                    onSuccess?.();
+                    // Notify callback of success to refresh UI, passing the workspace path
+                    onSuccess?.(workspaceRoot.fsPath);
                 } catch (error) {
                     logger.error('Failed to initialize project:', error);
                     vscode.window.showErrorMessage(

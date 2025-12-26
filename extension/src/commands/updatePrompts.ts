@@ -12,13 +12,15 @@ const logger = createLogger('UpdatePrompts');
 
 /**
  * Create the update prompts command handler
+ * @param context Extension context
+ * @param onSuccess Callback when update succeeds, receives the workspace path
  */
 export function createUpdatePromptsCommand(
     context: vscode.ExtensionContext,
-    onSuccess?: () => void
-): () => Promise<void> {
-    return async () => {
-        logger.info('Updating Ouroboros prompts...');
+    onSuccess?: (workspacePath?: string) => void
+): (targetPath?: string) => Promise<void> {
+    return async (targetPath?: string) => {
+        logger.info('Updating Ouroboros prompts...', { targetPath });
 
         // Check if workspace is open
         const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -29,9 +31,20 @@ export function createUpdatePromptsCommand(
             return;
         }
 
-        // If multiple workspaces, let user choose
+        // Determine workspace root
         let workspaceRoot: vscode.Uri;
-        if (workspaceFolders.length > 1) {
+        
+        if (targetPath) {
+            // Use provided path (from Welcome page selection)
+            const targetFolder = workspaceFolders.find(f => f.uri.fsPath === targetPath);
+            if (targetFolder) {
+                workspaceRoot = targetFolder.uri;
+            } else {
+                // Fallback to first workspace if path not found
+                workspaceRoot = workspaceFolders[0].uri;
+            }
+        } else if (workspaceFolders.length > 1) {
+            // No path provided and multiple workspaces - let user choose
             const selected = await vscode.window.showWorkspaceFolderPick({
                 placeHolder: 'Select workspace folder to update prompts',
             });
@@ -40,6 +53,7 @@ export function createUpdatePromptsCommand(
             }
             workspaceRoot = selected.uri;
         } else {
+            // Single workspace
             workspaceRoot = workspaceFolders[0].uri;
         }
 
@@ -74,8 +88,8 @@ export function createUpdatePromptsCommand(
                         `Prompts update complete: ${updated} updated, ${created} created, ${failed} failed`
                     );
 
-                    // Notify callback of success to refresh UI
-                    onSuccess?.();
+                    // Notify callback of success to refresh UI, passing the workspace path
+                    onSuccess?.(workspaceRoot.fsPath);
                 } catch (error) {
                     logger.error('Failed to update prompts:', error);
                     vscode.window.showErrorMessage(

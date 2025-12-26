@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.12] - 2025-12-25
+
+### 📝 Spec Agent Format Enforcement
+
+#### Added
+- **FORMAT LOCK Sections** — All 5 spec phase agents now have immutable format constraints:
+  - `🔒 FORMAT LOCK (IMMUTABLE)` — Tables defining exact required formats and forbidden variations
+  - `✅ POST-CREATION VALIDATION (MANDATORY)` — Checklist to verify after file creation
+  - `❌ FORMAT VIOLATIONS (REDO REQUIRED)` — Consequences table for violations
+
+- **Agent-Specific Format Rules**:
+  - **researcher**: Version `X.Y.Z`, Risk levels with emoji prefix, 4-column Tech Stack table
+  - **requirements**: `REQ-001` IDs, numbered AC list (not `AC-XXX-N`), `(Priority: P1)` format, EARS keywords
+  - **architect**: `(NEW)/(MODIFY)` tags, `**Why This Design**:` section, `**Covers**: REQ-XXX` traceability
+  - **tasks**: `T001` IDs (not `task-001`), `- [ ] **TXXX**` checkbox, `Effort: S/M/L`, `🔍 **CHECKPOINT**:`
+  - **validator**: `CRT-001/WRN-001/INF-001` IDs, `✅ **PASS**/❌ **FAIL**` verdict, 7-column traceability matrix
+
+#### Changed
+- **Core Workflow** — Changed `Step 2: Read Template` to `Step 2: Copy Template` in all 5 agents
+- **Response Format** — Changed `📌 Template: ✅ Read` to `📌 Template: ✅ Copied`
+- **Priority Format** — Replaced `MoSCoW` references with `P1/P2/P3` in requirements agent
+
+#### Removed
+- **Duplicate Format Sections** — Removed redundant format examples that duplicated FORMAT LOCK content:
+  - researcher: `📊 Tech Stack Evaluation Format`
+  - requirements: `📝 Requirement Format`
+  - tasks: `📊 Task Format`
+  - validator: `📊 Coverage Matrix Format`, `📝 Issue Format`
+
+#### Fixed
+- **Effort Estimation Guide** — Fixed corrupted emoji/typo `## � Effkort Estimation Guide` → `## 📏 Effort Estimation Guide`
+
+### 🐛 Extension Bug Fixes
+
+#### Fixed
+- **Multi-Workspace Command Bug** — Initialize and Update Prompts commands now correctly use the workspace selected in Welcome page:
+  - Commands accept optional `targetPath` parameter from Welcome page
+  - No longer shows workspace picker when called from Welcome page with selection
+  - Updates `selectedWorkspacePath` state after successful operation
+  - Fixes UI showing "Not Initialized" after Update Prompts in multi-root workspaces
+
+---
+
 ## [3.2.11] - 2025-12-25
 
 ### 🎨 Plan Review UI Improvements
