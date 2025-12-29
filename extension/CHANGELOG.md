@@ -7,9 +7,11 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 ### Added
 
 - **Copilot Usage Insights** — New card on Welcome page showing GitHub Copilot plan and quota:
-  - Displays plan type (Free/Pro/Enterprise)
-  - Shows Premium Requests usage with progress bar
-  - Color-coded status (green/yellow/red based on remaining %)
+  - SVG circular progress ring showing usage percentage
+  - Shows "used" percentage (increasing) — more intuitive than "remaining"
+  - Precision to 0.1%
+  - Color-coded ring (green < 75%, orange < 90%, red ≥ 90%)
+  - Plan type display (Free/Pro/Enterprise)
   - Reset countdown timer
   - Manual refresh button (uses internal GitHub API)
   - New `CopilotInsights` component with full test coverage
@@ -25,6 +27,11 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 ### Changed
 
 - **QA Agent** — Added `Lint-clean` rule to test design requirements
+
+- **Smart YAML Preservation** — Update Prompts now intelligently merges YAML:
+  - Preserves user-customized fields (`tools`, `description`)
+  - Updates other fields from new content
+  - Previously preserved entire YAML, now does field-level merge
 
 ### Tests
 

@@ -88,84 +88,173 @@
     gap: var(--spacing-md);
 }
 
-/* Plan Row */
-.planRow {
+/* Circular Progress Ring */
+.circularProgress {
+    transform: rotate(-90deg);
+}
+
+.circleBackground {
+    fill: none;
+    stroke: var(--border);
+    opacity: 0.3;
+}
+
+.circleProgress {
+    fill: none;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+}
+
+/* Quota Ring Layout */
+.quotaRing {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding-bottom: var(--spacing-sm);
-    border-bottom: 1px solid var(--border);
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) 0;
 }
 
-.planLabel {
-    font-size: 11px;
+.ringContainer {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+}
+
+.ringCenter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.ringPercent {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ringPercent.success {
+    color: var(--success);
+}
+
+.ringPercent.warning {
+    color: var(--warning);
+}
+
+.ringPercent.error {
+    color: var(--error);
+}
+
+.ringLabel {
+    font-size: 10px;
     color: var(--foreground-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
 }
 
-.planValue {
+/* Quota Details */
+.quotaDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.quotaTitle {
     font-size: 12px;
     font-weight: 600;
     color: var(--foreground);
 }
 
-/* Quota Section */
-.quotaSection {
+.quotaCount {
+    font-size: 14px;
+    font-weight: 500;
     display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
+    align-items: baseline;
+    gap: 2px;
 }
 
-.quotaHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.quotaLabel {
-    font-size: 11px;
-    color: var(--foreground-secondary);
-}
-
-.quotaPercent {
-    font-size: 11px;
+.quotaUsed {
+    color: var(--foreground);
     font-weight: 600;
 }
 
-.quotaPercent.success {
-    color: var(--success);
-}
-
-.quotaPercent.warning {
-    color: var(--warning);
-}
-
-.quotaPercent.error {
-    color: var(--error);
-}
-
-.quotaStats {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 10px;
+.quotaSeparator {
     color: var(--foreground-secondary);
-    margin-top: 2px;
+    opacity: 0.5;
 }
 
-.resetTime {
-    opacity: 0.8;
+.quotaTotal {
+    color: var(--foreground-secondary);
+    font-size: 12px;
 }
 
-/* Unlimited */
-.unlimited {
+.quotaMeta {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    background: rgba(115, 201, 145, 0.1);
+    margin-top: 4px;
+}
+
+.planBadge {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--badge-background);
+    color: var(--badge-foreground);
+    border-radius: 10px;
+    text-transform: capitalize;
+}
+
+.resetTime {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+}
+
+/* Unlimited State */
+.unlimited {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, rgba(115, 201, 145, 0.1) 0%, rgba(55, 148, 255, 0.1) 100%);
     border-radius: var(--radius-md);
-    font-size: 12px;
+    border: 1px solid rgba(115, 201, 145, 0.2);
+}
+
+.unlimitedIcon {
+    font-size: 28px;
+    font-weight: 300;
     color: var(--success);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(115, 201, 145, 0.15);
+    border-radius: 50%;
+}
+
+.unlimitedText {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.unlimitedTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--success);
+}
+
+.unlimitedSub {
+    font-size: 11px;
+    color: var(--foreground-secondary);
 }
 
 /* No Quota */

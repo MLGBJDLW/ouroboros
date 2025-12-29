@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 - **Copilot Insights Card** — New card on Welcome page showing GitHub Copilot usage:
+  - SVG circular progress ring showing usage percentage
+  - Shows "used" percentage (increasing) — more intuitive than "remaining"
+  - Precision to 0.1%
+  - Color-coded ring (green < 75%, orange < 90%, red ≥ 90%)
   - Plan type display (Free/Pro/Enterprise)
-  - Premium Requests progress bar with remaining count
-  - Color-coded status indicator (green >50%, yellow >20%, red ≤20%)
   - Reset countdown (days/hours until quota resets)
   - Manual refresh button
   - Disclaimer noting internal API usage
@@ -38,6 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `lint` gate to verification output format
 
 - **QA Agent** — Added `Lint-clean` rule to TEST DESIGN RULES table
+
+### 🔧 Smart YAML Preservation
+
+#### Changed
+- **Field-Level YAML Merge** — Update Prompts now intelligently merges YAML frontmatter:
+  - Preserves user-customized fields: `tools`, `description`
+  - Updates other fields from new remote content
+  - Previously preserved entire user YAML, now does smart field-level merge
 
 ---
 

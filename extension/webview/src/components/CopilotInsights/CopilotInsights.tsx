@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { Icon } from '../Icon';
 import { Button } from '../Button';
 import { Card, CardHeader, CardBody } from '../Card';
-import { ProgressBar } from '../ProgressBar';
 import { Spinner } from '../Spinner';
 import { Tooltip } from '../Tooltip';
 import { useVSCode } from '../../context/VSCodeContext';
@@ -27,6 +26,57 @@ interface CopilotData {
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
+// Circular progress ring component
+function CircularProgress({ 
+    percent, 
+    size = 100, 
+    strokeWidth = 8 
+}: { 
+    percent: number; 
+    size?: number; 
+    strokeWidth?: number;
+}) {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percent / 100) * circumference;
+    
+    // Color based on usage percentage
+    // 0-75%: green (safe), 75-90%: orange (warning), 90%+: red (critical)
+    const getColor = (pct: number): string => {
+        if (pct < 75) return 'var(--success)';
+        if (pct < 90) return 'var(--warning)';
+        return 'var(--error)';
+    };
+
+    return (
+        <svg 
+            width={size} 
+            height={size} 
+            className={styles.circularProgress}
+        >
+            {/* Background circle */}
+            <circle
+                className={styles.circleBackground}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                strokeWidth={strokeWidth}
+            />
+            {/* Progress circle */}
+            <circle
+                className={styles.circleProgress}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                strokeWidth={strokeWidth}
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                style={{ stroke: getColor(percent) }}
+            />
+        </svg>
+    );
+}
+
 export function CopilotInsights() {
     const [data, setData] = useState<CopilotData | null>(null);
     const [loadingState, setLoadingState] = useState<LoadingState>('idle');
@@ -39,7 +89,6 @@ export function CopilotInsights() {
         vscode.postMessage({ type: 'fetchCopilotInsights' });
     }, [vscode]);
 
-    // Listen for response from extension
     useEffect(() => {
         const handler = (event: MessageEvent) => {
             const message = event.data;
@@ -76,13 +125,20 @@ export function CopilotInsights() {
         ) || null;
     };
 
-    const getStatusColor = (percentRemaining: number): string => {
-        if (percentRemaining > 50) return 'success';
-        if (percentRemaining > 20) return 'warning';
+    const getStatusColor = (percentUsed: number): string => {
+        if (percentUsed < 75) return 'success';
+        if (percentUsed < 90) return 'warning';
         return 'error';
     };
 
     const premiumQuota = getPremiumQuota();
+
+    // Calculate "used" instead of "remaining"
+    const getUsageStats = (quota: QuotaSnapshot) => {
+        const used = quota.entitlement - quota.remaining;
+        const percentUsed = (used / quota.entitlement) * 100;
+        return { used, percentUsed };
+    };
 
     return (
         <Card className={styles.card}>
@@ -151,39 +207,46 @@ export function CopilotInsights() {
 
                 {loadingState === 'success' && data && (
                     <div className={styles.content}>
-                        {/* Plan Info */}
-                        <div className={styles.planRow}>
-                            <span className={styles.planLabel}>Plan</span>
-                            <span className={styles.planValue}>{data.copilot_plan}</span>
-                        </div>
-
-                        {/* Premium Quota */}
-                        {premiumQuota && !premiumQuota.unlimited && (
-                            <div className={styles.quotaSection}>
-                                <div className={styles.quotaHeader}>
-                                    <span className={styles.quotaLabel}>Premium Requests</span>
-                                    <span className={`${styles.quotaPercent} ${styles[getStatusColor(premiumQuota.percent_remaining)]}`}>
-                                        {Math.round(premiumQuota.percent_remaining)}% left
-                                    </span>
+                        {/* Premium Quota with Ring */}
+                        {premiumQuota && !premiumQuota.unlimited && (() => {
+                            const { used, percentUsed } = getUsageStats(premiumQuota);
+                            return (
+                                <div className={styles.quotaRing}>
+                                    <div className={styles.ringContainer}>
+                                        <CircularProgress percent={percentUsed} size={90} strokeWidth={8} />
+                                        <div className={styles.ringCenter}>
+                                            <span className={`${styles.ringPercent} ${styles[getStatusColor(percentUsed)]}`}>
+                                                {percentUsed.toFixed(1)}%
+                                            </span>
+                                            <span className={styles.ringLabel}>used</span>
+                                        </div>
+                                    </div>
+                                    <div className={styles.quotaDetails}>
+                                        <div className={styles.quotaTitle}>Premium Requests</div>
+                                        <div className={styles.quotaCount}>
+                                            <span className={styles.quotaUsed}>{used.toLocaleString()}</span>
+                                            <span className={styles.quotaSeparator}>/</span>
+                                            <span className={styles.quotaTotal}>{premiumQuota.entitlement.toLocaleString()}</span>
+                                        </div>
+                                        <div className={styles.quotaMeta}>
+                                            <span className={styles.planBadge}>{data.copilot_plan}</span>
+                                            <span className={styles.resetTime}>
+                                                Resets in {formatResetDate(data.quota_reset_date_utc)}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <ProgressBar
-                                    value={premiumQuota.remaining}
-                                    max={premiumQuota.entitlement}
-                                    size="small"
-                                />
-                                <div className={styles.quotaStats}>
-                                    <span>{premiumQuota.remaining} / {premiumQuota.entitlement}</span>
-                                    <span className={styles.resetTime}>
-                                        Resets in {formatResetDate(data.quota_reset_date_utc)}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {premiumQuota?.unlimited && (
                             <div className={styles.unlimited}>
-                                <Icon name="check" />
-                                <span>Unlimited Premium Requests</span>
+                                <div className={styles.unlimitedIcon}>∞</div>
+                                <div className={styles.unlimitedText}>
+                                    <span className={styles.unlimitedTitle}>Unlimited</span>
+                                    <span className={styles.unlimitedSub}>Premium Requests</span>
+                                </div>
+                                <span className={styles.planBadge}>{data.copilot_plan}</span>
                             </div>
                         )}
 

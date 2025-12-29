@@ -81,8 +81,11 @@ describe('CopilotInsights Component', () => {
         
         await waitFor(() => {
             expect(screen.getByText('Pro')).toBeInTheDocument();
-            expect(screen.getByText('750 / 1000')).toBeInTheDocument();
-            expect(screen.getByText('75% left')).toBeInTheDocument();
+            // New UI shows "used / total" format with separate elements
+            expect(screen.getByText('250')).toBeInTheDocument(); // used count
+            expect(screen.getByText('1,000')).toBeInTheDocument(); // total count
+            expect(screen.getByText('25.0%')).toBeInTheDocument(); // used percentage
+            expect(screen.getByText('used')).toBeInTheDocument(); // label
         });
     });
 
@@ -119,7 +122,10 @@ describe('CopilotInsights Component', () => {
         window.dispatchEvent(successMessage);
         
         await waitFor(() => {
-            expect(screen.getByText('Unlimited Premium Requests')).toBeInTheDocument();
+            // New UI shows "Unlimited" and "Premium Requests" as separate elements
+            expect(screen.getByText('Unlimited')).toBeInTheDocument();
+            expect(screen.getByText('Premium Requests')).toBeInTheDocument();
+            expect(screen.getByText('Enterprise')).toBeInTheDocument();
         });
     });
 

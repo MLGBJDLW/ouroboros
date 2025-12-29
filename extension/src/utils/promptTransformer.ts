@@ -1322,13 +1322,99 @@ export function extractYamlFrontmatter(content: string): YamlFrontmatter | null 
 }
 
 /**
+ * Fields that users commonly customize and should be preserved
+ * Other fields will be updated from the new content
+ */
+const USER_PRESERVED_YAML_FIELDS = ['tools', 'description'];
+
+/**
+ * Parse simple YAML content into key-value pairs
+ * Handles multi-line arrays (tools:) specially
+ */
+function parseSimpleYaml(yamlContent: string): Map<string, string> {
+    const result = new Map<string, string>();
+    const lines = yamlContent.split('\n');
+    let currentKey = '';
+    let currentValue: string[] = [];
+    let inArray = false;
+
+    for (const line of lines) {
+        // Check if this is a new top-level key
+        const keyMatch = line.match(/^(\w+):\s*(.*)/);
+        if (keyMatch && !line.startsWith('  ') && !line.startsWith('\t')) {
+            // Save previous key if exists
+            if (currentKey) {
+                result.set(currentKey, currentValue.join('\n'));
+            }
+            currentKey = keyMatch[1];
+            const value = keyMatch[2].trim();
+            if (value === '' || value === '|' || value === '>') {
+                // Multi-line value or array starting
+                currentValue = [];
+                inArray = true;
+            } else {
+                currentValue = [value];
+                inArray = false;
+            }
+        } else if (currentKey && (line.startsWith('  ') || line.startsWith('\t') || line.startsWith('- '))) {
+            // Continuation of multi-line value or array item
+            currentValue.push(line);
+        }
+    }
+    // Save last key
+    if (currentKey) {
+        result.set(currentKey, currentValue.join('\n'));
+    }
+
+    return result;
+}
+
+/**
+ * Merge YAML content, preserving user-customized fields
+ */
+function mergeYamlContent(existingYaml: string, newYaml: string): string {
+    const existingFields = parseSimpleYaml(existingYaml);
+    const newFields = parseSimpleYaml(newYaml);
+
+    // Start with new YAML as base
+    let result = newYaml;
+
+    // For each user-preserved field, if user has customized it, keep their version
+    for (const field of USER_PRESERVED_YAML_FIELDS) {
+        const existingValue = existingFields.get(field);
+        const newValue = newFields.get(field);
+
+        if (existingValue !== undefined && existingValue !== newValue) {
+            // User has a different value - preserve it
+            if (newValue !== undefined) {
+                // Replace the field in result
+                const fieldRegex = new RegExp(`^${field}:.*(?:\\n(?:  |\\t|- ).*)*`, 'm');
+                const existingFieldContent = existingValue 
+                    ? `${field}:\n${existingValue}`
+                    : `${field}: ${existingValue}`;
+                result = result.replace(fieldRegex, existingFieldContent);
+            } else {
+                // Field doesn't exist in new content, append it
+                const existingFieldContent = existingValue.includes('\n')
+                    ? `${field}:\n${existingValue}`
+                    : `${field}: ${existingValue}`;
+                result = result.trimEnd() + '\n' + existingFieldContent;
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
  * Preserve user's YAML frontmatter while updating content body
  * 
  * Strategy:
  * 1. Extract user's existing YAML frontmatter
- * 2. Extract new content's body (after YAML)
- * 3. Combine user's YAML with new body
- * 4. Re-inject Ouroboros tools if needed (for orchestrator files)
+ * 2. Extract new content's YAML and body
+ * 3. Merge YAML: use new YAML as base, preserve user-customized fields (tools, description)
+ * 4. Combine merged YAML with new body
+ * 5. Re-inject Ouroboros tools if needed (for orchestrator files)
  */
 export function preserveYamlFrontmatter(
     existingContent: string,
@@ -1348,8 +1434,11 @@ export function preserveYamlFrontmatter(
         return existingContent;
     }
 
-    // Build merged content: user's YAML + new body
-    let mergedContent = `---\n${existingYaml.content}\n---\n${newYaml.body}`;
+    // Merge YAML: new content as base, preserve user-customized fields
+    const mergedYamlContent = mergeYamlContent(existingYaml.content, newYaml.content);
+
+    // Build merged content: merged YAML + new body
+    let mergedContent = `---\n${mergedYamlContent}\n---\n${newYaml.body}`;
 
     // For orchestrators, ensure Ouroboros tools are present in YAML
     if (isOrchestrator) {

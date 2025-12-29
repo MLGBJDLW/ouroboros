@@ -10,6 +10,7 @@ import { createInitializeProjectCommand } from './initializeProject';
 import { createOpenSidebarCommand } from './openSidebar';
 import { createClearHistoryCommand } from './clearHistory';
 import { createUpdatePromptsCommand, createCheckPromptsVersionCommand } from './updatePrompts';
+import { getWorkspacesInfo, checkInitializationStatus } from '../webview/messageHandler';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Commands');
@@ -81,8 +82,24 @@ export function registerCommands(
                         selectedWorkspacePath: workspacePath,
                     });
                 }
-                // Trigger UI refresh after successful update
-                sidebarProvider.postMessage({ type: 'refresh' });
+                // Directly send updated state to webview (don't rely on refresh round-trip)
+                const workspaces = await getWorkspacesInfo();
+                const selectedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
+                const { isInitialized, projectName } = await checkInitializationStatus(selectedPath);
+                const workspaceState = stateManager.getWorkspaceState();
+
+                sidebarProvider.postMessage({
+                    type: 'init',
+                    payload: {
+                        workspaceState: {
+                            ...workspaceState,
+                            projectName,
+                            isInitialized,
+                        },
+                        workspaces,
+                        history: stateManager.getInteractionHistory(),
+                    },
+                });
             })
         )
     );
