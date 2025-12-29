@@ -4,6 +4,7 @@
 
 import { createLogger } from '../utils/logger';
 import { CONFIG } from '../constants';
+import { fetchCopilotInsights } from '../services/copilotInsights';
 import type { SidebarProvider } from './SidebarProvider';
 import type { StateManager } from '../storage/stateManager';
 import type { SpecWatcher } from '../services/specWatcher';
@@ -254,6 +255,16 @@ export async function handleMessage(
                     projectName,
                     isInitialized,
                 },
+            });
+            break;
+        }
+
+        case 'fetchCopilotInsights': {
+            logger.info('Fetching Copilot insights');
+            const result = await fetchCopilotInsights();
+            sidebarProvider.postMessage({
+                type: 'copilotInsightsResult',
+                payload: result,
             });
             break;
         }

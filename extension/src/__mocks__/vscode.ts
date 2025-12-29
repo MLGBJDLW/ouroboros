@@ -139,6 +139,10 @@ export const lm = {
     registerTool: vi.fn().mockReturnValue({ dispose: vi.fn() }),
 };
 
+export const authentication = {
+    getSession: vi.fn().mockResolvedValue(null),
+};
+
 export const FileType = {
     Unknown: 0,
     File: 1,
@@ -160,6 +164,7 @@ export default {
     ProgressLocation,
     StatusBarAlignment,
     lm,
+    authentication,
     RelativePattern,
     FileType,
 };

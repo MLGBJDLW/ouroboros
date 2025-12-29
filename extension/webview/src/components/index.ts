@@ -11,6 +11,7 @@ export { Tooltip } from './Tooltip';
 export { Welcome } from './Welcome';
 export { Logo } from './Logo';
 export { Markdown } from './Markdown';
+export { CopilotInsights } from './CopilotInsights';
 export { 
     AttachmentInput, 
     AttachmentBadge, 

@@ -1,0 +1,177 @@
+.card {
+    background: var(--background-secondary);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-focus);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.refreshButton {
+    padding: 4px;
+    min-width: auto;
+}
+
+.body {
+    padding: var(--spacing-md);
+}
+
+/* Idle State */
+.idle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-align: center;
+}
+
+.idleText {
+    font-size: 12px;
+    color: var(--foreground-secondary);
+    margin: 0;
+}
+
+.loadButton {
+    margin-top: var(--spacing-xs);
+}
+
+.disclaimer {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    opacity: 0.6;
+    margin: var(--spacing-xs) 0 0 0;
+}
+
+/* Loading State */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    font-size: 12px;
+    color: var(--foreground-secondary);
+}
+
+/* Error State */
+.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    font-size: 12px;
+    color: var(--error);
+    text-align: center;
+}
+
+/* Content */
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Plan Row */
+.planRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border);
+}
+
+.planLabel {
+    font-size: 11px;
+    color: var(--foreground-secondary);
+}
+
+.planValue {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+/* Quota Section */
+.quotaSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.quotaHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quotaLabel {
+    font-size: 11px;
+    color: var(--foreground-secondary);
+}
+
+.quotaPercent {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.quotaPercent.success {
+    color: var(--success);
+}
+
+.quotaPercent.warning {
+    color: var(--warning);
+}
+
+.quotaPercent.error {
+    color: var(--error);
+}
+
+.quotaStats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    margin-top: 2px;
+}
+
+.resetTime {
+    opacity: 0.8;
+}
+
+/* Unlimited */
+.unlimited {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(115, 201, 145, 0.1);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    color: var(--success);
+}
+
+/* No Quota */
+.noQuota {
+    font-size: 12px;
+    color: var(--foreground-secondary);
+    text-align: center;
+    padding: var(--spacing-sm);
+}

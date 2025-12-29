@@ -113,6 +113,7 @@ Before completing, verify:
 | **Deterministic** | Same input = same result, every time |
 | **Isolated** | No test depends on another |
 | **Fast** | Unit tests < 100ms each |
+| **Lint-clean** | Test code must pass project linter (no suppressions) |
 
 ---
 

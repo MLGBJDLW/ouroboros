@@ -3,6 +3,7 @@ import { Button } from '../Button';
 import { Card, CardHeader, CardBody } from '../Card';
 import { Badge } from '../Badge';
 import { Logo } from '../Logo';
+import { CopilotInsights } from '../CopilotInsights';
 import type { WorkspaceInfo } from '../../types/messages';
 import styles from './Welcome.module.css';
 
@@ -95,6 +96,9 @@ export function Welcome({
                     </div>
                 </CardBody>
             </Card>
+
+            {/* Copilot Usage */}
+            <CopilotInsights />
 
             {/* Quick Actions */}
             <Card className={styles.actionsCard}>

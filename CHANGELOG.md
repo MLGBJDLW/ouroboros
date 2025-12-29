@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.13] - 2025-12-29
+
+### 📊 Copilot Usage Insights
+
+#### Added
+- **Copilot Insights Card** — New card on Welcome page showing GitHub Copilot usage:
+  - Plan type display (Free/Pro/Enterprise)
+  - Premium Requests progress bar with remaining count
+  - Color-coded status indicator (green >50%, yellow >20%, red ≤20%)
+  - Reset countdown (days/hours until quota resets)
+  - Manual refresh button
+  - Disclaimer noting internal API usage
+
+- **New Components**:
+  - `CopilotInsights` — React component with idle/loading/success/error states
+  - `copilotInsights` service — Fetches data from `api.github.com/copilot_internal/user`
+
+#### Tests
+- 7 tests for `CopilotInsights` component (render states, message handling, retry)
+- 7 tests for `copilotInsights` service (auth, API responses, error handling)
+
+### 🔧 Agent Improvements
+
+#### Added
+- **Coder Agent Linting Rules** — Universal code quality requirements:
+  - `Pass linter` — Run project's lint command before completion
+  - `No lint suppressions` — Never add `eslint-disable`, `noqa`, `@SuppressWarnings`
+  - `Strong typing` — Avoid `any` (TS), `Object` (Java), `dynamic` (C#)
+  - `Match project style` — Follow existing codebase conventions
+  - `No unused code` — Remove unused imports/variables/functions
+  - Added `lint` gate to verification output format
+
+- **QA Agent** — Added `Lint-clean` rule to TEST DESIGN RULES table
+
+---
+
 ## [3.2.12] - 2025-12-25
 
 ### 📝 Spec Agent Format Enforcement
