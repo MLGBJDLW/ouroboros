@@ -2,6 +2,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Welcome } from '../../components/Welcome/Welcome';
 
+// Mock useVSCode hook used by CopilotInsights
+vi.mock('../../context/VSCodeContext', () => ({
+    useVSCode: () => ({
+        postMessage: vi.fn(),
+    }),
+}));
+
 describe('Welcome Component', () => {
     const defaultProps = {
         onInitialize: vi.fn(),

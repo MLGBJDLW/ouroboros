@@ -1,0 +1,266 @@
+.card {
+    background: var(--background-secondary);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-focus);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.refreshButton {
+    padding: 4px;
+    min-width: auto;
+}
+
+.body {
+    padding: var(--spacing-md);
+}
+
+/* Idle State */
+.idle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-align: center;
+}
+
+.idleText {
+    font-size: 12px;
+    color: var(--foreground-secondary);
+    margin: 0;
+}
+
+.loadButton {
+    margin-top: var(--spacing-xs);
+}
+
+.disclaimer {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    opacity: 0.6;
+    margin: var(--spacing-xs) 0 0 0;
+}
+
+/* Loading State */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    font-size: 12px;
+    color: var(--foreground-secondary);
+}
+
+/* Error State */
+.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    font-size: 12px;
+    color: var(--error);
+    text-align: center;
+}
+
+/* Content */
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Circular Progress Ring */
+.circularProgress {
+    transform: rotate(-90deg);
+}
+
+.circleBackground {
+    fill: none;
+    stroke: var(--border);
+    opacity: 0.3;
+}
+
+.circleProgress {
+    fill: none;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+}
+
+/* Quota Ring Layout */
+.quotaRing {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) 0;
+}
+
+.ringContainer {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+}
+
+.ringCenter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.ringPercent {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ringPercent.success {
+    color: var(--success);
+}
+
+.ringPercent.warning {
+    color: var(--warning);
+}
+
+.ringPercent.error {
+    color: var(--error);
+}
+
+.ringLabel {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* Quota Details */
+.quotaDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.quotaTitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.quotaCount {
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.quotaUsed {
+    color: var(--foreground);
+    font-weight: 600;
+}
+
+.quotaSeparator {
+    color: var(--foreground-secondary);
+    opacity: 0.5;
+}
+
+.quotaTotal {
+    color: var(--foreground-secondary);
+    font-size: 12px;
+}
+
+.quotaMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: 4px;
+}
+
+.planBadge {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--badge-background);
+    color: var(--badge-foreground);
+    border-radius: 10px;
+    text-transform: capitalize;
+}
+
+.resetTime {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+}
+
+/* Unlimited State */
+.unlimited {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, rgba(115, 201, 145, 0.1) 0%, rgba(55, 148, 255, 0.1) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(115, 201, 145, 0.2);
+}
+
+.unlimitedIcon {
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--success);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(115, 201, 145, 0.15);
+    border-radius: 50%;
+}
+
+.unlimitedText {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.unlimitedTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--success);
+}
+
+.unlimitedSub {
+    font-size: 11px;
+    color: var(--foreground-secondary);
+}
+
+/* No Quota */
+.noQuota {
+    font-size: 12px;
+    color: var(--foreground-secondary);
+    text-align: center;
+    padding: var(--spacing-sm);
+}

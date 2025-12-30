@@ -5,6 +5,88 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.13] - 2025-12-29
+
+### 📊 Copilot Usage Insights
+
+#### Added
+- **Copilot Insights Card** — New card on Welcome page showing GitHub Copilot usage:
+  - SVG circular progress ring showing usage percentage
+  - Shows "used" percentage (increasing) — more intuitive than "remaining"
+  - Precision to 0.1%
+  - Color-coded ring (green < 75%, orange < 90%, red ≥ 90%)
+  - Plan type display (Free/Pro/Enterprise)
+  - Reset countdown (days/hours until quota resets)
+  - Manual refresh button
+  - Disclaimer noting internal API usage
+
+- **New Components**:
+  - `CopilotInsights` — React component with idle/loading/success/error states
+  - `copilotInsights` service — Fetches data from `api.github.com/copilot_internal/user`
+
+#### Tests
+- 7 tests for `CopilotInsights` component (render states, message handling, retry)
+- 7 tests for `copilotInsights` service (auth, API responses, error handling)
+
+### 🔧 Agent Improvements
+
+#### Added
+- **Coder Agent Linting Rules** — Universal code quality requirements:
+  - `Pass linter` — Run project's lint command before completion
+  - `No lint suppressions` — Never add `eslint-disable`, `noqa`, `@SuppressWarnings`
+  - `Strong typing` — Avoid `any` (TS), `Object` (Java), `dynamic` (C#)
+  - `Match project style` — Follow existing codebase conventions
+  - `No unused code` — Remove unused imports/variables/functions
+  - Added `lint` gate to verification output format
+
+- **QA Agent** — Added `Lint-clean` rule to TEST DESIGN RULES table
+
+### 🔍 Agent Quality Rules Enhancement
+
+#### Added
+- **PRD Validation** — Validator agent now checks spec consistency against PRD:
+  - PRD path provided by spec orchestrator (not fixed locations)
+  - Validates scope alignment, priority match, acceptance criteria
+  - Detects scope creep (spec items not in PRD)
+  - Added PRD Alignment section to `validation-template.md`
+
+- **Complete Document Reading** — All spec agents now require full document reading:
+  - Large documents (>500 lines) must be read completely
+  - Partial reading = incomplete validation = FAILED TASK
+  - Added warnings to validator and researcher agents
+
+- **Cross-Document Validation** — Tasks agent now validates against design/requirements:
+  - Builds mental traceability matrix (REQ → Design → Task)
+  - Detects gaps: REQs without tasks, orphan tasks
+  - Feasibility checks for file paths and dependencies
+
+- **Evidence-Based Design** — Architect agent now requires evidence for decisions:
+  - Technology choices need benchmarks/team expertise/ecosystem data
+  - Performance claims need measurements or credible sources
+  - Anti-patterns table: "best practice" → cite specific reasons
+
+- **PRD Alignment** — Requirements agent now validates against PRD:
+  - Scope match, priority match, no scope creep
+  - PRD conflict detection with resolution suggestions
+
+- **Information Verification** — Researcher agent now requires sources:
+  - Every claim needs file:line citation
+  - Version numbers from config files only
+  - Outdated information warnings
+
+#### Changed
+- **Spec Agent Phase 5** — Now passes `[PRD]` field to validator with path or "None"
+
+### 🔧 Smart YAML Preservation
+
+#### Changed
+- **Field-Level YAML Merge** — Update Prompts now intelligently merges YAML frontmatter:
+  - Preserves user-customized fields: `tools`, `description`
+  - Updates other fields from new remote content
+  - Previously preserved entire user YAML, now does smart field-level merge
+
+---
+
 ## [3.2.12] - 2025-12-25
 
 ### 📝 Spec Agent Format Enforcement

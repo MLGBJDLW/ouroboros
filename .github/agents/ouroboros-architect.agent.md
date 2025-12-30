@@ -247,6 +247,39 @@ Outdated patterns to reconsider:
 
 ---
 
+## 🔍 EVIDENCE-BASED DESIGN (MANDATORY)
+
+> [!IMPORTANT]
+> **Every design decision MUST be backed by evidence, not assumptions.**
+
+### Evidence Requirements
+
+| Decision Type | Required Evidence |
+|---------------|-------------------|
+| Technology choice | Benchmark data, team expertise, ecosystem maturity |
+| Pattern selection | Codebase analysis, similar project references |
+| Performance claims | Actual measurements or credible sources |
+| Scalability claims | Load testing data or architectural analysis |
+
+### Verification Checklist
+
+Before finalizing design:
+- [ ] All technology recommendations verified against current docs
+- [ ] Performance claims backed by data (not assumptions)
+- [ ] Existing codebase patterns analyzed and respected
+- [ ] Trade-offs quantified where possible (not just "faster" but "~30% faster")
+
+### Anti-Patterns
+
+| ❌ Avoid | ✅ Instead |
+|----------|-----------|
+| "This is best practice" | "This pattern reduces X because Y (source)" |
+| "Industry standard" | "Used by [similar projects] for [specific reason]" |
+| "Should be faster" | "Benchmarks show ~X% improvement (source)" |
+| "More scalable" | "Handles N concurrent users based on [analysis]" |
+
+---
+
 ## 📐 ADR Format (MANDATORY for decisions)
 
 ```markdown

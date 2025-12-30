@@ -4,6 +4,7 @@
 
 import { createLogger } from '../utils/logger';
 import { CONFIG } from '../constants';
+import { fetchCopilotInsights } from '../services/copilotInsights';
 import type { SidebarProvider } from './SidebarProvider';
 import type { StateManager } from '../storage/stateManager';
 import type { SpecWatcher } from '../services/specWatcher';
@@ -32,7 +33,7 @@ export interface WorkspaceInfo {
 /**
  * Get info for all workspace folders
  */
-async function getWorkspacesInfo(): Promise<WorkspaceInfo[]> {
+export async function getWorkspacesInfo(): Promise<WorkspaceInfo[]> {
     const vscode = await import('vscode');
     const folders = vscode.workspace.workspaceFolders || [];
 
@@ -59,7 +60,7 @@ async function getWorkspacesInfo(): Promise<WorkspaceInfo[]> {
 /**
  * Check if Ouroboros is initialized in the workspace
  */
-async function checkInitializationStatus(selectedPath?: string): Promise<{
+export async function checkInitializationStatus(selectedPath?: string): Promise<{
     isInitialized: boolean;
     projectName: string | undefined;
 }> {
@@ -254,6 +255,16 @@ export async function handleMessage(
                     projectName,
                     isInitialized,
                 },
+            });
+            break;
+        }
+
+        case 'fetchCopilotInsights': {
+            logger.info('Fetching Copilot insights');
+            const result = await fetchCopilotInsights();
+            sidebarProvider.postMessage({
+                type: 'copilotInsightsResult',
+                payload: result,
             });
             break;
         }

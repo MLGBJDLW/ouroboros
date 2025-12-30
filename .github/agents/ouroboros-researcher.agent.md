@@ -180,6 +180,12 @@ After completing research, suggest relevant next steps:
 - Identify key questions to answer
 - Determine exploration boundaries
 
+> [!CAUTION]
+> **LARGE FILE HANDLING**
+> When reading configuration files or source code, read them COMPLETELY.
+> Do NOT truncate or skip sections. Use multiple read operations if needed.
+> Partial reading = incomplete research = unreliable findings.
+
 ### Step 2: Copy Template
 - **MANDATORY**: Copy `.ouroboros/specs/templates/research-template.md` to target path
 - Use `execute` tool to copy (NOT read then write from scratch)
@@ -247,6 +253,49 @@ Your responsibilities:
 3. **DON'T GUESS** framework patterns — read actual config files
 
 If documentation is needed, fetch it. You have web search capabilities.
+
+---
+
+## 🔍 INFORMATION VERIFICATION (MANDATORY)
+
+> [!CAUTION]
+> **Every claim MUST have a source. No assumptions allowed.**
+
+### Source Requirements
+
+| Claim Type | Required Source |
+|------------|-----------------|
+| Version numbers | `package.json`, `requirements.txt`, `go.mod`, etc. |
+| File structure | Actual directory listing |
+| Patterns used | Code file with line reference |
+| Dependencies | Lock file or manifest |
+| Config values | Actual config file content |
+
+### Verification Checklist
+
+Before including any finding:
+- [ ] Did I READ the actual file (not assume)?
+- [ ] Is the version from config file (not memory)?
+- [ ] Is the pattern from code (not assumption)?
+- [ ] Can I cite file:line for this claim?
+
+### Outdated Information Warning
+
+> [!WARNING]
+> **Your training data may be outdated.**
+
+When researching:
+1. **Prefer** reading actual project files over memory
+2. **Search** for current docs if library is unfamiliar
+3. **Flag** if version seems outdated: `⚠️ [version X.Y.Z - check for updates]`
+
+### Anti-Patterns
+
+| ❌ Never Say | ✅ Instead Say |
+|-------------|---------------|
+| "The project uses React" | "React 18.2.0 (found in `package.json:15`)" |
+| "Probably uses hooks" | "Uses hooks pattern (found in `src/App.tsx:23`)" |
+| "Standard folder structure" | "Structure: `src/`, `tests/`, `docs/` (verified)" |
 
 ---
 

@@ -2,6 +2,46 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.13] - 2025-12-29
+
+### Added
+
+- **Copilot Usage Insights** — New card on Welcome page showing GitHub Copilot plan and quota:
+  - SVG circular progress ring showing usage percentage
+  - Shows "used" percentage (increasing) — more intuitive than "remaining"
+  - Precision to 0.1%
+  - Color-coded ring (green < 75%, orange < 90%, red ≥ 90%)
+  - Plan type display (Free/Pro/Enterprise)
+  - Reset countdown timer
+  - Manual refresh button (uses internal GitHub API)
+  - New `CopilotInsights` component with full test coverage
+  - New `copilotInsights` service for fetching data
+
+- **Linting Rules for Coder Agent** — Added universal code quality rules:
+  - Pass project linter before completion
+  - No lint suppression comments (`eslint-disable`, `noqa`, etc.)
+  - Avoid weak types (`any`, `Object`, `dynamic`)
+  - Match existing project code style
+  - Added `lint` gate to verification checklist
+
+### Changed
+
+- **QA Agent** — Added `Lint-clean` rule to test design requirements
+
+- **Smart YAML Preservation** — Update Prompts now intelligently merges YAML:
+  - Preserves user-customized fields (`tools`, `description`)
+  - Updates other fields from new content
+  - Previously preserved entire YAML, now does field-level merge
+
+### Tests
+
+- Added 7 tests for `CopilotInsights` component
+- Added 7 tests for `copilotInsights` service
+- Updated `Welcome.test.tsx` to mock VSCode context
+- Added `authentication` API to vscode mock
+
+---
+
 ## [3.2.12] - 2025-12-25
 
 ### Changed

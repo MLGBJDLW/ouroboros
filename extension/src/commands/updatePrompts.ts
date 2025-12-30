@@ -89,6 +89,7 @@ export function createUpdatePromptsCommand(
                     );
 
                     // Notify callback of success to refresh UI, passing the workspace path
+                    // This triggers a state refresh in the webview
                     onSuccess?.(workspaceRoot.fsPath);
                 } catch (error) {
                     logger.error('Failed to update prompts:', error);
