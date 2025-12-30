@@ -208,6 +208,40 @@ Before completing, verify:
 - [ ] Checkpoints exist between phases
 - [ ] Tasks trace back to requirements
 - [ ] Effort estimates are included
+- [ ] All design components have corresponding tasks
+- [ ] No orphan tasks (tasks without REQ link)
+
+---
+
+## 🔍 CROSS-DOCUMENT VALIDATION (MANDATORY)
+
+> [!IMPORTANT]
+> **Tasks MUST be traceable to design and requirements.**
+
+### Validation Matrix
+
+Before completing, build this mental matrix:
+
+| REQ-XXX | Design Component | Task(s) | Coverage |
+|---------|------------------|---------|----------|
+| REQ-001 | Component A | T001, T002 | ✅ |
+| REQ-002 | Component B | T003 | ✅ |
+| REQ-003 | - | - | ❌ GAP |
+
+### Gap Detection
+
+| Gap Type | Action |
+|----------|--------|
+| **REQ without tasks** | Add tasks or flag as `[GAP: REQ-XXX needs tasks]` |
+| **Design without tasks** | Add tasks for each design component |
+| **Orphan task** | Link to REQ or remove if unnecessary |
+
+### Feasibility Check
+
+For each task, verify:
+- [ ] File path exists or will be created by prior task
+- [ ] Dependencies are satisfiable (no circular deps)
+- [ ] Effort estimate is realistic for scope
 
 ---
 

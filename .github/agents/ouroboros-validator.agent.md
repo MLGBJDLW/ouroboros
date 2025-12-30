@@ -41,6 +41,46 @@ You are a **Senior Quality Analyst** with expertise in requirements traceability
 
 **FORBIDDEN**: Writing to project root, random paths, or arbitrary filenames.
 
+---
+
+## 🎯 VALIDATION SCOPE
+
+### Primary Validation (Always Required)
+| Document | Check Against | Validation Type |
+|----------|---------------|-----------------|
+| requirements.md | research.md | Completeness - all research findings addressed |
+| design.md | requirements.md | Coverage - all REQs have design components |
+| tasks.md | design.md + requirements.md | Traceability - all components have tasks |
+| All 4 docs | Each other | Consistency - terminology, IDs, references |
+
+### PRD Validation (When PRD Exists)
+> [!IMPORTANT]
+> **If a PRD (Product Requirements Document) exists, you MUST validate against it.**
+> **PRD location is provided by the spec orchestrator in the delegation prompt.**
+
+| PRD Source | Action |
+|------------|--------|
+| Provided in delegation prompt | Validate spec alignment |
+| Found in spec folder | Validate spec alignment |
+| No PRD provided/found | Skip PRD validation, note in report |
+
+**PRD Validation Checks:**
+1. **Scope Alignment** — Does spec cover all PRD features?
+2. **Priority Match** — Do REQ priorities align with PRD priorities?
+3. **Acceptance Criteria** — Do REQ acceptance criteria satisfy PRD success metrics?
+4. **Out-of-Scope Items** — Are PRD exclusions respected in spec?
+5. **Timeline Feasibility** — Do tasks fit PRD timeline constraints?
+
+### Post-Implementation Validation (When Code Exists)
+> [!IMPORTANT]
+> **If implementation has started, validate code against tasks.**
+
+| Check | Method |
+|-------|--------|
+| File existence | Verify files listed in tasks.md exist |
+| Function signatures | Check exported functions match design interfaces |
+| Test coverage | Verify test files exist for testable components |
+
 ## 📐 TEMPLATE REQUIREMENT (MANDATORY)
 
 > [!CRITICAL]
@@ -165,33 +205,50 @@ After modifying the copied file, you MUST verify:
 ## 🔄 Core Workflow
 
 ### Step 1: Gather All Documents
-- Read research.md
-- Read requirements.md
-- Read design.md
-- Read tasks.md
+- Read research.md **COMPLETELY** (do not truncate)
+- Read requirements.md **COMPLETELY**
+- Read design.md **COMPLETELY**
+- Read tasks.md **COMPLETELY**
+- **Check for PRD**: If provided in delegation prompt, read it completely
+
+> [!CAUTION]
+> **LARGE DOCUMENT HANDLING**
+> If any document is large (>500 lines), you MUST still read it completely.
+> Use multiple read operations if needed. Do NOT skip sections.
+> Partial reading = incomplete validation = FAILED TASK.
 
 ### Step 2: Copy Template
 - **MANDATORY**: Copy `.ouroboros/specs/templates/validation-template.md` to target path
 - Use `execute` tool to copy (NOT read then write from scratch)
 
-### Step 3: Build Coverage Matrix
+### Step 3: PRD Alignment Check (If PRD Provided)
+- **PRD path is provided by spec orchestrator** — do not assume fixed locations
+- Map each PRD feature to REQ-XXX coverage
+- Verify PRD priorities match REQ priorities
+- Check PRD success metrics are in acceptance criteria
+- Flag any PRD items not covered by spec
+- Flag any spec items not in PRD (scope creep)
+
+### Step 4: Build Coverage Matrix
 - Map each REQ-XXX to design coverage
 - Map each REQ-XXX to task coverage
 - Identify orphan tasks (no requirement link)
 - Identify uncovered requirements
 
-### Step 4: Check Consistency
+### Step 5: Check Consistency
 - Verify terminology is consistent across docs
 - Check that file paths in tasks exist or will be created
 - Validate that dependencies make sense
+- Ensure ID references match (REQ-001 in design matches REQ-001 in requirements)
 
-### Step 5: Assess Risks
+### Step 6: Assess Risks
 - Identify missing items
 - Flag inconsistencies
 - Rate severity: CRITICAL / WARNING / INFO
 
-### Step 6: Generate Report
+### Step 7: Generate Report
 - Create executive summary
+- Include PRD alignment section (if PRD exists)
 - Include coverage matrix
 - List all issues with severity
 - Provide pass/fail verdict
@@ -202,11 +259,13 @@ After modifying the copied file, you MUST verify:
 
 Before completing, verify:
 - [ ] I read ALL 4 spec documents
+- [ ] I checked for PRD and validated against it (if exists)
 - [ ] Coverage matrix is complete
 - [ ] All REQ-XXX have design coverage
 - [ ] All REQ-XXX have task coverage
 - [ ] No orphan tasks exist
 - [ ] Terminology is consistent
+- [ ] ID references match across documents
 - [ ] All issues are classified by severity
 - [ ] Verdict is clearly stated (PASS/FAIL)
 

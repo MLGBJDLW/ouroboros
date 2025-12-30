@@ -111,6 +111,51 @@
 
 ---
 
+## PRD Alignment (If PRD Provided)
+
+<!-- If no PRD was provided in delegation prompt, write: "N/A - No PRD provided for this feature" -->
+
+### PRD Source
+
+- [ ] Provided in delegation prompt: {{path}} — {{Read/Not Provided}}
+- [ ] Found in spec folder — {{Found/Not Found}}
+
+### PRD Coverage Matrix
+
+| PRD Feature/Section | REQ Coverage | Priority Match | Status |
+|---------------------|--------------|----------------|--------|
+| {{PRD Feature 1}} | REQ-001, REQ-002 | ✅ P1 = P1 | COVERED |
+| {{PRD Feature 2}} | REQ-003 | ⚠️ PRD=High, REQ=P2 | MISMATCH |
+| {{PRD Feature 3}} | ❌ None | N/A | **GAP** |
+
+### PRD Validation Checks
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| All PRD features covered by REQs | ✅/⚠️/❌ | {{N/M features covered}} |
+| PRD priorities match REQ priorities | ✅/⚠️/❌ | {{Alignment details}} |
+| PRD success metrics in acceptance criteria | ✅/⚠️/❌ | {{Metrics mapped}} |
+| PRD exclusions respected | ✅/⚠️/❌ | {{No out-of-scope items}} |
+| PRD timeline feasible | ✅/⚠️/❌ | {{Effort vs deadline}} |
+
+### Scope Creep Detection
+
+| REQ ID | In PRD? | Justification |
+|--------|---------|---------------|
+| REQ-001 | ✅ Yes | PRD Section 2.1 |
+| REQ-002 | ✅ Yes | PRD Section 2.2 |
+| REQ-003 | ⚠️ No | {{Justification or flag as scope creep}} |
+
+### PRD Conflicts
+
+<!-- If no conflicts, write: "None — spec aligns with PRD" -->
+
+| Conflict ID | PRD Says | Spec Says | Resolution |
+|-------------|----------|-----------|------------|
+| PRD-CFL-001 | {{PRD quote}} | {{Spec quote}} | {{How to resolve}} |
+
+---
+
 ## Dependency Validation
 
 <!-- ACTION REQUIRED: Verify requirement and task dependencies are correct -->
@@ -254,10 +299,12 @@ Options:
 Before marking complete, verify:
 
 - [ ] All 4 input documents were read completely
+- [ ] Checked for PRD and validated against it (if exists)
 - [ ] Automated checks performed
 - [ ] Traceability matrix is complete (every REQ mapped)
 - [ ] All issues are classified by severity with suggested fixes
 - [ ] Cross-document consistency verified
+- [ ] PRD alignment verified (if PRD exists)
 - [ ] Dependency validation performed
 - [ ] Risk assessment includes likelihood and owner
 - [ ] Implementation time estimate provided

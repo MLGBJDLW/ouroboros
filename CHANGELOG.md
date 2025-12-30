@@ -41,6 +41,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **QA Agent** — Added `Lint-clean` rule to TEST DESIGN RULES table
 
+### 🔍 Agent Quality Rules Enhancement
+
+#### Added
+- **PRD Validation** — Validator agent now checks spec consistency against PRD:
+  - PRD path provided by spec orchestrator (not fixed locations)
+  - Validates scope alignment, priority match, acceptance criteria
+  - Detects scope creep (spec items not in PRD)
+  - Added PRD Alignment section to `validation-template.md`
+
+- **Complete Document Reading** — All spec agents now require full document reading:
+  - Large documents (>500 lines) must be read completely
+  - Partial reading = incomplete validation = FAILED TASK
+  - Added warnings to validator and researcher agents
+
+- **Cross-Document Validation** — Tasks agent now validates against design/requirements:
+  - Builds mental traceability matrix (REQ → Design → Task)
+  - Detects gaps: REQs without tasks, orphan tasks
+  - Feasibility checks for file paths and dependencies
+
+- **Evidence-Based Design** — Architect agent now requires evidence for decisions:
+  - Technology choices need benchmarks/team expertise/ecosystem data
+  - Performance claims need measurements or credible sources
+  - Anti-patterns table: "best practice" → cite specific reasons
+
+- **PRD Alignment** — Requirements agent now validates against PRD:
+  - Scope match, priority match, no scope creep
+  - PRD conflict detection with resolution suggestions
+
+- **Information Verification** — Researcher agent now requires sources:
+  - Every claim needs file:line citation
+  - Version numbers from config files only
+  - Outdated information warnings
+
+#### Changed
+- **Spec Agent Phase 5** — Now passes `[PRD]` field to validator with path or "None"
+
 ### 🔧 Smart YAML Preservation
 
 #### Changed
