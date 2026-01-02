@@ -32,6 +32,7 @@ describe('PendingRequests Component', () => {
                 currentAgent: null,
                 handoffHistory: [],
                 pendingRequests: [],
+                history: [], // Required for useInputHistory hook
             },
             dispatch: vi.fn(),
         });

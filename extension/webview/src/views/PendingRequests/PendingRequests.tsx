@@ -537,7 +537,7 @@ interface ContentProps {
 function AskContent({ request, data, onRespond, onCancel }: ContentProps & { data: AskRequestData }) {
     const [value, setValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const inputHistory = useInputHistory({ storageKey: 'ouroboros-ask-history' });
+    const inputHistory = useInputHistory();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -546,10 +546,6 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 
     const handleSubmit = useCallback(() => {
         if (value.trim() || attachments.length > 0) {
-            // Add to history before submitting
-            if (value.trim()) {
-                inputHistory.addToHistory(value);
-            }
             onRespond(request.id, {
                 response: value,
                 cancelled: false,
@@ -557,7 +553,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
             });
             clearAttachments();
         }
-    }, [request.id, value, attachments, onRespond, clearAttachments, inputHistory]);
+    }, [request.id, value, attachments, onRespond, clearAttachments]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -678,7 +674,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { data: MenuRequestData }) {
     const [customValue, setCustomValue] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
-    const inputHistory = useInputHistory({ storageKey: 'ouroboros-custom-history' });
+    const inputHistory = useInputHistory();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -697,10 +693,6 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
     const handleCustomSubmit = useCallback(() => {
         const trimmed = customValue.trim();
         if (!trimmed && attachments.length === 0) return;
-        // Add to history before submitting
-        if (trimmed) {
-            inputHistory.addToHistory(trimmed);
-        }
         onRespond(request.id, {
             selectedIndex: -1,
             selectedOption: trimmed,
@@ -709,7 +701,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, customValue, attachments, onRespond, clearAttachments, inputHistory]);
+    }, [request.id, customValue, attachments, onRespond, clearAttachments]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCustomValue(e.target.value);
@@ -839,7 +831,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
 function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & { data: ConfirmRequestData }) {
     const [customValue, setCustomValue] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
-    const inputHistory = useInputHistory({ storageKey: 'ouroboros-custom-history' });
+    const inputHistory = useInputHistory();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -853,10 +845,6 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
     const handleCustomSubmit = useCallback(() => {
         const trimmed = customValue.trim();
         if (!trimmed && attachments.length === 0) return;
-        // Add to history before submitting
-        if (trimmed) {
-            inputHistory.addToHistory(trimmed);
-        }
         onRespond(request.id, {
             confirmed: false,
             customResponse: trimmed,
@@ -865,7 +853,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, customValue, attachments, onRespond, clearAttachments, inputHistory]);
+    }, [request.id, customValue, attachments, onRespond, clearAttachments]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCustomValue(e.target.value);

@@ -26,8 +26,7 @@ export interface ParsedTasks {
 }
 
 // Regex patterns
-const PHASE_HEADER_REGEX = /^## Phase (\d+):\s*(.+?)(?:\s*\(.+\))?$/gm;
-const CHECKBOX_REGEX = /^- \[([ x\/\-])\]\s*\*\*(\w+)\*\*\s*(.+)$/;
+const CHECKBOX_REGEX = /^- \[([ x/-])\]\s*\*\*(\w+)\*\*\s*(.+)$/;
 
 /**
  * Parse a tasks.md file content
