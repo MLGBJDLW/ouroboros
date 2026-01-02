@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePendingRequests } from '../../hooks/usePendingRequests';
 import { useAppContext } from '../../context/AppContext';
+import { useInputHistory } from '../../hooks/useInputHistory';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
@@ -536,6 +537,7 @@ interface ContentProps {
 function AskContent({ request, data, onRespond, onCancel }: ContentProps & { data: AskRequestData }) {
     const [value, setValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const inputHistory = useInputHistory({ storageKey: 'ouroboros-ask-history' });
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -544,6 +546,10 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 
     const handleSubmit = useCallback(() => {
         if (value.trim() || attachments.length > 0) {
+            // Add to history before submitting
+            if (value.trim()) {
+                inputHistory.addToHistory(value);
+            }
             onRespond(request.id, {
                 response: value,
                 cancelled: false,
@@ -551,7 +557,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
             });
             clearAttachments();
         }
-    }, [request.id, value, attachments, onRespond, clearAttachments]);
+    }, [request.id, value, attachments, onRespond, clearAttachments, inputHistory]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -563,8 +569,21 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setValue(e.target.value);
+        inputHistory.resetNavigation();
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
+    };
+
+    const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle history navigation first
+        if (inputHistory.handleKeyDown(e, value, setValue)) {
+            return;
+        }
+        // Handle submit
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
+        }
     };
 
     return (
@@ -603,18 +622,13 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                     <textarea
                         ref={textareaRef}
                         className={styles.chatTextarea}
-                        placeholder={data.inputLabel ?? 'Type your reply... (Ctrl+V to paste images)'}
+                        placeholder={data.inputLabel ?? 'Type your reply... (↑↓ for history)'}
                         value={value}
                         onChange={handleTextareaChange}
                         onPaste={handlePaste}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); handleDragOver(e); }}
                         onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(e); }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSubmit();
-                            }
-                        }}
+                        onKeyDown={handleTextareaKeyDown}
                         rows={1}
                         autoFocus
                     />
@@ -644,7 +658,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                             maxAttachments={MAX_ATTACHMENTS}
                         />
                         <span className={styles.inputHint}>
-                            Enter to send · Shift+Enter for new line
+                            Enter to send · ↑↓ for history
                         </span>
                     </div>
                     <button
@@ -664,6 +678,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { data: MenuRequestData }) {
     const [customValue, setCustomValue] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const inputHistory = useInputHistory({ storageKey: 'ouroboros-custom-history' });
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -682,6 +697,10 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
     const handleCustomSubmit = useCallback(() => {
         const trimmed = customValue.trim();
         if (!trimmed && attachments.length === 0) return;
+        // Add to history before submitting
+        if (trimmed) {
+            inputHistory.addToHistory(trimmed);
+        }
         onRespond(request.id, {
             selectedIndex: -1,
             selectedOption: trimmed,
@@ -690,12 +709,25 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, customValue, attachments, onRespond, clearAttachments]);
+    }, [request.id, customValue, attachments, onRespond, clearAttachments, inputHistory]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCustomValue(e.target.value);
+        inputHistory.resetNavigation();
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
+    };
+
+    const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle history navigation first
+        if (inputHistory.handleKeyDown(e, customValue, setCustomValue)) {
+            return;
+        }
+        // Handle submit
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleCustomSubmit();
+        }
     };
 
     useEffect(() => {
@@ -757,16 +789,11 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                         <div className={styles.customInputWrapper}>
                             <textarea
                                 className={styles.customInput}
-                                placeholder="Type your message... (Ctrl+V to paste)"
+                                placeholder="Type your message... (↑↓ for history)"
                                 value={customValue}
                                 onChange={handleTextareaChange}
                                 onPaste={handlePaste}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleCustomSubmit();
-                                    }
-                                }}
+                                onKeyDown={handleCustomKeyDown}
                                 rows={1}
                                 autoFocus
                             />
@@ -802,7 +829,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                 )}
 
                 <p className={styles.shortcutHintText}>
-                    Press 1-{Math.min(data.options.length, 9)} to select · C for custom · Ctrl+V to paste
+                    Press 1-{Math.min(data.options.length, 9)} to select · C for custom · ↑↓ for history
                 </p>
             </div>
         </div>
@@ -812,6 +839,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
 function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & { data: ConfirmRequestData }) {
     const [customValue, setCustomValue] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const inputHistory = useInputHistory({ storageKey: 'ouroboros-custom-history' });
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -825,6 +853,10 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
     const handleCustomSubmit = useCallback(() => {
         const trimmed = customValue.trim();
         if (!trimmed && attachments.length === 0) return;
+        // Add to history before submitting
+        if (trimmed) {
+            inputHistory.addToHistory(trimmed);
+        }
         onRespond(request.id, {
             confirmed: false,
             customResponse: trimmed,
@@ -833,12 +865,25 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, customValue, attachments, onRespond, clearAttachments]);
+    }, [request.id, customValue, attachments, onRespond, clearAttachments, inputHistory]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCustomValue(e.target.value);
+        inputHistory.resetNavigation();
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
+    };
+
+    const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle history navigation first
+        if (inputHistory.handleKeyDown(e, customValue, setCustomValue)) {
+            return;
+        }
+        // Handle submit
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleCustomSubmit();
+        }
     };
 
     useEffect(() => {
@@ -902,16 +947,11 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                         <div className={styles.customInputWrapper}>
                             <textarea
                                 className={styles.customInput}
-                                placeholder="Type your message... (Ctrl+V to paste)"
+                                placeholder="Type your message... (↑↓ for history)"
                                 value={customValue}
                                 onChange={handleTextareaChange}
                                 onPaste={handlePaste}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleCustomSubmit();
-                                    }
-                                }}
+                                onKeyDown={handleCustomKeyDown}
                                 rows={1}
                                 autoFocus
                             />
@@ -947,7 +987,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                 )}
 
                 <p className={styles.shortcutHintText}>
-                    Press Y for yes · N for no · C for custom · Ctrl+V to paste
+                    Press Y for yes · N for no · C for custom · ↑↓ for history
                 </p>
             </div>
         </div>

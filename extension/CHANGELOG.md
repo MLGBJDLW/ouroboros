@@ -10,6 +10,11 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
     - **Dynamic Icons**: Agents now have context-aware identities (e.g., Hubot for God Mode, Code for Coder) powered by Codicons.
     - **Idle State**: New pulsing idle animation and "SYSTEM_WAKE_MODE" status.
     - **Visual upgrade**: Holographic overlays, scanlines, and circuit-like data streams.
+- **Input History Navigation**: Navigate through previous inputs using ↑/↓ arrow keys.
+    - New `useInputHistory` hook with localStorage persistence (max 50 entries).
+    - Works in Ask, Menu (custom input), and Confirm (custom input) components.
+    - Updated placeholder hints from "Ctrl+V to paste" to "↑↓ for history".
+    - 16 unit tests for the new hook.
 
 ## [3.2.13] - 2025-12-29
 
