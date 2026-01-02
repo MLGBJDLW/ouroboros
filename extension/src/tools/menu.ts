@@ -74,6 +74,16 @@ export function createMenuTool(
                 // Fallback to VS Code quick pick
                 const fallbackResult = await fallbackToVSCodeQuickPick(input, token);
 
+                // Store interaction for fallback path too
+                await stateManager.addInteraction({
+                    type: 'menu',
+                    agentName: input.agentName ?? 'unknown',
+                    agentLevel: (input.agentLevel as 0 | 1 | 2) ?? 0,
+                    question: input.question,
+                    response: fallbackResult.selectedOption ?? '',
+                    status: fallbackResult.cancelled ? 'cancelled' : 'responded',
+                });
+
                 return new vscode.LanguageModelToolResult([
                     new vscode.LanguageModelTextPart(JSON.stringify(fallbackResult)),
                 ]);

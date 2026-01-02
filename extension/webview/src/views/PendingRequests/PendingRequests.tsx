@@ -261,11 +261,11 @@ interface SentMessageBubbleProps {
 function SentMessageBubble({ message }: SentMessageBubbleProps) {
     const getTypeInfo = () => {
         switch (message.type) {
-            case 'ask': return { icon: 'comment', label: 'Response', color: 'info' };
-            case 'menu': return { icon: 'list-selection', label: 'Selection', color: 'success' };
-            case 'confirm': return { icon: 'check', label: 'Confirmation', color: 'warning' };
-            case 'plan_review': return { icon: 'file-text', label: 'Review', color: 'info' };
-            default: return { icon: 'send', label: 'Sent', color: 'info' };
+            case 'ask': return { icon: 'comment', label: 'RESPONSE', color: 'info' };
+            case 'menu': return { icon: 'list-selection', label: 'SELECTION', color: 'success' };
+            case 'confirm': return { icon: 'check', label: 'CONFIRM', color: 'warning' };
+            case 'plan_review': return { icon: 'file-text', label: 'REVIEW', color: 'info' };
+            default: return { icon: 'send', label: 'SENT', color: 'info' };
         }
     };
 
@@ -274,26 +274,42 @@ function SentMessageBubble({ message }: SentMessageBubbleProps) {
 
     return (
         <div className={styles.sentContainer}>
-            <div className={`${styles.sentBubble} ${styles[`sent${typeInfo.color.charAt(0).toUpperCase() + typeInfo.color.slice(1)}`]}`}>
-                <div className={styles.sentTail} />
-                <div className={styles.sentHeader}>
-                    <div className={styles.sentStatus}>
-                        <Icon name="check-all" className={styles.sentCheckIcon} />
-                        <span>Sent to Copilot</span>
+            <div className={`${styles.sentCard} ${styles[`sentCard${typeInfo.color.charAt(0).toUpperCase() + typeInfo.color.slice(1)}`]}`}>
+                {/* Texture layers */}
+                <div className={styles.sentScanlines} />
+                <div className={styles.sentGlowEdge} />
+                
+                {/* Header */}
+                <div className={styles.sentCardHeader}>
+                    <div className={styles.sentStatusBadge}>
+                        <div className={styles.sentStatusDot} />
+                        <span className={styles.sentStatusText}>TRANSMITTED</span>
                     </div>
-                    <span className={styles.sentTime}>{timeStr}</span>
+                    <div className={styles.sentTimestamp}>
+                        <Icon name="clock" className={styles.sentTimeIcon} />
+                        <span>{timeStr}</span>
+                    </div>
                 </div>
-                <p className={styles.sentText}>{message.text}</p>
-                <div className={styles.sentFooter}>
+
+                {/* Content */}
+                <div className={styles.sentCardBody}>
+                    <p className={styles.sentMessageText}>{message.text}</p>
+                </div>
+
+                {/* Footer */}
+                <div className={styles.sentCardFooter}>
                     {message.attachmentCount && message.attachmentCount > 0 && (
-                        <div className={styles.sentAttachmentBadge}>
+                        <div className={styles.sentAttachmentTag}>
                             <Icon name="attach" />
-                            <span>{message.attachmentCount} file{message.attachmentCount > 1 ? 's' : ''}</span>
+                            <span>{message.attachmentCount}</span>
                         </div>
                     )}
-                    <div className={styles.sentTypeBadge}>
+                    <div className={styles.sentTypeTag}>
                         <Icon name={typeInfo.icon} />
                         <span>{typeInfo.label}</span>
+                    </div>
+                    <div className={styles.sentCheckmark}>
+                        <Icon name="check-all" />
                     </div>
                 </div>
             </div>

@@ -51,9 +51,16 @@ export class StateManager extends DisposableBase {
     private readonly onStateChangeEmitter = new vscode.EventEmitter<WorkspaceState>();
     public readonly onStateChange = this.onStateChangeEmitter.event;
 
+    private readonly onHistoryChangeEmitter = new vscode.EventEmitter<ReadonlyArray<StoredInteraction>>();
+    public readonly onHistoryChange = this.onHistoryChangeEmitter.event;
+
+    // Mutex for history operations to prevent race conditions
+    private historyMutex: Promise<void> = Promise.resolve();
+
     constructor(private readonly context: vscode.ExtensionContext) {
         super();
         this.register(this.onStateChangeEmitter);
+        this.register(this.onHistoryChangeEmitter);
     }
 
     /**
@@ -125,30 +132,49 @@ export class StateManager extends DisposableBase {
      * Add a new interaction to history
      */
     async addInteraction(interaction: Omit<StoredInteraction, 'id' | 'timestamp'>): Promise<void> {
-        const historyLimit = vscode.workspace
-            .getConfiguration()
-            .get<number>(CONFIG.HISTORY_LIMIT, 100);
+        // Use mutex to prevent race conditions when multiple tools call simultaneously
+        const previousMutex = this.historyMutex;
+        let releaseMutex: (() => void) | undefined;
+        this.historyMutex = new Promise((resolve) => {
+            releaseMutex = resolve;
+        });
 
-        const newInteraction: StoredInteraction = {
-            ...interaction,
-            id: this.generateId(),
-            timestamp: Date.now(),
-        };
+        try {
+            // Wait for previous operation to complete
+            await previousMutex;
 
-        this.globalState.interactionHistory.push(newInteraction);
+            const historyLimit = vscode.workspace
+                .getConfiguration()
+                .get<number>(CONFIG.HISTORY_LIMIT, 100);
 
-        // Trim history if exceeds limit
-        if (this.globalState.interactionHistory.length > historyLimit) {
-            this.globalState.interactionHistory =
-                this.globalState.interactionHistory.slice(-historyLimit);
+            const newInteraction: StoredInteraction = {
+                ...interaction,
+                id: this.generateId(),
+                timestamp: Date.now(),
+            };
+
+            this.globalState.interactionHistory.push(newInteraction);
+
+            // Trim history if exceeds limit
+            if (this.globalState.interactionHistory.length > historyLimit) {
+                this.globalState.interactionHistory =
+                    this.globalState.interactionHistory.slice(-historyLimit);
+            }
+
+            await this.context.globalState.update(
+                STORAGE_KEYS.GLOBAL.INTERACTION_HISTORY,
+                this.globalState.interactionHistory
+            );
+
+            // Notify listeners of history change
+            this.onHistoryChangeEmitter.fire(this.getInteractionHistory());
+
+            logger.debug('Interaction added', { type: interaction.type });
+        } finally {
+            if (releaseMutex) {
+                releaseMutex();
+            }
         }
-
-        await this.context.globalState.update(
-            STORAGE_KEYS.GLOBAL.INTERACTION_HISTORY,
-            this.globalState.interactionHistory
-        );
-
-        logger.debug('Interaction added', { type: interaction.type });
     }
 
     /**
@@ -157,6 +183,10 @@ export class StateManager extends DisposableBase {
     async clearHistory(): Promise<void> {
         this.globalState.interactionHistory = [];
         await this.context.globalState.update(STORAGE_KEYS.GLOBAL.INTERACTION_HISTORY, []);
+
+        // Notify listeners of history change
+        this.onHistoryChangeEmitter.fire([]);
+
         logger.info('Interaction history cleared');
     }
 
