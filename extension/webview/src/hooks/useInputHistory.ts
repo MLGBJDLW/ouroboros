@@ -1,12 +1,18 @@
 /**
  * Input History Hook
  * Provides up/down arrow key navigation through input history
+ * Uses VS Code webview state API for persistence (localStorage doesn't persist in webviews)
  */
 
 import { useState, useCallback, useRef } from 'react';
 
 const MAX_HISTORY_SIZE = 50;
 const STORAGE_KEY = 'ouroboros-input-history';
+
+// Get VS Code API for state persistence
+const getVSCodeApi = () => {
+    return (window as unknown as { vscodeApi?: { getState: () => unknown; setState: (state: unknown) => void } }).vscodeApi;
+};
 
 interface UseInputHistoryOptions {
     maxSize?: number;
@@ -42,18 +48,29 @@ interface UseInputHistoryReturn {
 export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputHistoryReturn {
     const { maxSize = MAX_HISTORY_SIZE, storageKey = STORAGE_KEY } = options;
     
-    // Load initial history from localStorage
+    // Load initial history from VS Code state
     const loadHistory = (): string[] => {
         try {
-            const stored = localStorage.getItem(storageKey);
-            if (stored) {
-                const parsed = JSON.parse(stored);
+            const vscode = getVSCodeApi();
+            if (vscode) {
+                const state = vscode.getState() as Record<string, unknown> | null;
+                const stored = state?.[storageKey];
+                console.log('[InputHistory] loadHistory from vscode state - storageKey:', storageKey, 'stored:', stored);
+                if (Array.isArray(stored)) {
+                    return stored.slice(0, maxSize);
+                }
+            }
+            // Fallback to localStorage for dev/test
+            const localStored = localStorage.getItem(storageKey);
+            console.log('[InputHistory] loadHistory from localStorage - storageKey:', storageKey, 'stored:', localStored);
+            if (localStored) {
+                const parsed = JSON.parse(localStored);
                 if (Array.isArray(parsed)) {
                     return parsed.slice(0, maxSize);
                 }
             }
-        } catch {
-            // Ignore parse errors
+        } catch (err) {
+            console.error('[InputHistory] loadHistory error:', err);
         }
         return [];
     };
@@ -64,12 +81,19 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
     // Store the current input before navigating
     const currentInputRef = useRef<string>('');
 
-    // Save history to localStorage
+    // Save history to VS Code state
     const saveHistory = useCallback((newHistory: string[]) => {
         try {
+            const vscode = getVSCodeApi();
+            if (vscode) {
+                const currentState = (vscode.getState() as Record<string, unknown>) || {};
+                vscode.setState({ ...currentState, [storageKey]: newHistory });
+                console.log('[InputHistory] saved to vscode state:', newHistory);
+            }
+            // Also save to localStorage as fallback
             localStorage.setItem(storageKey, JSON.stringify(newHistory));
-        } catch {
-            // Ignore storage errors
+        } catch (err) {
+            console.error('[InputHistory] saveHistory error:', err);
         }
     }, [storageKey]);
 
@@ -78,11 +102,14 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
         const trimmed = value.trim();
         if (!trimmed) return;
 
+        console.log('[InputHistory] addToHistory:', trimmed);
+
         setHistory(prev => {
             // Remove duplicate if exists
             const filtered = prev.filter(item => item !== trimmed);
             // Add to front, limit size
             const newHistory = [trimmed, ...filtered].slice(0, maxSize);
+            console.log('[InputHistory] new history:', newHistory);
             saveHistory(newHistory);
             return newHistory;
         });
@@ -132,6 +159,15 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
         const target = e.target as HTMLTextAreaElement | HTMLInputElement;
         const isTextarea = target.tagName === 'TEXTAREA';
         
+        // Debug logging
+        console.log('[InputHistory] handleKeyDown:', {
+            key: e.key,
+            historyLength: history.length,
+            navigationIndex,
+            currentValue,
+            isTextarea,
+        });
+        
         // For textarea, only handle up/down at start/end of content
         if (isTextarea) {
             const textarea = target as HTMLTextAreaElement;
@@ -139,10 +175,19 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
             const hasNoSelection = selectionStart === selectionEnd;
             
             // Check if cursor is on first or last line
-            const beforeCursor = value.substring(0, selectionStart);
-            const afterCursor = value.substring(selectionEnd);
+            const beforeCursor = value.substring(0, selectionStart ?? 0);
+            const afterCursor = value.substring(selectionEnd ?? 0);
             const isOnFirstLine = !beforeCursor.includes('\n');
             const isOnLastLine = !afterCursor.includes('\n');
+            
+            console.log('[InputHistory] textarea state:', {
+                selectionStart,
+                selectionEnd,
+                hasNoSelection,
+                isOnFirstLine,
+                isOnLastLine,
+                valueLength: value.length,
+            });
             
             if (e.key === 'ArrowUp' && isOnFirstLine && hasNoSelection) {
                 // Store current input if starting navigation
@@ -151,6 +196,7 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
                 }
                 
                 const prevValue = navigateUp();
+                console.log('[InputHistory] ArrowUp - prevValue:', prevValue);
                 if (prevValue !== null) {
                     e.preventDefault();
                     setValue(prevValue);
@@ -164,6 +210,7 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
             
             if (e.key === 'ArrowDown' && isOnLastLine && hasNoSelection) {
                 const nextValue = navigateDown();
+                console.log('[InputHistory] ArrowDown - nextValue:', nextValue);
                 if (nextValue !== null) {
                     e.preventDefault();
                     setValue(nextValue);
@@ -212,6 +259,12 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
         setNavigationIndex(-1);
         currentInputRef.current = '';
         try {
+            const vscode = getVSCodeApi();
+            if (vscode) {
+                const currentState = (vscode.getState() as Record<string, unknown>) || {};
+                delete currentState[storageKey];
+                vscode.setState(currentState);
+            }
             localStorage.removeItem(storageKey);
         } catch {
             // Ignore storage errors
