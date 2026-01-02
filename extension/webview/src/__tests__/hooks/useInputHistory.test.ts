@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useInputHistory } from '../../hooks/useInputHistory';
+import { useInputHistory, _clearGlobalHistoryStore } from '../../hooks/useInputHistory';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -28,6 +28,7 @@ Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 describe('useInputHistory', () => {
     beforeEach(() => {
         localStorageMock.clear();
+        _clearGlobalHistoryStore(); // Clear global store between tests
         vi.clearAllMocks();
     });
 
