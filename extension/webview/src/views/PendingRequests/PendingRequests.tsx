@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePendingRequests } from '../../hooks/usePendingRequests';
 import { useAppContext } from '../../context/AppContext';
+import { useInputHistory } from '../../hooks/useInputHistory';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
@@ -63,7 +64,7 @@ export function PendingRequests() {
     if (requests.length === 0) {
         return (
             <div className={styles.empty}>
-                <AgentActivityBox 
+                <AgentActivityBox
                     currentAgent={state.currentAgent}
                     handoffHistory={state.handoffHistory}
                     showAllActivity={showAllActivity}
@@ -87,7 +88,7 @@ export function PendingRequests() {
 
     return (
         <div className={`${styles.container} ${isPlanReview ? styles.containerFullWidth : ''}`}>
-            <AgentActivityBox 
+            <AgentActivityBox
                 currentAgent={state.currentAgent}
                 handoffHistory={state.handoffHistory}
                 showAllActivity={showAllActivity}
@@ -115,52 +116,108 @@ interface AgentActivityBoxProps {
     onToggle: () => void;
 }
 
+const AGENT_ICONS: Record<string, string> = {
+    // Level 0 (Core)
+    'ouroboros': 'hubot',
+
+    // Level 1 (Leads)
+    'ouroboros-init': 'rocket',
+    'ouroboros-spec': 'book',
+    'ouroboros-implement': 'tools',
+    'ouroboros-archive': 'archive',
+
+    // Level 2 (Specialists)
+    'ouroboros-coder': 'code',
+    'ouroboros-architect': 'circuit-board',
+    'ouroboros-devops': 'server-process',
+
+    'ouroboros-qa': 'beaker',
+    'ouroboros-validator': 'pass',
+    'ouroboros-security': 'shield',
+
+    'ouroboros-analyst': 'graph',
+    'ouroboros-researcher': 'telescope',
+    'ouroboros-requirements': 'checklist',
+    'ouroboros-tasks': 'list-ordered',
+
+    'ouroboros-writer': 'markdown',
+    'ouroboros-review': 'eye',
+};
+
+function getAgentIcon(name: string): string {
+    return AGENT_ICONS[name] || 'organization';
+}
+
 function AgentActivityBox({ currentAgent, handoffHistory, showAllActivity, onToggle }: AgentActivityBoxProps) {
     const recentHandoffs = handoffHistory.slice(-5).reverse();
     const hasHandoffs = recentHandoffs.length > 0;
+    // Use 'pulse' for idle state to indicate system is alive but waiting
+    const currentIcon = currentAgent ? getAgentIcon(currentAgent.name) : 'pulse';
 
     return (
-        <div className={styles.activityBox}>
-            <button className={styles.activityHeader} onClick={onToggle}>
-                <div className={styles.activityLeft}>
-                    <div className={styles.activityIcon}><Icon name="organization" /></div>
-                    <div className={styles.activityInfo}>
-                        <span className={styles.activityLabel}>Current Agent</span>
-                        <span className={styles.activityAgent}>
+        <div className={styles.cardContainer}>
+            <div className={styles.holographicOverlay} />
+            <div className={styles.scanlineLayer} />
+
+            <button className={styles.techHeader} onClick={onToggle}>
+                <div className={styles.headerLeft}>
+                    <div className={styles.dataBadge}>
+                        <Icon name={currentIcon} className={styles.badgeIcon} />
+                        <div className={styles.badgeGlow} />
+                    </div>
+
+                    <div className={styles.headerInfo}>
+                        <span className={styles.techLabel}>ACTIVE_NEURAL_UNIT</span>
+                        <div className={styles.agentIdentity}>
                             {currentAgent ? (
                                 <>
-                                    <span className={styles.agentName}>{getDisplayName(currentAgent.name)}</span>
-                                    <span className={styles.agentLevel}>L{currentAgent.level}</span>
+                                    <span className={styles.agentNameGlitch} data-text={getDisplayName(currentAgent.name)}>
+                                        {getDisplayName(currentAgent.name)}
+                                    </span>
+                                    <span className={styles.levelTag}>::LVL_{currentAgent.level}</span>
                                 </>
                             ) : (
-                                <span className={styles.agentIdle}>Idle</span>
+                                <span className={styles.agentSystemIdle}>SYSTEM_WAKE_MODE</span>
                             )}
-                        </span>
+                        </div>
                     </div>
                 </div>
+
                 {hasHandoffs && (
-                    <Icon name={showAllActivity ? 'chevron-up' : 'chevron-down'} className={styles.activityToggle} />
+                    <div className={styles.headerRight}>
+                        <div className={styles.statusArray}>
+                            <div className={styles.statusLight} />
+                            <div className={styles.statusLight} />
+                            <div className={styles.statusLightActive} />
+                        </div>
+                        <div className={styles.expandTrigger}>
+                            <span className={styles.dataCount}>[{recentHandoffs.length}]</span>
+                            <Icon name={showAllActivity ? 'chevron-up' : 'chevron-down'} className={styles.techChevron} />
+                        </div>
+                    </div>
                 )}
             </button>
+
             {showAllActivity && hasHandoffs && (
-                <div className={styles.activityList}>
-                    <div className={styles.activityListHeader}>Recent Handoffs</div>
-                    {recentHandoffs.map((handoff, index) => (
-                        <div key={index} className={styles.activityItem}>
-                            <div className={styles.handoffFlow}>
-                                <span className={styles.activityFrom}>
-                                    {getDisplayName(handoff.from.name)}
-                                    <span className={styles.levelBadge}>L{handoff.from.level}</span>
-                                </span>
-                                <Icon name="arrow-right" className={styles.activityArrow} />
-                                <span className={styles.activityTo}>
-                                    {getDisplayName(handoff.to.name)}
-                                    <span className={styles.levelBadge}>L{handoff.to.level}</span>
-                                </span>
+                <div className={styles.streamContainer}>
+                    <div className={styles.streamTimeline}>
+                        {recentHandoffs.map((handoff, index) => (
+                            <div key={index} className={styles.streamItem}>
+                                <div className={styles.streamTrack}>
+                                    <div className={styles.circuitNode} />
+                                    {index !== recentHandoffs.length - 1 && <div className={styles.circuitLine} />}
+                                </div>
+                                <div className={styles.streamContent}>
+                                    <div className={styles.dataLink}>
+                                        <span className={styles.sourceNode}>{getDisplayName(handoff.from.name)}</span>
+                                        <div className={styles.linkArrow}>»</div>
+                                        <span className={styles.targetNode}>{getDisplayName(handoff.to.name)}</span>
+                                    </div>
+                                    {handoff.reason && <div className={styles.systemLog}>LOG: {handoff.reason}</div>}
+                                </div>
                             </div>
-                            {handoff.reason && <span className={styles.handoffReason}>{handoff.reason}</span>}
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
@@ -256,7 +313,7 @@ interface RequestChatBubbleProps {
 
 function RequestChatBubble({ request, onRespond, onCancel }: RequestChatBubbleProps) {
     const isPlanReview = request.type === 'plan_review';
-    
+
     const getTypeVariant = () => {
         switch (request.type) {
             case 'confirm': return styles.confirmType;
@@ -330,7 +387,7 @@ function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE
         }
 
         const isImage = isImageType(file.type);
-        
+
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -408,29 +465,29 @@ function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE
         e.preventDefault();
         e.stopPropagation();
         setIsDragOver(false);
-        
+
         // Try to get VS Code URI list first (for files dragged from Explorer)
         const textData = e.dataTransfer?.getData('text') || '';
         const uriListData = e.dataTransfer?.getData('application/vnd.code.uri-list') || '';
         const pathData = textData || uriListData;
-        
+
         console.log('[Attachment] Drop - text:', textData, 'uri-list:', uriListData);
-        
+
         if (pathData) {
             // Files dragged from VS Code Explorer - we get paths, not file content
             // For now, just insert the path as text (could be enhanced to read file content)
             const paths = pathData.split(/\r?\n/).filter(line => line.trim());
             console.log('[Attachment] Got paths:', paths);
-            
+
             // Insert paths as mentions or text
             // TODO: Could enhance to actually read file content via extension
             return;
         }
-        
+
         // Try to get actual files (from OS file manager)
         const files = Array.from(e.dataTransfer?.files || []);
         console.log('[Attachment] Drop - files count:', files.length);
-        
+
         for (const file of files) {
             console.log('[Attachment] Processing file:', file.name, file.size, file.type);
             await addAttachment(file);
@@ -480,6 +537,7 @@ interface ContentProps {
 function AskContent({ request, data, onRespond, onCancel }: ContentProps & { data: AskRequestData }) {
     const [value, setValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const inputHistory = useInputHistory();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -507,8 +565,21 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setValue(e.target.value);
+        inputHistory.resetNavigation();
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
+    };
+
+    const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle history navigation first
+        if (inputHistory.handleKeyDown(e, value, setValue)) {
+            return;
+        }
+        // Handle submit
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
+        }
     };
 
     return (
@@ -521,17 +592,17 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                     </div>
                 </div>
             )}
-            
+
             <div className={styles.userInputArea}>
                 {attachments.length > 0 && (
-                    <AttachmentsList 
-                        attachments={attachments} 
+                    <AttachmentsList
+                        attachments={attachments}
                         onRemove={removeAttachment}
                         compact
                     />
                 )}
-                
-                <div 
+
+                <div
                     className={`${styles.textareaWrapper} ${isDragOver ? styles.dragOver : ''}`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -547,23 +618,18 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                     <textarea
                         ref={textareaRef}
                         className={styles.chatTextarea}
-                        placeholder={data.inputLabel ?? 'Type your reply... (Ctrl+V to paste images)'}
+                        placeholder={data.inputLabel ?? 'Type your reply... (↑↓ for history)'}
                         value={value}
                         onChange={handleTextareaChange}
                         onPaste={handlePaste}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); handleDragOver(e); }}
                         onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(e); }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSubmit();
-                            }
-                        }}
+                        onKeyDown={handleTextareaKeyDown}
                         rows={1}
                         autoFocus
                     />
                 </div>
-                
+
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -572,14 +638,14 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                     onChange={handleFileSelect}
                     accept="image/*,.txt,.md,.json,.js,.ts,.tsx,.jsx,.py,.rs,.go,.java,.cpp,.c,.cs,.rb,.php,.swift,.kt,.yaml,.yml,.xml,.html,.css,.scss,.sql,.sh"
                 />
-                
+
                 {error && (
                     <div className={styles.errorMessage}>
                         <Icon name="warning" />
                         <span>{error}</span>
                     </div>
                 )}
-                
+
                 <div className={styles.chatInputFooter}>
                     <div className={styles.footerLeft}>
                         <AttachmentActions
@@ -588,12 +654,12 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                             maxAttachments={MAX_ATTACHMENTS}
                         />
                         <span className={styles.inputHint}>
-                            Enter to send · Shift+Enter for new line
+                            Enter to send · ↑↓ for history
                         </span>
                     </div>
-                    <button 
-                        className={styles.chatSendButton} 
-                        onClick={handleSubmit} 
+                    <button
+                        className={styles.chatSendButton}
+                        onClick={handleSubmit}
                         disabled={!value.trim() && attachments.length === 0}
                         title="Send"
                     >
@@ -608,6 +674,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { data: MenuRequestData }) {
     const [customValue, setCustomValue] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const inputHistory = useInputHistory();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -638,8 +705,21 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCustomValue(e.target.value);
+        inputHistory.resetNavigation();
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
+    };
+
+    const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle history navigation first
+        if (inputHistory.handleKeyDown(e, customValue, setCustomValue)) {
+            return;
+        }
+        // Handle submit
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleCustomSubmit();
+        }
     };
 
     useEffect(() => {
@@ -678,7 +758,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                         </button>
                     ))}
                 </div>
-                
+
                 {!showCustomInput ? (
                     <button className={styles.customToggle} onClick={() => setShowCustomInput(true)}>
                         <Icon name="edit" />
@@ -686,31 +766,26 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                         <span className={styles.shortcutHint}>C</span>
                     </button>
                 ) : (
-                    <div 
+                    <div
                         className={`${styles.customInputContainer} ${isDragOver ? styles.dragOver : ''}`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                     >
                         <DragOverlay visible={isDragOver} />
-                        
+
                         {attachments.length > 0 && (
                             <AttachmentsList attachments={attachments} onRemove={removeAttachment} compact />
                         )}
-                        
+
                         <div className={styles.customInputWrapper}>
                             <textarea
                                 className={styles.customInput}
-                                placeholder="Type your message... (Ctrl+V to paste)"
+                                placeholder="Type your message... (↑↓ for history)"
                                 value={customValue}
                                 onChange={handleTextareaChange}
                                 onPaste={handlePaste}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleCustomSubmit();
-                                    }
-                                }}
+                                onKeyDown={handleCustomKeyDown}
                                 rows={1}
                                 autoFocus
                             />
@@ -719,16 +794,16 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                                 attachmentCount={attachments.length}
                                 maxAttachments={MAX_ATTACHMENTS}
                             />
-                            <button 
-                                className={styles.sendButton} 
-                                onClick={handleCustomSubmit} 
+                            <button
+                                className={styles.sendButton}
+                                onClick={handleCustomSubmit}
                                 disabled={!customValue.trim() && attachments.length === 0}
                                 title="Send"
                             >
                                 <Logo size={18} />
                             </button>
                         </div>
-                        
+
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -738,15 +813,15 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                         />
                     </div>
                 )}
-                
+
                 {error && (
                     <div className={styles.errorMessage}>
                         <Icon name="warning" /><span>{error}</span>
                     </div>
                 )}
-                
+
                 <p className={styles.shortcutHintText}>
-                    Press 1-{Math.min(data.options.length, 9)} to select · C for custom · Ctrl+V to paste
+                    Press 1-{Math.min(data.options.length, 9)} to select · C for custom · ↑↓ for history
                 </p>
             </div>
         </div>
@@ -756,6 +831,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
 function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & { data: ConfirmRequestData }) {
     const [customValue, setCustomValue] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const inputHistory = useInputHistory();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -781,8 +857,21 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCustomValue(e.target.value);
+        inputHistory.resetNavigation();
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
+    };
+
+    const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle history navigation first
+        if (inputHistory.handleKeyDown(e, customValue, setCustomValue)) {
+            return;
+        }
+        // Handle submit
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleCustomSubmit();
+        }
     };
 
     useEffect(() => {
@@ -823,7 +912,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                         {data.noLabel ?? 'No'}
                     </Button>
                 </div>
-                
+
                 {!showCustomInput ? (
                     <button className={styles.customToggle} onClick={() => setShowCustomInput(true)}>
                         <Icon name="edit" />
@@ -831,31 +920,26 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                         <span className={styles.shortcutHint}>C</span>
                     </button>
                 ) : (
-                    <div 
+                    <div
                         className={`${styles.customInputContainer} ${isDragOver ? styles.dragOver : ''}`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                     >
                         <DragOverlay visible={isDragOver} />
-                        
+
                         {attachments.length > 0 && (
                             <AttachmentsList attachments={attachments} onRemove={removeAttachment} compact />
                         )}
-                        
+
                         <div className={styles.customInputWrapper}>
                             <textarea
                                 className={styles.customInput}
-                                placeholder="Type your message... (Ctrl+V to paste)"
+                                placeholder="Type your message... (↑↓ for history)"
                                 value={customValue}
                                 onChange={handleTextareaChange}
                                 onPaste={handlePaste}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleCustomSubmit();
-                                    }
-                                }}
+                                onKeyDown={handleCustomKeyDown}
                                 rows={1}
                                 autoFocus
                             />
@@ -864,16 +948,16 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                                 attachmentCount={attachments.length}
                                 maxAttachments={MAX_ATTACHMENTS}
                             />
-                            <button 
-                                className={styles.sendButton} 
-                                onClick={handleCustomSubmit} 
+                            <button
+                                className={styles.sendButton}
+                                onClick={handleCustomSubmit}
                                 disabled={!customValue.trim() && attachments.length === 0}
                                 title="Send"
                             >
                                 <Logo size={18} />
                             </button>
                         </div>
-                        
+
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -883,15 +967,15 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                         />
                     </div>
                 )}
-                
+
                 {error && (
                     <div className={styles.errorMessage}>
                         <Icon name="warning" /><span>{error}</span>
                     </div>
                 )}
-                
+
                 <p className={styles.shortcutHintText}>
-                    Press Y for yes · N for no · C for custom · Ctrl+V to paste
+                    Press Y for yes · N for no · C for custom · ↑↓ for history
                 </p>
             </div>
         </div>
@@ -977,7 +1061,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                                 </span>
                             )}
                         </div>
-                        <button 
+                        <button
                             className={styles.expandToggle}
                             onClick={() => setIsExpanded(!isExpanded)}
                             title={isExpanded ? 'Collapse' : 'Expand'}
@@ -986,25 +1070,25 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                         </button>
                     </div>
                 )}
-                
+
                 <div className={`${styles.planMarkdownWrapper} ${isExpanded ? styles.expanded : styles.collapsed}`}>
                     <Markdown content={parseNewlines(data.plan)} className={styles.planMarkdown} />
                 </div>
             </div>
 
             {/* Actions Area - Fixed at bottom */}
-            <div 
+            <div
                 className={`${styles.planActionsArea} ${isDragOver ? styles.dragOver : ''}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
             >
                 <DragOverlay visible={isDragOver} />
-                
+
                 {attachments.length > 0 && (
                     <AttachmentsList attachments={attachments} onRemove={removeAttachment} compact />
                 )}
-                
+
                 <div className={styles.feedbackInputWrapper}>
                     <textarea
                         className={styles.chatTextarea}
@@ -1020,7 +1104,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                         maxAttachments={MAX_ATTACHMENTS}
                     />
                 </div>
-                
+
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -1028,7 +1112,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                     className={styles.hiddenInput}
                     onChange={handleFileSelect}
                 />
-                
+
                 <div className={styles.planActionButtons}>
                     <Button size="small" onClick={() => handleApprove(true)}>
                         <Icon name="check" /> Approve
@@ -1045,7 +1129,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                         <Icon name="close" /> Reject
                     </Button>
                 </div>
-                
+
                 {!showCustomInput ? (
                     <button className={styles.customToggle} onClick={() => setShowCustomInput(true)}>
                         <Icon name="edit" />
@@ -1072,9 +1156,9 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                             rows={1}
                             autoFocus
                         />
-                        <button 
-                            className={styles.sendButton} 
-                            onClick={handleCustomSubmit} 
+                        <button
+                            className={styles.sendButton}
+                            onClick={handleCustomSubmit}
                             disabled={!customValue.trim() && attachments.length === 0}
                             title="Send"
                         >
@@ -1082,13 +1166,13 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                         </button>
                     </div>
                 )}
-                
+
                 {error && (
                     <div className={styles.errorMessage}>
                         <Icon name="warning" /><span>{error}</span>
                     </div>
                 )}
-                
+
                 <p className={styles.shortcutHintText}>
                     Ctrl+Enter to approve · C for custom · Ctrl+V to paste
                 </p>

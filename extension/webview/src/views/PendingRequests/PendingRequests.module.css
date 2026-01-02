@@ -8,189 +8,335 @@
     padding: var(--spacing-md);
 }
 
-/* Agent Activity Box - At top */
-.activityBox {
+/* ============================================================================
+   V5 Redesign: "Native Avant-Garde" (Strict Theme Integration)
+   ============================================================================ */
+
+.cardContainer {
+    position: relative;
     width: 100%;
-    max-width: 420px;
-    margin-bottom: var(--spacing-md);
-    background: linear-gradient(135deg, 
-        rgba(33, 150, 243, 0.08) 0%, 
-        rgba(156, 39, 176, 0.06) 50%,
-        rgba(0, 188, 212, 0.04) 100%);
-    border: 1px solid rgba(156, 39, 176, 0.2);
-    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-widget-border);
+    /* "Brutalist" corners for tech feel */
+    border-radius: 0px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     flex-shrink: 0;
+    /* Subtle depth using widget shadow */
+    box-shadow: 0 4px 12px var(--vscode-widget-shadow);
 }
 
-.activityHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+/* Active Border Concept: Uses focus border for the "powered on" feel */
+.cardContainer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--vscode-focusBorder);
+    opacity: 0.5;
+    z-index: 10;
+}
+
+/* Texture Layers - Native Implementation */
+.holographicOverlay {
+    position: absolute;
+    inset: 0;
+    /* Use selection background for a subtle tint that matches the theme's "highlight" color */
+    background:
+        repeating-linear-gradient(45deg,
+            transparent,
+            transparent 10px,
+            var(--vscode-editor-lineHighlightBorder) 10px,
+            var(--vscode-editor-lineHighlightBorder) 11px);
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.scanlineLayer {
+    position: absolute;
+    inset: 0;
+    /* Use editor ruler color for the scanline grid */
+    background: linear-gradient(to bottom, transparent 50%, var(--vscode-editorRuler-foreground) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.1;
+}
+
+.techHeader {
+    position: relative;
     width: 100%;
-    padding: var(--spacing-md);
+    padding: 16px;
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: background 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    height: 64px;
+    transition: background 0.2s;
+    z-index: 2;
 }
 
-.activityHeader:hover {
-    background: rgba(255, 255, 255, 0.03);
+.techHeader:hover {
+    /* Use list hover background for native interaction feel */
+    background: var(--vscode-list-hoverBackground);
 }
 
-.activityLeft {
+.headerLeft {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: 16px;
 }
 
-.activityIcon {
+/* Data Badge: Uses badge colors for high contrast */
+.dataBadge {
+    position: relative;
+    width: 40px;
+    height: 40px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: linear-gradient(135deg, 
-        rgba(33, 150, 243, 0.25) 0%, 
-        rgba(156, 39, 176, 0.2) 100%);
-    border-radius: 50%;
-    color: #9C27B0;
-    font-size: 16px;
-}
-
-.activityInfo {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-}
-
-.activityLabel {
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--foreground-secondary);
-    opacity: 0.7;
-}
-
-.activityAgent {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--foreground);
-}
-
-.agentName {
-    color: #9C27B0;
-}
-
-.agentLevel {
-    display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 1px 6px;
-    background: rgba(156, 39, 176, 0.15);
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 600;
-    color: #9C27B0;
+    border: 1px solid var(--vscode-focusBorder);
+    background: var(--vscode-editor-background);
+    transform: skew(-10deg);
+    /* Tech skew */
 }
 
-.agentIdle {
-    color: var(--foreground-secondary);
-    font-style: italic;
-    font-weight: 400;
+.badgeIcon {
+    /* Use the "Link" color for the icon to make it pop like a data point */
+    color: var(--vscode-textLink-foreground);
+    font-size: 18px;
+    transform: skew(10deg);
 }
 
-.activityToggle {
-    opacity: 0.5;
-    transition: opacity 0.15s, transform 0.2s;
+.badgeGlow {
+    position: absolute;
+    inset: 0;
+    /* Simulated glow using inset shadow of the focus color */
+    box-shadow: inset 0 0 10px var(--vscode-focusBorder);
+    opacity: 0.2;
+    animation: badgePulse 3s infinite;
 }
 
-.activityHeader:hover .activityToggle {
-    opacity: 0.8;
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        opacity: 0.2;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
-.activityList {
-    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
-    border-top: 1px solid rgba(156, 39, 176, 0.15);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.activityListHeader {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--foreground-secondary);
-    opacity: 0.6;
-    margin-bottom: var(--spacing-xs);
-}
-
-.activityItem {
+.headerInfo {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: var(--radius-sm);
-    border-left: 2px solid rgba(156, 39, 176, 0.4);
 }
 
-.handoffFlow {
+.techLabel {
+    /* Use Code Font for the "system" feel */
+    font-family: var(--vscode-editor-font-family);
+    font-size: 10px;
+    color: var(--vscode-descriptionForeground);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.agentIdentity {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.agentNameGlitch {
+    /* Use UI Font for the name */
+    font-family: var(--vscode-font-family);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--vscode-editor-foreground);
+    position: relative;
+    letter-spacing: 0.5px;
+}
+
+/* Simple native hover effect instead of complex glitch */
+.techHeader:hover .agentNameGlitch {
+    color: var(--vscode-textLink-activeForeground);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.levelTag {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 10px;
+    /* Use "Keyword" color logic effectively by grabbing a high-vis token if available, 
+       but standardizing on badge colors is safer */
+    color: var(--vscode-badge-foreground);
+    background: var(--vscode-badge-background);
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.agentSystemIdle {
+    color: var(--vscode-disabledForeground);
+    font-style: italic;
+    font-family: var(--vscode-editor-font-family);
+}
+
+.headerRight {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
+    gap: 16px;
+}
+
+.statusArray {
+    display: flex;
+    gap: 4px;
+}
+
+.statusLight {
+    width: 4px;
+    height: 4px;
+    background: var(--vscode-scrollbarSlider-background);
+    border-radius: 50%;
+}
+
+.statusLightActive {
+    width: 4px;
+    height: 4px;
+    /* Use Git "Added" color for positive/active status */
+    background: var(--vscode-gitDecoration-addedResourceForeground);
+    border-radius: 50%;
+    /* Hard to do native glow without box-shadow opacity, so we rely on the vibrant color itself */
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.expandTrigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--vscode-textLink-foreground);
+}
+
+.dataCount {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.techChevron {
+    font-size: 14px;
+    color: var(--vscode-icon-foreground);
+    transition: transform 0.2s;
+}
+
+.activityHeader:hover .techChevron {
+    transform: rotate(180deg);
+}
+
+
+/* Stream Timeline */
+.streamContainer {
+    position: relative;
+    padding: 0 16px 16px;
+    background: var(--vscode-editor-background);
+    border-top: 1px solid var(--vscode-widget-border);
+    z-index: 2;
+}
+
+.streamTimeline {
+    display: flex;
+    flex-direction: column;
+    padding-top: 12px;
+}
+
+.streamItem {
+    display: flex;
+    gap: 12px;
+    min-height: 36px;
+}
+
+.streamTrack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 16px;
+}
+
+.circuitNode {
+    width: 8px;
+    height: 8px;
+    /* Use the background to "punch out" the shape */
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-textLink-foreground);
+    transform: rotate(45deg);
+    /* Diamond */
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+.circuitLine {
+    flex: 1;
+    width: 1px;
+    /* Dashed line for data flow feel */
+    border-left: 1px dashed var(--vscode-tree-indentGuidesStroke);
+    margin-top: 2px;
+    margin-bottom: -2px;
+}
+
+.streamContent {
+    flex: 1;
+    padding-bottom: 8px;
+    font-family: var(--vscode-editor-font-family);
+}
+
+.dataLink {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 12px;
 }
 
-.activityFrom {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--foreground);
+.sourceNode {
+    color: var(--vscode-descriptionForeground);
 }
 
-.activityArrow {
-    font-size: 10px;
-    color: #00BCD4;
-    opacity: 0.8;
+.linkArrow {
+    color: var(--vscode-textLink-foreground);
+    font-weight: bold;
+    font-size: 14px;
 }
 
-.activityTo {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #2196F3;
-    font-weight: 500;
-}
-
-.levelBadge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 4px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
-    font-size: 9px;
+.targetNode {
+    color: var(--vscode-textLink-activeForeground);
     font-weight: 600;
-    color: var(--foreground-secondary);
 }
 
-.handoffReason {
-    font-size: 11px;
-    color: var(--foreground-secondary);
-    opacity: 0.7;
-    font-style: italic;
-    padding-left: var(--spacing-xs);
+.systemLog {
+    font-size: 10px;
+    color: var(--vscode-textPreformat-foreground);
+    margin-top: 2px;
+    padding-left: 8px;
+    border-left: 1px solid var(--vscode-tree-indentGuidesStroke);
 }
 
 /* Empty State with breathing animation */
@@ -224,8 +370,17 @@
 }
 
 @keyframes breathe {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.05); }
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(1.05);
+    }
 }
 
 .emptyHint {
@@ -252,12 +407,12 @@
     padding: var(--spacing-md) var(--spacing-lg);
     min-width: 280px;
     max-width: 100%;
-    background: linear-gradient(135deg, 
-        rgba(35, 134, 54, 0.12) 0%, 
-        rgba(35, 134, 54, 0.06) 100%);
+    background: linear-gradient(135deg,
+            rgba(35, 134, 54, 0.12) 0%,
+            rgba(35, 134, 54, 0.06) 100%);
     border: 1px solid rgba(35, 134, 54, 0.25);
     border-radius: 16px 16px 4px 16px;
-    box-shadow: 
+    box-shadow:
         0 2px 8px rgba(0, 0, 0, 0.1),
         0 1px 2px rgba(35, 134, 54, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -267,23 +422,23 @@
 
 /* Color variants */
 .sentInfo {
-    background: linear-gradient(135deg, 
-        rgba(0, 127, 212, 0.12) 0%, 
-        rgba(0, 127, 212, 0.06) 100%);
+    background: linear-gradient(135deg,
+            rgba(0, 127, 212, 0.12) 0%,
+            rgba(0, 127, 212, 0.06) 100%);
     border-color: rgba(0, 127, 212, 0.25);
 }
 
 .sentSuccess {
-    background: linear-gradient(135deg, 
-        rgba(35, 134, 54, 0.12) 0%, 
-        rgba(35, 134, 54, 0.06) 100%);
+    background: linear-gradient(135deg,
+            rgba(35, 134, 54, 0.12) 0%,
+            rgba(35, 134, 54, 0.06) 100%);
     border-color: rgba(35, 134, 54, 0.25);
 }
 
 .sentWarning {
-    background: linear-gradient(135deg, 
-        rgba(227, 179, 65, 0.12) 0%, 
-        rgba(227, 179, 65, 0.06) 100%);
+    background: linear-gradient(135deg,
+            rgba(227, 179, 65, 0.12) 0%,
+            rgba(227, 179, 65, 0.06) 100%);
     border-color: rgba(227, 179, 65, 0.25);
 }
 
@@ -348,6 +503,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
+    line-clamp: 10;
     -webkit-line-clamp: 10;
     -webkit-box-orient: vertical;
     white-space: pre-wrap;
@@ -379,6 +535,7 @@
         opacity: 0;
         transform: translateX(20px) scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: translateX(0) scale(1);
@@ -390,9 +547,11 @@
         opacity: 0;
         transform: scale(0);
     }
+
     50% {
         transform: scale(1.3);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -404,6 +563,7 @@
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+
     to {
         opacity: 0;
         transform: translateY(-15px) scale(0.95);
@@ -411,8 +571,15 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Request Card - centered in remaining space */
@@ -425,14 +592,21 @@
     animation: slideIn 0.3s ease;
 }
 
-.listItem > .messageBubble {
+.listItem>.messageBubble {
     width: 100%;
     max-width: 420px;
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Message Bubble - base styles */
@@ -533,15 +707,15 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, 
-        rgba(0, 127, 212, 0.15) 0%, 
-        rgba(0, 127, 212, 0.08) 100%);
+    background: linear-gradient(135deg,
+            rgba(0, 127, 212, 0.15) 0%,
+            rgba(0, 127, 212, 0.08) 100%);
     border: 1px solid rgba(0, 127, 212, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 
+    box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
@@ -607,7 +781,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
-    padding-left: 36px; /* Align with message content */
+    padding-left: 36px;
+    /* Align with message content */
 }
 
 .chatTextarea {
@@ -826,8 +1001,15 @@
 }
 
 @keyframes expandIn {
-    from { opacity: 0; transform: scaleY(0.8); }
-    to { opacity: 1; transform: scaleY(1); }
+    from {
+        opacity: 0;
+        transform: scaleY(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+    }
 }
 
 .customInput {
@@ -1080,9 +1262,19 @@
 }
 
 @keyframes shakeIn {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+
+    75% {
+        transform: translateX(4px);
+    }
 }
 
 /* Sent message attachment badge */
@@ -1140,9 +1332,9 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-sm) var(--spacing-md);
-    background: linear-gradient(135deg, 
-        rgba(0, 127, 212, 0.08) 0%, 
-        rgba(0, 127, 212, 0.04) 100%);
+    background: linear-gradient(135deg,
+            rgba(0, 127, 212, 0.08) 0%,
+            rgba(0, 127, 212, 0.04) 100%);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
@@ -1225,9 +1417,7 @@
     pointer-events: none;
 }
 
-.planMarkdown {
-    /* Markdown component styles applied here */
-}
+
 
 /* Plan actions area - fixed at bottom */
 .planActionsArea {
@@ -1294,6 +1484,6 @@
     width: 100%;
 }
 
-.listItemFullWidth > .messageBubble {
+.listItemFullWidth>.messageBubble {
     max-width: 100%;
 }

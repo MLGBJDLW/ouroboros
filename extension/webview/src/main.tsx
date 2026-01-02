@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AppProvider } from './context/AppContext';
 import { VSCodeProvider } from './context/VSCodeContext';
+import '@vscode/codicons/dist/codicon.css';
 import './styles/reset.css';
 import './styles/variables.css';
 import './styles/global.css';

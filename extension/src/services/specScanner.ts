@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { parseTasksMarkdown, calculateProgress, type ParsedTasks } from './tasksParser';
+import { parseTasksMarkdown, calculateProgress } from './tasksParser';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('SpecScanner');
@@ -81,7 +81,7 @@ export async function scanSpecsFolder(workspacePath: string): Promise<{
             activeCount: active.length,
             archivedCount: archived.length,
         });
-    } catch (error) {
+    } catch {
         logger.debug('Specs folder not found or inaccessible', { workspacePath });
     }
 
@@ -220,8 +220,8 @@ async function analyzeSpecFolder(
             progress,
             taskSummary,
         };
-    } catch (error) {
-        logger.error('Error analyzing spec folder', { specPath, error });
+    } catch {
+        logger.error('Error analyzing spec folder', { specPath });
         return null;
     }
 }

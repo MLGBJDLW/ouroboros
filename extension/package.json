@@ -2,7 +2,7 @@
     "name": "ouroboros-ai",
     "displayName": "Ouroboros AI",
     "description": "Structured AI agent workflow with spec-driven development",
-    "version": "3.2.13",
+    "version": "3.2.15",
     "publisher": "MLGBJDLW",
     "license": "MIT",
     "icon": "resources/icon.png",
@@ -362,6 +362,7 @@
         "vitest": "^2.0.0"
     },
     "dependencies": {
+        "@vscode/codicons": "^0.0.36",
         "zod": "^3.0.0"
     }
 }

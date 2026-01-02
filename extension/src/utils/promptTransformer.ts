@@ -1336,7 +1336,6 @@ function parseSimpleYaml(yamlContent: string): Map<string, string> {
     const lines = yamlContent.split('\n');
     let currentKey = '';
     let currentValue: string[] = [];
-    let inArray = false;
 
     for (const line of lines) {
         // Check if this is a new top-level key
@@ -1351,10 +1350,8 @@ function parseSimpleYaml(yamlContent: string): Map<string, string> {
             if (value === '' || value === '|' || value === '>') {
                 // Multi-line value or array starting
                 currentValue = [];
-                inArray = true;
             } else {
                 currentValue = [value];
-                inArray = false;
             }
         } else if (currentKey && (line.startsWith('  ') || line.startsWith('\t') || line.startsWith('- '))) {
             // Continuation of multi-line value or array item
