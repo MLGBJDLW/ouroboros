@@ -17,10 +17,6 @@ export function generateHtml(webview: vscode.Webview, extensionUri: vscode.Uri):
         vscode.Uri.joinPath(extensionUri, 'webview', 'dist', 'assets', 'index.css')
     );
 
-    const codiconsUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css')
-    );
-
     const logoUri = webview.asWebviewUri(
         vscode.Uri.joinPath(extensionUri, 'resources', 'icon.svg')
     );
@@ -33,9 +29,8 @@ export function generateHtml(webview: vscode.Webview, extensionUri: vscode.Uri):
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource}; img-src ${webview.cspSource};">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource} data:; img-src ${webview.cspSource};">
   <link href="${styleUri}" rel="stylesheet">
-  <link href="${codiconsUri}" rel="stylesheet">
   <title>Ouroboros</title>
 </head>
 <body>
