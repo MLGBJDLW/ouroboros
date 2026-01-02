@@ -2,6 +2,15 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.15] - 2026-01-02
+
+### Added
+- **UI Redesign**: "Handoff Card" V5 "Native Avant-Garde" - A complete overhaul of the pending request widget.
+    - **Native Theming**: Zero hardcoded colors; stricly uses VS Code theme variables for universal compatibility.
+    - **Dynamic Icons**: Agents now have context-aware identities (e.g., Hubot for God Mode, Code for Coder) powered by Codicons.
+    - **Idle State**: New pulsing idle animation and "SYSTEM_WAKE_MODE" status.
+    - **Visual upgrade**: Holographic overlays, scanlines, and circuit-like data streams.
+
 ## [3.2.13] - 2025-12-29
 
 ### Added

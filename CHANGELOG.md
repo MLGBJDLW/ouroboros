@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.15] - 2026-01-02
+
+### Extension
+- **UI Redesign**: Deployed "Native Avant-Garde" (V5) Handoff Card redesign.
+    - Features fully theme-compliant cyberpunk aesthetic.
+    - Dynamic agent identity icons.
+    - Interactive "neural" animations.
+
 ## [3.2.13] - 2025-12-29
 
 ### 📊 Copilot Usage Insights
