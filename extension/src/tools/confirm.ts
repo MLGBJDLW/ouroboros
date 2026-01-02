@@ -74,6 +74,16 @@ export function createConfirmTool(
                 // Fallback to VS Code message box
                 const fallbackResult = await fallbackToVSCodeConfirm(input, token);
 
+                // Store interaction for fallback path too
+                await stateManager.addInteraction({
+                    type: 'confirm',
+                    agentName: input.agentName ?? 'unknown',
+                    agentLevel: (input.agentLevel as 0 | 1 | 2) ?? 0,
+                    question: input.question,
+                    response: fallbackResult.cancelled ? '' : fallbackResult.confirmed ? 'yes' : 'no',
+                    status: fallbackResult.cancelled ? 'cancelled' : 'responded',
+                });
+
                 return new vscode.LanguageModelToolResult([
                     new vscode.LanguageModelTextPart(JSON.stringify(fallbackResult)),
                 ]);

@@ -2,6 +2,24 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.16] - 2026-01-02
+
+### Fixed
+- **History Not Updating in Real-Time** — Fixed issue where interaction history wasn't refreshing automatically after user responses.
+  - Added `onHistoryChange` event emitter to `StateManager`
+  - `SidebarProvider` now listens to history changes and sends `historyUpdate` to webview
+  - History tab now updates immediately when new interactions are recorded
+  - Previously required VS Code restart to see new history entries
+
+### Changed
+- **Sent Message Card Redesign** — Upgraded to "Native Avant-Garde" style matching the Handoff Card.
+  - Brutalist corners with VS Code theme integration
+  - Scanline texture overlay for tech aesthetic
+  - Status indicator with pulse animation
+  - Type-specific accent colors (info/success/warning)
+  - Monospace typography for system labels
+  - Checkmark animation on send confirmation
+
 ## [3.2.15] - 2026-01-02
 
 ### Added

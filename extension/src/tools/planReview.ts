@@ -85,6 +85,20 @@ export function createPlanReviewTool(
                 // Fallback to VS Code preview
                 const fallbackResult = await fallbackToVSCodePreview(input, token);
 
+                // Store interaction for fallback path too
+                await stateManager.addInteraction({
+                    type: 'plan_review',
+                    agentName: input.agentName ?? 'unknown',
+                    agentLevel: (input.agentLevel as 0 | 1 | 2) ?? 0,
+                    question: input.title ?? 'Plan Review',
+                    response: fallbackResult.cancelled
+                        ? ''
+                        : fallbackResult.approved
+                          ? 'approved'
+                          : (fallbackResult.feedback ?? 'rejected'),
+                    status: fallbackResult.cancelled ? 'cancelled' : 'responded',
+                });
+
                 return new vscode.LanguageModelToolResult([
                     new vscode.LanguageModelTextPart(JSON.stringify(fallbackResult)),
                 ]);

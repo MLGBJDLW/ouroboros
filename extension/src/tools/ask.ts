@@ -78,6 +78,16 @@ export function createAskTool(
                 // Fallback to VS Code input box
                 const fallbackResult = await fallbackToVSCodeInput(input, token);
 
+                // Store interaction for fallback path too
+                await stateManager.addInteraction({
+                    type: 'ask',
+                    agentName: input.agentName ?? 'unknown',
+                    agentLevel: (input.agentLevel as 0 | 1 | 2) ?? 0,
+                    question: input.question,
+                    response: fallbackResult.response ?? '',
+                    status: fallbackResult.cancelled ? 'cancelled' : 'responded',
+                });
+
                 return new vscode.LanguageModelToolResult([
                     new vscode.LanguageModelTextPart(JSON.stringify(fallbackResult)),
                 ]);

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.16] - 2026-01-02
+
+### Extension
+- **History Real-Time Update Fix**: Fixed issue where interaction history wasn't refreshing automatically.
+  - History tab now updates immediately when new interactions are recorded
+  - Previously required VS Code restart to see new history entries
+- **Sent Message Card Redesign**: Upgraded to "Native Avant-Garde" style matching the Handoff Card.
+  - Brutalist corners with VS Code theme integration
+  - Scanline texture and status pulse animation
+  - Type-specific accent colors
+
 ## [3.2.15] - 2026-01-02
 
 ### Extension

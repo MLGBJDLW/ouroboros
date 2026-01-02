@@ -49,6 +49,13 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
                 this.postMessage({ type: 'stateUpdate', payload: state });
             })
         );
+
+        // Listen to history changes and notify webview
+        this.register(
+            this.stateManager.onHistoryChange((history) => {
+                this.postMessage({ type: 'historyUpdate', payload: history });
+            })
+        );
     }
 
     /**
