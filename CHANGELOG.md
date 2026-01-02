@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Extension
 - **UI Redesign**: Deployed "Native Avant-Garde" (V5) Handoff Card redesign.
-    - Features fully theme-compliant cyberpunk aesthetic.
-    - Dynamic agent identity icons.
-    - Interactive "neural" animations.
+  - Features fully theme-compliant cyberpunk aesthetic.
+  - Dynamic agent identity icons.
+  - Interactive "neural" animations.
 - **Input History Navigation**: Added up/down arrow key support for input history.
-    - Navigate through previous inputs using ↑/↓ arrow keys.
-    - History persisted to localStorage (max 50 entries).
-    - Works in Ask, Menu (custom), and Confirm (custom) inputs.
-    - Updated placeholder hints to show `↑↓ for history`.
+  - Navigate through previous inputs using ↑/↓ arrow keys.
+  - History persisted to localStorage (max 50 entries).
+  - Works in Ask, Menu (custom), and Confirm (custom) inputs.
+  - Updated placeholder hints to show `↑↓ for history`.
 
 ## [3.2.13] - 2025-12-29
 
