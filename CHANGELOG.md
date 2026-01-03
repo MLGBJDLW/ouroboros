@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.2.17] - 2026-01-02
 
 ### Extension
+- **Slash Command Autocomplete**: Type `/` in input to see available commands (`/ouroboros`, `/ouroboros-spec`, etc.)
+  - Fuzzy matching, keyboard navigation (↑↓ Tab Esc)
+  - Auto-prepends agent instruction on send
 - **Test Fix**: Added `onHistoryChange` mock to SidebarProvider tests.
 
 ## [3.2.16] - 2026-01-02

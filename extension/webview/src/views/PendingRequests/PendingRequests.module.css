@@ -892,6 +892,11 @@
     box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.15);
 }
 
+.chatTextarea.slashActive {
+    border-color: var(--vscode-textLink-foreground);
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.2);
+}
+
 .chatTextarea::placeholder {
     color: var(--input-placeholder);
 }

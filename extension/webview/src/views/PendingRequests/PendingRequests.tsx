@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePendingRequests } from '../../hooks/usePendingRequests';
 import { useAppContext } from '../../context/AppContext';
 import { useInputHistory } from '../../hooks/useInputHistory';
+import { useSlashCommands } from '../../hooks/useSlashCommands';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
 import { Logo } from '../../components/Logo';
 import { Markdown } from '../../components/Markdown';
 import { AttachmentsList, DragOverlay, AttachmentActions } from '../../components/AttachmentInput';
+import { SlashCommandDropdown } from '../../components/SlashCommandDropdown';
 import { formatRelativeTime, formatRequestType } from '../../utils/formatters';
 import { AGENT_DISPLAY_NAMES } from '../../types/agent';
 import { serializeAttachments } from '../../types/requests';
@@ -554,6 +556,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
     const [value, setValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputHistory = useInputHistory();
+    const slashCommands = useSlashCommands();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -562,41 +565,85 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 
     const handleSubmit = useCallback(() => {
         if (value.trim() || attachments.length > 0) {
+            // Prepend agent instruction if slash command detected
+            const processedValue = slashCommands.prependInstruction(value);
             onRespond(request.id, {
-                response: value,
+                response: processedValue,
                 cancelled: false,
                 attachments: serializeAttachments(attachments),
             });
             clearAttachments();
+            slashCommands.cancel();
         }
-    }, [request.id, value, attachments, onRespond, clearAttachments]);
+    }, [request.id, value, attachments, onRespond, clearAttachments, slashCommands]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onCancel(request.id);
+            if (e.key === 'Escape') {
+                if (slashCommands.isActive) {
+                    slashCommands.cancel();
+                } else {
+                    onCancel(request.id);
+                }
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [request.id, onCancel]);
+    }, [request.id, onCancel, slashCommands]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setValue(e.target.value);
+        const newValue = e.target.value;
+        setValue(newValue);
         inputHistory.resetNavigation();
+        // Update slash command matches
+        slashCommands.update(newValue);
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
     };
 
     const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        // Handle history navigation first
-        if (inputHistory.handleKeyDown(e, value, setValue)) {
+        // Handle slash command navigation
+        if (slashCommands.isActive) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                slashCommands.moveUp();
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                slashCommands.moveDown();
+                return;
+            }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const completed = slashCommands.complete(value);
+                setValue(completed);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                slashCommands.cancel();
+                return;
+            }
+        }
+
+        // Handle history navigation (only when slash commands not active)
+        if (!slashCommands.isActive && inputHistory.handleKeyDown(e, value, setValue)) {
             return;
         }
+
         // Handle submit
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();
         }
     };
+
+    const handleSlashCommandSelect = useCallback((cmd: { command: string }) => {
+        setValue(cmd.command + ' ');
+        slashCommands.cancel();
+        textareaRef.current?.focus();
+    }, [slashCommands]);
 
     return (
         <div className={styles.askContent}>
@@ -625,6 +672,13 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                     onDrop={handleDrop}
                     onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 >
+                    {slashCommands.isActive && (
+                        <SlashCommandDropdown
+                            matches={slashCommands.matches}
+                            selectedIndex={slashCommands.selectedIndex}
+                            onSelect={handleSlashCommandSelect}
+                        />
+                    )}
                     {isDragOver && (
                         <div className={styles.dropIndicator}>
                             <Icon name="cloud-upload" />
@@ -633,8 +687,8 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                     )}
                     <textarea
                         ref={textareaRef}
-                        className={styles.chatTextarea}
-                        placeholder={data.inputLabel ?? 'Type your reply... (↑↓ for history)'}
+                        className={`${styles.chatTextarea} ${slashCommands.isActive ? styles.slashActive : ''}`}
+                        placeholder={data.inputLabel ?? 'Type / for commands, ↑↓ for history'}
                         value={value}
                         onChange={handleTextareaChange}
                         onPaste={handlePaste}
@@ -670,7 +724,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                             maxAttachments={MAX_ATTACHMENTS}
                         />
                         <span className={styles.inputHint}>
-                            Enter to send · ↑↓ for history
+                            Enter to send · / for commands
                         </span>
                     </div>
                     <button
