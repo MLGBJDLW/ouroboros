@@ -2,6 +2,12 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.18] - 2026-01-02
+
+### Tests
+- All 357 tests passing (31 test files)
+- Verified slash command feature integration
+
 ## [3.2.17] - 2026-01-02
 
 ### Added
