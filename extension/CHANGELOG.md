@@ -2,7 +2,29 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.18] - 2026-01-02
+
+### Added
+- **Slash Command Autocomplete** — Type `/` in the input box to see available slash commands.
+  - 5 commands: `/ouroboros`, `/ouroboros-init`, `/ouroboros-spec`, `/ouroboros-implement`, `/ouroboros-archive`
+  - Fuzzy matching: prioritizes commands that start with your input, then contains
+  - Keyboard navigation: ↑↓ to select, Tab to complete, Esc to cancel
+  - Auto-prepends agent instruction when sending slash commands (e.g., "Follow the prompt '.github/agents/ouroboros-spec.agent.md'")
+  - Native Avant-Garde styled dropdown matching the UI theme
+  - New `useSlashCommands` hook with 26 unit tests
+  - New `SlashCommandDropdown` component
+
+### Tests
+- All 488 tests passing (357 extension + 131 webview)
+
 ## [3.2.17] - 2026-01-02
+
+### Added
+- **Slash Command Autocomplete** — Type `/` in the input box to see available slash commands.
+  - Fuzzy matching: prioritizes commands that start with your input, then contains
+  - Keyboard navigation: ↑↓ to select, Tab to complete, Esc to cancel
+  - Auto-prepends agent instruction when sending slash commands
+  - Native Avant-Garde styled dropdown matching the UI theme
 
 ### Fixed
 - **Test Mock Update** — Added `onHistoryChange` mock to SidebarProvider tests to fix CI failures.

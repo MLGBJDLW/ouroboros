@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.18] - 2026-01-02
+
+### Extension
+- **Slash Command Autocomplete**: Type `/` in input to see available commands (`/ouroboros`, `/ouroboros-spec`, etc.)
+  - Fuzzy matching, keyboard navigation (↑↓ Tab Esc)
+  - Auto-prepends agent instruction on send
+  - Native Avant-Garde styled dropdown
+- All 488 tests passing (357 extension + 131 webview)
+
 ## [3.2.17] - 2026-01-02
 
 ### Extension
