@@ -2,6 +2,11 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.17] - 2026-01-02
+
+### Fixed
+- **Test Mock Update** — Added `onHistoryChange` mock to SidebarProvider tests to fix CI failures.
+
 ## [3.2.16] - 2026-01-02
 
 ### Fixed
