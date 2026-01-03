@@ -69,6 +69,7 @@ vi.mock('../../webview/messageHandler', () => ({
 describe('SidebarProvider', () => {
     let mockStateManager: {
         onStateChange: ReturnType<typeof vi.fn>;
+        onHistoryChange: ReturnType<typeof vi.fn>;
         getWorkspaceState: ReturnType<typeof vi.fn>;
         getInteractionHistory: ReturnType<typeof vi.fn>;
     };
@@ -79,6 +80,7 @@ describe('SidebarProvider', () => {
 
         mockStateManager = {
             onStateChange: vi.fn().mockReturnValue({ dispose: () => { } }),
+            onHistoryChange: vi.fn().mockReturnValue({ dispose: () => { } }),
             getWorkspaceState: vi.fn().mockReturnValue({}),
             getInteractionHistory: vi.fn().mockReturnValue([]),
         };
