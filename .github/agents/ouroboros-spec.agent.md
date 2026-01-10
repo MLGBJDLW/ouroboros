@@ -10,6 +10,10 @@ handoffs:
     agent: ouroboros-implement
     prompt: "Spec complete and validated. Begin implementation."
     send: false
+  - label: "Continue from PRD"
+    agent: ouroboros-prd
+    prompt: "PRD complete. Continue with spec generation."
+    send: false
 ---
 
 # ♾️ Ouroboros Spec — Spec Workflow Orchestrator

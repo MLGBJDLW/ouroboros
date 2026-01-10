@@ -542,6 +542,7 @@ def output_result(marker: str, content: str) -> None:
                 "/ouroboros-init": "ouroboros-init.agent.md",
                 "/ouroboros-implement": "ouroboros-implement.agent.md",
                 "/ouroboros-archive": "ouroboros-archive.agent.md",
+                "/ouroboros-prd": "ouroboros-prd.agent.md",
             }
             if cmd in agent_map:
                 formatted = (

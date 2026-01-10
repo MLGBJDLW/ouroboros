@@ -183,6 +183,7 @@ class TestAgentInstructionPrepending(unittest.TestCase):
             "/ouroboros-init": "ouroboros-init.agent.md",
             "/ouroboros-implement": "ouroboros-implement.agent.md",
             "/ouroboros-archive": "ouroboros-archive.agent.md",
+            "/ouroboros-prd": "ouroboros-prd.agent.md",
         }
 
         for cmd, expected_file in expected_mappings.items():
