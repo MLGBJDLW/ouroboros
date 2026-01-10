@@ -435,6 +435,73 @@ description: Default
         const result = preserveYamlFrontmatter(existingContent, newContent, true);
         expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_ask');
     });
+
+    it('should handle multi-line tools arrays', () => {
+        const existingContent = `---
+description: Agent with multi-line tools
+tools:
+  - 'basic-memory/search'
+  - 'cognitional/deepwiki/*'
+  - 'microsoft/markitdown/*'
+---
+# Content`;
+
+        const newContent = `---
+description: Default
+tools: ['read']
+---
+# New content`;
+
+        const result = preserveYamlFrontmatter(existingContent, newContent, true);
+        // Should preserve user's tools AND add Ouroboros tools
+        expect(result).toContain('basic-memory/search');
+        expect(result).toContain('cognitional/deepwiki/*');
+        expect(result).toContain('microsoft/markitdown/*');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_ask');
+    });
+
+    it('should handle wrapped single-line tools arrays', () => {
+        const existingContent = `---
+description: Agent with wrapped tools
+tools: ['vscode', 'read', 'search', 'web', 'basic-memory/search', 'cognitional/deepwiki/*',
+        'context7/*', 'microsoft/markitdown/*', 'oraios/serena/*', 'ref/*', 'sequential-thinking/*']
+---
+# Content`;
+
+        const newContent = `---
+description: Default
+tools: ['read']
+---
+# New content`;
+
+        const result = preserveYamlFrontmatter(existingContent, newContent, true);
+        expect(result).toContain('vscode');
+        expect(result).toContain('basic-memory/search');
+        expect(result).toContain('sequential-thinking/*');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_ask');
+    });
+
+    it('should keep L2 worker tools on a single line (not wrapped)', () => {
+        const existingContent = `---
+description: "Worker Agent"
+tools: ['vscode', 'read', 'search', 'web', 'basic-memory/search']
+---
+# Content`;
+
+        const newContent = `---
+description: Default
+tools: ['read']
+---
+# New content`;
+
+        // isOrchestrator = false for L2 workers
+        const result = preserveYamlFrontmatter(existingContent, newContent, false);
+
+        // The tools should be on a single line, not wrapped
+        expect(result).toContain("tools: ['vscode', 'read', 'search', 'web', 'basic-memory/search']");
+        expect(result).not.toContain('tools:\n');
+        expect(result).toContain('Worker Agent');
+    });
 });
 
 import { fetchAndTransformPrompts, createOuroborosStructure } from '../../utils/promptTransformer';

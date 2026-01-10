@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.20] - 2026-01-10
+
+### 🐛 Bug Fixes
+
+#### Fixed
+- **YAML Tools Field Formatting** — Fixed issue where user-customized `tools:` array in agent YAML frontmatter was incorrectly formatted after Update Prompts:
+  - Single-line arrays like `tools: ['tool1', 'tool2']` were being split with an unwanted newline
+  - L2 worker agents were most affected (no Ouroboros tools injection)
+  - Root cause: `mergeYamlContent()` incorrectly treated all non-empty values as multi-line
+
+- **Multi-Line Tools Array Parsing** — Added robust `parseToolsFromYaml()` function to handle all YAML array formats:
+  - Single-line: `tools: ['a', 'b']`
+  - Multi-line (YAML list): `tools:\n  - 'a'\n  - 'b'`
+  - Wrapped single-line: `tools: ['a', 'b',\n        'c']`
+
+#### Tests
+- Added 3 new test cases for tools array formatting
+- All 360 tests passing
+
+---
+
 ## [3.2.19] - 2026-01-10
 
 ### 📝 New PRD Agent
