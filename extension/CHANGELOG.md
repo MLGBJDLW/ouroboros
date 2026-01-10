@@ -2,6 +2,17 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.19] - 2026-01-10
+
+### Added
+- **PRD Agent Support** — New `/ouroboros-prd` slash command for AI-guided PRD creation:
+  - Added to slash command autocomplete (now 6 commands total)
+  - Added `prd` workflow type to constants
+  - Added `ouroboros-prd.agent.md` and `ouroboros-prd.prompt.md` to promptTransformer
+
+### Tests
+- All 488 tests passing (357 extension + 131 webview)
+
 ## [3.2.18] - 2026-01-02
 
 ### Added

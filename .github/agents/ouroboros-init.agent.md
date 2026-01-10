@@ -162,6 +162,7 @@ Your project is now ready for Ouroboros!
 
 Suggested next steps:
   📋 /ouroboros-spec  — Create feature specifications
+  📝 /ouroboros-prd   — Create PRD with AI guidance
   ⚙️ /ouroboros       — Start working with the main agent
 
 Type a command or describe what you'd like to build.

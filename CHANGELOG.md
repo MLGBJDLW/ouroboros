@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.19] - 2026-01-10
+
+### 📝 New PRD Agent
+
+#### Added
+- **`ouroboros-prd` Agent** — New Level 1 agent for AI-guided PRD creation:
+  - 5-phase interactive workflow: Problem → Users → Features → Priorities → Constraints
+  - Asks ONE question at a time using CCL
+  - Delegates to `ouroboros-writer` for final PRD document creation
+  - Handoff links to `ouroboros-spec` for seamless workflow continuation
+
+- **PRD Template** — New `.ouroboros/templates/prd-template.md`:
+  - Executive Summary for stakeholder quick-read
+  - User Journey with Mermaid diagrams
+  - Risks & Mitigations section
+  - Timeline with Gantt charts
+  - Stakeholder tracking
+
+- **Slash Command** — `/ouroboros-prd` available in TUI and Extension
+
+#### Changed
+- **Agent Roster** — Added `ouroboros-prd` to orchestrator's sub-agent list
+- **Init Agent** — Suggests `/ouroboros-prd` as next step after initialization
+- **Spec Agent** — Added handoff link from PRD
+- **AGENTS.md** — Updated workflow recommendation: PRD → Spec → Implement
+
+#### Tests
+- Updated `test_agent_prepend.py` with `/ouroboros-prd` mapping
+- All 43 TUI tests passing
+
 ## [3.2.18] - 2026-01-02
 
 ### Extension

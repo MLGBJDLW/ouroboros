@@ -26,6 +26,7 @@ User → ouroboros (Orchestrator) → Subagents → Return to Orchestrator
 - **Orchestrator** delegates ALL work via `runSubagent()`
 - **Subagents** execute work, then `handoff` back
 - **CCL** keeps the loop alive — never terminate
+- **PRD → Spec → Implement** is the recommended workflow
 
 ---
 

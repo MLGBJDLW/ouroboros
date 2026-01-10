@@ -9,7 +9,7 @@ and autocomplete functionality.
 
 from typing import List, Tuple, Optional, Dict
 
-# Slash commands for orchestrator mode switching (5 main orchestrators)
+# Slash commands for orchestrator mode switching (6 main orchestrators)
 SLASH_COMMANDS: Dict[str, Dict[str, str]] = {
     "/ouroboros": {"desc": "Main Orchestrator", "file": "ouroboros.agent.md"},
     "/ouroboros-init": {"desc": "Project Init", "file": "ouroboros-init.agent.md"},
@@ -21,6 +21,10 @@ SLASH_COMMANDS: Dict[str, Dict[str, str]] = {
     "/ouroboros-archive": {
         "desc": "Archive Specs",
         "file": "ouroboros-archive.agent.md",
+    },
+    "/ouroboros-prd": {
+        "desc": "PRD Creation",
+        "file": "ouroboros-prd.agent.md",
     },
 }
 

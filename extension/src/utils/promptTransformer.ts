@@ -30,6 +30,7 @@ const ORCHESTRATOR_AGENT_FILES = [
     'ouroboros-spec.agent.md', // Level 1
     'ouroboros-implement.agent.md', // Level 1
     'ouroboros-archive.agent.md', // Level 1
+    'ouroboros-prd.agent.md', // Level 1
 ];
 
 // Level 2 Workers (NO CCL, handoff only - don't need LM Tools)
@@ -53,6 +54,7 @@ const PROMPT_FILES = [
     'ouroboros-spec.prompt.md',
     'ouroboros-implement.prompt.md',
     'ouroboros-archive.prompt.md',
+    'ouroboros-prd.prompt.md',
 ];
 
 const CORE_FILES = ['copilot-instructions.md'];
@@ -1386,7 +1388,7 @@ function mergeYamlContent(existingYaml: string, newYaml: string): string {
             if (newValue !== undefined) {
                 // Replace the field in result
                 const fieldRegex = new RegExp(`^${field}:.*(?:\\n(?:  |\\t|- ).*)*`, 'm');
-                const existingFieldContent = existingValue 
+                const existingFieldContent = existingValue
                     ? `${field}:\n${existingValue}`
                     : `${field}: ${existingValue}`;
                 result = result.replace(fieldRegex, existingFieldContent);

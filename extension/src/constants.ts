@@ -42,7 +42,7 @@ export type ExecutionMode = 'task-by-task' | 'phase-by-phase' | 'auto-run';
 export type AgentLevel = 0 | 1 | 2;
 
 // Workflow Types
-export type WorkflowType = 'spec' | 'implement';
+export type WorkflowType = 'spec' | 'implement' | 'prd';
 
 // Request Types
 export type RequestType = 'ask' | 'menu' | 'confirm' | 'plan_review' | 'phase_complete';

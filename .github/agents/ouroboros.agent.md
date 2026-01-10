@@ -195,6 +195,7 @@ Here are your options:
 | `ouroboros-requirements` | Requirements (EARS) | Spec Phase 2 |
 | `ouroboros-tasks` | Task planning | Spec Phase 4 |
 | `ouroboros-validator` | Spec validation | Spec Phase 5 |
+| `ouroboros-prd` | AI-guided PRD creation | Before Spec workflow |
 
 ---
 
