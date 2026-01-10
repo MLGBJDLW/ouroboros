@@ -2,6 +2,22 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.2.20] - 2026-01-10
+
+### Fixed
+
+- **YAML Tools Field Formatting** — Fixed issue where user-customized `tools:` array was incorrectly formatted after Update Prompts:
+  - Single-line arrays now stay on one line (no unwanted newlines)
+  - L2 worker agents no longer affected by format corruption
+  - Added `parseToolsFromYaml()` for robust array parsing
+
+### Tests
+
+- Added 3 new test cases for tools array formatting
+- All 360 tests passing (54 promptTransformer tests)
+
+---
+
 ## [3.2.19] - 2026-01-10
 
 ### Added

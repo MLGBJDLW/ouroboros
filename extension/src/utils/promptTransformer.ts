@@ -924,7 +924,106 @@ const OUROBOROS_TOOLS = [
 ];
 
 /**
+ * Parse tools from YAML content - handles both single-line and multi-line formats
+ * Single-line: tools: ['tool1', 'tool2']
+ * Multi-line:
+ *   tools:
+ *     - 'tool1'
+ *     - 'tool2'
+ */
+function parseToolsFromYaml(yamlContent: string): { tools: string[]; startPos: number; endPos: number; isMultiLine: boolean } | null {
+    const lines = yamlContent.split('\n');
+    let toolsStartLine = -1;
+    let toolsEndLine = -1;
+    const tools: string[] = [];
+    let isMultiLine = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Check for tools: line
+        const toolsMatch = line.match(/^tools:\s*(.*)/);
+        if (toolsMatch) {
+            toolsStartLine = i;
+            const afterColon = toolsMatch[1].trim();
+
+            // Check if it's a single-line array: tools: ['a', 'b']
+            if (afterColon.startsWith('[') && afterColon.includes(']')) {
+                // Single-line array
+                isMultiLine = false;
+                toolsEndLine = i;
+                const arrayContent = afterColon.slice(1, afterColon.lastIndexOf(']'));
+                const toolMatches = arrayContent.match(/['"]([^'"]+)['"]/g);
+                if (toolMatches) {
+                    for (const tm of toolMatches) {
+                        const toolName = tm.slice(1, -1);
+                        if (toolName.length > 0) {
+                            tools.push(toolName);
+                        }
+                    }
+                }
+                break;
+            } else if (afterColon === '' || afterColon === '|' || afterColon === '>') {
+                // Multi-line array starting
+                isMultiLine = true;
+                continue;
+            } else if (afterColon.startsWith('[')) {
+                // Array spans multiple lines: tools: ['a', 
+                //                                     'b']
+                isMultiLine = false;
+                let fullArrayStr = afterColon;
+                let j = i;
+                while (!fullArrayStr.includes(']') && j < lines.length - 1) {
+                    j++;
+                    fullArrayStr += '\n' + lines[j].trim();
+                }
+                toolsEndLine = j;
+                const arrayContent = fullArrayStr.slice(1, fullArrayStr.lastIndexOf(']'));
+                const toolMatches = arrayContent.match(/['"]([^'"]+)['"]/g);
+                if (toolMatches) {
+                    for (const tm of toolMatches) {
+                        const toolName = tm.slice(1, -1);
+                        if (toolName.length > 0) {
+                            tools.push(toolName);
+                        }
+                    }
+                }
+                break;
+            }
+        } else if (toolsStartLine >= 0 && isMultiLine) {
+            // Check for multi-line array items: - 'tool' or - "tool"
+            const itemMatch = line.match(/^\s*-\s*['"]?([^'"]+)['"]?\s*$/);
+            if (itemMatch) {
+                tools.push(itemMatch[1].trim());
+                toolsEndLine = i;
+            } else if (line.match(/^\w+:/) || (line.trim() !== '' && !line.match(/^\s/))) {
+                // New top-level key or non-indented line - end of tools array
+                break;
+            }
+        }
+    }
+
+    if (toolsStartLine === -1) {
+        return null;
+    }
+
+    // Calculate character positions
+    let startPos = 0;
+    for (let i = 0; i < toolsStartLine; i++) {
+        startPos += lines[i].length + 1; // +1 for newline
+    }
+    let endPos = startPos;
+    for (let i = toolsStartLine; i <= toolsEndLine; i++) {
+        endPos += lines[i].length + 1;
+    }
+    endPos--; // Remove last newline
+
+    return { tools, startPos, endPos, isMultiLine };
+}
+
+/**
  * Inject Ouroboros tools into YAML frontmatter's tools array
+ * Preserves existing tools and adds Ouroboros tools without duplicates
  */
 function injectOuroborosTools(content: string): string {
     const yamlFrontmatterRegex = /^(---\r?\n)([\s\S]*?)(\r?\n---\r?\n)/;
@@ -937,29 +1036,32 @@ function injectOuroborosTools(content: string): string {
     const [fullMatch, startDelim, yamlContent, endDelim] = match;
     const restOfContent = content.slice(fullMatch.length);
 
-    // Check if there's a tools: line
-    const toolsLineRegex = /^(tools:\s*\[)([^\]]*)\]/m;
-    const toolsMatch = yamlContent.match(toolsLineRegex);
+    // Parse existing tools
+    const parsed = parseToolsFromYaml(yamlContent);
 
-    if (toolsMatch) {
-        // Parse existing tools and add ouroboros tools
-        const existingToolsStr = toolsMatch[2];
-        const existingTools = existingToolsStr
-            .split(',')
-            .map((t) => t.trim().replace(/^['"]|['"]$/g, ''))
-            .filter((t) => t.length > 0);
-
-        // Add ouroboros tools (avoid duplicates)
-        const allTools = [...existingTools];
+    if (parsed) {
+        // Merge tools - preserve existing, add Ouroboros tools
+        const allTools = [...parsed.tools];
         for (const tool of OUROBOROS_TOOLS) {
             if (!allTools.includes(tool)) {
                 allTools.push(tool);
             }
         }
 
-        // Rebuild tools line
+        // Rebuild tools line (always single-line for consistency)
         const newToolsLine = `tools: [${allTools.map((t) => `'${t}'`).join(', ')}]`;
-        const newYamlContent = yamlContent.replace(toolsLineRegex, newToolsLine);
+
+        // Replace the tools section in YAML content
+        const lines = yamlContent.split('\n');
+        const toolsStartLine = yamlContent.substring(0, parsed.startPos).split('\n').length - 1;
+        const toolsEndLine = yamlContent.substring(0, parsed.endPos).split('\n').length - 1;
+
+        const newLines = [
+            ...lines.slice(0, toolsStartLine),
+            newToolsLine,
+            ...lines.slice(toolsEndLine + 1)
+        ];
+        const newYamlContent = newLines.join('\n');
 
         return startDelim + newYamlContent + endDelim + restOfContent;
     }
@@ -1388,13 +1490,21 @@ function mergeYamlContent(existingYaml: string, newYaml: string): string {
             if (newValue !== undefined) {
                 // Replace the field in result
                 const fieldRegex = new RegExp(`^${field}:.*(?:\\n(?:  |\\t|- ).*)*`, 'm');
-                const existingFieldContent = existingValue
+
+                // Determine if the existing value is multi-line (starts with indentation or list items)
+                // Multi-line values start with whitespace or '-' on subsequent lines
+                const isMultiLine = existingValue.includes('\n') &&
+                    (existingValue.startsWith('  ') || existingValue.startsWith('\t') || existingValue.startsWith('- '));
+
+                const existingFieldContent = isMultiLine
                     ? `${field}:\n${existingValue}`
                     : `${field}: ${existingValue}`;
                 result = result.replace(fieldRegex, existingFieldContent);
             } else {
                 // Field doesn't exist in new content, append it
-                const existingFieldContent = existingValue.includes('\n')
+                const isMultiLine = existingValue.includes('\n') &&
+                    (existingValue.startsWith('  ') || existingValue.startsWith('\t') || existingValue.startsWith('- '));
+                const existingFieldContent = isMultiLine
                     ? `${field}:\n${existingValue}`
                     : `${field}: ${existingValue}`;
                 result = result.trimEnd() + '\n' + existingFieldContent;
