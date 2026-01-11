@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.1] - 2026-01-11
+
+### 🔧 Comprehensive Language Indexer Upgrade
+
+Major improvements to all language indexers for better Code Graph detection.
+
+#### Fixes
+- **Tree-sitter WASM Init** — Fixed `file://` URL conversion for Windows paths
+- **Workspace Selection** — Tools now register correctly after Marketplace install
+- **vscode.open Command** — Fixed webview path-to-Uri conversion
+
+#### Improved
+- **BaseIndexer** — Enhanced `normalizeImportPath()` with path alias support (@/, ~/, src/), improved external package detection
+- **TypeScriptIndexer** — Comment removal, multiline imports, destructured exports, Next.js App Router detection, Vue/test file detection
+- **PythonIndexer** — Stdlib/common package filtering, improved entrypoint detection (click, typer, fastapi, flask, django, celery)
+- **RustIndexer** — External crate filtering, chained `super::` support, test detection (#[test], #[cfg(test)]), framework detection (Actix, Rocket, Axum)
+- **GoIndexer** — Stdlib detection, internal/pkg/cmd package resolution, test file detection (*_test.go), framework detection (Gin, Echo, Fiber, Chi, gRPC)
+- **JavaIndexer** — Extended external package list, static imports, Maven/Gradle structure detection, framework detection (Spring, Micronaut, Quarkus, Jakarta)
+- **GenericIndexer** — Extended language support (60+ extensions), improved test file detection, more entrypoint patterns
+
+#### Added
+- `'component' | 'test'` entrypoint types in `types.ts`
+
+---
+
 ## [3.3.0] - 2026-01-11
 
 ### 🚀 Code Graph v1.0 - Production Ready

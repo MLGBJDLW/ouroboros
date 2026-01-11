@@ -34,7 +34,7 @@ export type IssueKind =
 
 export type IssueSeverity = 'info' | 'warning' | 'error';
 
-export type EntrypointType = 'route' | 'page' | 'command' | 'job' | 'api' | 'barrel' | 'main' | 'module' | 'layout';
+export type EntrypointType = 'route' | 'page' | 'command' | 'job' | 'api' | 'barrel' | 'main' | 'module' | 'layout' | 'component' | 'test';
 
 // ============================================
 // Framework Detection (v0.3)

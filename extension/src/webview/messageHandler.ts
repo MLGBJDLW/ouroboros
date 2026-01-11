@@ -193,6 +193,40 @@ export async function handleMessage(
             logger.info('Executing command:', payload.command);
             try {
                 const vscode = await import('vscode');
+                
+                // Special handling for vscode.open command
+                // The webview sends { path: string } but vscode.open needs a Uri
+                if (payload.command === 'vscode.open' && payload.args && payload.args.length > 0) {
+                    const firstArg = payload.args[0] as { path?: string } | string;
+                    let filePath: string | undefined;
+                    
+                    if (typeof firstArg === 'string') {
+                        filePath = firstArg;
+                    } else if (firstArg && typeof firstArg === 'object' && 'path' in firstArg) {
+                        filePath = firstArg.path;
+                    }
+                    
+                    if (filePath) {
+                        // Convert relative path to absolute if needed
+                        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                        let uri: vscode.Uri;
+                        
+                        if (filePath.startsWith('/') || /^[a-zA-Z]:/.test(filePath)) {
+                            // Absolute path
+                            uri = vscode.Uri.file(filePath);
+                        } else if (workspaceFolder) {
+                            // Relative path - resolve against workspace
+                            uri = vscode.Uri.joinPath(workspaceFolder.uri, filePath);
+                        } else {
+                            uri = vscode.Uri.file(filePath);
+                        }
+                        
+                        await vscode.commands.executeCommand('vscode.open', uri);
+                        return;
+                    }
+                }
+                
+                // Default command execution
                 await vscode.commands.executeCommand(payload.command, ...(payload.args || []));
             } catch (error) {
                 logger.error('Failed to execute command:', error);

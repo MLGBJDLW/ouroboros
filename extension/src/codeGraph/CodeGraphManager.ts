@@ -574,7 +574,32 @@ export class CodeGraphManager implements vscode.Disposable {
         const includePattern = `{${this.config.indexing.include.join(',')}}`;
         const excludePattern = `{${this.config.indexing.exclude.join(',')}}`;
         
-        return vscode.workspace.findFiles(includePattern, excludePattern);
+        // Use RelativePattern to limit search to the specific workspace folder
+        // This is critical for multi-root workspaces and ensures we only index
+        // files within the target workspace, not all open workspaces
+        const workspaceFolder = vscode.workspace.workspaceFolders?.find(
+            folder => this.workspaceRoot.startsWith(folder.uri.fsPath)
+        );
+        
+        if (workspaceFolder) {
+            // Use RelativePattern for precise workspace-scoped search
+            const relativePattern = new vscode.RelativePattern(workspaceFolder, includePattern);
+            return vscode.workspace.findFiles(relativePattern, excludePattern);
+        }
+        
+        // Fallback: try using the workspaceRoot directly as a RelativePattern base
+        // This handles cases where workspaceRoot might not match a workspace folder exactly
+        try {
+            const relativePattern = new vscode.RelativePattern(
+                vscode.Uri.file(this.workspaceRoot),
+                includePattern
+            );
+            return vscode.workspace.findFiles(relativePattern, excludePattern);
+        } catch {
+            // Final fallback: use global search (original behavior)
+            logger.warn('Could not create RelativePattern, falling back to global search');
+            return vscode.workspace.findFiles(includePattern, excludePattern);
+        }
     }
 
     private async readFile(uri: vscode.Uri): Promise<string> {
@@ -586,10 +611,27 @@ export class CodeGraphManager implements vscode.Disposable {
         const fullPath = uri.fsPath.replace(/\\/g, '/');
         const rootPath = this.workspaceRoot.replace(/\\/g, '/');
         
-        if (fullPath.startsWith(rootPath)) {
-            return fullPath.substring(rootPath.length + 1);
+        // Ensure rootPath ends without slash for consistent comparison
+        const normalizedRoot = rootPath.endsWith('/') ? rootPath.slice(0, -1) : rootPath;
+        
+        if (fullPath.toLowerCase().startsWith(normalizedRoot.toLowerCase())) {
+            // Handle both with and without trailing slash
+            const relativePath = fullPath.substring(normalizedRoot.length);
+            return relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
         }
         
+        // If path doesn't start with workspace root, try to get relative path from VS Code
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+        if (workspaceFolder) {
+            const wsRoot = workspaceFolder.uri.fsPath.replace(/\\/g, '/');
+            if (fullPath.toLowerCase().startsWith(wsRoot.toLowerCase())) {
+                const relativePath = fullPath.substring(wsRoot.length);
+                return relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+            }
+        }
+        
+        // Last resort: return the full path
+        logger.warn('Could not determine relative path', { fullPath, rootPath: normalizedRoot });
         return fullPath;
     }
 

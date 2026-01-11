@@ -82,19 +82,23 @@ export class TreeSitterManager {
 
                 wasmInfo = this.resolveTreeSitterWasmPath();
 
+                // Convert file path to file URL for Node.js compatibility
+                // web-tree-sitter requires a file URL, not a plain path
+                const wasmFileUrl = this.pathToFileUrl(wasmInfo.wasmPath);
+
                 // Initialize with WASM path
                 await TreeSitter.init({
                     locateFile: (scriptName: string) => {
                         // Try to locate tree-sitter.wasm
                         if (scriptName.includes('tree-sitter.wasm')) {
-                            return wasmInfo?.wasmPath ?? scriptName;
+                            return wasmFileUrl;
                         }
                         return scriptName;
                     },
                 });
 
                 treeSitterInitialized = true;
-                logger.info('Tree-sitter initialized');
+                logger.info('Tree-sitter initialized', { wasmPath: wasmInfo.wasmPath });
             } catch (error) {
                 treeSitterInitFailed = true;
                 const errorMessage = error instanceof Error ? error.message : String(error);
@@ -117,6 +121,32 @@ export class TreeSitterManager {
         })();
 
         return treeSitterInitPromise;
+    }
+
+    /**
+     * Convert a file path to a file URL
+     * Required for web-tree-sitter in Node.js environment
+     */
+    private pathToFileUrl(filePath: string): string {
+        // Normalize path separators
+        const normalizedPath = filePath.replace(/\\/g, '/');
+        
+        // Handle Windows absolute paths (e.g., C:/path/to/file)
+        if (/^[a-zA-Z]:/.test(normalizedPath)) {
+            return `file:///${normalizedPath}`;
+        }
+        
+        // Handle Unix absolute paths
+        if (normalizedPath.startsWith('/')) {
+            return `file://${normalizedPath}`;
+        }
+        
+        // Relative path - convert to absolute first
+        const absolutePath = path.resolve(filePath).replace(/\\/g, '/');
+        if (/^[a-zA-Z]:/.test(absolutePath)) {
+            return `file:///${absolutePath}`;
+        }
+        return `file://${absolutePath}`;
     }
 
     /**

@@ -48,16 +48,19 @@ describe('PythonIndexer', () => {
 import os
 import sys
 from pathlib import Path
-from . import utils
+from .utils import helper
 from ..models import User
+from myapp.services import UserService
             `;
 
-            const result = await indexer.indexFile('test.py', content);
+            const result = await indexer.indexFile('src/test.py', content);
 
-            expect(result.edges.length).toBeGreaterThanOrEqual(5);
-            expect(result.edges.some(e => e.meta?.importPath === 'os')).toBe(true);
-            expect(result.edges.some(e => e.meta?.importPath === 'sys')).toBe(true);
-            expect(result.edges.some(e => e.meta?.importPath === 'pathlib')).toBe(true);
+            // Should have edges for relative imports and local packages (stdlib is filtered)
+            // Relative imports: .utils, ..models
+            // Local packages: myapp.services (has dot, not in stdlib/common)
+            expect(result.edges.length).toBeGreaterThanOrEqual(1);
+            // Local package import should be tracked
+            expect(result.edges.some(e => e.meta?.importPath === 'myapp.services')).toBe(true);
         });
 
         it('should create file node', async () => {

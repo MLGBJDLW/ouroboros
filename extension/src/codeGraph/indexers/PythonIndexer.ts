@@ -4,7 +4,7 @@
  */
 
 import { BaseIndexer, type IndexerOptions } from './BaseIndexer';
-import type { GraphNode, GraphEdge, IndexResult, Confidence } from '../core/types';
+import type { GraphNode, GraphEdge, IndexResult, Confidence, EntrypointType } from '../core/types';
 import { TreeSitterManager, type ParsedNode } from '../parsers/TreeSitterManager';
 import { createLogger } from '../../utils/logger';
 
@@ -14,12 +14,59 @@ export interface PythonIndexerOptions extends IndexerOptions {
     treeSitterManager: TreeSitterManager;
 }
 
+// Common Python standard library modules (skip these as external)
+const STDLIB_MODULES = new Set([
+    'abc', 'aifc', 'argparse', 'array', 'ast', 'asynchat', 'asyncio', 'asyncore',
+    'atexit', 'audioop', 'base64', 'bdb', 'binascii', 'binhex', 'bisect',
+    'builtins', 'bz2', 'calendar', 'cgi', 'cgitb', 'chunk', 'cmath', 'cmd',
+    'code', 'codecs', 'codeop', 'collections', 'colorsys', 'compileall',
+    'concurrent', 'configparser', 'contextlib', 'contextvars', 'copy', 'copyreg',
+    'cProfile', 'crypt', 'csv', 'ctypes', 'curses', 'dataclasses', 'datetime',
+    'dbm', 'decimal', 'difflib', 'dis', 'distutils', 'doctest', 'email',
+    'encodings', 'enum', 'errno', 'faulthandler', 'fcntl', 'filecmp', 'fileinput',
+    'fnmatch', 'fractions', 'ftplib', 'functools', 'gc', 'getopt', 'getpass',
+    'gettext', 'glob', 'graphlib', 'grp', 'gzip', 'hashlib', 'heapq', 'hmac',
+    'html', 'http', 'idlelib', 'imaplib', 'imghdr', 'imp', 'importlib', 'inspect',
+    'io', 'ipaddress', 'itertools', 'json', 'keyword', 'lib2to3', 'linecache',
+    'locale', 'logging', 'lzma', 'mailbox', 'mailcap', 'marshal', 'math',
+    'mimetypes', 'mmap', 'modulefinder', 'multiprocessing', 'netrc', 'nis',
+    'nntplib', 'numbers', 'operator', 'optparse', 'os', 'ossaudiodev', 'pathlib',
+    'pdb', 'pickle', 'pickletools', 'pipes', 'pkgutil', 'platform', 'plistlib',
+    'poplib', 'posix', 'posixpath', 'pprint', 'profile', 'pstats', 'pty', 'pwd',
+    'py_compile', 'pyclbr', 'pydoc', 'queue', 'quopri', 'random', 're', 'readline',
+    'reprlib', 'resource', 'rlcompleter', 'runpy', 'sched', 'secrets', 'select',
+    'selectors', 'shelve', 'shlex', 'shutil', 'signal', 'site', 'smtpd', 'smtplib',
+    'sndhdr', 'socket', 'socketserver', 'spwd', 'sqlite3', 'ssl', 'stat',
+    'statistics', 'string', 'stringprep', 'struct', 'subprocess', 'sunau',
+    'symtable', 'sys', 'sysconfig', 'syslog', 'tabnanny', 'tarfile', 'telnetlib',
+    'tempfile', 'termios', 'test', 'textwrap', 'threading', 'time', 'timeit',
+    'tkinter', 'token', 'tokenize', 'trace', 'traceback', 'tracemalloc', 'tty',
+    'turtle', 'turtledemo', 'types', 'typing', 'unicodedata', 'unittest', 'urllib',
+    'uu', 'uuid', 'venv', 'warnings', 'wave', 'weakref', 'webbrowser', 'winreg',
+    'winsound', 'wsgiref', 'xdrlib', 'xml', 'xmlrpc', 'zipapp', 'zipfile',
+    'zipimport', 'zlib', '_thread',
+]);
+
+// Common third-party packages (skip these as external)
+const COMMON_PACKAGES = new Set([
+    'numpy', 'pandas', 'scipy', 'matplotlib', 'seaborn', 'sklearn', 'tensorflow',
+    'torch', 'keras', 'flask', 'django', 'fastapi', 'starlette', 'uvicorn',
+    'requests', 'httpx', 'aiohttp', 'beautifulsoup4', 'bs4', 'lxml', 'selenium',
+    'pytest', 'unittest', 'nose', 'coverage', 'tox', 'black', 'flake8', 'mypy',
+    'pylint', 'isort', 'autopep8', 'yapf', 'click', 'typer', 'fire',
+    'pydantic', 'attrs', 'marshmallow', 'cerberus', 'sqlalchemy',
+    'alembic', 'peewee', 'tortoise', 'motor', 'pymongo', 'redis', 'celery',
+    'rq', 'dramatiq', 'boto3', 'botocore', 'google', 'azure', 'aws_cdk',
+    'PIL', 'pillow', 'cv2', 'opencv', 'imageio', 'skimage', 'transformers',
+    'huggingface', 'openai', 'anthropic', 'langchain', 'llama_index',
+]);
+
 export class PythonIndexer extends BaseIndexer {
     readonly supportedExtensions = ['.py', '.pyi'];
     private tsManager: TreeSitterManager;
     private initialized = false;
-    private treeSitterAvailable = true; // Track if tree-sitter works
-    private loggedFallback = false; // Only log once
+    private treeSitterAvailable = true;
+    private loggedFallback = false;
 
     constructor(options: PythonIndexerOptions) {
         super(options);
@@ -35,15 +82,10 @@ export class PythonIndexer extends BaseIndexer {
     }
 
     async indexFile(filePath: string, content: string): Promise<IndexResult> {
-        const nodes: GraphNode[] = [];
-        const edges: GraphEdge[] = [];
-
-        // If tree-sitter already failed, use fallback directly
         if (!this.treeSitterAvailable) {
             return this.fallbackParse(filePath, content);
         }
 
-        // Initialize tree-sitter if needed
         if (!this.initialized) {
             try {
                 await this.tsManager.loadLanguage('python');
@@ -60,78 +102,59 @@ export class PythonIndexer extends BaseIndexer {
 
         try {
             const tree = await this.tsManager.parse(content, 'python');
-            const rootNode = tree.rootNode;
-
-            // Add file node
-            const fileNode: GraphNode = {
-                id: `file:${filePath}`,
-                kind: 'file',
-                name: this.getFileName(filePath),
-                path: filePath,
-                meta: {
-                    language: 'python',
-                    exports: [],
-                },
-            };
-
-            // Extract imports
-            const imports = this.extractImports(rootNode, filePath);
-            edges.push(...imports);
-
-            // Extract exports
-            const exports = this.extractExports(rootNode, content);
-            if (fileNode.meta) {
-                fileNode.meta.exports = exports;
-            }
-            nodes.push(fileNode);
-
-            // Detect entrypoints
-            const entrypoint = this.detectEntrypoint(rootNode, content, filePath);
-            if (entrypoint) {
-                nodes.push(entrypoint);
-            }
-
-            return { nodes, edges };
+            return this.parseTree(tree.rootNode, filePath, content);
         } catch (error) {
             logger.error(`Error parsing ${filePath}:`, error);
             return this.fallbackParse(filePath, content);
         }
     }
 
-    /**
-     * Extract import statements using tree-sitter AST
-     */
-    private extractImports(rootNode: ParsedNode, fromFile: string): GraphEdge[] {
+    private parseTree(rootNode: ParsedNode, filePath: string, content: string): IndexResult {
+        const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
 
-        // Find all import statements
+        const fileNode: GraphNode = {
+            id: `file:${filePath}`,
+            kind: 'file',
+            name: this.getFileName(filePath),
+            path: filePath,
+            meta: { language: 'python', exports: [] },
+        };
+
+        const imports = this.extractImports(rootNode, filePath);
+        edges.push(...imports);
+
+        const exports = this.extractExports(rootNode);
+        if (fileNode.meta) fileNode.meta.exports = exports;
+        nodes.push(fileNode);
+
+        const entrypoint = this.detectEntrypoint(rootNode, content, filePath);
+        if (entrypoint) nodes.push(entrypoint);
+
+        return { nodes, edges };
+    }
+
+    private extractImports(rootNode: ParsedNode, fromFile: string): GraphEdge[] {
+        const edges: GraphEdge[] = [];
+        const seen = new Set<string>();
+
         this.walkTree(rootNode, (node) => {
-            // import_statement: import module
             if (node.type === 'import_statement') {
                 const nameNode = this.findChild(node, 'dotted_name');
-                if (nameNode) {
-                    edges.push(this.createPythonImportEdge(
-                        fromFile,
-                        nameNode.text,
-                        nameNode.startPosition.row + 1,
-                        'high'
-                    ));
+                if (nameNode && !seen.has(nameNode.text)) {
+                    seen.add(nameNode.text);
+                    const edge = this.createPythonImportEdge(fromFile, nameNode.text, nameNode.startPosition.row + 1, 'high');
+                    if (edge) edges.push(edge);
                 }
             }
 
-            // import_from_statement: from module import ...
             if (node.type === 'import_from_statement') {
-                const moduleNode = this.findChild(node, 'dotted_name') || 
-                                   this.findChild(node, 'relative_import');
-                if (moduleNode) {
-                    const modulePath = moduleNode.text;
-                    const confidence: Confidence = modulePath.startsWith('.') ? 'high' : 'medium';
-                    edges.push(this.createPythonImportEdge(
-                        fromFile,
-                        modulePath,
-                        moduleNode.startPosition.row + 1,
-                        confidence
-                    ));
+                const moduleNode = this.findChild(node, 'dotted_name') || this.findChild(node, 'relative_import');
+                if (moduleNode && !seen.has(moduleNode.text)) {
+                    seen.add(moduleNode.text);
+                    const confidence: Confidence = moduleNode.text.startsWith('.') ? 'high' : 'medium';
+                    const edge = this.createPythonImportEdge(fromFile, moduleNode.text, moduleNode.startPosition.row + 1, confidence);
+                    if (edge) edges.push(edge);
                 }
             }
         });
@@ -139,13 +162,11 @@ export class PythonIndexer extends BaseIndexer {
         return edges;
     }
 
-    /**
-     * Extract exports using tree-sitter AST
-     */
-    private extractExports(rootNode: ParsedNode, _content: string): string[] {
+    private extractExports(rootNode: ParsedNode): string[] {
         const exports: string[] = [];
+        const seen = new Set<string>();
 
-        // Check for __all__ first
+        // Check __all__ first
         this.walkTree(rootNode, (node) => {
             if (node.type === 'assignment') {
                 const leftNode = node.namedChildren[0];
@@ -154,9 +175,8 @@ export class PythonIndexer extends BaseIndexer {
                     if (listNode) {
                         for (const child of listNode.namedChildren) {
                             if (child.type === 'string') {
-                                // Remove quotes
                                 const name = child.text.replace(/^['"]|['"]$/g, '');
-                                exports.push(name);
+                                if (!seen.has(name)) { seen.add(name); exports.push(name); }
                             }
                         }
                     }
@@ -164,25 +184,14 @@ export class PythonIndexer extends BaseIndexer {
             }
         });
 
-        // If __all__ found, use it
-        if (exports.length > 0) {
-            return exports;
-        }
+        if (exports.length > 0) return exports;
 
-        // Otherwise, collect public functions and classes
+        // Collect public symbols
         this.walkTree(rootNode, (node) => {
-            // Function definitions at module level
-            if (node.type === 'function_definition') {
+            if (node.type === 'function_definition' || node.type === 'class_definition') {
                 const nameNode = this.findChild(node, 'identifier');
-                if (nameNode && !nameNode.text.startsWith('_')) {
-                    exports.push(nameNode.text);
-                }
-            }
-
-            // Class definitions at module level
-            if (node.type === 'class_definition') {
-                const nameNode = this.findChild(node, 'identifier');
-                if (nameNode && !nameNode.text.startsWith('_')) {
+                if (nameNode && !nameNode.text.startsWith('_') && !seen.has(nameNode.text)) {
+                    seen.add(nameNode.text);
                     exports.push(nameNode.text);
                 }
             }
@@ -191,15 +200,12 @@ export class PythonIndexer extends BaseIndexer {
         return exports;
     }
 
-    /**
-     * Detect if file is an entrypoint
-     */
-    private detectEntrypoint(rootNode: ParsedNode, _content: string, filePath: string): GraphNode | null {
+    private detectEntrypoint(rootNode: ParsedNode, content: string, filePath: string): GraphNode | null {
         let hasMainBlock = false;
         let framework: string | null = null;
+        let entrypointType: EntrypointType = 'main';
 
         this.walkTree(rootNode, (node) => {
-            // if __name__ == "__main__":
             if (node.type === 'if_statement') {
                 const condition = node.namedChildren[0];
                 if (condition?.text.includes('__name__') && condition?.text.includes('__main__')) {
@@ -207,99 +213,60 @@ export class PythonIndexer extends BaseIndexer {
                 }
             }
 
-            // Decorator-based entrypoints
             if (node.type === 'decorated_definition') {
                 const decorator = this.findChild(node, 'decorator');
                 if (decorator) {
-                    const decoratorText = decorator.text;
-                    
-                    // Click CLI
-                    if (decoratorText.includes('@click.command') || decoratorText.includes('@click.group')) {
-                        framework = 'click';
-                    }
-                    // Typer CLI
-                    if (decoratorText.includes('@app.command')) {
-                        framework = 'typer';
-                    }
-                    // FastAPI routes
-                    if (decoratorText.match(/@(app|router)\.(get|post|put|delete|patch)/)) {
-                        framework = 'fastapi';
-                    }
-                    // Flask routes
-                    if (decoratorText.includes('@app.route') || decoratorText.includes('@blueprint.route')) {
-                        framework = 'flask';
-                    }
+                    const text = decorator.text;
+                    if (text.includes('@click.command') || text.includes('@click.group')) { framework = 'click'; entrypointType = 'command'; }
+                    if (text.includes('@app.command') || text.includes('@typer.')) { framework = 'typer'; entrypointType = 'command'; }
+                    if (text.match(/@(app|router)\.(get|post|put|delete|patch)/i)) { framework = framework || 'fastapi'; entrypointType = 'api'; }
+                    if (text.includes('@app.route') || text.includes('@blueprint.route')) { framework = 'flask'; entrypointType = 'route'; }
+                    if (text.includes('@api_view') || text.includes('@action')) { framework = 'django'; entrypointType = 'api'; }
+                    if (text.includes('@app.task') || text.includes('@celery.task') || text.includes('@shared_task')) { framework = 'celery'; entrypointType = 'job'; }
                 }
             }
         });
 
-        if (hasMainBlock) {
-            return {
-                id: `entrypoint:main:${filePath}`,
-                kind: 'entrypoint',
-                name: `Main: ${this.getFileName(filePath)}`,
-                path: filePath,
-                meta: {
-                    entrypointType: 'main',
-                    language: 'python',
-                },
-            };
-        }
-
-        if (framework) {
-            const type = ['click', 'typer'].includes(framework) ? 'command' : 'api';
-            return {
-                id: `entrypoint:${type}:${filePath}`,
-                kind: 'entrypoint',
-                name: `${type === 'command' ? 'CLI' : 'API'}: ${this.getFileName(filePath)}`,
-                path: filePath,
-                meta: {
-                    entrypointType: type,
-                    framework,
-                    language: 'python',
-                },
-            };
-        }
-
-        return null;
-    }
-
-    /**
-     * Walk the AST tree
-     */
-    private walkTree(node: ParsedNode, callback: (node: ParsedNode) => void): void {
-        callback(node);
-        for (const child of node.children) {
-            this.walkTree(child, callback);
-        }
-    }
-
-    /**
-     * Find child node by type
-     */
-    private findChild(node: ParsedNode, type: string): ParsedNode | null {
-        for (const child of node.children) {
-            if (child.type === type) {
-                return child;
+        // Test files
+        if (filePath.includes('test_') || filePath.includes('_test.py') || filePath.includes('/tests/')) {
+            if (content.includes('def test_') || content.includes('class Test')) {
+                return {
+                    id: `entrypoint:test:${filePath}`,
+                    kind: 'entrypoint',
+                    name: `Test: ${this.getFileName(filePath)}`,
+                    path: filePath,
+                    meta: { entrypointType: 'test', framework: content.includes('pytest') ? 'pytest' : 'unittest', language: 'python' },
+                };
             }
         }
+
+        if (hasMainBlock || framework) {
+            const typeLabels: Record<string, string> = { main: 'Main', command: 'CLI', api: 'API', route: 'Route', job: 'Task' };
+            return {
+                id: `entrypoint:${entrypointType}:${filePath}`,
+                kind: 'entrypoint',
+                name: `${typeLabels[entrypointType] || entrypointType}: ${this.getFileName(filePath)}`,
+                path: filePath,
+                meta: { entrypointType, framework, language: 'python' },
+            };
+        }
+
         return null;
     }
 
-    /**
-     * Create import edge with path resolution for relative imports
-     */
-    private createPythonImportEdge(
-        fromFile: string,
-        toModule: string,
-        line: number,
-        confidence: Confidence
-    ): GraphEdge {
-        // Try to resolve relative imports to file paths
+    private walkTree(node: ParsedNode, callback: (node: ParsedNode) => void): void {
+        callback(node);
+        for (const child of node.children) this.walkTree(child, callback);
+    }
+
+    private findChild(node: ParsedNode, type: string): ParsedNode | null {
+        for (const child of node.children) if (child.type === type) return child;
+        return null;
+    }
+
+    private createPythonImportEdge(fromFile: string, toModule: string, line: number, confidence: Confidence): GraphEdge | null {
         const resolvedPath = this.resolvePythonImport(toModule, fromFile);
-        
         if (resolvedPath) {
-            // Resolved to a local file - use file: prefix
             return {
                 id: `edge:${fromFile}:imports:${resolvedPath}`,
                 from: `file:${fromFile}`,
@@ -307,140 +274,78 @@ export class PythonIndexer extends BaseIndexer {
                 kind: 'imports',
                 confidence,
                 reason: 'python import',
-                meta: {
-                    importPath: toModule,
-                    loc: { line, column: 0 },
-                    language: 'python',
-                },
+                meta: { importPath: toModule, loc: { line, column: 0 }, language: 'python' },
             };
         }
-        
-        // External package or unresolvable - use module: prefix
-        return {
-            id: `edge:${fromFile}:${toModule}:${line}`,
-            from: `file:${fromFile}`,
-            to: `module:${toModule}`,
-            kind: 'imports',
-            confidence: 'low', // Lower confidence for unresolved
-            reason: 'external package',
-            meta: {
-                importPath: toModule,
-                loc: { line, column: 0 },
-                language: 'python',
-                isExternal: true,
-            },
-        };
+        return null; // Skip external packages
     }
 
-    /**
-     * Resolve Python import to file path
-     * Returns null for external packages
-     */
     private resolvePythonImport(modulePath: string, fromFile: string): string | null {
-        // Handle relative imports (starting with .)
         if (modulePath.startsWith('.')) {
             const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
-            
-            // Count leading dots to determine parent level
             let dots = 0;
             while (modulePath[dots] === '.') dots++;
-            
-            // Get the module name after dots
             const moduleName = modulePath.slice(dots);
-            
-            // Navigate up directories based on dot count
             const parts = fromDir.split('/').filter(Boolean);
-            for (let i = 1; i < dots; i++) {
-                parts.pop();
-            }
-            
-            // Add module path (convert dots to slashes)
-            if (moduleName) {
-                const moduleParts = moduleName.split('.');
-                parts.push(...moduleParts);
-            }
-            
-            // Return as .py file path
+            for (let i = 1; i < dots; i++) parts.pop();
+            if (moduleName) parts.push(...moduleName.split('.'));
             const basePath = parts.join('/');
             return basePath ? `${basePath}.py` : null;
         }
-        
-        // Handle package-style imports (e.g., mypackage.submodule)
-        // These could be local packages - try to resolve
-        if (!modulePath.includes('.')) {
-            // Single module name - likely external (flask, os, etc.)
-            return null;
-        }
-        
-        // Multi-part import (e.g., myapp.utils.helpers)
-        // Could be local package - convert to path
-        const parts = modulePath.split('.');
-        const possiblePath = parts.join('/') + '.py';
-        
-        // Return the path - the graph will validate if file exists
-        return possiblePath;
+
+        const topModule = modulePath.split('.')[0];
+        if (STDLIB_MODULES.has(topModule) || COMMON_PACKAGES.has(topModule)) return null;
+        if (!modulePath.includes('.')) return null;
+
+        return modulePath.split('.').join('/') + '.py';
     }
 
-    /**
-     * Fallback regex-based parsing when tree-sitter is unavailable
-     */
     private fallbackParse(filePath: string, content: string): IndexResult {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         const lines = content.split('\n');
+        const seen = new Set<string>();
 
-        const fileNode: GraphNode = {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('#')) continue;
+
+            const importMatch = line.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)/);
+            if (importMatch && !seen.has(importMatch[1])) {
+                seen.add(importMatch[1]);
+                const edge = this.createPythonImportEdge(filePath, importMatch[1], i + 1, 'low');
+                if (edge) edges.push(edge);
+            }
+
+            const fromMatch = line.match(/^from\s+([a-zA-Z_.][a-zA-Z0-9_.]*)\s+import/);
+            if (fromMatch && !seen.has(fromMatch[1])) {
+                seen.add(fromMatch[1]);
+                const edge = this.createPythonImportEdge(filePath, fromMatch[1], i + 1, 'low');
+                if (edge) edges.push(edge);
+            }
+        }
+
+        nodes.push({
             id: `file:${filePath}`,
             kind: 'file',
             name: this.getFileName(filePath),
             path: filePath,
-            meta: {
-                language: 'python',
-                exports: [],
-                confidence: 'low',
-            },
-        };
+            meta: { language: 'python', exports: [], confidence: 'low' },
+        });
 
-        // Simple regex-based import extraction
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            
-            // import module
-            const importMatch = line.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)/);
-            if (importMatch) {
-                edges.push(this.createPythonImportEdge(filePath, importMatch[1], i + 1, 'low'));
-            }
-
-            // from module import ...
-            const fromMatch = line.match(/^from\s+([a-zA-Z_.][a-zA-Z0-9_.]*)\s+import/);
-            if (fromMatch) {
-                edges.push(this.createPythonImportEdge(filePath, fromMatch[1], i + 1, 'low'));
-            }
-        }
-
-        nodes.push(fileNode);
-
-        // Check for main block
         if (content.includes('if __name__') && content.includes('__main__')) {
             nodes.push({
                 id: `entrypoint:main:${filePath}`,
                 kind: 'entrypoint',
                 name: `Main: ${this.getFileName(filePath)}`,
                 path: filePath,
-                meta: {
-                    entrypointType: 'main',
-                    language: 'python',
-                    confidence: 'low',
-                },
+                meta: { entrypointType: 'main', language: 'python', confidence: 'low' },
             });
         }
 
         return { nodes, edges };
     }
 
-    /**
-     * Get file name from path
-     */
     private getFileName(filePath: string): string {
         return filePath.split('/').pop() ?? filePath;
     }
