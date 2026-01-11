@@ -20,6 +20,7 @@ export type {
     PathResult,
     ModuleResult,
     AnnotationsResult,
+    FrameworkDetection,
     Confidence,
     NodeKind,
     EdgeKind,
@@ -42,6 +43,19 @@ export { IssueDetector } from './analyzers/IssueDetector';
 
 // Annotations
 export { AnnotationManager, type ManualEdge, type ManualEntrypoint, type IgnoreRule, type AnnotationFile } from './annotations/AnnotationManager';
+
+// Adapters (v0.3)
+export { 
+    AdapterRegistry, 
+    getAdapterRegistry, 
+    resetAdapterRegistry,
+    registerBuiltinAdapters,
+    ExpressAdapter,
+    NextjsAdapter,
+    NestjsAdapter,
+    CliAdapter,
+} from './adapters';
+export type { FrameworkAdapter, PackageJson, RouteInfo, CommandInfo } from './adapters';
 
 // Watcher
 export { IncrementalWatcher, type WatcherOptions } from './watcher/IncrementalWatcher';

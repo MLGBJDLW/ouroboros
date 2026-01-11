@@ -13,7 +13,9 @@ import { BarrelAnalyzer } from './indexers/BarrelAnalyzer';
 import { IssueDetector } from './analyzers/IssueDetector';
 import { IncrementalWatcher } from './watcher/IncrementalWatcher';
 import { AnnotationManager } from './annotations/AnnotationManager';
-import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig } from './core/types';
+import { getAdapterRegistry, registerBuiltinAdapters } from './adapters';
+import type { AdapterRegistry } from './adapters';
+import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig, FrameworkDetection } from './core/types';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('CodeGraphManager');
@@ -44,11 +46,13 @@ export class CodeGraphManager implements vscode.Disposable {
     private barrelAnalyzer: BarrelAnalyzer;
     private issueDetector: IssueDetector;
     private annotationManager: AnnotationManager;
+    private adapterRegistry: AdapterRegistry;
     private watcher: IncrementalWatcher | null = null;
     private config: GraphConfig;
     private workspaceRoot: string;
     private isIndexing = false;
     private disposables: vscode.Disposable[] = [];
+    private detectedFrameworks: FrameworkDetection[] = [];
 
     constructor(workspaceRoot: string, config?: Partial<GraphConfig>) {
         this.workspaceRoot = workspaceRoot;
@@ -61,6 +65,10 @@ export class CodeGraphManager implements vscode.Disposable {
         this.entrypointDetector = new EntrypointDetector();
         this.issueDetector = new IssueDetector(this.store);
         this.annotationManager = new AnnotationManager(workspaceRoot);
+        
+        // v0.3: Initialize adapter registry
+        registerBuiltinAdapters();
+        this.adapterRegistry = getAdapterRegistry();
         
         this.indexers = [
             new TypeScriptIndexer({
@@ -86,6 +94,12 @@ export class CodeGraphManager implements vscode.Disposable {
         
         // Load annotations
         await this.annotationManager.load();
+        
+        // v0.3: Detect frameworks
+        this.detectedFrameworks = await this.adapterRegistry.detectFrameworks(this.workspaceRoot);
+        if (this.detectedFrameworks.length > 0) {
+            logger.info(`Detected frameworks: ${this.detectedFrameworks.map(f => f.displayName).join(', ')}`);
+        }
         
         await this.fullIndex();
         this.startWatcher();
@@ -147,8 +161,21 @@ export class CodeGraphManager implements vscode.Disposable {
             // Detect barrel-related issues
             const barrelIssues = this.barrelAnalyzer.detectCircularReexports();
             
+            // v0.3: Run framework adapters
+            const frameworkEntrypoints = await this.adapterRegistry.extractAllEntrypoints(this.store, this.workspaceRoot);
+            for (const ep of frameworkEntrypoints) {
+                this.store.addNode(ep);
+            }
+            
+            const frameworkEdges = await this.adapterRegistry.extractAllRegistrations(this.store, this.workspaceRoot);
+            for (const edge of frameworkEdges) {
+                this.store.addEdge(edge);
+            }
+            
+            const frameworkIssues = await this.adapterRegistry.detectAllIssues(this.store);
+            
             // Filter out ignored issues
-            const allIssues = [...issues, ...barrelIssues];
+            const allIssues = [...issues, ...barrelIssues, ...frameworkIssues];
             const filteredIssues = [];
             for (const issue of allIssues) {
                 const shouldIgnore = await this.annotationManager.shouldIgnore(
@@ -280,6 +307,20 @@ export class CodeGraphManager implements vscode.Disposable {
      */
     getBarrelAnalyzer(): BarrelAnalyzer {
         return this.barrelAnalyzer;
+    }
+
+    /**
+     * Get adapter registry (v0.3)
+     */
+    getAdapterRegistry(): AdapterRegistry {
+        return this.adapterRegistry;
+    }
+
+    /**
+     * Get detected frameworks (v0.3)
+     */
+    getDetectedFrameworks(): FrameworkDetection[] {
+        return [...this.detectedFrameworks];
     }
 
     /**

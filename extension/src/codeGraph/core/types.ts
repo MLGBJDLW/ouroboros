@@ -24,11 +24,25 @@ export type IssueKind =
     | 'DYNAMIC_EDGE_UNKNOWN'
     | 'BROKEN_EXPORT_CHAIN'
     | 'CIRCULAR_REEXPORT'
-    | 'ORPHAN_EXPORT';
+    | 'ORPHAN_EXPORT'
+    // v0.3 - Framework-specific issues
+    | 'ENTRY_MISSING_HANDLER'
+    | 'NOT_REGISTERED';
 
 export type IssueSeverity = 'info' | 'warning' | 'error';
 
-export type EntrypointType = 'route' | 'page' | 'command' | 'job' | 'api' | 'barrel' | 'main';
+export type EntrypointType = 'route' | 'page' | 'command' | 'job' | 'api' | 'barrel' | 'main' | 'module' | 'layout';
+
+// ============================================
+// Framework Detection (v0.3)
+// ============================================
+
+export interface FrameworkDetection {
+    name: string;
+    displayName: string;
+    confidence: 'high' | 'medium' | 'low';
+    version?: string;
+}
 
 // ============================================
 // Graph Nodes
@@ -92,9 +106,14 @@ export interface GraphIssue {
     severity: IssueSeverity;
     nodeId?: string;
     entrypointId?: string;
-    title: string;
-    evidence: string[];
-    suggestedFix?: string[];
+    /** Short title for display */
+    title?: string;
+    /** Detailed message */
+    message?: string;
+    /** Evidence array for detailed display */
+    evidence?: string[] | Record<string, unknown>;
+    /** Suggested fix(es) */
+    suggestedFix?: string | string[];
     meta?: IssueMeta;
 }
 

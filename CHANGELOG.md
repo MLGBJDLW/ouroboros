@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🚀 New Feature: Code Graph
 
-#### Added
+#### Added (v0.1 - MVP)
 - **Code Graph System** — Token-efficient codebase structure analysis for Copilot:
   - Static import/export analysis for TypeScript/JavaScript
   - Entrypoint detection (routes, pages, commands, jobs)
@@ -55,6 +55,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Tests
 - 432 tests passing (10 new for Code Graph)
 - CodeGraphManager, GraphStore, GraphQuery, TypeScriptIndexer, IssueDetector, ReachabilityAnalyzer covered
+
+#### Added (v0.2 - Path Resolution & Annotations)
+- **PathResolver** — tsconfig paths alias resolution:
+  - Loads `tsconfig.json` and parses `compilerOptions.paths`
+  - Resolves `@/utils` → `src/utils` style aliases
+  - Supports wildcard patterns (`@/*` → `src/*`)
+
+- **BarrelAnalyzer** — Barrel file (index.ts) handling:
+  - Detects barrel files by re-export patterns
+  - Analyzes re-export chains
+  - Detects circular re-exports (`CIRCULAR_REEXPORT` issue)
+
+- **AnnotationManager** — Manual annotation system:
+  - Add manual edges for dynamic imports
+  - Mark custom entrypoints (jobs, workers, scripts)
+  - Ignore rules for false positive issues
+  - Persists to `.ouroboros/graph/annotations.json`
+
+- **3 New LM Tools** (v0.2):
+  - `ouroborosai_graph_path` — Find dependency paths between modules
+  - `ouroborosai_graph_module` — Get detailed module information
+  - `ouroborosai_graph_annotations` — Manage manual annotations
+
+- **2 New Issue Types**:
+  - `CIRCULAR_REEXPORT` — Circular re-export chains in barrel files
+  - `ORPHAN_EXPORT` — Exports not used anywhere
+
+- **GraphQuery Extensions**:
+  - `path(from, to)` — Find shortest paths between modules
+  - `module(target)` — Get module details (imports, exports, dependents)
+
+#### Tests (v0.2)
+- 514 tests passing (+82 new for v0.2)
+- PathResolver: 12 tests
+- BarrelAnalyzer: 17 tests
+- AnnotationManager: 12 tests
+- GraphQuery.path: 20 tests
+- graphPath tool: 4 tests
+- graphModule tool: 4 tests
+- graphAnnotations tool: 13 tests
+
+#### Added (v0.3 - Framework Adapters)
+- **AdapterRegistry** — Framework adapter management:
+  - Auto-detects frameworks from package.json
+  - Coordinates entrypoint extraction across adapters
+  - Extensible architecture for adding new frameworks
+
+- **4 JS/TS Framework Adapters**:
+  - `ExpressAdapter` — Express/Koa/Fastify/Hono route detection
+  - `NextjsAdapter` — Next.js pages & API routes (Pages + App Router)
+  - `NestjsAdapter` — NestJS controllers, modules, decorators
+  - `CliAdapter` — commander/yargs/cac CLI command detection
+
+- **2 New Issue Types** (v0.3):
+  - `ENTRY_MISSING_HANDLER` — Route defined but handler not found
+  - `NOT_REGISTERED` — Implementation exists but not registered (NestJS)
+
+- **Framework-Specific Detection**:
+  - Express: `app.get()`, `router.use()` patterns
+  - Next.js: File-based routing (`pages/`, `app/`), dynamic routes
+  - NestJS: `@Controller`, `@Get`, `@Module` decorators
+  - CLI: `.command()`, `.action()` patterns
+
+#### Tests (v0.3)
+- 564 tests passing (+50 new for v0.3)
+- AdapterRegistry: 10 tests
+- ExpressAdapter: 10 tests
+- NextjsAdapter: 12 tests
+- NestjsAdapter: 8 tests
+- CliAdapter: 10 tests
 
 ---
 
