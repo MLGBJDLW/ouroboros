@@ -4,196 +4,173 @@
  */
 
 import * as vscode from 'vscode';
-import type { GraphQuery } from '../core/GraphQuery';
+import { z } from 'zod';
+import type { CodeGraphManager } from '../CodeGraphManager';
 import type { PathResult } from '../core/types';
+import { createLogger } from '../../utils/logger';
 import {
     createSuccessEnvelope,
+    createErrorEnvelope,
+    envelopeToResult,
     getWorkspaceContext,
-    type ToolEnvelope,
 } from './envelope';
 import { TOOLS } from '../../constants';
 
-export interface GraphPathInput {
-    from: string;
-    to: string;
-    maxDepth?: number;
-    maxPaths?: number;
-    includeEdgeDetails?: boolean;
-}
+const logger = createLogger('GraphPathTool');
 
-export interface GraphPathTool {
-    name: string;
-    description: string;
-    inputSchema: object;
-    execute: (input: GraphPathInput) => Promise<ToolEnvelope<PathResult | Record<string, unknown>>>;
-}
+export const GraphPathInputSchema = z.object({
+    from: z
+        .string()
+        .describe('Source file path (e.g., "src/index.ts")'),
+    to: z
+        .string()
+        .describe('Target file path (e.g., "src/utils/helpers.ts")'),
+    maxDepth: z
+        .number()
+        .min(1)
+        .max(10)
+        .optional()
+        .describe('Maximum path depth to search (1-10, default: 5)'),
+    maxPaths: z
+        .number()
+        .min(1)
+        .max(10)
+        .optional()
+        .describe('Maximum number of paths to return (1-10, default: 3)'),
+    includeEdgeDetails: z
+        .boolean()
+        .optional()
+        .describe('Include edge IDs in response (default: false, saves tokens)'),
+});
+
+export type GraphPathInput = z.infer<typeof GraphPathInputSchema>;
 
 export function createGraphPathTool(
-    manager: { getQuery: () => GraphQuery }
-): GraphPathTool {
+    manager: CodeGraphManager
+): vscode.LanguageModelTool<GraphPathInput> {
     return {
-        name: 'ouroborosai_graph_path',
-        description: `Find dependency paths between two modules in the codebase.
-Use this to understand how modules are connected and trace import chains.
-Returns shortest paths by default.
-
-Parameters:
-- from/to: File paths to trace between
-- maxDepth: How deep to search (1-10, default: 5)
-- maxPaths: How many paths to return (1-10, default: 3)
-- includeEdgeDetails: Include edge IDs in response (default: false)
-
-Examples:
-- Quick check: from="src/index.ts", to="src/utils/helpers.ts", maxPaths=1
-- Full trace: from="src/api/users.ts", to="src/db/models.ts", maxDepth=8`,
-
-        inputSchema: {
-            type: 'object',
-            required: ['from', 'to'],
-            properties: {
-                from: {
-                    type: 'string',
-                    description: 'Source file path (e.g., "src/index.ts")',
-                },
-                to: {
-                    type: 'string',
-                    description: 'Target file path (e.g., "src/utils/helpers.ts")',
-                },
-                maxDepth: {
-                    type: 'number',
-                    description: 'Maximum path depth to search (1-10, default: 5)',
-                },
-                maxPaths: {
-                    type: 'number',
-                    description: 'Maximum number of paths to return (1-10, default: 3)',
-                },
-                includeEdgeDetails: {
-                    type: 'boolean',
-                    description: 'Include edge IDs in response (default: false, saves tokens)',
-                },
-            },
-        },
-
-        async execute(input: GraphPathInput): Promise<ToolEnvelope<PathResult | Record<string, unknown>>> {
-            const workspace = getWorkspaceContext();
-            const query = manager.getQuery();
-            
-            if (!query) {
-                const emptyResult: PathResult = {
-                    from: input.from,
-                    to: input.to,
-                    paths: [],
-                    connected: false,
-                    shortestPath: null,
-                    meta: {
-                        tokensEstimate: 100,
-                        truncated: false,
-                        maxDepthReached: false,
-                    },
-                };
-                return createSuccessEnvelope(
-                    TOOLS.GRAPH_PATH,
-                    emptyResult,
-                    workspace,
-                    { truncated: false, limits: {} }
-                );
-            }
-
-            const fullResult = query.path(input.from, input.to, {
-                maxDepth: input.maxDepth,
-                maxPaths: input.maxPaths,
-            });
-
-            // Build filtered result
-            const filteredResult: Record<string, unknown> = {
-                from: fullResult.from,
-                to: fullResult.to,
-                connected: fullResult.connected,
-                shortestPath: fullResult.shortestPath,
-                pathCount: fullResult.paths.length,
-                meta: fullResult.meta,
-            };
-
-            // Include paths with or without edge details
-            if (input.includeEdgeDetails) {
-                filteredResult.paths = fullResult.paths;
-            } else {
-                // Omit edge IDs to save tokens
-                filteredResult.paths = fullResult.paths.map(p => ({
-                    nodes: p.nodes,
-                    length: p.length,
-                }));
-            }
-
-            // Recalculate token estimate
-            const tokensEstimate = Math.ceil(JSON.stringify(filteredResult).length / 4);
-            (filteredResult.meta as Record<string, unknown>).tokensEstimate = tokensEstimate;
-
-            return createSuccessEnvelope(
-                TOOLS.GRAPH_PATH,
-                filteredResult,
-                workspace,
-                {
-                    truncated: fullResult.meta.truncated ?? false,
-                    limits: {
-                        maxDepth: input.maxDepth ?? 5,
-                        maxPaths: input.maxPaths ?? 3,
-                    },
-                    nextQuerySuggestion: fullResult.connected && fullResult.paths.length > 0
-                        ? [{
-                            tool: TOOLS.GRAPH_IMPACT,
-                            args: { target: input.from, depth: 2 },
-                            reason: 'Analyze full impact of changes to source',
-                        }]
-                        : !fullResult.connected
-                            ? [{
-                                tool: TOOLS.GRAPH_MODULE,
-                                args: { target: input.from, include: ['imports'] },
-                                reason: 'Modules not connected - inspect source imports',
-                            }]
-                            : undefined,
-                }
-            );
-        },
-    };
-}
-
-/**
- * Register the graph path tool with VS Code
- */
-export function registerGraphPathTool(
-    context: vscode.ExtensionContext,
-    getQuery: () => GraphQuery | null
-): vscode.Disposable | undefined {
-    const vscodeAny = vscode as typeof vscode & {
-        lm?: {
-            registerTool?: (
-                name: string,
-                tool: {
-                    invoke: (
-                        options: { input: GraphPathInput },
-                        token: vscode.CancellationToken
-                    ) => Promise<vscode.LanguageModelToolResult>;
-                }
-            ) => vscode.Disposable;
-        };
-    };
-
-    if (!vscodeAny.lm?.registerTool) {
-        return undefined;
-    }
-
-    const tool = createGraphPathTool(getQuery as unknown as { getQuery: () => GraphQuery });
-
-    return vscodeAny.lm.registerTool(tool.name, {
         async invoke(
-            options: { input: GraphPathInput },
+            options: vscode.LanguageModelToolInvocationOptions<GraphPathInput>,
             _token: vscode.CancellationToken
         ): Promise<vscode.LanguageModelToolResult> {
-            const result = await tool.execute(options.input);
-            return new vscodeAny.LanguageModelToolResult([
-                new vscodeAny.LanguageModelTextPart(JSON.stringify(result, null, 2)),
-            ]);
+            const input = options.input;
+            const workspace = getWorkspaceContext();
+
+            logger.info('Graph path requested', input);
+
+            try {
+                // Validate input
+                const parsed = GraphPathInputSchema.safeParse(input);
+                if (!parsed.success) {
+                    const envelope = createErrorEnvelope(
+                        TOOLS.GRAPH_PATH,
+                        'INVALID_INPUT',
+                        'Invalid input: ' + parsed.error.message,
+                        workspace,
+                        { errors: parsed.error.errors }
+                    );
+                    return envelopeToResult(envelope);
+                }
+
+                const { from, to, maxDepth, maxPaths, includeEdgeDetails } = parsed.data;
+                const query = manager.getQuery();
+
+                if (!query) {
+                    const emptyResult: PathResult = {
+                        from,
+                        to,
+                        paths: [],
+                        connected: false,
+                        shortestPath: null,
+                        meta: {
+                            tokensEstimate: 100,
+                            truncated: false,
+                            maxDepthReached: false,
+                        },
+                    };
+                    const envelope = createSuccessEnvelope(
+                        TOOLS.GRAPH_PATH,
+                        emptyResult,
+                        workspace,
+                        { truncated: false, limits: {} }
+                    );
+                    return envelopeToResult(envelope);
+                }
+
+                const fullResult = query.path(from, to, {
+                    maxDepth,
+                    maxPaths,
+                });
+
+                // Build filtered result
+                const filteredResult: Record<string, unknown> = {
+                    from: fullResult.from,
+                    to: fullResult.to,
+                    connected: fullResult.connected,
+                    shortestPath: fullResult.shortestPath,
+                    pathCount: fullResult.paths.length,
+                    meta: fullResult.meta,
+                };
+
+                // Include paths with or without edge details
+                if (includeEdgeDetails) {
+                    filteredResult.paths = fullResult.paths;
+                } else {
+                    // Omit edge IDs to save tokens
+                    filteredResult.paths = fullResult.paths.map(p => ({
+                        nodes: p.nodes,
+                        length: p.length,
+                    }));
+                }
+
+                // Recalculate token estimate
+                const tokensEstimate = Math.ceil(JSON.stringify(filteredResult).length / 4);
+                (filteredResult.meta as Record<string, unknown>).tokensEstimate = tokensEstimate;
+
+                logger.debug('Path result', {
+                    from,
+                    to,
+                    connected: fullResult.connected,
+                    pathCount: fullResult.paths.length,
+                    tokensEstimate,
+                });
+
+                const envelope = createSuccessEnvelope(
+                    TOOLS.GRAPH_PATH,
+                    filteredResult,
+                    workspace,
+                    {
+                        truncated: fullResult.meta.truncated ?? false,
+                        limits: {
+                            maxDepth: maxDepth ?? 5,
+                            maxPaths: maxPaths ?? 3,
+                        },
+                        nextQuerySuggestion: fullResult.connected && fullResult.paths.length > 0
+                            ? [{
+                                tool: TOOLS.GRAPH_IMPACT,
+                                args: { target: from, depth: 2 },
+                                reason: 'Analyze full impact of changes to source',
+                            }]
+                            : !fullResult.connected
+                                ? [{
+                                    tool: TOOLS.GRAPH_MODULE,
+                                    args: { target: from, include: ['imports'] },
+                                    reason: 'Modules not connected - inspect source imports',
+                                }]
+                                : undefined,
+                    }
+                );
+                return envelopeToResult(envelope);
+            } catch (error) {
+                logger.error('Graph path error:', error);
+                const envelope = createErrorEnvelope(
+                    TOOLS.GRAPH_PATH,
+                    'INTERNAL_ERROR',
+                    error instanceof Error ? error.message : 'Unknown error',
+                    workspace
+                );
+                return envelopeToResult(envelope);
+            }
         },
-    });
+    };
 }

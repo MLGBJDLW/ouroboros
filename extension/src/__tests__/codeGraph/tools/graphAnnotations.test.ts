@@ -3,12 +3,52 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createGraphAnnotationsTool } from '../../../codeGraph/tools/graphAnnotations';
+
+// Mock vscode
+vi.mock('vscode', () => ({
+    LanguageModelToolResult: class {
+        constructor(public parts: unknown[]) {}
+    },
+    LanguageModelTextPart: class {
+        constructor(public text: string) {}
+    },
+}));
+
+// Mock logger
+vi.mock('../../../utils/logger', () => ({
+    createLogger: () => ({
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    }),
+}));
+
+import { createGraphAnnotationsTool, type GraphAnnotationsInput } from '../../../codeGraph/tools/graphAnnotations';
+import type { CodeGraphManager } from '../../../codeGraph/CodeGraphManager';
 import type { AnnotationManager } from '../../../codeGraph/annotations/AnnotationManager';
+
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
+// Helper to invoke tool with proper VS Code API format
+async function invokeTool(
+    tool: ReturnType<typeof createGraphAnnotationsTool>,
+    input: GraphAnnotationsInput
+): Promise<{ success: boolean; data: { tool: string; result: unknown } }> {
+    const result = await tool.invoke(
+        { input } as never,
+        { isCancellationRequested: false } as never
+    );
+    // Parse the JSON from LanguageModelToolResult
+    const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
+    return output;
+}
 
 describe('createGraphAnnotationsTool', () => {
     let mockAnnotationManager: Partial<AnnotationManager>;
-    let mockManager: { getAnnotationManager: () => AnnotationManager };
+    let mockManager: Partial<CodeGraphManager>;
 
     beforeEach(() => {
         mockAnnotationManager = {
@@ -25,7 +65,9 @@ describe('createGraphAnnotationsTool', () => {
             removeIgnore: vi.fn().mockResolvedValue(true),
             getFilePath: vi.fn().mockReturnValue('/workspace/.ouroboros/graph/annotations.json'),
         };
-        mockManager = { getAnnotationManager: () => mockAnnotationManager as AnnotationManager };
+        mockManager = { 
+            getAnnotationManager: () => mockAnnotationManager as AnnotationManager,
+        };
     });
 
     describe('list action', () => {
@@ -38,8 +80,8 @@ describe('createGraphAnnotationsTool', () => {
                 ignores: [{ issueKind: 'HANDLER_UNREACHABLE', path: 'legacy/*', reason: 'legacy' }],
             });
 
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({ action: 'list' });
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, { action: 'list' });
 
             expect(result.success).toBe(true);
             expect(result.data.result).toHaveProperty('edges');
@@ -52,8 +94,8 @@ describe('createGraphAnnotationsTool', () => {
 
     describe('addEdge action', () => {
         it('should add edge successfully', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {
                 action: 'addEdge',
                 from: 'src/loader.ts',
                 to: 'src/plugins/auth.ts',
@@ -69,8 +111,8 @@ describe('createGraphAnnotationsTool', () => {
         });
 
         it('should fail without required params', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({ action: 'addEdge' });
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, { action: 'addEdge' });
 
             expect(result.success).toBe(false);
             expect(result.data.result).toHaveProperty('error');
@@ -80,8 +122,8 @@ describe('createGraphAnnotationsTool', () => {
 
     describe('addEntrypoint action', () => {
         it('should add entrypoint successfully', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {
                 action: 'addEntrypoint',
                 path: 'src/workers/cleanup.ts',
                 entrypointType: 'job',
@@ -95,8 +137,8 @@ describe('createGraphAnnotationsTool', () => {
         });
 
         it('should fail without required params', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({ action: 'addEntrypoint', path: 'test.ts' });
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, { action: 'addEntrypoint', path: 'test.ts' });
 
             expect(result.success).toBe(false);
             expect((result.data.result as { error: { code: string } }).error.code).toBe('MISSING_PARAMS');
@@ -105,8 +147,8 @@ describe('createGraphAnnotationsTool', () => {
 
     describe('addIgnore action', () => {
         it('should add ignore rule successfully', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {
                 action: 'addIgnore',
                 issueKind: 'HANDLER_UNREACHABLE',
                 ignorePath: 'src/legacy/*',
@@ -120,8 +162,8 @@ describe('createGraphAnnotationsTool', () => {
         });
 
         it('should fail without required params', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({ action: 'addIgnore' });
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, { action: 'addIgnore' });
 
             expect(result.success).toBe(false);
             expect((result.data.result as { error: { code: string } }).error.code).toBe('MISSING_PARAMS');
@@ -130,8 +172,8 @@ describe('createGraphAnnotationsTool', () => {
 
     describe('remove action', () => {
         it('should remove edge', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {
                 action: 'remove',
                 removeType: 'edge',
                 from: 'a.ts',
@@ -143,8 +185,8 @@ describe('createGraphAnnotationsTool', () => {
         });
 
         it('should remove entrypoint', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {
                 action: 'remove',
                 removeType: 'entrypoint',
                 path: 'main.ts',
@@ -155,8 +197,8 @@ describe('createGraphAnnotationsTool', () => {
         });
 
         it('should remove ignore rule', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {
                 action: 'remove',
                 removeType: 'ignore',
                 issueKind: 'HANDLER_UNREACHABLE',
@@ -170,28 +212,31 @@ describe('createGraphAnnotationsTool', () => {
 
     describe('error handling', () => {
         it('should return error when manager is null', async () => {
-            const nullManager = { getAnnotationManager: () => null } as unknown as { getAnnotationManager: () => AnnotationManager };
+            const nullManager = { getAnnotationManager: () => null } as unknown as CodeGraphManager;
             const tool = createGraphAnnotationsTool(nullManager);
-            const result = await tool.execute({ action: 'list' });
+            const result = await invokeTool(tool, { action: 'list' });
 
             expect(result.success).toBe(false);
             expect((result.data.result as { error: { code: string } }).error.code).toBe('NOT_AVAILABLE');
         });
 
         it('should handle unknown action', async () => {
-            const tool = createGraphAnnotationsTool(mockManager);
-            const result = await tool.execute({ action: 'unknown' as 'list' });
+            const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, { action: 'unknown' as 'list' });
 
             expect(result.success).toBe(false);
-            expect((result.data.result as { error: { code: string } }).error.code).toBe('UNKNOWN_ACTION');
+            // Unknown action will fail zod validation
+            expect((result.data.result as { error: { code: string } }).error.code).toBe('INVALID_INPUT');
         });
     });
 
-    it('should have correct tool metadata', () => {
-        const tool = createGraphAnnotationsTool(mockManager);
-
-        expect(tool.name).toBe('ouroborosai_graph_annotations');
-        expect(tool.description).toContain('annotations');
-        expect(tool.inputSchema).toHaveProperty('properties.action');
+    it('should return tool via invoke method', async () => {
+        const tool = createGraphAnnotationsTool(mockManager as CodeGraphManager);
+        
+        // Tool should have invoke method (VS Code LanguageModelTool interface)
+        expect(typeof tool.invoke).toBe('function');
+        
+        const result = await invokeTool(tool, { action: 'list' });
+        expect(result.data.tool).toBe('ouroborosai_graph_annotations');
     });
 });

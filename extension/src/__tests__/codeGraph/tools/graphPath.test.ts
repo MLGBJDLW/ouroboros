@@ -3,19 +3,61 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createGraphPathTool } from '../../../codeGraph/tools/graphPath';
+
+// Mock vscode
+vi.mock('vscode', () => ({
+    LanguageModelToolResult: class {
+        constructor(public parts: unknown[]) {}
+    },
+    LanguageModelTextPart: class {
+        constructor(public text: string) {}
+    },
+}));
+
+// Mock logger
+vi.mock('../../../utils/logger', () => ({
+    createLogger: () => ({
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    }),
+}));
+
+import { createGraphPathTool, type GraphPathInput } from '../../../codeGraph/tools/graphPath';
+import type { CodeGraphManager } from '../../../codeGraph/CodeGraphManager';
 import type { GraphQuery } from '../../../codeGraph/core/GraphQuery';
 import type { PathResult } from '../../../codeGraph/core/types';
 
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
+// Helper to invoke tool with proper VS Code API format
+async function invokeTool(
+    tool: ReturnType<typeof createGraphPathTool>,
+    input: GraphPathInput
+): Promise<{ success: boolean; data: { tool: string; result: unknown } }> {
+    const result = await tool.invoke(
+        { input } as never,
+        { isCancellationRequested: false } as never
+    );
+    // Parse the JSON from LanguageModelToolResult
+    const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
+    return output;
+}
+
 describe('createGraphPathTool', () => {
     let mockQuery: Partial<GraphQuery>;
-    let mockManager: { getQuery: () => GraphQuery };
+    let mockManager: Partial<CodeGraphManager>;
 
     beforeEach(() => {
         mockQuery = {
             path: vi.fn(),
         };
-        mockManager = { getQuery: () => mockQuery as GraphQuery };
+        mockManager = { 
+            getQuery: () => mockQuery as GraphQuery,
+        };
     });
 
     it('should return path result successfully', async () => {
@@ -40,8 +82,8 @@ describe('createGraphPathTool', () => {
 
         vi.mocked(mockQuery.path as NonNullable<typeof mockQuery.path>).mockReturnValue(mockResult);
 
-        const tool = createGraphPathTool(mockManager);
-        const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
+        const tool = createGraphPathTool(mockManager as CodeGraphManager);
+        const result = await invokeTool(tool, { from: 'src/a.ts', to: 'src/b.ts' });
 
         expect(result.success).toBe(true);
         // New format: pathCount added, edges omitted by default
@@ -73,8 +115,8 @@ describe('createGraphPathTool', () => {
 
         vi.mocked(mockQuery.path as NonNullable<typeof mockQuery.path>).mockReturnValue(mockResult);
 
-        const tool = createGraphPathTool(mockManager);
-        await tool.execute({ from: 'src/a.ts', to: 'src/c.ts', maxDepth: 3, maxPaths: 5 });
+        const tool = createGraphPathTool(mockManager as CodeGraphManager);
+        await invokeTool(tool, { from: 'src/a.ts', to: 'src/c.ts', maxDepth: 3, maxPaths: 5 });
 
         expect(mockQuery.path).toHaveBeenCalledWith('src/a.ts', 'src/c.ts', {
             maxDepth: 3,
@@ -83,9 +125,9 @@ describe('createGraphPathTool', () => {
     });
 
     it('should return empty result when query is null', async () => {
-        const nullManager = { getQuery: () => null } as unknown as { getQuery: () => GraphQuery };
+        const nullManager = { getQuery: () => null } as unknown as CodeGraphManager;
         const tool = createGraphPathTool(nullManager);
-        const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
+        const result = await invokeTool(tool, { from: 'src/a.ts', to: 'src/b.ts' });
         const pathResult = result.data.result as PathResult;
 
         expect(result.success).toBe(true);
@@ -94,12 +136,24 @@ describe('createGraphPathTool', () => {
         expect(pathResult.shortestPath).toBeNull();
     });
 
-    it('should have correct tool metadata', () => {
-        const tool = createGraphPathTool(mockManager);
+    it('should return tool via invoke method', async () => {
+        const mockResult: PathResult = {
+            from: 'src/a.ts',
+            to: 'src/b.ts',
+            paths: [],
+            connected: false,
+            shortestPath: null,
+            meta: { tokensEstimate: 100, truncated: false, maxDepthReached: false },
+        };
 
-        expect(tool.name).toBe('ouroborosai_graph_path');
-        expect(tool.description).toContain('dependency paths');
-        expect(tool.inputSchema).toHaveProperty('properties.from');
-        expect(tool.inputSchema).toHaveProperty('properties.to');
+        vi.mocked(mockQuery.path as NonNullable<typeof mockQuery.path>).mockReturnValue(mockResult);
+
+        const tool = createGraphPathTool(mockManager as CodeGraphManager);
+        
+        // Tool should have invoke method (VS Code LanguageModelTool interface)
+        expect(typeof tool.invoke).toBe('function');
+        
+        const result = await invokeTool(tool, { from: 'src/a.ts', to: 'src/b.ts' });
+        expect(result.data.tool).toBe('ouroborosai_graph_path');
     });
 });

@@ -2,6 +2,13 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.4] - 2026-01-11
+
+### Fixed
+- **Code Graph Tool Invoke** — Fixed `TypeError: i.tool.invoke is not a function` by refactoring 5 graph tools to use proper `vscode.LanguageModelTool<T>` interface with `invoke` method
+
+---
+
 ## [3.3.3] - 2026-01-11
 
 ### Fixed
