@@ -20,7 +20,7 @@ export interface GraphModuleTool {
 }
 
 export function createGraphModuleTool(
-    getQuery: () => GraphQuery | null
+    manager: { getQuery: () => GraphQuery }
 ): GraphModuleTool {
     return {
         name: 'ouroborosai_graph_module',
@@ -49,7 +49,7 @@ Examples:
         },
 
         async execute(input: GraphModuleInput): Promise<ModuleResult> {
-            const query = getQuery();
+            const query = manager.getQuery();
             
             if (!query) {
                 return {

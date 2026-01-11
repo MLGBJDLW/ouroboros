@@ -36,7 +36,7 @@ export interface GraphAnnotationsTool {
 }
 
 export function createGraphAnnotationsTool(
-    getAnnotationManager: () => AnnotationManager | null
+    manager: { getAnnotationManager: () => AnnotationManager }
 ): GraphAnnotationsTool {
     return {
         name: 'ouroborosai_graph_annotations',
@@ -116,9 +116,9 @@ Examples:
         },
 
         async execute(input: GraphAnnotationsInput): Promise<AnnotationsResult | { success: boolean; message: string }> {
-            const manager = getAnnotationManager();
+            const annotationManager = manager.getAnnotationManager();
             
-            if (!manager) {
+            if (!annotationManager) {
                 return {
                     success: false,
                     message: 'Annotation manager not available',
@@ -127,13 +127,13 @@ Examples:
 
             switch (input.action) {
                 case 'list':
-                    return listAnnotations(manager);
+                    return listAnnotations(annotationManager);
 
                 case 'addEdge':
                     if (!input.from || !input.to) {
                         return { success: false, message: 'from and to are required for addEdge' };
                     }
-                    await manager.addEdge({
+                    await annotationManager.addEdge({
                         from: input.from,
                         to: input.to,
                         kind: input.edgeKind ?? 'imports',
@@ -146,7 +146,7 @@ Examples:
                     if (!input.path || !input.entrypointType || !input.name) {
                         return { success: false, message: 'path, entrypointType, and name are required for addEntrypoint' };
                     }
-                    await manager.addEntrypoint({
+                    await annotationManager.addEntrypoint({
                         path: input.path,
                         type: input.entrypointType,
                         name: input.name,
@@ -157,7 +157,7 @@ Examples:
                     if (!input.issueKind || !input.ignorePath) {
                         return { success: false, message: 'issueKind and ignorePath are required for addIgnore' };
                     }
-                    await manager.addIgnore({
+                    await annotationManager.addIgnore({
                         issueKind: input.issueKind,
                         path: input.ignorePath,
                         reason: input.ignoreReason ?? 'manual ignore',
@@ -166,15 +166,15 @@ Examples:
 
                 case 'remove':
                     if (input.removeType === 'edge' && input.from && input.to) {
-                        const removed = await manager.removeEdge(input.from, input.to);
+                        const removed = await annotationManager.removeEdge(input.from, input.to);
                         return { success: removed, message: removed ? 'Edge removed' : 'Edge not found' };
                     }
                     if (input.removeType === 'entrypoint' && input.path) {
-                        const removed = await manager.removeEntrypoint(input.path);
+                        const removed = await annotationManager.removeEntrypoint(input.path);
                         return { success: removed, message: removed ? 'Entrypoint removed' : 'Entrypoint not found' };
                     }
                     if (input.removeType === 'ignore' && input.issueKind && input.ignorePath) {
-                        const removed = await manager.removeIgnore(input.issueKind, input.ignorePath);
+                        const removed = await annotationManager.removeIgnore(input.issueKind, input.ignorePath);
                         return { success: removed, message: removed ? 'Ignore rule removed' : 'Ignore rule not found' };
                     }
                     return { success: false, message: 'Invalid remove parameters' };

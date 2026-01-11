@@ -15,6 +15,11 @@ import { createHandoffTool } from './handoff';
 import { createGraphDigestTool } from '../codeGraph/tools/graphDigest';
 import { createGraphIssuesTool } from '../codeGraph/tools/graphIssues';
 import { createGraphImpactTool } from '../codeGraph/tools/graphImpact';
+import { createGraphPathTool } from '../codeGraph/tools/graphPath';
+import { createGraphModuleTool } from '../codeGraph/tools/graphModule';
+import { createGraphAnnotationsTool } from '../codeGraph/tools/graphAnnotations';
+import { createGraphCyclesTool } from '../codeGraph/tools/graphCycles';
+import { createGraphLayersTool } from '../codeGraph/tools/graphLayers';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Tools');
@@ -58,6 +63,7 @@ export function registerTools(
 
     // Register Code Graph tools (if manager provided)
     if (codeGraphManager) {
+        // MVP tools
         const digestTool = createGraphDigestTool(codeGraphManager);
         disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_DIGEST, digestTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_DIGEST}`);
@@ -69,6 +75,28 @@ export function registerTools(
         const impactTool = createGraphImpactTool(codeGraphManager);
         disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_IMPACT, impactTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_IMPACT}`);
+
+        // v0.2 tools
+        const pathTool = createGraphPathTool(codeGraphManager);
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_PATH, pathTool));
+        logger.info(`Registered tool: ${TOOLS.GRAPH_PATH}`);
+
+        const moduleTool = createGraphModuleTool(codeGraphManager);
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_MODULE, moduleTool));
+        logger.info(`Registered tool: ${TOOLS.GRAPH_MODULE}`);
+
+        const annotationsTool = createGraphAnnotationsTool(codeGraphManager);
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_ANNOTATIONS, annotationsTool));
+        logger.info(`Registered tool: ${TOOLS.GRAPH_ANNOTATIONS}`);
+
+        // v0.5 tools
+        const cyclesTool = createGraphCyclesTool(() => codeGraphManager.getCycleDetector());
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_CYCLES, cyclesTool));
+        logger.info(`Registered tool: ${TOOLS.GRAPH_CYCLES}`);
+
+        const layersTool = createGraphLayersTool(() => codeGraphManager.getLayerAnalyzer());
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_LAYERS, layersTool));
+        logger.info(`Registered tool: ${TOOLS.GRAPH_LAYERS}`);
     }
 
     logger.info('All LM Tools registered successfully');

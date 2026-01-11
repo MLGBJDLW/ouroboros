@@ -22,7 +22,7 @@ export interface GraphPathTool {
 }
 
 export function createGraphPathTool(
-    getQuery: () => GraphQuery | null
+    manager: { getQuery: () => GraphQuery }
 ): GraphPathTool {
     return {
         name: 'ouroborosai_graph_path',
@@ -58,7 +58,7 @@ Examples:
         },
 
         async execute(input: GraphPathInput): Promise<PathResult> {
-            const query = getQuery();
+            const query = manager.getQuery();
             
             if (!query) {
                 return {

@@ -9,13 +9,13 @@ import type { PathResult } from '../../../codeGraph/core/types';
 
 describe('createGraphPathTool', () => {
     let mockQuery: Partial<GraphQuery>;
-    let getQuery: () => GraphQuery | null;
+    let mockManager: { getQuery: () => GraphQuery | null };
 
     beforeEach(() => {
         mockQuery = {
             path: vi.fn(),
         };
-        getQuery = () => mockQuery as GraphQuery;
+        mockManager = { getQuery: () => mockQuery as GraphQuery };
     });
 
     it('should return path result successfully', async () => {
@@ -30,11 +30,7 @@ describe('createGraphPathTool', () => {
                 },
             ],
             connected: true,
-            shortestPath: {
-                nodes: ['file:src/a.ts', 'file:src/b.ts'],
-                edges: ['edge:src/a.ts:src/b.ts'],
-                length: 1,
-            },
+            shortestPath: 1,
             meta: {
                 tokensEstimate: 150,
                 truncated: false,
@@ -44,7 +40,7 @@ describe('createGraphPathTool', () => {
 
         vi.mocked(mockQuery.path!).mockReturnValue(mockResult);
 
-        const tool = createGraphPathTool(getQuery);
+        const tool = createGraphPathTool(mockManager);
         const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
 
         expect(result).toEqual(mockResult);
@@ -66,7 +62,7 @@ describe('createGraphPathTool', () => {
 
         vi.mocked(mockQuery.path!).mockReturnValue(mockResult);
 
-        const tool = createGraphPathTool(getQuery);
+        const tool = createGraphPathTool(mockManager);
         await tool.execute({ from: 'src/a.ts', to: 'src/c.ts', maxDepth: 3, maxPaths: 5 });
 
         expect(mockQuery.path).toHaveBeenCalledWith('src/a.ts', 'src/c.ts', {
@@ -76,7 +72,8 @@ describe('createGraphPathTool', () => {
     });
 
     it('should return empty result when query is null', async () => {
-        const tool = createGraphPathTool(() => null);
+        const nullManager = { getQuery: () => null };
+        const tool = createGraphPathTool(nullManager);
         const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
 
         expect(result.connected).toBe(false);
@@ -85,7 +82,7 @@ describe('createGraphPathTool', () => {
     });
 
     it('should have correct tool metadata', () => {
-        const tool = createGraphPathTool(getQuery);
+        const tool = createGraphPathTool(mockManager);
 
         expect(tool.name).toBe('ouroborosai_graph_path');
         expect(tool.description).toContain('dependency paths');

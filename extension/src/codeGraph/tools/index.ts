@@ -16,3 +16,18 @@ export { createGraphAnnotationsTool, registerGraphAnnotationsTool, type GraphAnn
 // v0.5 Tools
 export { createGraphCyclesTool, registerGraphCyclesTool, type GraphCyclesInput, type GraphCyclesResult } from './graphCycles';
 export { createGraphLayersTool, registerGraphLayersTool, type GraphLayersInput, type GraphLayersResult } from './graphLayers';
+
+// v1.0 Envelope
+export {
+    createSuccessEnvelope,
+    createErrorEnvelope,
+    envelopeToResult,
+    getWorkspaceContext,
+    type ToolEnvelope,
+    type SuccessEnvelope,
+    type ErrorEnvelope,
+    type WorkspaceContext,
+    type ResponseMeta,
+    type NextQuerySuggestion,
+    type PageInfo,
+} from './envelope';

@@ -9,13 +9,13 @@ import type { ModuleResult } from '../../../codeGraph/core/types';
 
 describe('createGraphModuleTool', () => {
     let mockQuery: Partial<GraphQuery>;
-    let getQuery: () => GraphQuery | null;
+    let mockManager: { getQuery: () => GraphQuery | null };
 
     beforeEach(() => {
         mockQuery = {
             module: vi.fn(),
         };
-        getQuery = () => mockQuery as GraphQuery;
+        mockManager = { getQuery: () => mockQuery as GraphQuery };
     });
 
     it('should return module result successfully', async () => {
@@ -24,8 +24,8 @@ describe('createGraphModuleTool', () => {
             path: 'src/utils/helpers.ts',
             name: 'helpers.ts',
             kind: 'file',
-            imports: ['lodash', './constants'],
-            importedBy: ['src/index.ts', 'src/api/users.ts'],
+            imports: [{ path: 'lodash', kind: 'imports', confidence: 'high' }],
+            importedBy: [{ path: 'src/index.ts', kind: 'imports' }],
             exports: ['formatDate', 'parseJSON'],
             reexports: [],
             entrypoints: [],
@@ -35,7 +35,7 @@ describe('createGraphModuleTool', () => {
 
         vi.mocked(mockQuery.module!).mockReturnValue(mockResult);
 
-        const tool = createGraphModuleTool(getQuery);
+        const tool = createGraphModuleTool(mockManager);
         const result = await tool.execute({ target: 'src/utils/helpers.ts' });
 
         expect(result).toEqual(mockResult);
@@ -61,7 +61,7 @@ describe('createGraphModuleTool', () => {
 
         vi.mocked(mockQuery.module!).mockReturnValue(mockResult);
 
-        const tool = createGraphModuleTool(getQuery);
+        const tool = createGraphModuleTool(mockManager);
         await tool.execute({ target: 'src/index.ts', includeTransitive: true });
 
         expect(mockQuery.module).toHaveBeenCalledWith('src/index.ts', {
@@ -70,7 +70,8 @@ describe('createGraphModuleTool', () => {
     });
 
     it('should return default result when query is null', async () => {
-        const tool = createGraphModuleTool(() => null);
+        const nullManager = { getQuery: () => null };
+        const tool = createGraphModuleTool(nullManager);
         const result = await tool.execute({ target: 'src/test.ts' });
 
         expect(result.id).toBe('file:src/test.ts');
@@ -80,7 +81,7 @@ describe('createGraphModuleTool', () => {
     });
 
     it('should have correct tool metadata', () => {
-        const tool = createGraphModuleTool(getQuery);
+        const tool = createGraphModuleTool(mockManager);
 
         expect(tool.name).toBe('ouroborosai_graph_module');
         expect(tool.description).toContain('detailed information');

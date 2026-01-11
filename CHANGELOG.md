@@ -217,9 +217,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `getCacheStats()` — Get hit/miss statistics
   - `invalidateCache()` — Manual cache invalidation
 
+#### Fixed (v1.0)
+- **Tool Registration** — All 8 Code Graph tools now properly registered in `tools/index.ts`:
+  - v0.2 tools (`graph_path`, `graph_module`, `graph_annotations`) were missing from registration
+  - v0.5 tools (`graph_cycles`, `graph_layers`) were missing from registration
+  - Updated tool signatures to accept manager object instead of getter function
+
+- **Unified Envelope Format** — Added `envelope.ts` with standardized response types:
+  - `SuccessEnvelope<T>` / `ErrorEnvelope` — Consistent response wrapper
+  - `WorkspaceContext` — Root, repoName, rev metadata
+  - `ResponseMeta` — approxTokens, truncated, limits, nextQuerySuggestion
+  - `createSuccessEnvelope()` / `createErrorEnvelope()` — Factory functions
+  - `envelopeToResult()` — Convert to VS Code LanguageModelToolResult
+
 #### Tests (v1.0)
 - 677 tests passing (+24 new for v1.0)
-- QueryCache: 12 tests
+- QueryCache: 13 tests
 - ParallelIndexer: 10 tests
 
 ---
