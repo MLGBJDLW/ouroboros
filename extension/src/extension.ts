@@ -78,7 +78,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             });
 
             // Initialize Code Graph Manager
-            codeGraphManager = new CodeGraphManager(workspacePath);
+            codeGraphManager = new CodeGraphManager(workspacePath, undefined, context.extensionPath);
             context.subscriptions.push(codeGraphManager);
             // Set reference in sidebar provider
             sidebarProvider.setCodeGraphManager(codeGraphManager);

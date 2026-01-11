@@ -3,6 +3,8 @@
  * Main entry point for the Code Graph system
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { GraphStore } from './core/GraphStore';
 import { GraphQuery } from './core/GraphQuery';
@@ -34,11 +36,22 @@ const logger = createLogger('CodeGraphManager');
 const DEFAULT_CONFIG: GraphConfig = {
     indexing: {
         include: [
-            '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx',  // TypeScript/JavaScript
-            '**/*.py', '**/*.pyi',                          // Python
-            '**/*.rs',                                       // Rust
-            '**/*.go',                                       // Go
-            '**/*.java',                                     // Java
+            // TypeScript/JavaScript
+            '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.mjs', '**/*.cjs',
+            // Python
+            '**/*.py', '**/*.pyi',
+            // Rust, Go, Java, Kotlin, C#
+            '**/*.rs', '**/*.go', '**/*.java', '**/*.kt', '**/*.kts', '**/*.cs',
+            // Ruby, PHP
+            '**/*.rb', '**/*.php',
+            // C/C++
+            '**/*.c', '**/*.h', '**/*.cpp', '**/*.hpp', '**/*.cc', '**/*.cxx', '**/*.hxx',
+            // Swift, Scala
+            '**/*.swift', '**/*.scala',
+            // Shell
+            '**/*.sh', '**/*.bash', '**/*.zsh',
+            // Frontend single-file components
+            '**/*.vue', '**/*.svelte', '**/*.astro',
         ],
         exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**', '**/target/**', '**/vendor/**'],
         maxFileSize: 1024 * 1024, // 1MB
@@ -80,7 +93,27 @@ export class CodeGraphManager implements vscode.Disposable {
     constructor(workspaceRoot: string, config?: Partial<GraphConfig>, extensionPath?: string) {
         this.workspaceRoot = workspaceRoot;
         this.extensionPath = extensionPath ?? workspaceRoot;
-        this.config = { ...DEFAULT_CONFIG, ...config };
+        const fileConfig = CodeGraphManager.loadGraphConfig(workspaceRoot);
+        this.config = {
+            ...DEFAULT_CONFIG,
+            ...fileConfig,
+            ...config,
+            indexing: {
+                ...DEFAULT_CONFIG.indexing,
+                ...fileConfig?.indexing,
+                ...config?.indexing,
+            },
+            entrypoints: {
+                ...DEFAULT_CONFIG.entrypoints,
+                ...fileConfig?.entrypoints,
+                ...config?.entrypoints,
+            },
+            output: {
+                ...DEFAULT_CONFIG.output,
+                ...fileConfig?.output,
+                ...config?.output,
+            },
+        };
         
         this.store = new GraphStore();
         this.query = new GraphQuery(this.store);
@@ -131,6 +164,26 @@ export class CodeGraphManager implements vscode.Disposable {
         ];
 
         logger.info('CodeGraphManager initialized');
+    }
+
+    private static loadGraphConfig(workspaceRoot: string): Partial<GraphConfig> | undefined {
+        const configPath = path.join(workspaceRoot, '.ouroboros', 'graph', 'config.json');
+        if (!fs.existsSync(configPath)) {
+            return undefined;
+        }
+
+        try {
+            const raw = fs.readFileSync(configPath, 'utf8');
+            const parsed = JSON.parse(raw) as Partial<GraphConfig>;
+            logger.info('Loaded graph config', { path: configPath });
+            return parsed;
+        } catch (error) {
+            logger.warn('Failed to load graph config, using defaults', {
+                path: configPath,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return undefined;
+        }
     }
 
     /**
@@ -325,6 +378,66 @@ export class CodeGraphManager implements vscode.Disposable {
             scope: options?.scope,
             limit: options?.limit,
         }));
+    }
+
+    /**
+     * Get full file index for UI (tree view)
+     */
+    getFileIndex(options?: { hotspotLimit?: number }): {
+        files: Array<{
+            path: string;
+            name: string;
+            importers: number;
+            exports: number;
+            isEntrypoint: boolean;
+            isHotspot: boolean;
+            language?: string;
+        }>;
+        meta: { total: number; hotspotLimit: number };
+    } {
+        const fileNodes = this.store.getNodesByKind('file');
+        const entrypointNodes = this.store.getNodesByKind('entrypoint');
+        const entrypointPaths = new Set(entrypointNodes.map((n) => n.path).filter(Boolean) as string[]);
+
+        const importerCounts = new Map<string, number>();
+        for (const edge of this.store.getAllEdges()) {
+            if (edge.to.startsWith('file:')) {
+                const targetPath = edge.to.slice(5);
+                importerCounts.set(targetPath, (importerCounts.get(targetPath) ?? 0) + 1);
+            }
+        }
+
+        const hotspotLimit = Math.max(1, options?.hotspotLimit ?? 15);
+        const hotspotPaths = new Set(
+            [...importerCounts.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, hotspotLimit)
+                .map(([path]) => path)
+        );
+
+        const files = fileNodes
+            .map((node) => {
+                const path = node.path ?? '';
+                const name = node.name;
+                return {
+                    path,
+                    name,
+                    importers: importerCounts.get(path) ?? 0,
+                    exports: (node.meta?.exports as string[] | undefined)?.length ?? 0,
+                    isEntrypoint: entrypointPaths.has(path),
+                    isHotspot: hotspotPaths.has(path),
+                    language: node.meta?.language as string | undefined,
+                };
+            })
+            .filter((file) => file.path);
+
+        return {
+            files,
+            meta: {
+                total: files.length,
+                hotspotLimit,
+            },
+        };
     }
 
     /**

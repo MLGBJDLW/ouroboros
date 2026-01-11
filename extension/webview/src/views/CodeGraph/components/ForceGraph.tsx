@@ -3,7 +3,7 @@
  * Interactive force-directed graph visualization
  */
 
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import ForceGraph2D, { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import type { GraphData, GraphNode, GraphEdge } from '../types';
 import styles from './ForceGraph.module.css';
@@ -23,8 +23,11 @@ interface ForceGraphProps {
     onNodeHover: (node: GraphNode | null) => void;
     onNodeRightClick: (node: GraphNode) => void;
     showLabels: boolean;
+    showEdges: boolean;
     highlightEntrypoints: boolean;
     highlightHotspots: boolean;
+    isFrozen: boolean;
+    fitVersion: number;
 }
 
 // Color palette - using CSS custom properties where possible
@@ -83,12 +86,17 @@ export function ForceGraph({
     onNodeHover,
     onNodeRightClick,
     showLabels,
+    showEdges,
     highlightEntrypoints,
     highlightHotspots,
+    isFrozen,
+    fitVersion,
 }: ForceGraphProps) {
     const graphRef = useRef<ForceGraphMethods | null>(null);
     const [isStabilized, setIsStabilized] = useState(false);
     const [themeColors, setThemeColors] = useState(getThemeColors());
+    const pendingZoomRef = useRef(true);
+    const lastZoomSizeRef = useRef<{ width: number; height: number } | null>(null);
 
     // Update colors when theme changes
     useEffect(() => {
@@ -101,10 +109,10 @@ export function ForceGraph({
     }, []);
 
     // Convert data to force graph format
-    const forceData = {
+    const forceData = useMemo(() => ({
         nodes: data.nodes as ForceNode[],
         links: data.links as ForceLink[],
-    };
+    }), [data]);
 
     // Get node color
     const getNodeColor = useCallback((node: GraphNode): string => {
@@ -187,8 +195,10 @@ export function ForceGraph({
             ctx.fillText(String(node.issueCount), badgeX, badgeY);
         }
 
-        // Draw label
-        if (showLabels && globalScale > 0.5) {
+        // Draw label (only when zoomed or focused to reduce clutter)
+        const shouldShowLabel =
+            showLabels && (node.id === selectedNode || node.id === hoveredNode || globalScale > 1.2);
+        if (shouldShowLabel) {
             const label = node.name;
             const fontSize = Math.max(10, 12 / globalScale);
             ctx.font = `${fontSize}px sans-serif`;
@@ -203,6 +213,7 @@ export function ForceGraph({
 
     // Draw link
     const drawLink = useCallback((link: ForceLink, ctx: CanvasRenderingContext2D) => {
+        if (!showEdges) return;
         const source = link.source as unknown as ForceNode;
         const target = link.target as unknown as ForceNode;
         
@@ -239,7 +250,7 @@ export function ForceGraph({
             ctx.fillStyle = themeColors.edgeHighlight;
             ctx.fill();
         }
-    }, [highlightedNodes, themeColors]);
+    }, [highlightedNodes, themeColors, showEdges]);
 
     // Handle node click
     const handleNodeClick = useCallback((node: ForceNode) => {
@@ -255,20 +266,67 @@ export function ForceGraph({
         onNodeRightClick(node);
     }, [onNodeRightClick]);
 
-    // Zoom to fit on mount
-    useEffect(() => {
-        if (graphRef.current && data.nodes.length > 0 && !isStabilized) {
-            setTimeout(() => {
-                graphRef.current?.zoomToFit(400, 50);
-                setIsStabilized(true);
-            }, 1000);
+    const zoomToFit = useCallback(() => {
+        if (!graphRef.current || data.nodes.length === 0) return;
+        graphRef.current.zoomToFit(400, 50);
+        lastZoomSizeRef.current = { width, height };
+        pendingZoomRef.current = false;
+    }, [data.nodes.length, width, height]);
+
+    const handleEngineStop = useCallback(() => {
+        if (pendingZoomRef.current) {
+            zoomToFit();
         }
-    }, [data.nodes.length, isStabilized]);
+        setIsStabilized(true);
+    }, [zoomToFit]);
 
     // Reset stabilization when data changes
     useEffect(() => {
+        pendingZoomRef.current = true;
         setIsStabilized(false);
     }, [data]);
+
+    useEffect(() => {
+        const lastSize = lastZoomSizeRef.current;
+        const sizeChanged = !lastSize || lastSize.width !== width || lastSize.height !== height;
+        if (sizeChanged) {
+            if (isStabilized) {
+                zoomToFit();
+            } else {
+                pendingZoomRef.current = true;
+            }
+        }
+    }, [width, height, isStabilized, zoomToFit]);
+
+    useEffect(() => {
+        if (!graphRef.current) return;
+        const nodeCount = data.nodes.length;
+        const charge = graphRef.current.d3Force('charge') as { strength?: (value: number) => void } | undefined;
+        const link = graphRef.current.d3Force('link') as { distance?: (value: number) => void; strength?: (value: number) => void } | undefined;
+
+        const chargeStrength = -Math.min(420, 60 + nodeCount * 8);
+        const linkDistance = Math.min(160, 40 + nodeCount * 3);
+
+        charge?.strength?.(chargeStrength);
+        link?.distance?.(linkDistance);
+        link?.strength?.(showEdges ? 0.8 : 0.2);
+        graphRef.current.d3ReheatSimulation();
+    }, [data.nodes.length, showEdges]);
+
+    useEffect(() => {
+        if (!graphRef.current) return;
+        if (isFrozen) {
+            graphRef.current.pauseAnimation();
+        } else {
+            graphRef.current.resumeAnimation();
+            graphRef.current.d3ReheatSimulation();
+        }
+    }, [isFrozen]);
+
+    useEffect(() => {
+        if (fitVersion <= 0) return;
+        zoomToFit();
+    }, [fitVersion, zoomToFit]);
 
     return (
         <div className={styles.container}>
@@ -296,7 +354,7 @@ export function ForceGraph({
                 onNodeHover={(node) => onNodeHover(node as ForceNode | null)}
                 onNodeRightClick={(node, event) => handleNodeRightClick(node as ForceNode, event)}
                 cooldownTicks={100}
-                onEngineStop={() => setIsStabilized(true)}
+                onEngineStop={handleEngineStop}
                 enableNodeDrag={true}
                 enableZoomInteraction={true}
                 enablePanInteraction={true}

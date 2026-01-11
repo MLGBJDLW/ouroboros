@@ -13,8 +13,6 @@ import type {
     IssueKind,
     IssueSeverity,
     GraphNode,
-    EdgeKind,
-    Confidence,
 } from './types';
 
 const CHARS_PER_TOKEN = 4;
@@ -83,6 +81,10 @@ export class GraphQuery {
             BROKEN_EXPORT_CHAIN: 0,
             CIRCULAR_REEXPORT: 0,
             ORPHAN_EXPORT: 0,
+            ENTRY_MISSING_HANDLER: 0,
+            NOT_REGISTERED: 0,
+            CYCLE_RISK: 0,
+            LAYER_VIOLATION: 0,
         };
 
         for (const issue of filteredIssues) {
@@ -153,9 +155,9 @@ export class GraphQuery {
                 kind: i.kind,
                 severity: i.severity,
                 file: i.meta?.filePath ?? 'unknown',
-                summary: i.title,
-                evidence: i.evidence,
-                suggestedFix: i.suggestedFix ?? [],
+                summary: i.title ?? '',
+                evidence: Array.isArray(i.evidence) ? i.evidence : [],
+                suggestedFix: Array.isArray(i.suggestedFix) ? i.suggestedFix : (i.suggestedFix ? [i.suggestedFix] : []),
             })),
             stats: {
                 total,
@@ -283,8 +285,8 @@ export class GraphQuery {
         for (const edge of allEdges) {
             // edge.to could be:
             // - "file:path/to/file.ts" (TypeScript resolved)
-            // - "module:./relative/path" (unresolved relative)
-            // - "module:package-name" (external package)
+            // - "file:path/to/file.py" (Python resolved relative import)
+            // - "module:package-name" (external package - skip)
             
             const toValue = edge.to;
             
@@ -293,24 +295,7 @@ export class GraphQuery {
                 const targetPath = toValue.slice(5); // Remove "file:" prefix
                 importerCounts.set(targetPath, (importerCounts.get(targetPath) || 0) + 1);
             }
-            // For module references, try to match against file paths
-            else if (toValue.startsWith('module:')) {
-                const modulePath = toValue.slice(7); // Remove "module:" prefix
-                // Try to find a matching file
-                for (const file of files) {
-                    if (file.path && (
-                        file.path.endsWith(modulePath) ||
-                        file.path.endsWith(modulePath + '.ts') ||
-                        file.path.endsWith(modulePath + '.js') ||
-                        file.path.endsWith(modulePath + '.py') ||
-                        file.path.includes('/' + modulePath + '/') ||
-                        file.path.includes('/' + modulePath.replace(/\./g, '/'))
-                    )) {
-                        importerCounts.set(file.path, (importerCounts.get(file.path) || 0) + 1);
-                        break;
-                    }
-                }
-            }
+            // Skip module: references - they are external packages
         }
 
         for (const file of files) {
@@ -330,6 +315,20 @@ export class GraphQuery {
 
         // Sort by importers descending
         hotspots.sort((a, b) => b.importers - a.importers);
+
+        // If no hotspots found (e.g., no resolved imports), fallback to files with most exports
+        if (hotspots.length === 0) {
+            const filesWithExports = files
+                .filter(f => f.path && (f.meta?.exports?.length ?? 0) > 0)
+                .map(f => ({
+                    path: f.path as string,
+                    importers: 0,
+                    exports: f.meta?.exports?.length ?? 0,
+                }))
+                .sort((a, b) => b.exports - a.exports);
+            
+            return filesWithExports.slice(0, limit);
+        }
 
         return hotspots.slice(0, limit);
     }
@@ -577,7 +576,8 @@ export class GraphQuery {
         visited.set(fromId, 0);
 
         while (queue.length > 0 && paths.length < maxPaths) {
-            const current = queue.shift()!;
+            const current = queue.shift();
+            if (!current) continue;
             
             if (current.path.length > maxDepth) continue;
 
@@ -664,7 +664,7 @@ export class GraphQuery {
 
         // Check if barrel file
         const isBarrel = node.meta?.entrypointType === 'barrel' ||
-            (node.path?.endsWith('index.ts') && reexports.length > 0);
+            (node.path?.endsWith('index.ts') && reexports.length > 0) || false;
 
         // Get related entrypoints
         const entrypoints = this.getRelatedEntrypoints(nodeId);

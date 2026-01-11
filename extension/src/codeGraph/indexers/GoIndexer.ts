@@ -15,6 +15,27 @@ export class GoIndexer extends TreeSitterIndexer {
         super(options);
     }
 
+    /**
+     * Resolve Go import path to local file
+     * Go uses package paths, not file paths directly
+     */
+    protected override resolveImportPath(importPath: string, fromFile: string): string | null {
+        // Relative imports (rare in Go but possible)
+        if (importPath.startsWith('./') || importPath.startsWith('../')) {
+            const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
+            // Go imports are directories, not files
+            return this.resolveRelativePath(fromDir, importPath);
+        }
+        
+        // Internal package imports (same module)
+        // These typically look like: "myproject/pkg/utils"
+        // We can't resolve these without go.mod info, so return null
+        
+        // Standard library and external packages
+        // fmt, os, github.com/*, etc. - return null
+        return null;
+    }
+
     protected parseTree(rootNode: ParsedNode, filePath: string, content: string): IndexResult {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
@@ -30,7 +51,7 @@ export class GoIndexer extends TreeSitterIndexer {
                     if (pathNode) {
                         const importPath = pathNode.text.replace(/"/g, '');
                         const confidence = importPath.startsWith('.') ? 'high' : 'medium';
-                        edges.push(this.createImportEdge(
+                        edges.push(this.createTsImportEdge(
                             filePath,
                             importPath,
                             spec.startPosition.row + 1,
@@ -73,7 +94,7 @@ export class GoIndexer extends TreeSitterIndexer {
         });
 
         // Create file node
-        nodes.push(this.createFileNode(filePath, exports));
+        nodes.push(this.createTsFileNode(filePath, exports));
 
         // Detect entrypoints
         const entrypoint = this.detectEntrypoint(rootNode, content, filePath);
@@ -158,17 +179,17 @@ export class GoIndexer extends TreeSitterIndexer {
             // import "package"
             const singleImport = line.match(/^import\s+"([^"]+)"/);
             if (singleImport) {
-                edges.push(this.createImportEdge(filePath, singleImport[1], i + 1, 'low'));
+                edges.push(this.createTsImportEdge(filePath, singleImport[1], i + 1, 'low'));
             }
 
             // Inside import block
             const importLine = line.match(/^\s*"([^"]+)"/);
             if (importLine && !line.includes('=')) {
-                edges.push(this.createImportEdge(filePath, importLine[1], i + 1, 'low'));
+                edges.push(this.createTsImportEdge(filePath, importLine[1], i + 1, 'low'));
             }
         }
 
-        nodes.push(this.createFileNode(filePath));
+        nodes.push(this.createTsFileNode(filePath));
 
         // Check for main
         if (content.includes('package main') && content.includes('func main(')) {

@@ -74,7 +74,7 @@ export class AnnotationManager {
                 ignores: parsed.ignores ?? [],
             };
             this.loaded = true;
-        } catch (error) {
+        } catch {
             // File doesn't exist or is invalid, use defaults
             this.annotations = { ...DEFAULT_ANNOTATIONS };
             this.loaded = true;

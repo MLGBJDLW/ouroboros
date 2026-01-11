@@ -5,7 +5,7 @@
 
 import { BaseIndexer, type IndexerOptions } from './BaseIndexer';
 import type { GraphNode, GraphEdge, IndexResult, Confidence } from '../core/types';
-import { TreeSitterManager, type ParsedNode, type SupportedLanguage } from '../parsers/TreeSitterManager';
+import { TreeSitterManager, type ParsedNode } from '../parsers/TreeSitterManager';
 import { createLogger } from '../../utils/logger';
 
 const logger = createLogger('PythonIndexer');
@@ -26,6 +26,10 @@ export class PythonIndexer extends BaseIndexer {
         this.tsManager = options.treeSitterManager;
     }
 
+    get extensions(): string[] {
+        return this.supportedExtensions;
+    }
+
     supports(filePath: string): boolean {
         return this.supportedExtensions.some(ext => filePath.endsWith(ext));
     }
@@ -44,7 +48,7 @@ export class PythonIndexer extends BaseIndexer {
             try {
                 await this.tsManager.loadLanguage('python');
                 this.initialized = true;
-            } catch (error) {
+            } catch {
                 this.treeSitterAvailable = false;
                 if (!this.loggedFallback) {
                     logger.warn('Tree-sitter not available for Python, using fallback parsing');
@@ -76,7 +80,9 @@ export class PythonIndexer extends BaseIndexer {
 
             // Extract exports
             const exports = this.extractExports(rootNode, content);
-            fileNode.meta!.exports = exports;
+            if (fileNode.meta) {
+                fileNode.meta.exports = exports;
+            }
             nodes.push(fileNode);
 
             // Detect entrypoints
@@ -104,7 +110,7 @@ export class PythonIndexer extends BaseIndexer {
             if (node.type === 'import_statement') {
                 const nameNode = this.findChild(node, 'dotted_name');
                 if (nameNode) {
-                    edges.push(this.createImportEdge(
+                    edges.push(this.createPythonImportEdge(
                         fromFile,
                         nameNode.text,
                         nameNode.startPosition.row + 1,
@@ -120,7 +126,7 @@ export class PythonIndexer extends BaseIndexer {
                 if (moduleNode) {
                     const modulePath = moduleNode.text;
                     const confidence: Confidence = modulePath.startsWith('.') ? 'high' : 'medium';
-                    edges.push(this.createImportEdge(
+                    edges.push(this.createPythonImportEdge(
                         fromFile,
                         modulePath,
                         moduleNode.startPosition.row + 1,
@@ -136,7 +142,7 @@ export class PythonIndexer extends BaseIndexer {
     /**
      * Extract exports using tree-sitter AST
      */
-    private extractExports(rootNode: ParsedNode, content: string): string[] {
+    private extractExports(rootNode: ParsedNode, _content: string): string[] {
         const exports: string[] = [];
 
         // Check for __all__ first
@@ -188,7 +194,7 @@ export class PythonIndexer extends BaseIndexer {
     /**
      * Detect if file is an entrypoint
      */
-    private detectEntrypoint(rootNode: ParsedNode, content: string, filePath: string): GraphNode | null {
+    private detectEntrypoint(rootNode: ParsedNode, _content: string, filePath: string): GraphNode | null {
         let hasMainBlock = false;
         let framework: string | null = null;
 
@@ -281,26 +287,98 @@ export class PythonIndexer extends BaseIndexer {
     }
 
     /**
-     * Create import edge
+     * Create import edge with path resolution for relative imports
      */
-    private createImportEdge(
+    private createPythonImportEdge(
         fromFile: string,
         toModule: string,
         line: number,
         confidence: Confidence
     ): GraphEdge {
+        // Try to resolve relative imports to file paths
+        const resolvedPath = this.resolvePythonImport(toModule, fromFile);
+        
+        if (resolvedPath) {
+            // Resolved to a local file - use file: prefix
+            return {
+                id: `edge:${fromFile}:imports:${resolvedPath}`,
+                from: `file:${fromFile}`,
+                to: `file:${resolvedPath}`,
+                kind: 'imports',
+                confidence,
+                reason: 'python import',
+                meta: {
+                    importPath: toModule,
+                    loc: { line, column: 0 },
+                    language: 'python',
+                },
+            };
+        }
+        
+        // External package or unresolvable - use module: prefix
         return {
             id: `edge:${fromFile}:${toModule}:${line}`,
             from: `file:${fromFile}`,
             to: `module:${toModule}`,
             kind: 'imports',
-            confidence,
+            confidence: 'low', // Lower confidence for unresolved
+            reason: 'external package',
             meta: {
                 importPath: toModule,
                 loc: { line, column: 0 },
                 language: 'python',
+                isExternal: true,
             },
         };
+    }
+
+    /**
+     * Resolve Python import to file path
+     * Returns null for external packages
+     */
+    private resolvePythonImport(modulePath: string, fromFile: string): string | null {
+        // Handle relative imports (starting with .)
+        if (modulePath.startsWith('.')) {
+            const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
+            
+            // Count leading dots to determine parent level
+            let dots = 0;
+            while (modulePath[dots] === '.') dots++;
+            
+            // Get the module name after dots
+            const moduleName = modulePath.slice(dots);
+            
+            // Navigate up directories based on dot count
+            const parts = fromDir.split('/').filter(Boolean);
+            for (let i = 1; i < dots; i++) {
+                parts.pop();
+            }
+            
+            // Add module path (convert dots to slashes)
+            if (moduleName) {
+                const moduleParts = moduleName.split('.');
+                parts.push(...moduleParts);
+            }
+            
+            // Return as .py file path
+            const basePath = parts.join('/');
+            return basePath ? `${basePath}.py` : null;
+        }
+        
+        // Handle package-style imports (e.g., mypackage.submodule)
+        // These could be local packages - try to resolve
+        if (!modulePath.includes('.')) {
+            // Single module name - likely external (flask, os, etc.)
+            return null;
+        }
+        
+        // Multi-part import (e.g., myapp.utils.helpers)
+        // Could be local package - convert to path
+        const parts = modulePath.split('.');
+        const possiblePath = parts.join('/') + '.py';
+        
+        // Return the path - the graph will validate if file exists
+        return possiblePath;
     }
 
     /**
@@ -330,13 +408,13 @@ export class PythonIndexer extends BaseIndexer {
             // import module
             const importMatch = line.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)/);
             if (importMatch) {
-                edges.push(this.createImportEdge(filePath, importMatch[1], i + 1, 'low'));
+                edges.push(this.createPythonImportEdge(filePath, importMatch[1], i + 1, 'low'));
             }
 
             // from module import ...
-            const fromMatch = line.match(/^from\s+([a-zA-Z_\.][a-zA-Z0-9_\.]*)\s+import/);
+            const fromMatch = line.match(/^from\s+([a-zA-Z_.][a-zA-Z0-9_.]*)\s+import/);
             if (fromMatch) {
-                edges.push(this.createImportEdge(filePath, fromMatch[1], i + 1, 'low'));
+                edges.push(this.createPythonImportEdge(filePath, fromMatch[1], i + 1, 'low'));
             }
         }
 

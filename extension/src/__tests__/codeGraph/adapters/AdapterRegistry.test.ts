@@ -69,7 +69,7 @@ describe('AdapterRegistry', () => {
             vi.mocked(fs.promises.readFile).mockRejectedValue(new Error('ENOENT'));
             registry.register(mockAdapter);
 
-            const detected = await registry.detectFrameworks('/workspace');
+            await registry.detectFrameworks('/workspace');
             
             // Adapter detect() is called with undefined packageJson
             expect(mockAdapter.detect).toHaveBeenCalledWith('/workspace', undefined);
@@ -80,9 +80,9 @@ describe('AdapterRegistry', () => {
             mockAdapter.detect = vi.fn().mockRejectedValue(new Error('Detection failed'));
             registry.register(mockAdapter);
 
-            const detected = await registry.detectFrameworks('/workspace');
+            const result = await registry.detectFrameworks('/workspace');
             
-            expect(detected).toHaveLength(0);
+            expect(result).toHaveLength(0);
         });
     });
 

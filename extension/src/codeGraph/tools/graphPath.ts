@@ -3,12 +3,11 @@
  * LM Tool for finding paths between modules in the code graph
  */
 
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 import type { GraphQuery } from '../core/GraphQuery';
 import type { PathResult } from '../core/types';
 import {
     createSuccessEnvelope,
-    createErrorEnvelope,
     getWorkspaceContext,
     type ToolEnvelope,
 } from './envelope';
@@ -130,7 +129,7 @@ export function registerGraphPathTool(
     context: vscode.ExtensionContext,
     getQuery: () => GraphQuery | null
 ): vscode.Disposable | undefined {
-    const vscodeAny = require('vscode') as typeof vscode & {
+    const vscodeAny = vscode as typeof vscode & {
         lm?: {
             registerTool?: (
                 name: string,
@@ -148,7 +147,7 @@ export function registerGraphPathTool(
         return undefined;
     }
 
-    const tool = createGraphPathTool(getQuery);
+    const tool = createGraphPathTool(getQuery as unknown as { getQuery: () => GraphQuery });
 
     return vscodeAny.lm.registerTool(tool.name, {
         async invoke(

@@ -153,7 +153,7 @@ describe('NestjsAdapter', () => {
                 },
             });
 
-            const issues = await adapter.detectIssues!(store);
+            const issues = await (adapter.detectIssues as NonNullable<typeof adapter.detectIssues>)(store);
             
             expect(issues.some(i => i.kind === 'NOT_REGISTERED')).toBe(true);
             expect(issues.some(i => i.message?.includes('OrphanController'))).toBe(true);

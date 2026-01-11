@@ -5,10 +5,7 @@
  */
 
 import { BaseIndexer, type IndexerOptions } from './BaseIndexer';
-import type { GraphNode, GraphEdge, IndexResult, Confidence } from '../core/types';
-import { createLogger } from '../../utils/logger';
-
-const logger = createLogger('GenericIndexer');
+import type { GraphNode, GraphEdge, IndexResult } from '../core/types';
 
 // Common import patterns across languages
 const IMPORT_PATTERNS: Array<{
@@ -17,8 +14,8 @@ const IMPORT_PATTERNS: Array<{
     extractModule: (match: RegExpMatchArray) => string;
 }> = [
     // Python: import x, from x import y
-    { pattern: /^import\s+([a-zA-Z_][a-zA-Z0-9_\.]*)/m, language: 'python', extractModule: m => m[1] },
-    { pattern: /^from\s+([a-zA-Z_\.][a-zA-Z0-9_\.]*)\s+import/m, language: 'python', extractModule: m => m[1] },
+    { pattern: /^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)/m, language: 'python', extractModule: m => m[1] },
+    { pattern: /^from\s+([a-zA-Z_.][a-zA-Z0-9_.]*)\s+import/m, language: 'python', extractModule: m => m[1] },
     
     // Rust: use crate::x, mod x
     { pattern: /^use\s+([a-zA-Z_][a-zA-Z0-9_:]*)/m, language: 'rust', extractModule: m => m[1] },
@@ -28,10 +25,10 @@ const IMPORT_PATTERNS: Array<{
     { pattern: /import\s+"([^"]+)"/g, language: 'go', extractModule: m => m[1] },
     
     // Java/Kotlin: import x.y.z
-    { pattern: /^import\s+([a-zA-Z_][a-zA-Z0-9_\.]*);?/m, language: 'java', extractModule: m => m[1] },
+    { pattern: /^import\s+([a-zA-Z_][a-zA-Z0-9_.]*);?/m, language: 'java', extractModule: m => m[1] },
     
     // C#: using X.Y.Z
-    { pattern: /^using\s+([a-zA-Z_][a-zA-Z0-9_\.]*);/m, language: 'csharp', extractModule: m => m[1] },
+    { pattern: /^using\s+([a-zA-Z_][a-zA-Z0-9_.]*);/m, language: 'csharp', extractModule: m => m[1] },
     
     // Ruby: require 'x', require_relative 'x'
     { pattern: /require(?:_relative)?\s+['"]([^'"]+)['"]/g, language: 'ruby', extractModule: m => m[1] },
@@ -47,7 +44,7 @@ const IMPORT_PATTERNS: Array<{
     { pattern: /^import\s+([a-zA-Z_][a-zA-Z0-9_]*)/m, language: 'swift', extractModule: m => m[1] },
     
     // Kotlin: import x.y.z
-    { pattern: /^import\s+([a-zA-Z_][a-zA-Z0-9_\.]*)/m, language: 'kotlin', extractModule: m => m[1] },
+    { pattern: /^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)/m, language: 'kotlin', extractModule: m => m[1] },
 ];
 
 // Common entrypoint patterns
@@ -80,6 +77,10 @@ export class GenericIndexer extends BaseIndexer {
     
     constructor(options: IndexerOptions) {
         super(options);
+    }
+
+    get extensions(): string[] {
+        return this.supportedExtensions;
     }
 
     supports(filePath: string): boolean {
@@ -115,7 +116,7 @@ export class GenericIndexer extends BaseIndexer {
                 let match;
                 while ((match = pattern.exec(line)) !== null) {
                     const modulePath = extractModule(match);
-                    edges.push(this.createImportEdge(filePath, modulePath, i + 1));
+                    edges.push(this.createGenericImportEdge(filePath, modulePath, i + 1));
                     
                     // Break if not global pattern
                     if (!pattern.global) break;
@@ -160,7 +161,7 @@ export class GenericIndexer extends BaseIndexer {
     /**
      * Create import edge with low confidence
      */
-    private createImportEdge(fromFile: string, toModule: string, line: number): GraphEdge {
+    private createGenericImportEdge(fromFile: string, toModule: string, line: number): GraphEdge {
         return {
             id: `edge:${fromFile}:${toModule}:${line}`,
             from: `file:${fromFile}`,

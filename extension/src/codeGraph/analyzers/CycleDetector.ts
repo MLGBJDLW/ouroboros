@@ -137,7 +137,10 @@ export class CycleDetector {
             if (!adjacency.has(from)) {
                 adjacency.set(from, []);
             }
-            adjacency.get(from)!.push(to);
+            const fromList = adjacency.get(from);
+            if (fromList) {
+                fromList.push(to);
+            }
 
             // Ensure 'to' node exists in adjacency
             if (!adjacency.has(to)) {
@@ -171,22 +174,32 @@ export class CycleDetector {
                 if (!index.has(neighbor)) {
                     // Neighbor not yet visited
                     strongConnect(neighbor);
-                    lowlink.set(node, Math.min(lowlink.get(node)!, lowlink.get(neighbor)!));
+                    const nodeLowlink = lowlink.get(node);
+                    const neighborLowlink = lowlink.get(neighbor);
+                    if (nodeLowlink !== undefined && neighborLowlink !== undefined) {
+                        lowlink.set(node, Math.min(nodeLowlink, neighborLowlink));
+                    }
                 } else if (onStack.has(neighbor)) {
                     // Neighbor is on stack, part of current SCC
-                    lowlink.set(node, Math.min(lowlink.get(node)!, index.get(neighbor)!));
+                    const nodeLowlink = lowlink.get(node);
+                    const neighborIndex = index.get(neighbor);
+                    if (nodeLowlink !== undefined && neighborIndex !== undefined) {
+                        lowlink.set(node, Math.min(nodeLowlink, neighborIndex));
+                    }
                 }
             }
 
             // If node is a root node, pop the stack and generate SCC
             if (lowlink.get(node) === index.get(node)) {
                 const scc: string[] = [];
-                let w: string;
+                let w: string | undefined;
                 do {
-                    w = stack.pop()!;
-                    onStack.delete(w);
-                    scc.push(w);
-                } while (w !== node);
+                    w = stack.pop();
+                    if (w) {
+                        onStack.delete(w);
+                        scc.push(w);
+                    }
+                } while (w && w !== node);
                 sccs.push(scc);
             }
         };

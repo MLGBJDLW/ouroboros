@@ -27,6 +27,9 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
   - Click nodes to view details (imports, exports, issues)
   - Visual indicators for entrypoints (🚀) and hotspots (🔥)
   - "Fix with Copilot" one-click button
+- **Tree View** — New "Tree" tab with hierarchical file browsing and issue badges
+- **Graph Controls** — Fit-to-view, freeze layout, show edges, label declutter
+- **Mixed-Repo Indexing** — Expanded include patterns with `.ouroboros/graph/config.json` overrides
 
 - **Performance** — QueryCache with LRU eviction, ParallelIndexer for batch processing
 
@@ -35,8 +38,16 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 - **Framework Detection** — Express, Next.js, NestJS, FastAPI, Spring Boot, etc.
 
 #### Fixes
-- **Hotspot Detection** — Fixed module path matching for all languages
+- **Hotspot Detection** — Use resolved file imports and skip external modules
+- **Import Path Resolution** — All languages now resolve local imports to file paths:
+  - Python: Relative imports (`.module`, `..module`) → `path/to/module.py`
+  - Rust: `crate::`, `super::`, `self::` → `src/path/to/module.rs`
+  - Java: Local package imports → `src/main/java/path/Class.java`
+  - Go: Relative imports (`./`, `../`) → resolved directory paths
+- **Hotspot Fallback** — Shows files with most exports when no import-based hotspots found
 - **Bundle Splitting** — Webview split into 4 chunks (react, markdown, graph, app)
+- **Log Spam Reduction** — Tree-sitter fallback warnings now log only once per language
+- **Tree-Sitter Init** — Normalize module exports and bundle WASM for reliable startup
 
 #### Tests
 - 677 tests passing (+317 from v3.2.20)

@@ -150,7 +150,7 @@ describe('attachmentHelper', () => {
     describe('buildToolResult', () => {
         it('should build result with text output only', () => {
             const output = { response: 'hello', cancelled: false };
-            const result = buildToolResult(output);
+            const result = buildToolResult(output) as unknown as { parts: vscode.LanguageModelTextPart[] };
 
             expect(result).toBeInstanceOf(vscode.LanguageModelToolResult);
             expect(result.parts.length).toBe(1);
@@ -168,13 +168,13 @@ describe('attachmentHelper', () => {
                 },
             ];
 
-            const result = buildToolResult(output, attachments);
+            const result = buildToolResult(output, attachments) as unknown as { parts: unknown[] };
             expect(result.parts.length).toBe(2);
         });
 
         it('should serialize output to JSON', () => {
             const output = { foo: 'bar', num: 42 };
-            const result = buildToolResult(output);
+            const result = buildToolResult(output) as unknown as { parts: vscode.LanguageModelTextPart[] };
 
             const textPart = result.parts[0] as vscode.LanguageModelTextPart;
             expect(JSON.parse(textPart.value)).toEqual(output);

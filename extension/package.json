@@ -570,7 +570,7 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "compile": "npm run build-webview && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+        "compile": "npm run build-webview && node scripts/copy-tree-sitter-wasm.js && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
         "watch": "npm run compile -- --watch",
         "build-webview": "cd webview && npm run build",
         "package": "npm run compile -- --minify",

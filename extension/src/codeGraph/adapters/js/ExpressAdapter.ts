@@ -137,7 +137,7 @@ export class ExpressAdapter implements FrameworkAdapter {
                         routes.push({
                             method: (match[1]?.toUpperCase() || 'ALL') as RouteInfo['method'],
                             path: match[2] || '/',
-                            handlerFile: node.path,
+                            handlerFile: node.path || '',
                             handlerName: match[3],
                             line: i + 1,
                         });

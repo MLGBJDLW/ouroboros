@@ -9,7 +9,7 @@ import type { ModuleResult } from '../../../codeGraph/core/types';
 
 describe('createGraphModuleTool', () => {
     let mockQuery: Partial<GraphQuery>;
-    let mockManager: { getQuery: () => GraphQuery | null };
+    let mockManager: { getQuery: () => GraphQuery };
 
     beforeEach(() => {
         mockQuery = {
@@ -33,7 +33,7 @@ describe('createGraphModuleTool', () => {
             meta: { tokensEstimate: 200 },
         };
 
-        vi.mocked(mockQuery.module!).mockReturnValue(mockResult);
+        vi.mocked(mockQuery.module as NonNullable<typeof mockQuery.module>).mockReturnValue(mockResult);
 
         const tool = createGraphModuleTool(mockManager);
         const result = await tool.execute({ target: 'src/utils/helpers.ts' });
@@ -61,7 +61,7 @@ describe('createGraphModuleTool', () => {
             meta: { tokensEstimate: 150 },
         };
 
-        vi.mocked(mockQuery.module!).mockReturnValue(mockResult);
+        vi.mocked(mockQuery.module as NonNullable<typeof mockQuery.module>).mockReturnValue(mockResult);
 
         const tool = createGraphModuleTool(mockManager);
         await tool.execute({ target: 'src/index.ts', includeTransitive: true });
@@ -72,15 +72,16 @@ describe('createGraphModuleTool', () => {
     });
 
     it('should return default result when query is null', async () => {
-        const nullManager = { getQuery: () => null };
+        const nullManager = { getQuery: () => null } as unknown as { getQuery: () => GraphQuery };
         const tool = createGraphModuleTool(nullManager);
         const result = await tool.execute({ target: 'src/test.ts' });
+        const moduleResult = result.data.result as ModuleResult;
 
         expect(result.success).toBe(true);
-        expect(result.data.result.id).toBe('file:src/test.ts');
-        expect(result.data.result.path).toBe('src/test.ts');
-        expect(result.data.result.imports).toHaveLength(0);
-        expect(result.data.result.isBarrel).toBe(false);
+        expect(moduleResult.id).toBe('file:src/test.ts');
+        expect(moduleResult.path).toBe('src/test.ts');
+        expect(moduleResult.imports).toHaveLength(0);
+        expect(moduleResult.isBarrel).toBe(false);
     });
 
     it('should have correct tool metadata', () => {

@@ -2,7 +2,7 @@
  * ExpressAdapter Tests
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ExpressAdapter } from '../../../codeGraph/adapters/js/ExpressAdapter';
 import { GraphStore } from '../../../codeGraph/core/GraphStore';
 import type { PackageJson } from '../../../codeGraph/adapters/types';

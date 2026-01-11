@@ -15,6 +15,46 @@ export class RustIndexer extends TreeSitterIndexer {
         super(options);
     }
 
+    /**
+     * Resolve Rust import path to local file
+     */
+    protected override resolveImportPath(importPath: string, fromFile: string): string | null {
+        // crate:: imports - local crate modules
+        if (importPath.startsWith('crate::')) {
+            const modulePath = importPath.slice(7); // Remove "crate::"
+            const parts = modulePath.split('::');
+            // Convert to file path: crate::foo::bar -> src/foo/bar.rs or src/foo/bar/mod.rs
+            return `src/${parts.join('/')}.rs`;
+        }
+        
+        // super:: imports - parent module
+        if (importPath.startsWith('super::')) {
+            const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
+            const parentDir = fromDir.substring(0, fromDir.lastIndexOf('/'));
+            const modulePath = importPath.slice(7); // Remove "super::"
+            const parts = modulePath.split('::');
+            return `${parentDir}/${parts.join('/')}.rs`;
+        }
+        
+        // self:: imports - current module
+        if (importPath.startsWith('self::')) {
+            const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
+            const modulePath = importPath.slice(6); // Remove "self::"
+            const parts = modulePath.split('::');
+            return `${fromDir}/${parts.join('/')}.rs`;
+        }
+        
+        // mod declarations - sibling file or directory
+        if (!importPath.includes('::')) {
+            const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
+            // Could be module_name.rs or module_name/mod.rs
+            return `${fromDir}/${importPath}.rs`;
+        }
+        
+        // External crates (std::, external packages) - return null
+        return null;
+    }
+
     protected parseTree(rootNode: ParsedNode, filePath: string, content: string): IndexResult {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
@@ -30,7 +70,7 @@ export class RustIndexer extends TreeSitterIndexer {
                 if (pathNode) {
                     const modulePath = pathNode.text;
                     const confidence = modulePath.startsWith('crate::') ? 'high' : 'medium';
-                    edges.push(this.createImportEdge(
+                    edges.push(this.createTsImportEdge(
                         filePath,
                         modulePath,
                         node.startPosition.row + 1,
@@ -43,7 +83,7 @@ export class RustIndexer extends TreeSitterIndexer {
             if (node.type === 'mod_item') {
                 const nameNode = this.findChild(node, 'identifier');
                 if (nameNode) {
-                    edges.push(this.createImportEdge(
+                    edges.push(this.createTsImportEdge(
                         filePath,
                         nameNode.text,
                         node.startPosition.row + 1,
@@ -72,7 +112,7 @@ export class RustIndexer extends TreeSitterIndexer {
         });
 
         // Create file node
-        nodes.push(this.createFileNode(filePath, exports));
+        nodes.push(this.createTsFileNode(filePath, exports));
 
         // Detect entrypoints
         const entrypoint = this.detectEntrypoint(rootNode, content, filePath);
@@ -149,17 +189,17 @@ export class RustIndexer extends TreeSitterIndexer {
             // use crate::module;
             const useMatch = line.match(/^use\s+([a-zA-Z_][a-zA-Z0-9_:]*)/);
             if (useMatch) {
-                edges.push(this.createImportEdge(filePath, useMatch[1], i + 1, 'low'));
+                edges.push(this.createTsImportEdge(filePath, useMatch[1], i + 1, 'low'));
             }
 
             // mod module_name;
             const modMatch = line.match(/^mod\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;/);
             if (modMatch) {
-                edges.push(this.createImportEdge(filePath, modMatch[1], i + 1, 'low'));
+                edges.push(this.createTsImportEdge(filePath, modMatch[1], i + 1, 'low'));
             }
         }
 
-        nodes.push(this.createFileNode(filePath));
+        nodes.push(this.createTsFileNode(filePath));
 
         // Check for main function
         if (content.includes('fn main(')) {

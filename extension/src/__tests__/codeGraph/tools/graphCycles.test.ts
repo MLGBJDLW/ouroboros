@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createGraphCyclesTool } from '../../../codeGraph/tools/graphCycles';
+import { createGraphCyclesTool, type GraphCyclesResult } from '../../../codeGraph/tools/graphCycles';
 import { CycleDetector } from '../../../codeGraph/analyzers/CycleDetector';
 import { GraphStore } from '../../../codeGraph/core/GraphStore';
 
@@ -39,8 +39,9 @@ describe('graphCycles Tool', () => {
             const result = await tool.execute({});
             
             expect(result.success).toBe(true);
-            expect(result.data.result.cycles).toHaveLength(0);
-            expect(result.data.result.stats.totalCycles).toBe(0);
+            const cyclesResult = result.data.result as GraphCyclesResult;
+            expect(cyclesResult.cycles).toHaveLength(0);
+            expect(cyclesResult.stats.totalCycles).toBe(0);
         });
 
         it('should return empty result when no cycles', async () => {
@@ -52,8 +53,9 @@ describe('graphCycles Tool', () => {
             const result = await tool.execute({});
             
             expect(result.success).toBe(true);
-            expect(result.data.result.cycles).toHaveLength(0);
-            expect(result.data.result.stats.totalCycles).toBe(0);
+            const cyclesResult = result.data.result as GraphCyclesResult;
+            expect(cyclesResult.cycles).toHaveLength(0);
+            expect(cyclesResult.stats.totalCycles).toBe(0);
         });
 
         it('should detect cycles and return formatted result', async () => {
@@ -66,13 +68,14 @@ describe('graphCycles Tool', () => {
             const result = await tool.execute({});
             
             expect(result.success).toBe(true);
-            expect(result.data.result.cycles.length).toBeGreaterThan(0);
-            expect(result.data.result.stats.totalCycles).toBeGreaterThan(0);
-            expect(result.data.result.cycles[0]).toHaveProperty('nodes');
-            expect(result.data.result.cycles[0]).toHaveProperty('length');
-            expect(result.data.result.cycles[0]).toHaveProperty('severity');
-            expect(result.data.result.cycles[0]).toHaveProperty('breakPoints');
-            expect(result.data.result.cycles[0]).toHaveProperty('description');
+            const cyclesResult = result.data.result as GraphCyclesResult;
+            expect(cyclesResult.cycles.length).toBeGreaterThan(0);
+            expect(cyclesResult.stats.totalCycles).toBeGreaterThan(0);
+            expect(cyclesResult.cycles[0]).toHaveProperty('nodes');
+            expect(cyclesResult.cycles[0]).toHaveProperty('length');
+            expect(cyclesResult.cycles[0]).toHaveProperty('severity');
+            expect(cyclesResult.cycles[0]).toHaveProperty('breakPoints');
+            expect(cyclesResult.cycles[0]).toHaveProperty('description');
         });
 
         it('should strip file: prefix from node paths', async () => {
@@ -83,8 +86,9 @@ describe('graphCycles Tool', () => {
 
             const tool = createGraphCyclesTool(() => detector);
             const result = await tool.execute({});
+            const cyclesResult = result.data.result as GraphCyclesResult;
             
-            for (const cycle of result.data.result.cycles) {
+            for (const cycle of cyclesResult.cycles) {
                 for (const node of cycle.nodes) {
                     expect(node).not.toContain('file:');
                 }
@@ -115,18 +119,20 @@ describe('graphCycles Tool', () => {
 
             const tool = createGraphCyclesTool(() => detector);
             const result = await tool.execute({});
+            const cyclesResult = result.data.result as GraphCyclesResult;
             
-            const stats = result.data.result.stats;
+            const stats = cyclesResult.stats;
             expect(stats.errorCount + stats.warningCount).toBe(stats.totalCycles);
         });
 
         it('should include meta information', async () => {
             const tool = createGraphCyclesTool(() => detector);
             const result = await tool.execute({ scope: 'src/features', maxCycles: 10 });
+            const cyclesResult = result.data.result as GraphCyclesResult;
             
-            expect(result.data.result.meta).toHaveProperty('tokensEstimate');
-            expect(result.data.result.meta).toHaveProperty('truncated');
-            expect(result.data.result.meta.scope).toBe('src/features');
+            expect(cyclesResult.meta).toHaveProperty('tokensEstimate');
+            expect(cyclesResult.meta).toHaveProperty('truncated');
+            expect(cyclesResult.meta.scope).toBe('src/features');
             expect(result.data.tool).toBe('ouroborosai_graph_cycles');
         });
 
@@ -141,8 +147,9 @@ describe('graphCycles Tool', () => {
 
             const tool = createGraphCyclesTool(() => detector);
             const result = await tool.execute({ maxCycles: 2 });
+            const cyclesResult = result.data.result as GraphCyclesResult;
             
-            expect(result.data.result.meta.truncated).toBe(true);
+            expect(cyclesResult.meta.truncated).toBe(true);
         });
     });
 });

@@ -9,7 +9,7 @@ import type { PathResult } from '../../../codeGraph/core/types';
 
 describe('createGraphPathTool', () => {
     let mockQuery: Partial<GraphQuery>;
-    let mockManager: { getQuery: () => GraphQuery | null };
+    let mockManager: { getQuery: () => GraphQuery };
 
     beforeEach(() => {
         mockQuery = {
@@ -38,7 +38,7 @@ describe('createGraphPathTool', () => {
             },
         };
 
-        vi.mocked(mockQuery.path!).mockReturnValue(mockResult);
+        vi.mocked(mockQuery.path as NonNullable<typeof mockQuery.path>).mockReturnValue(mockResult);
 
         const tool = createGraphPathTool(mockManager);
         const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
@@ -62,7 +62,7 @@ describe('createGraphPathTool', () => {
             meta: { tokensEstimate: 100, truncated: false, maxDepthReached: true },
         };
 
-        vi.mocked(mockQuery.path!).mockReturnValue(mockResult);
+        vi.mocked(mockQuery.path as NonNullable<typeof mockQuery.path>).mockReturnValue(mockResult);
 
         const tool = createGraphPathTool(mockManager);
         await tool.execute({ from: 'src/a.ts', to: 'src/c.ts', maxDepth: 3, maxPaths: 5 });
@@ -74,14 +74,15 @@ describe('createGraphPathTool', () => {
     });
 
     it('should return empty result when query is null', async () => {
-        const nullManager = { getQuery: () => null };
+        const nullManager = { getQuery: () => null } as unknown as { getQuery: () => GraphQuery };
         const tool = createGraphPathTool(nullManager);
         const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
+        const pathResult = result.data.result as PathResult;
 
         expect(result.success).toBe(true);
-        expect(result.data.result.connected).toBe(false);
-        expect(result.data.result.paths).toHaveLength(0);
-        expect(result.data.result.shortestPath).toBeNull();
+        expect(pathResult.connected).toBe(false);
+        expect(pathResult.paths).toHaveLength(0);
+        expect(pathResult.shortestPath).toBeNull();
     });
 
     it('should have correct tool metadata', () => {

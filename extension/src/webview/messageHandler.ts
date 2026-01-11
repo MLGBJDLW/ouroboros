@@ -312,6 +312,118 @@ export async function handleMessage(
             break;
         }
 
+        case 'getGraphFiles': {
+            logger.info('Getting graph file index');
+            if (codeGraphManager) {
+                try {
+                    const payload = codeGraphManager.getFileIndex();
+                    sidebarProvider.postMessage({
+                        type: 'graphFiles',
+                        payload,
+                    });
+                } catch (error) {
+                    logger.error('Failed to get graph files:', error);
+                    sidebarProvider.postMessage({
+                        type: 'graphError',
+                        payload: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                }
+            } else {
+                sidebarProvider.postMessage({
+                    type: 'graphError',
+                    payload: 'Code Graph not initialized',
+                });
+            }
+            break;
+        }
+
+        case 'getGraphImpact': {
+            logger.info('Getting graph impact');
+            if (codeGraphManager) {
+                try {
+                    const payload = message.payload as { target: string; depth?: number };
+                    const impact = codeGraphManager.getImpact(payload.target, payload.depth);
+                    const entrypointPaths = new Set(
+                        impact.affectedEntrypoints.map((ep) => ep.path).filter(Boolean)
+                    );
+                    const affectedFiles = impact.directDependents.map((path) => ({
+                        path,
+                        distance: 1,
+                        reason: 'Direct import',
+                        isEntrypoint: entrypointPaths.has(path),
+                    }));
+
+                    for (const ep of impact.affectedEntrypoints) {
+                        if (!ep.path || affectedFiles.find((f) => f.path === ep.path)) continue;
+                        affectedFiles.push({
+                            path: ep.path,
+                            distance: 2,
+                            reason: 'Entrypoint depends on target',
+                            isEntrypoint: true,
+                        });
+                    }
+
+                    const summaryParts = [impact.riskAssessment.reason, ...impact.riskAssessment.factors];
+                    sidebarProvider.postMessage({
+                        type: 'graphImpact',
+                        payload: {
+                            target: impact.target,
+                            depth: impact.meta.depthReached,
+                            affectedFiles,
+                            riskLevel: impact.riskAssessment.level,
+                            summary: summaryParts.filter(Boolean).join(' · '),
+                        },
+                    });
+                } catch (error) {
+                    logger.error('Failed to get graph impact:', error);
+                    sidebarProvider.postMessage({
+                        type: 'graphError',
+                        payload: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                }
+            } else {
+                sidebarProvider.postMessage({
+                    type: 'graphError',
+                    payload: 'Code Graph not initialized',
+                });
+            }
+            break;
+        }
+
+        case 'getGraphModule': {
+            logger.info('Getting graph module');
+            if (codeGraphManager) {
+                try {
+                    const payload = message.payload as { target: string };
+                    const moduleInfo = codeGraphManager.getModule(payload.target);
+                    sidebarProvider.postMessage({
+                        type: 'graphModule',
+                        payload: {
+                            path: moduleInfo.path ?? payload.target,
+                            imports: moduleInfo.imports.map((imp) => imp.path),
+                            exports: moduleInfo.exports,
+                            dependents: moduleInfo.importedBy.map((dep) => dep.path),
+                            isEntrypoint: moduleInfo.entrypoints.length > 0,
+                            entrypointType: moduleInfo.entrypoints[0]?.type,
+                            issues: [],
+                        },
+                    });
+                } catch (error) {
+                    logger.error('Failed to get graph module:', error);
+                    sidebarProvider.postMessage({
+                        type: 'graphError',
+                        payload: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                }
+            } else {
+                sidebarProvider.postMessage({
+                    type: 'graphError',
+                    payload: 'Code Graph not initialized',
+                });
+            }
+            break;
+        }
+
         case 'addGraphContext': {
             const payload = message.payload as {
                 type: string;

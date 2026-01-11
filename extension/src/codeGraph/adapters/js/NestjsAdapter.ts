@@ -29,7 +29,7 @@ export class NestjsAdapter implements FrameworkAdapter {
         const nodes = store.getAllNodes();
 
         for (const node of nodes) {
-            if (node.kind !== 'file') continue;
+            if (node.kind !== 'file' || !node.path) continue;
             
             const content = node.meta?.content as string | undefined;
             if (!content) continue;
@@ -187,7 +187,7 @@ export class NestjsAdapter implements FrameworkAdapter {
     private extractRoutes(
         content: string,
         basePath: string,
-        filePath: string
+        _filePath: string
     ): Array<{ method: string; path: string; handler: string; line: number }> {
         const routes: Array<{ method: string; path: string; handler: string; line: number }> = [];
         const lines = content.split('\n');

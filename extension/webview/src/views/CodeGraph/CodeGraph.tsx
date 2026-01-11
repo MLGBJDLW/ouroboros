@@ -10,8 +10,9 @@ import { Icon } from '../../components/Icon';
 import { EmptyState } from '../../components/EmptyState';
 import { Spinner } from '../../components/Spinner';
 import { ForceGraph } from './components/ForceGraph';
+import { FileTree } from './components/FileTree';
 import { NodeDetail } from './components/NodeDetail';
-import type { GraphNode, GraphEdge, GraphData, ImpactResult, ModuleInfo } from './types';
+import type { GraphNode, GraphEdge, GraphData, ImpactResult, ModuleInfo, GraphIssue } from './types';
 import styles from './CodeGraph.module.css';
 
 interface GraphDigest {
@@ -39,17 +40,23 @@ interface GraphDigest {
     };
 }
 
-interface GraphIssue {
-    id: string;
-    kind: string;
-    severity: 'info' | 'warning' | 'error';
-    file: string;
-    summary: string;
-    evidence: string[];
-    suggestedFix: string[];
-}
+type TabType = 'overview' | 'graph' | 'tree' | 'issues' | 'hotspots';
 
-type TabType = 'overview' | 'graph' | 'issues' | 'hotspots';
+interface GraphFileIndex {
+    files: Array<{
+        path: string;
+        name: string;
+        importers: number;
+        exports: number;
+        isEntrypoint: boolean;
+        isHotspot: boolean;
+        language?: string;
+    }>;
+    meta: {
+        total: number;
+        hotspotLimit: number;
+    };
+}
 
 export function CodeGraph() {
     const vscode = useVSCode();
@@ -62,13 +69,19 @@ export function CodeGraph() {
     
     // Graph view state
     const [graphData, setGraphData] = useState<GraphData | null>(null);
+    const [fileNodes, setFileNodes] = useState<GraphNode[]>([]);
+    const [fileIndex, setFileIndex] = useState<GraphFileIndex | null>(null);
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
     const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
     const [showDetail, setShowDetail] = useState(false);
     const [graphSize, setGraphSize] = useState({ width: 600, height: 400 });
+    const [isFileIndexLoading, setIsFileIndexLoading] = useState(true);
+    const [fitVersion, setFitVersion] = useState(0);
+    const [isFrozen, setIsFrozen] = useState(false);
     const [graphSettings, setGraphSettings] = useState({
         showLabels: true,
+        showEdges: true,
         highlightEntrypoints: true,
         highlightHotspots: true,
     });
@@ -153,12 +166,37 @@ export function CodeGraph() {
         return { nodes, links };
     }, []);
 
+    const buildFileNodes = useCallback((fileIndex: GraphFileIndex, issues: GraphIssue[]): GraphNode[] => {
+        const issueCountMap = new Map<string, number>();
+        issues.forEach(issue => {
+            const count = issueCountMap.get(issue.file) || 0;
+            issueCountMap.set(issue.file, count + 1);
+        });
+
+        return fileIndex.files.map((file, index) => ({
+            id: file.path,
+            path: file.path,
+            name: file.name || file.path.split('/').pop() || file.path,
+            type: 'file',
+            language: file.language,
+            issueCount: issueCountMap.get(file.path) || 0,
+            importers: file.importers,
+            exports: file.exports,
+            isEntrypoint: file.isEntrypoint,
+            isHotspot: file.isHotspot,
+            depth: index,
+            val: Math.max(4, Math.min(18, file.importers || 4)),
+        }));
+    }, []);
+
     // Request graph data from extension
     const refreshData = useCallback(() => {
         setIsLoading(true);
+        setIsFileIndexLoading(true);
         setError(null);
         vscode.postMessage({ type: 'getGraphDigest' });
         vscode.postMessage({ type: 'getGraphIssues' });
+        vscode.postMessage({ type: 'getGraphFiles' });
     }, [vscode]);
 
     // Add item to pending request context
@@ -218,6 +256,11 @@ export function CodeGraph() {
         setHoveredNode(node?.id || null);
     }, []);
 
+    const handleTreeSelect = useCallback((path: string) => {
+        setSelectedNode(path);
+        setShowDetail(true);
+    }, []);
+
     const clearSelection = useCallback(() => {
         setSelectedNode(null);
         setShowDetail(false);
@@ -260,6 +303,24 @@ export function CodeGraph() {
         vscode.postMessage({ type: 'sendToCopilot', payload: { prompt } });
     }, [vscode]);
 
+    const handleTreeAction = useCallback((path: string, action: 'open' | 'impact' | 'fix') => {
+        if (action === 'open') {
+            openFile(path);
+            return;
+        }
+        if (action === 'impact') {
+            setSelectedNode(path);
+            setShowDetail(true);
+            return;
+        }
+        if (action === 'fix') {
+            const issue = issues.find((i) => i.file === path);
+            if (issue) {
+                handleFixWithCopilot(issue);
+            }
+        }
+    }, [openFile, issues, handleFixWithCopilot]);
+
     // Resize observer for graph container
     useEffect(() => {
         if (!graphContainerRef.current) return;
@@ -283,6 +344,10 @@ export function CodeGraph() {
                 setIsLoading(false);
             } else if (message.type === 'graphIssues') {
                 setIssues(message.payload?.issues || []);
+            } else if (message.type === 'graphFiles') {
+                const indexPayload = message.payload as GraphFileIndex;
+                setFileIndex(indexPayload);
+                setIsFileIndexLoading(false);
             } else if (message.type === 'graphError') {
                 setError(message.payload);
                 setIsLoading(false);
@@ -301,8 +366,17 @@ export function CodeGraph() {
         }
     }, [digest, issues, buildGraphData]);
 
+    useEffect(() => {
+        if (fileIndex) {
+            const nodes = buildFileNodes(fileIndex, issues);
+            setFileNodes(nodes);
+        }
+    }, [fileIndex, issues, buildFileNodes]);
+
     // Get selected node object
-    const selectedNodeObj = graphData?.nodes.find(n => n.id === selectedNode) || null;
+    const selectedGraphNode = graphData?.nodes.find(n => n.id === selectedNode) || null;
+    const selectedFileNode = fileNodes.find(n => n.id === selectedNode) || null;
+    const selectedNodeObj = selectedGraphNode || selectedFileNode || null;
 
     if (isLoading) {
         return (
@@ -373,6 +447,14 @@ export function CodeGraph() {
                     <span>Graph</span>
                 </button>
                 <button
+                    className={`${styles.tab} ${activeTab === 'tree' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('tree')}
+                    title="File tree with hotspots and issues"
+                >
+                    <Icon name="list-tree" />
+                    <span>Tree</span>
+                </button>
+                <button
                     className={`${styles.tab} ${activeTab === 'issues' ? styles.active : ''}`}
                     onClick={() => setActiveTab('issues')}
                     title="Code quality issues detected"
@@ -417,6 +499,13 @@ export function CodeGraph() {
                                         <Icon name="symbol-text" />
                                     </button>
                                     <button
+                                        className={`${styles.settingBtn} ${graphSettings.showEdges ? styles.active : ''}`}
+                                        onClick={() => setGraphSettings(s => ({ ...s, showEdges: !s.showEdges }))}
+                                        title="Show edges"
+                                    >
+                                        <Icon name="git-merge" />
+                                    </button>
+                                    <button
                                         className={`${styles.settingBtn} ${graphSettings.highlightEntrypoints ? styles.active : ''}`}
                                         onClick={() => setGraphSettings(s => ({ ...s, highlightEntrypoints: !s.highlightEntrypoints }))}
                                         title="Highlight entrypoints"
@@ -431,6 +520,20 @@ export function CodeGraph() {
                                         🔥
                                     </button>
                                     <div className={styles.settingDivider} />
+                                    <button
+                                        className={styles.settingBtn}
+                                        onClick={() => setFitVersion((v) => v + 1)}
+                                        title="Fit to view"
+                                    >
+                                        <Icon name="target" />
+                                    </button>
+                                    <button
+                                        className={`${styles.settingBtn} ${isFrozen ? styles.active : ''}`}
+                                        onClick={() => setIsFrozen((prev) => !prev)}
+                                        title={isFrozen ? 'Resume layout' : 'Freeze layout'}
+                                    >
+                                        <Icon name={isFrozen ? 'debug-start' : 'debug-pause'} />
+                                    </button>
                                     <button
                                         className={styles.settingBtn}
                                         onClick={clearSelection}
@@ -454,8 +557,11 @@ export function CodeGraph() {
                                             onNodeHover={handleNodeHover}
                                             onNodeRightClick={handleNodeClick}
                                             showLabels={graphSettings.showLabels}
+                                            showEdges={graphSettings.showEdges}
                                             highlightEntrypoints={graphSettings.highlightEntrypoints}
                                             highlightHotspots={graphSettings.highlightHotspots}
+                                            isFrozen={isFrozen}
+                                            fitVersion={fitVersion}
                                         />
                                     </div>
                                     {showDetail && (
@@ -474,6 +580,48 @@ export function CodeGraph() {
                                     )}
                                 </div>
                             </>
+                        )}
+                    </div>
+                )}
+                {activeTab === 'tree' && (
+                    <div className={styles.treeTab}>
+                        {isFileIndexLoading ? (
+                            <div className={styles.loading}>
+                                <Spinner size="large" />
+                                <span>Building file index...</span>
+                            </div>
+                        ) : fileNodes.length === 0 ? (
+                            <EmptyState
+                                icon="list-tree"
+                                title="No files indexed"
+                                description="Adjust graph include patterns or ensure the repo has supported files."
+                            />
+                        ) : (
+                            <div className={styles.treeLayout}>
+                                <div className={styles.treeContainer}>
+                                    <FileTree
+                                        nodes={fileNodes}
+                                        issues={issues}
+                                        selectedNode={selectedNode}
+                                        onNodeSelect={handleTreeSelect}
+                                        onNodeAction={handleTreeAction}
+                                    />
+                                </div>
+                                {showDetail && selectedNodeObj && (
+                                    <div className={styles.detailPanel}>
+                                        <NodeDetail
+                                            node={selectedNodeObj}
+                                            issues={issues}
+                                            onClose={clearSelection}
+                                            onOpenFile={openFile}
+                                            onAnalyzeImpact={getImpact}
+                                            onGetModule={getModule}
+                                            onFixWithCopilot={handleFixWithCopilot}
+                                            onAddToContext={addToContext}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 )}
@@ -870,11 +1018,18 @@ function IssueCard({ issue, addToContext, isAdded, openFile }: {
     const [expanded, setExpanded] = useState(false);
 
     const severityIcon = issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info';
-    const kindLabel = {
-        'HANDLER_UNREACHABLE': 'Unreachable Code',
-        'DYNAMIC_EDGE_UNKNOWN': 'Dynamic Import',
-        'BROKEN_EXPORT_CHAIN': 'Broken Export'
-    }[issue.kind] || issue.kind;
+    const kindLabelMap: Record<string, string> = {
+        HANDLER_UNREACHABLE: 'Unreachable Code',
+        DYNAMIC_EDGE_UNKNOWN: 'Dynamic Import',
+        BROKEN_EXPORT_CHAIN: 'Broken Export',
+        CIRCULAR_REEXPORT: 'Circular Re-export',
+        ORPHAN_EXPORT: 'Orphan Export',
+        ENTRY_MISSING_HANDLER: 'Missing Handler',
+        NOT_REGISTERED: 'Not Registered',
+        CYCLE_RISK: 'Cycle Risk',
+        LAYER_VIOLATION: 'Layer Violation',
+    };
+    const kindLabel = kindLabelMap[issue.kind] || issue.kind;
 
     return (
         <div className={`${styles.issueCard} ${styles[issue.severity]}`}>

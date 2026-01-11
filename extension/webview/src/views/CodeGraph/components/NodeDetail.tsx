@@ -6,28 +6,17 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '../../../components/Icon';
 import { Spinner } from '../../../components/Spinner';
-import type { GraphNode, ModuleInfo, ImpactResult } from '../types';
+import type { GraphNode, ModuleInfo, ImpactResult, GraphIssue } from '../types';
 import styles from './NodeDetail.module.css';
-
-// Simple issue type for this component
-interface SimpleIssue {
-    id: string;
-    kind: string;
-    severity: 'info' | 'warning' | 'error';
-    file: string;
-    summary: string;
-    evidence: string[];
-    suggestedFix: string[];
-}
 
 interface NodeDetailProps {
     node: GraphNode | null;
-    issues: SimpleIssue[];
+    issues: GraphIssue[];
     onClose: () => void;
     onOpenFile: (path: string) => void;
     onAnalyzeImpact: (path: string) => Promise<ImpactResult | null>;
     onGetModule: (path: string) => Promise<ModuleInfo | null>;
-    onFixWithCopilot: (issue: SimpleIssue) => void;
+    onFixWithCopilot: (issue: GraphIssue) => void;
     onAddToContext: (type: string, data: unknown) => void;
 }
 
@@ -303,8 +292,8 @@ function IssuesTab({
     onFixWithCopilot,
     onAddToContext,
 }: { 
-    issues: SimpleIssue[];
-    onFixWithCopilot: (issue: SimpleIssue) => void;
+    issues: GraphIssue[];
+    onFixWithCopilot: (issue: GraphIssue) => void;
     onAddToContext: (type: string, data: unknown) => void;
 }) {
     if (issues.length === 0) {

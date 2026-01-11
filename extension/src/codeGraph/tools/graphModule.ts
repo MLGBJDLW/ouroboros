@@ -3,7 +3,7 @@
  * LM Tool for getting detailed information about a specific module
  */
 
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 import type { GraphQuery } from '../core/GraphQuery';
 import type { ModuleResult } from '../core/types';
 import {
@@ -119,7 +119,7 @@ export function registerGraphModuleTool(
     context: vscode.ExtensionContext,
     getQuery: () => GraphQuery | null
 ): vscode.Disposable | undefined {
-    const vscodeAny = require('vscode') as typeof vscode & {
+    const vscodeAny = vscode as typeof vscode & {
         lm?: {
             registerTool?: (
                 name: string,
@@ -137,7 +137,7 @@ export function registerGraphModuleTool(
         return undefined;
     }
 
-    const tool = createGraphModuleTool(getQuery);
+    const tool = createGraphModuleTool(getQuery as unknown as { getQuery: () => GraphQuery });
 
     return vscodeAny.lm.registerTool(tool.name, {
         async invoke(

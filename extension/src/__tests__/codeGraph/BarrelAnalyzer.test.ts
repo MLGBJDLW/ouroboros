@@ -187,7 +187,7 @@ export * from './utils';
 
             const issues = analyzer.detectCircularReexports();
             
-            expect(issues.some(i => i.title.includes('Circular'))).toBe(true);
+            expect(issues.some(i => i.title?.includes('Circular'))).toBe(true);
         });
 
         it('should return empty array when no circular chains', () => {
@@ -204,7 +204,7 @@ export * from './utils';
 
             const issues = analyzer.detectCircularReexports();
             
-            expect(issues.filter(i => i.title.includes('Circular'))).toHaveLength(0);
+            expect(issues.filter(i => i.title?.includes('Circular'))).toHaveLength(0);
         });
     });
 

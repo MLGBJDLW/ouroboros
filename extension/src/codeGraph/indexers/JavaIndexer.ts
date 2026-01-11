@@ -15,6 +15,42 @@ export class JavaIndexer extends TreeSitterIndexer {
         super(options);
     }
 
+    /**
+     * Resolve Java import path to local file
+     */
+    protected override resolveImportPath(importPath: string, _fromFile: string): string | null {
+        // Java imports are fully qualified class names
+        // e.g., com.example.myapp.utils.Helper
+        
+        // Skip standard library and common external packages
+        if (importPath.startsWith('java.') ||
+            importPath.startsWith('javax.') ||
+            importPath.startsWith('org.springframework.') ||
+            importPath.startsWith('org.junit.') ||
+            importPath.startsWith('org.apache.') ||
+            importPath.startsWith('com.google.') ||
+            importPath.startsWith('io.') ||
+            importPath.startsWith('lombok.')) {
+            return null;
+        }
+        
+        // Try to resolve as local package
+        // Convert package.Class to package/Class.java
+        const parts = importPath.split('.');
+        
+        // Handle wildcard imports (com.example.*)
+        if (parts[parts.length - 1] === '*') {
+            parts.pop();
+            return `src/main/java/${parts.join('/')}`;
+        }
+        
+        // Regular import - could be in src/main/java or src/
+        const relativePath = parts.join('/') + '.java';
+        
+        // Return the path - graph will validate if file exists
+        return `src/main/java/${relativePath}`;
+    }
+
     protected parseTree(rootNode: ParsedNode, filePath: string, content: string): IndexResult {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
@@ -25,7 +61,7 @@ export class JavaIndexer extends TreeSitterIndexer {
             if (node.type === 'import_declaration') {
                 const pathNode = this.findDescendant(node, 'scoped_identifier');
                 if (pathNode) {
-                    edges.push(this.createImportEdge(
+                    edges.push(this.createTsImportEdge(
                         filePath,
                         pathNode.text,
                         node.startPosition.row + 1,
@@ -69,7 +105,7 @@ export class JavaIndexer extends TreeSitterIndexer {
         });
 
         // Create file node
-        nodes.push(this.createFileNode(filePath, exports));
+        nodes.push(this.createTsFileNode(filePath, exports));
 
         // Detect entrypoints
         const entrypoint = this.detectEntrypoint(rootNode, content, filePath);
@@ -142,13 +178,13 @@ export class JavaIndexer extends TreeSitterIndexer {
             const line = lines[i].trim();
 
             // import package.Class;
-            const importMatch = line.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_\.]*);/);
+            const importMatch = line.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_.]*);/);
             if (importMatch) {
-                edges.push(this.createImportEdge(filePath, importMatch[1], i + 1, 'low'));
+                edges.push(this.createTsImportEdge(filePath, importMatch[1], i + 1, 'low'));
             }
         }
 
-        nodes.push(this.createFileNode(filePath));
+        nodes.push(this.createTsFileNode(filePath));
 
         // Check for main method
         if (content.includes('public static void main')) {

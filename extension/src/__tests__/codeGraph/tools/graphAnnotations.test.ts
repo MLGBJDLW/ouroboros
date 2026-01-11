@@ -8,7 +8,7 @@ import type { AnnotationManager } from '../../../codeGraph/annotations/Annotatio
 
 describe('createGraphAnnotationsTool', () => {
     let mockAnnotationManager: Partial<AnnotationManager>;
-    let mockManager: { getAnnotationManager: () => AnnotationManager | null };
+    let mockManager: { getAnnotationManager: () => AnnotationManager };
 
     beforeEach(() => {
         mockAnnotationManager = {
@@ -30,7 +30,8 @@ describe('createGraphAnnotationsTool', () => {
 
     describe('list action', () => {
         it('should list all annotations', async () => {
-            vi.mocked(mockAnnotationManager.getAll!).mockResolvedValue({
+            const getAll = mockAnnotationManager.getAll as NonNullable<typeof mockAnnotationManager.getAll>;
+            vi.mocked(getAll).mockResolvedValue({
                 version: '1.0.0',
                 edges: [{ from: 'a.ts', to: 'b.ts', kind: 'imports', confidence: 'high', reason: 'test' }],
                 entrypoints: [{ path: 'main.ts', type: 'main', name: 'Main' }],
@@ -169,7 +170,7 @@ describe('createGraphAnnotationsTool', () => {
 
     describe('error handling', () => {
         it('should return error when manager is null', async () => {
-            const nullManager = { getAnnotationManager: () => null };
+            const nullManager = { getAnnotationManager: () => null } as unknown as { getAnnotationManager: () => AnnotationManager };
             const tool = createGraphAnnotationsTool(nullManager);
             const result = await tool.execute({ action: 'list' });
 

@@ -28,6 +28,10 @@ export abstract class TreeSitterIndexer extends BaseIndexer {
         this.tsManager = options.treeSitterManager;
     }
 
+    get extensions(): string[] {
+        return this.supportedExtensions;
+    }
+
     supports(filePath: string): boolean {
         return this.supportedExtensions.some(ext => filePath.endsWith(ext));
     }
@@ -43,7 +47,7 @@ export abstract class TreeSitterIndexer extends BaseIndexer {
             try {
                 await this.tsManager.loadLanguage(this.language);
                 this.initialized = true;
-            } catch (error) {
+            } catch {
                 this.treeSitterAvailable = false;
                 if (!TreeSitterIndexer.loggedLanguages.has(this.language)) {
                     logger.warn(`Tree-sitter not available for ${this.language}, using fallback`);
@@ -135,32 +139,104 @@ export abstract class TreeSitterIndexer extends BaseIndexer {
     }
 
     /**
-     * Create import edge
+     * Create import edge with optional path resolution
+     * Override base class to use language-specific resolution
      */
-    protected createImportEdge(
+    protected override createImportEdge(
         fromFile: string,
         toModule: string,
-        line: number,
-        confidence: Confidence
+        confidence: Confidence,
+        reason: string,
+        isDynamic = false,
+        line?: number
     ): GraphEdge {
+        // Try to resolve to a local file path
+        const resolvedPath = this.resolveImportPath(toModule, fromFile);
+        
+        if (resolvedPath) {
+            // Resolved to a local file - use file: prefix
+            return {
+                id: `edge:${fromFile}:imports:${resolvedPath}`,
+                from: `file:${fromFile}`,
+                to: `file:${resolvedPath}`,
+                kind: 'imports',
+                confidence,
+                reason: reason || `${this.language} import`,
+                meta: {
+                    importPath: toModule,
+                    isDynamic,
+                    loc: line ? { line, column: 0 } : undefined,
+                    language: this.language,
+                },
+            };
+        }
+        
+        // External package - use module: prefix
         return {
-            id: `edge:${fromFile}:${toModule}:${line}`,
+            id: `edge:${fromFile}:${toModule}:${line || 0}`,
             from: `file:${fromFile}`,
             to: `module:${toModule}`,
             kind: 'imports',
-            confidence,
+            confidence: 'low', // Lower confidence for unresolved
+            reason: 'external package',
             meta: {
                 importPath: toModule,
-                loc: { line, column: 0 },
+                isDynamic,
+                loc: line ? { line, column: 0 } : undefined,
                 language: this.language,
+                isExternal: true,
             },
         };
     }
 
     /**
-     * Create file node
+     * Helper to create import edge with simpler signature for tree-sitter indexers
      */
-    protected createFileNode(filePath: string, exports: string[] = []): GraphNode {
+    protected createTsImportEdge(
+        fromFile: string,
+        toModule: string,
+        line: number,
+        confidence: Confidence
+    ): GraphEdge {
+        return this.createImportEdge(fromFile, toModule, confidence, `${this.language} import`, false, line);
+    }
+
+    /**
+     * Resolve import path to local file path
+     * Override in subclasses for language-specific resolution
+     */
+    protected resolveImportPath(importPath: string, fromFile: string): string | null {
+        // Default implementation - subclasses can override
+        // Handle relative imports starting with .
+        if (importPath.startsWith('.')) {
+            const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
+            return this.resolveRelativePath(fromDir, importPath);
+        }
+        return null;
+    }
+
+    /**
+     * Simple path resolution for relative imports
+     */
+    protected resolveRelativePath(base: string, relative: string): string {
+        const parts = base.split('/').filter(Boolean);
+        const relativeParts = relative.split('/');
+
+        for (const part of relativeParts) {
+            if (part === '..') {
+                parts.pop();
+            } else if (part !== '.') {
+                parts.push(part);
+            }
+        }
+
+        return parts.join('/');
+    }
+
+    /**
+     * Create file node with exports
+     */
+    protected createTsFileNode(filePath: string, exports: string[] = []): GraphNode {
         return {
             id: `file:${filePath}`,
             kind: 'file',

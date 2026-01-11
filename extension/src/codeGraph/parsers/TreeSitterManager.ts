@@ -3,6 +3,7 @@
  * Manages tree-sitter parser instances and language loading
  */
 
+import * as fs from 'fs';
 import * as path from 'path';
 import { createLogger } from '../../utils/logger';
 
@@ -41,10 +42,17 @@ export interface TreeSitterParser {
 }
 
 // Lazy-loaded tree-sitter module
-let TreeSitter: any = null;
+type TreeSitterApi = {
+    Parser: new () => TreeSitterParser;
+    Language: { load: (input: Uint8Array) => Promise<unknown> };
+    init: (options: { locateFile: (scriptName: string) => string }) => Promise<void>;
+};
+
+let TreeSitter: TreeSitterApi | null = null;
 let treeSitterInitialized = false;
 let treeSitterInitFailed = false; // Track if init already failed
 let initErrorLogged = false; // Only log error once
+let treeSitterInitPromise: Promise<void> | null = null;
 
 export class TreeSitterManager {
     private parsers: Map<SupportedLanguage, TreeSitterParser> = new Map();
@@ -63,38 +71,52 @@ export class TreeSitterManager {
         if (treeSitterInitialized) return;
         if (treeSitterInitFailed) throw new Error('Tree-sitter init previously failed');
 
-        try {
-            // Dynamic import for web-tree-sitter
-            const module = await import('web-tree-sitter');
-            TreeSitter = module.default || module;
-            
-            // Initialize with WASM path
-            await TreeSitter.init({
-                locateFile: (scriptName: string) => {
-                    // Try to locate tree-sitter.wasm
-                    if (scriptName.includes('tree-sitter.wasm')) {
-                        // Check node_modules path
-                        return path.join(
-                            this.extensionPath,
-                            'node_modules',
-                            'web-tree-sitter',
-                            'tree-sitter.wasm'
-                        );
-                    }
-                    return scriptName;
-                },
-            });
-            
-            treeSitterInitialized = true;
-            logger.info('Tree-sitter initialized');
-        } catch (error) {
-            treeSitterInitFailed = true;
-            if (!initErrorLogged) {
-                logger.debug('Tree-sitter not available in this environment');
-                initErrorLogged = true;
+        if (treeSitterInitPromise) return treeSitterInitPromise;
+
+        let wasmInfo: { wasmPath: string; candidates: string[] } | null = null;
+        treeSitterInitPromise = (async () => {
+            try {
+                // Dynamic import for web-tree-sitter
+                const module = await import('web-tree-sitter');
+                TreeSitter = this.normalizeTreeSitterModule(module);
+
+                wasmInfo = this.resolveTreeSitterWasmPath();
+
+                // Initialize with WASM path
+                await TreeSitter.init({
+                    locateFile: (scriptName: string) => {
+                        // Try to locate tree-sitter.wasm
+                        if (scriptName.includes('tree-sitter.wasm')) {
+                            return wasmInfo?.wasmPath ?? scriptName;
+                        }
+                        return scriptName;
+                    },
+                });
+
+                treeSitterInitialized = true;
+                logger.info('Tree-sitter initialized');
+            } catch (error) {
+                treeSitterInitFailed = true;
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                if (!initErrorLogged) {
+                    const fallbackInfo = wasmInfo ?? this.resolveTreeSitterWasmPath();
+                    logger.error('Failed to initialize tree-sitter', {
+                        error: errorMessage,
+                        wasmPath: fallbackInfo.wasmPath,
+                        candidates: fallbackInfo.candidates,
+                        extensionPath: this.extensionPath,
+                    });
+                    initErrorLogged = true;
+                }
+                throw error;
+            } finally {
+                if (treeSitterInitFailed) {
+                    treeSitterInitPromise = null;
+                }
             }
-            throw error;
-        }
+        })();
+
+        return treeSitterInitPromise;
     }
 
     /**
@@ -122,6 +144,9 @@ export class TreeSitterManager {
 
     private async doLoadLanguage(language: SupportedLanguage): Promise<void> {
         await this.initialize();
+        if (!TreeSitter) {
+            throw new Error('Tree-sitter not initialized');
+        }
 
         const wasmUrl = LANGUAGE_WASM_URLS[language];
         if (!wasmUrl) {
@@ -153,10 +178,13 @@ export class TreeSitterManager {
      */
     async getParser(language: SupportedLanguage): Promise<TreeSitterParser> {
         await this.loadLanguage(language);
+        if (!TreeSitter) {
+            throw new Error('Tree-sitter not initialized');
+        }
 
         let parser = this.parsers.get(language);
         if (!parser) {
-            parser = new TreeSitter() as TreeSitterParser;
+            parser = new TreeSitter.Parser() as TreeSitterParser;
             parser.setLanguage(this.languages.get(language));
             this.parsers.set(language, parser);
         }
@@ -203,6 +231,46 @@ export class TreeSitterManager {
         return extMap[ext] ?? null;
     }
 
+    private resolveTreeSitterWasmPath(): { wasmPath: string; candidates: string[] } {
+        const candidates = [
+            path.join(this.extensionPath, 'dist', 'tree-sitter.wasm'),
+            path.join(this.extensionPath, 'resources', 'tree-sitter', 'tree-sitter.wasm'),
+            path.join(this.extensionPath, 'node_modules', 'web-tree-sitter', 'tree-sitter.wasm'),
+            path.join(this.extensionPath, 'node_modules', 'web-tree-sitter', 'web-tree-sitter.wasm'),
+            path.join(this.extensionPath, 'node_modules', 'web-tree-sitter', 'debug', 'web-tree-sitter.wasm'),
+        ];
+
+        for (const candidate of candidates) {
+            if (fs.existsSync(candidate)) {
+                return { wasmPath: candidate, candidates };
+            }
+        }
+
+        return { wasmPath: candidates[candidates.length - 1], candidates };
+    }
+
+    private normalizeTreeSitterModule(module: unknown): TreeSitterApi {
+        const mod = module as Record<string, unknown> | undefined;
+        const parserCandidate = (mod?.Parser as TreeSitterApi['Parser'] | undefined) ??
+            (mod?.default as TreeSitterApi['Parser'] | undefined) ??
+            (mod as TreeSitterApi['Parser'] | undefined);
+        const languageCandidate = (mod?.Language as TreeSitterApi['Language'] | undefined) ??
+            (parserCandidate as unknown as { Language?: TreeSitterApi['Language'] })?.Language;
+        const initCandidate = (parserCandidate as unknown as { init?: TreeSitterApi['init'] })?.init ??
+            (mod?.init as TreeSitterApi['init'] | undefined);
+
+        if (!parserCandidate || !languageCandidate || typeof initCandidate !== 'function') {
+            const keys = mod ? Object.keys(mod) : [];
+            throw new Error(`Unsupported web-tree-sitter module shape (exports: ${keys.join(', ')})`);
+        }
+
+        return {
+            Parser: parserCandidate,
+            Language: languageCandidate,
+            init: initCandidate,
+        };
+    }
+
     /**
      * Dispose all parsers
      */
@@ -228,4 +296,9 @@ export function resetTreeSitterManager(): void {
         managerInstance.dispose();
         managerInstance = null;
     }
+    TreeSitter = null;
+    treeSitterInitialized = false;
+    treeSitterInitFailed = false;
+    initErrorLogged = false;
+    treeSitterInitPromise = null;
 }

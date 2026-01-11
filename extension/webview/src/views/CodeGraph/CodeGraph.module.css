@@ -810,6 +810,28 @@
     overflow-y: auto;
 }
 
+.treeTab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: var(--spacing-sm);
+}
+
+.treeLayout {
+    flex: 1;
+    display: flex;
+    gap: var(--spacing-sm);
+    min-height: 0;
+}
+
+.treeContainer {
+    flex: 1;
+    min-width: 0;
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
 
 /* Graph Empty State */
 .graphEmpty {

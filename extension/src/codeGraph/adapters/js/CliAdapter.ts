@@ -4,7 +4,7 @@
  */
 
 import type { GraphStore } from '../../core/GraphStore';
-import type { GraphNode, GraphEdge, GraphIssue } from '../../core/types';
+import type { GraphNode, GraphEdge } from '../../core/types';
 import type { FrameworkAdapter, PackageJson, CommandInfo } from '../types';
 
 type CliFramework = 'commander' | 'yargs' | 'cac' | 'clipanion';
@@ -34,7 +34,7 @@ export class CliAdapter implements FrameworkAdapter {
         }
 
         // Check for bin field in package.json
-        if (packageJson.scripts?.['bin'] || (packageJson as any).bin) {
+        if (packageJson.scripts?.['bin'] || (packageJson as Record<string, unknown>).bin) {
             return true;
         }
 
@@ -46,7 +46,7 @@ export class CliAdapter implements FrameworkAdapter {
         const nodes = store.getAllNodes();
 
         for (const node of nodes) {
-            if (node.kind !== 'file') continue;
+            if (node.kind !== 'file' || !node.path) continue;
             
             const content = node.meta?.content as string | undefined;
             if (!content) continue;
@@ -79,7 +79,7 @@ export class CliAdapter implements FrameworkAdapter {
         const nodes = store.getAllNodes();
 
         for (const node of nodes) {
-            if (node.kind !== 'file') continue;
+            if (node.kind !== 'file' || !node.path) continue;
             
             const content = node.meta?.content as string | undefined;
             if (!content) continue;

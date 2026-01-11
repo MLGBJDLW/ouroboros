@@ -3,7 +3,7 @@
  * LM Tool for managing manual graph annotations
  */
 
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 import type { AnnotationManager } from '../annotations/AnnotationManager';
 import type { AnnotationsResult, IssueKind, EntrypointType, Confidence } from '../core/types';
 import {
@@ -312,7 +312,7 @@ export function registerGraphAnnotationsTool(
     context: vscode.ExtensionContext,
     getAnnotationManager: () => AnnotationManager | null
 ): vscode.Disposable | undefined {
-    const vscodeAny = require('vscode') as typeof vscode & {
+    const vscodeAny = vscode as typeof vscode & {
         lm?: {
             registerTool?: (
                 name: string,
@@ -330,7 +330,7 @@ export function registerGraphAnnotationsTool(
         return undefined;
     }
 
-    const tool = createGraphAnnotationsTool(getAnnotationManager);
+    const tool = createGraphAnnotationsTool(getAnnotationManager as unknown as { getAnnotationManager: () => AnnotationManager });
 
     return vscodeAny.lm.registerTool(tool.name, {
         async invoke(

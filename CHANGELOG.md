@@ -15,14 +15,25 @@ Complete codebase structure analysis system for Copilot integration.
 - **8 LM Tools** — digest, issues, impact, path, module, annotations, cycles, layers
 - **Unified Envelope Format** — Consistent JSON response structure with `nextQuerySuggestion`
 - **Interactive Graph UI** — Force-directed visualization with drag/zoom/click interactions
+- **Tree View** — Hierarchical file tree with entrypoint/hotspot badges and issue counts
 - **Multi-Language** — TypeScript, Python, Rust, Go, Java via tree-sitter
 - **Framework Detection** — Express, Next.js, NestJS, FastAPI, Spring Boot, etc.
 - **Architecture Analysis** — Cycle detection (Tarjan's), layer rule enforcement
 - **Performance** — QueryCache (LRU), ParallelIndexer (batch processing)
+- **Graph Controls** — Fit-to-view, freeze layout, show edges, label declutter
+- **Mixed-Repo Indexing** — Expanded include patterns with `.ouroboros/graph/config.json` overrides
 - **Bundle Splitting** — Webview split into 4 chunks for faster loading
 
 #### Fixes
-- **Hotspot Detection** — Fixed module path matching for all languages
+- **Hotspot Detection** — Use resolved file imports and skip external modules
+- **Import Path Resolution** — All languages now resolve local imports to file paths:
+  - Python: Relative imports (`.module`, `..module`) → `path/to/module.py`
+  - Rust: `crate::`, `super::`, `self::` → `src/path/to/module.rs`
+  - Java: Local package imports → `src/main/java/path/Class.java`
+  - Go: Relative imports (`./`, `../`) → resolved directory paths
+- **Hotspot Fallback** — Shows files with most exports when no import-based hotspots found
+- **Tree-Sitter Init** — Normalize module exports and bundle WASM for reliable startup
+- **Log Spam Reduction** — Tree-sitter fallback warnings now log only once per language
 
 #### Version History
 | Version | Tests | Key Features |

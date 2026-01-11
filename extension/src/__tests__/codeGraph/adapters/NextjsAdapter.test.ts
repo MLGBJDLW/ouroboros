@@ -91,7 +91,7 @@ describe('NextjsAdapter', () => {
 
             const entrypoints = await adapter.extractEntrypoints(store, '/workspace');
             
-            expect(entrypoints.some(e => e.meta?.route?.includes(':id'))).toBe(true);
+            expect(entrypoints.some(e => (e.meta?.route as string)?.includes(':id'))).toBe(true);
         });
     });
 
@@ -158,7 +158,7 @@ describe('NextjsAdapter', () => {
                 meta: { content: 'export function Page() {}' }, // Missing default
             });
 
-            const issues = await adapter.detectIssues!(store);
+            const issues = await (adapter.detectIssues as NonNullable<typeof adapter.detectIssues>)(store);
             
             expect(issues.some(i => i.kind === 'BROKEN_EXPORT_CHAIN')).toBe(true);
         });
@@ -172,7 +172,7 @@ describe('NextjsAdapter', () => {
                 meta: { content: 'const x = 1;' }, // No handler
             });
 
-            const issues = await adapter.detectIssues!(store);
+            const issues = await (adapter.detectIssues as NonNullable<typeof adapter.detectIssues>)(store);
             
             expect(issues.some(i => i.kind === 'ENTRY_MISSING_HANDLER')).toBe(true);
         });

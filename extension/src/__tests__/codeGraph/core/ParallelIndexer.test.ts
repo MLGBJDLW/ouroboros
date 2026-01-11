@@ -73,7 +73,7 @@ describe('ParallelIndexer', () => {
                 { path: 'b.py', content: 'py' },
             ];
 
-            const result = await indexer.indexAll(files, [selectiveIndexer]);
+            const _result = await indexer.indexAll(files, [selectiveIndexer]);
 
             expect(selectiveIndexer.indexFile).toHaveBeenCalledTimes(1);
         });

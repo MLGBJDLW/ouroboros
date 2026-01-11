@@ -3,7 +3,6 @@
  * Detects pages and API routes from file-based routing
  */
 
-import * as path from 'path';
 import type { GraphStore } from '../../core/GraphStore';
 import type { GraphNode, GraphEdge, GraphIssue } from '../../core/types';
 import type { FrameworkAdapter, PackageJson } from '../types';
@@ -21,7 +20,7 @@ export class NextjsAdapter implements FrameworkAdapter {
 
     private isAppRouter = false;
 
-    async detect(projectRoot: string, packageJson?: PackageJson): Promise<boolean> {
+    async detect(_projectRoot: string, packageJson?: PackageJson): Promise<boolean> {
         if (!packageJson) return false;
 
         const deps = {
@@ -32,12 +31,12 @@ export class NextjsAdapter implements FrameworkAdapter {
         return !!deps['next'];
     }
 
-    async extractEntrypoints(store: GraphStore, projectRoot: string): Promise<GraphNode[]> {
+    async extractEntrypoints(store: GraphStore, _projectRoot: string): Promise<GraphNode[]> {
         const entrypoints: GraphNode[] = [];
         const nodes = store.getAllNodes();
 
         for (const node of nodes) {
-            if (node.kind !== 'file') continue;
+            if (node.kind !== 'file' || !node.path) continue;
 
             const filePath = node.path;
             const entrypoint = this.classifyFile(filePath);
@@ -49,7 +48,7 @@ export class NextjsAdapter implements FrameworkAdapter {
                     name: entrypoint.name,
                     path: filePath,
                     meta: {
-                        entrypointType: entrypoint.type,
+                        entrypointType: entrypoint.type as 'route' | 'page' | 'api' | 'layout',
                         route: entrypoint.route,
                         framework: 'nextjs',
                         isAppRouter: this.isAppRouter,
@@ -71,7 +70,7 @@ export class NextjsAdapter implements FrameworkAdapter {
         const nodes = store.getAllNodes();
 
         for (const node of nodes) {
-            if (node.kind !== 'file') continue;
+            if (node.kind !== 'file' || !node.path) continue;
 
             const filePath = node.path;
             const content = node.meta?.content as string | undefined;

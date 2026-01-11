@@ -5,7 +5,7 @@
 
 import { createLogger } from '../../utils/logger';
 import type { BaseIndexer } from '../indexers/BaseIndexer';
-import type { IndexResult, GraphNode, GraphEdge } from './types';
+import type { GraphNode, GraphEdge } from './types';
 
 const logger = createLogger('ParallelIndexer');
 

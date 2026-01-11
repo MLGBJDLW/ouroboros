@@ -43,7 +43,8 @@ export class BarrelAnalyzer {
      */
     analyzeFile(filePath: string, content: string): BarrelInfo {
         if (this.barrelCache.has(filePath)) {
-            return this.barrelCache.get(filePath)!;
+            const cached = this.barrelCache.get(filePath);
+            if (cached) return cached;
         }
 
         const reexports = this.extractReexports(content);
@@ -320,7 +321,7 @@ export class BarrelAnalyzer {
     /**
      * Find source node for a re-export path
      */
-    private findSourceNode(fromPath: string, importPath: string): GraphNode | null {
+    private findSourceNode(fromPath: string, _importPath: string): GraphNode | null {
         // Try to find the resolved edge
         const fromNode = this.store.getNodeByPath(fromPath);
         if (!fromNode) return null;
