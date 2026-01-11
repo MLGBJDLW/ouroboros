@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Language Indexers** — Comprehensive framework detection for Go (20+), Java (60+ packages), Python, Rust, TypeScript
 - **Code Graph Tools** — All 8 tools now injected for L0/L1/L2 agents via promptTransformer
 - **EntrypointType** — Added `test`, `job`, `component`, `middleware`, `story`
+- **Tool Parameters** — Fine-grained filtering for all Code Graph tools:
+  - `graph_digest`: `include`, `hotspotLimit`, `entrypointLimit`
+  - `graph_issues`: `groupBy`, all 9 issue kinds
+  - `graph_impact`: `include`, `dependentLimit`, `entrypointLimit`
+  - `graph_module`: `include`, `importLimit`, `importedByLimit`
+  - `graph_path`: `includeEdgeDetails`
+  - `graph_cycles`: `severityFilter`, `includeBreakPoints`
+  - `graph_layers`: `severityFilter`, `limit`, `groupByRule`
 
 ---
 

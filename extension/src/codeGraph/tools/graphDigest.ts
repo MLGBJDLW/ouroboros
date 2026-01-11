@@ -17,8 +17,33 @@ import { TOOLS } from '../../constants';
 
 const logger = createLogger('GraphDigestTool');
 
+/**
+ * Sections that can be included in the digest response
+ */
+const DIGEST_SECTIONS = ['summary', 'entrypoints', 'hotspots', 'issues'] as const;
+type DigestSection = typeof DIGEST_SECTIONS[number];
+
 export const GraphDigestInputSchema = z.object({
-    scope: z.string().optional().describe('Optional directory scope to limit the digest'),
+    scope: z
+        .string()
+        .optional()
+        .describe('Directory scope to limit the digest (e.g., "src/features")'),
+    include: z
+        .array(z.enum(DIGEST_SECTIONS))
+        .optional()
+        .describe('Sections to include: summary, entrypoints, hotspots, issues. Default: all'),
+    hotspotLimit: z
+        .number()
+        .min(1)
+        .max(20)
+        .optional()
+        .describe('Max hotspots to return (1-20, default: 10)'),
+    entrypointLimit: z
+        .number()
+        .min(1)
+        .max(20)
+        .optional()
+        .describe('Max entrypoints per type (1-20, default: 5)'),
 });
 
 export type GraphDigestInput = z.infer<typeof GraphDigestInputSchema>;
@@ -34,7 +59,12 @@ export function createGraphDigestTool(
             const input = options.input;
             const workspace = getWorkspaceContext();
 
-            logger.info('Graph digest requested', { scope: input.scope });
+            logger.info('Graph digest requested', {
+                scope: input.scope,
+                include: input.include,
+                hotspotLimit: input.hotspotLimit,
+                entrypointLimit: input.entrypointLimit,
+            });
 
             try {
                 // Validate input
@@ -50,29 +80,78 @@ export function createGraphDigestTool(
                     return envelopeToResult(envelope);
                 }
 
-                const result = manager.getDigest(parsed.data.scope);
+                const { scope, include, hotspotLimit, entrypointLimit } = parsed.data;
+                
+                // Determine which sections to include
+                const sections = new Set<DigestSection>(include ?? DIGEST_SECTIONS);
+                
+                const fullResult = manager.getDigest(scope);
+
+                // Build filtered result based on requested sections
+                const filteredResult: Record<string, unknown> = {
+                    meta: fullResult.meta,
+                };
+
+                if (sections.has('summary')) {
+                    filteredResult.summary = fullResult.summary;
+                }
+
+                if (sections.has('entrypoints')) {
+                    const limit = entrypointLimit ?? 5;
+                    filteredResult.entrypoints = {
+                        routes: fullResult.entrypoints.routes.slice(0, limit),
+                        commands: fullResult.entrypoints.commands.slice(0, limit),
+                        pages: fullResult.entrypoints.pages.slice(0, limit),
+                        jobs: fullResult.entrypoints.jobs.slice(0, limit),
+                    };
+                }
+
+                if (sections.has('hotspots')) {
+                    const limit = hotspotLimit ?? 10;
+                    filteredResult.hotspots = fullResult.hotspots.slice(0, limit);
+                }
+
+                if (sections.has('issues')) {
+                    filteredResult.issues = fullResult.issues;
+                }
+
+                // Recalculate token estimate for filtered result
+                const tokensEstimate = Math.ceil(JSON.stringify(filteredResult).length / 4);
+                (filteredResult.meta as Record<string, unknown>).tokensEstimate = tokensEstimate;
 
                 logger.debug('Digest result', {
-                    files: result.summary.files,
-                    entrypoints: result.summary.entrypoints,
-                    tokensEstimate: result.meta.tokensEstimate,
+                    sections: Array.from(sections),
+                    tokensEstimate,
                 });
+
+                const hasIssues = sections.has('issues') && (
+                    fullResult.issues.HANDLER_UNREACHABLE > 0 ||
+                    fullResult.issues.BROKEN_EXPORT_CHAIN > 0
+                );
 
                 const envelope = createSuccessEnvelope(
                     TOOLS.GRAPH_DIGEST,
-                    result,
+                    filteredResult,
                     workspace,
                     {
-                        truncated: result.meta.truncated ?? false,
-                        limits: { maxItems: 10 },
-                        nextQuerySuggestion: result.issues.HANDLER_UNREACHABLE > 0 ||
-                            result.issues.BROKEN_EXPORT_CHAIN > 0
+                        truncated: fullResult.meta.truncated ?? false,
+                        limits: {
+                            hotspotLimit: hotspotLimit ?? 10,
+                            entrypointLimit: entrypointLimit ?? 5,
+                        },
+                        nextQuerySuggestion: hasIssues
                             ? [{
                                 tool: TOOLS.GRAPH_ISSUES,
-                                args: { severity: 'error', limit: 20 },
+                                args: { severity: 'error', limit: 10 },
                                 reason: 'Issues detected - review errors first',
                             }]
-                            : undefined,
+                            : !sections.has('hotspots') && fullResult.hotspots.length > 0
+                                ? [{
+                                    tool: TOOLS.GRAPH_DIGEST,
+                                    args: { include: ['hotspots'], hotspotLimit: 5 },
+                                    reason: 'Get hotspot files for impact analysis',
+                                }]
+                                : undefined,
                     }
                 );
                 return envelopeToResult(envelope);
