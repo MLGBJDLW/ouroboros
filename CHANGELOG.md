@@ -12,11 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Graph Zoom** — Fixed graph shrinking to corner after refresh (now auto-fits to view)
 - **Issues Categories** — Dynamic issue type filtering (shows all detected types, not just 3 hardcoded)
 - **Real Dependency Edges** — Graph now displays actual import relationships instead of directory-based fake links
+- **Monorepo Workspace Detection** — All language indexers now detect workspace packages:
+  - **TypeScript/JavaScript**: `package.json` workspaces, `pnpm-workspace.yaml`
+  - **Python**: `pyproject.toml`, `setup.py`, Poetry/PDM workspace packages
+  - **Go**: `go.work` modules, `go.mod` replace directives
+  - **Rust**: `Cargo.toml` workspace members, path dependencies
+  - **Java**: Maven `pom.xml` modules, Gradle `settings.gradle` includes
 
 ### Added
 - **Auto-Refresh** — Graph data auto-refreshes every 2 minutes when visible
 - **Graph Stats Bar** — Shows node/edge counts with warning when no connections exist
 - **Backend Edge API** — New `getGraphEdges` message for fetching real import edges
+- **Multi-Language Workspace Cache** — `BaseIndexer.WorkspaceCache` structure for efficient cross-language workspace detection
 
 ### Improved
 - **TypeScript Compilation** — Fixed multiple type errors in codeGraph tools

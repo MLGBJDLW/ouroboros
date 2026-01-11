@@ -471,6 +471,13 @@ export class PythonIndexer extends BaseIndexer {
         }
 
         const topModule = modulePath.split('.')[0];
+        
+        // Check if it's a workspace package (monorepo internal dependency)
+        if (this.isWorkspacePackage(topModule, 'python')) {
+            // This is a workspace package - return a special marker
+            return `workspace:${modulePath}`;
+        }
+        
         if (STDLIB_MODULES.has(topModule) || COMMON_PACKAGES.has(topModule)) return null;
         if (!modulePath.includes('.')) return null;
 

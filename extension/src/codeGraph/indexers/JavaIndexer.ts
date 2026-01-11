@@ -85,6 +85,11 @@ export class JavaIndexer extends TreeSitterIndexer {
      * Check if import is from an external package
      */
     private isJavaExternalPackage(importPath: string): boolean {
+        // Check if it's a workspace package (monorepo internal dependency)
+        if (this.isWorkspacePackage(importPath, 'java')) {
+            return false;
+        }
+        
         return JAVA_EXTERNAL_PACKAGES.some(prefix => importPath.startsWith(prefix));
     }
 
