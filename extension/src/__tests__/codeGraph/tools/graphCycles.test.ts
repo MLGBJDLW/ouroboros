@@ -3,45 +3,79 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createGraphCyclesTool, type GraphCyclesResult } from '../../../codeGraph/tools/graphCycles';
+
+// Mock vscode
+vi.mock('vscode', () => ({
+    LanguageModelToolResult: class {
+        constructor(public parts: unknown[]) {}
+    },
+    LanguageModelTextPart: class {
+        constructor(public text: string) {}
+    },
+}));
+
+// Mock logger
+vi.mock('../../../utils/logger', () => ({
+    createLogger: () => ({
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    }),
+}));
+
+import { createGraphCyclesTool, type GraphCyclesResult, type GraphCyclesInput } from '../../../codeGraph/tools/graphCycles';
+import type { CodeGraphManager } from '../../../codeGraph/CodeGraphManager';
 import { CycleDetector } from '../../../codeGraph/analyzers/CycleDetector';
 import { GraphStore } from '../../../codeGraph/core/GraphStore';
+
+interface MockToolResult {
+    parts: Array<{ text: string }>;
+}
+
+// Helper to invoke tool with proper VS Code API format
+async function invokeTool(
+    tool: ReturnType<typeof createGraphCyclesTool>,
+    input: GraphCyclesInput
+): Promise<{ success: boolean; data: { tool: string; result: GraphCyclesResult } }> {
+    const result = await tool.invoke(
+        { input } as never,
+        { isCancellationRequested: false } as never
+    );
+    // Parse the JSON from LanguageModelToolResult
+    const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
+    return output;
+}
 
 describe('graphCycles Tool', () => {
     let store: GraphStore;
     let detector: CycleDetector;
+    let mockManager: Partial<CodeGraphManager>;
 
     beforeEach(() => {
         store = new GraphStore();
         detector = new CycleDetector(store);
+        mockManager = {
+            getCycleDetector: () => detector,
+        };
     });
 
     describe('createGraphCyclesTool', () => {
-        it('should create tool with correct name and description', () => {
-            const tool = createGraphCyclesTool(() => detector);
-            expect(tool.name).toBe('ouroborosai_graph_cycles');
-            expect(tool.description).toContain('circular dependencies');
-        });
-
-        it('should have correct input schema', () => {
-            const tool = createGraphCyclesTool(() => detector);
-            expect(tool.inputSchema).toHaveProperty('properties');
-            const props = (tool.inputSchema as { properties: Record<string, unknown> }).properties;
-            expect(props).toHaveProperty('scope');
-            expect(props).toHaveProperty('minLength');
-            expect(props).toHaveProperty('maxCycles');
+        it('should create tool with invoke method', () => {
+            const tool = createGraphCyclesTool(mockManager as CodeGraphManager);
+            expect(typeof tool.invoke).toBe('function');
         });
     });
 
-    describe('execute', () => {
+    describe('invoke', () => {
         it('should return empty result when no detector', async () => {
-            const tool = createGraphCyclesTool(() => null);
-            const result = await tool.execute({});
+            const nullManager = { getCycleDetector: () => null } as unknown as CodeGraphManager;
+            const tool = createGraphCyclesTool(nullManager);
+            const result = await invokeTool(tool, {});
             
             expect(result.success).toBe(true);
-            const cyclesResult = result.data.result as GraphCyclesResult;
-            expect(cyclesResult.cycles).toHaveLength(0);
-            expect(cyclesResult.stats.totalCycles).toBe(0);
+            expect(result.data.result.cycles).toHaveLength(0);
+            expect(result.data.result.stats.totalCycles).toBe(0);
         });
 
         it('should return empty result when no cycles', async () => {
@@ -49,13 +83,12 @@ describe('graphCycles Tool', () => {
             store.addNode({ id: 'file:b.ts', kind: 'file', name: 'b.ts', path: 'b.ts' });
             store.addEdge({ id: 'e1', from: 'file:a.ts', to: 'file:b.ts', kind: 'imports', confidence: 'high' });
 
-            const tool = createGraphCyclesTool(() => detector);
-            const result = await tool.execute({});
+            const tool = createGraphCyclesTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {});
             
             expect(result.success).toBe(true);
-            const cyclesResult = result.data.result as GraphCyclesResult;
-            expect(cyclesResult.cycles).toHaveLength(0);
-            expect(cyclesResult.stats.totalCycles).toBe(0);
+            expect(result.data.result.cycles).toHaveLength(0);
+            expect(result.data.result.stats.totalCycles).toBe(0);
         });
 
         it('should detect cycles and return formatted result', async () => {
@@ -64,18 +97,17 @@ describe('graphCycles Tool', () => {
             store.addEdge({ id: 'e1', from: 'file:a.ts', to: 'file:b.ts', kind: 'imports', confidence: 'high' });
             store.addEdge({ id: 'e2', from: 'file:b.ts', to: 'file:a.ts', kind: 'imports', confidence: 'high' });
 
-            const tool = createGraphCyclesTool(() => detector);
-            const result = await tool.execute({});
+            const tool = createGraphCyclesTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {});
             
             expect(result.success).toBe(true);
-            const cyclesResult = result.data.result as GraphCyclesResult;
-            expect(cyclesResult.cycles.length).toBeGreaterThan(0);
-            expect(cyclesResult.stats.totalCycles).toBeGreaterThan(0);
-            expect(cyclesResult.cycles[0]).toHaveProperty('nodes');
-            expect(cyclesResult.cycles[0]).toHaveProperty('length');
-            expect(cyclesResult.cycles[0]).toHaveProperty('severity');
-            expect(cyclesResult.cycles[0]).toHaveProperty('breakPoints');
-            expect(cyclesResult.cycles[0]).toHaveProperty('description');
+            expect(result.data.result.cycles.length).toBeGreaterThan(0);
+            expect(result.data.result.stats.totalCycles).toBeGreaterThan(0);
+            expect(result.data.result.cycles[0]).toHaveProperty('nodes');
+            expect(result.data.result.cycles[0]).toHaveProperty('length');
+            expect(result.data.result.cycles[0]).toHaveProperty('severity');
+            expect(result.data.result.cycles[0]).toHaveProperty('breakPoints');
+            expect(result.data.result.cycles[0]).toHaveProperty('description');
         });
 
         it('should strip file: prefix from node paths', async () => {
@@ -84,11 +116,10 @@ describe('graphCycles Tool', () => {
             store.addEdge({ id: 'e1', from: 'file:a.ts', to: 'file:b.ts', kind: 'imports', confidence: 'high' });
             store.addEdge({ id: 'e2', from: 'file:b.ts', to: 'file:a.ts', kind: 'imports', confidence: 'high' });
 
-            const tool = createGraphCyclesTool(() => detector);
-            const result = await tool.execute({});
-            const cyclesResult = result.data.result as GraphCyclesResult;
+            const tool = createGraphCyclesTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {});
             
-            for (const cycle of cyclesResult.cycles) {
+            for (const cycle of result.data.result.cycles) {
                 for (const node of cycle.nodes) {
                     expect(node).not.toContain('file:');
                 }
@@ -99,9 +130,10 @@ describe('graphCycles Tool', () => {
             const mockDetector = {
                 findCycles: vi.fn().mockReturnValue([]),
             } as unknown as CycleDetector;
+            const mockMgr = { getCycleDetector: () => mockDetector } as unknown as CodeGraphManager;
 
-            const tool = createGraphCyclesTool(() => mockDetector);
-            await tool.execute({ scope: 'src/features', minLength: 3, maxCycles: 5 });
+            const tool = createGraphCyclesTool(mockMgr);
+            await invokeTool(tool, { scope: 'src/features', minLength: 3, maxCycles: 5 });
             
             expect(mockDetector.findCycles).toHaveBeenCalledWith({
                 scope: 'src/features',
@@ -117,22 +149,20 @@ describe('graphCycles Tool', () => {
             store.addEdge({ id: 'e1', from: 'file:a.ts', to: 'file:b.ts', kind: 'imports', confidence: 'high' });
             store.addEdge({ id: 'e2', from: 'file:b.ts', to: 'file:a.ts', kind: 'imports', confidence: 'high' });
 
-            const tool = createGraphCyclesTool(() => detector);
-            const result = await tool.execute({});
-            const cyclesResult = result.data.result as GraphCyclesResult;
+            const tool = createGraphCyclesTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, {});
             
-            const stats = cyclesResult.stats;
+            const stats = result.data.result.stats;
             expect(stats.errorCount + stats.warningCount).toBe(stats.totalCycles);
         });
 
         it('should include meta information', async () => {
-            const tool = createGraphCyclesTool(() => detector);
-            const result = await tool.execute({ scope: 'src/features', maxCycles: 10 });
-            const cyclesResult = result.data.result as GraphCyclesResult;
+            const tool = createGraphCyclesTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, { scope: 'src/features', maxCycles: 10 });
             
-            expect(cyclesResult.meta).toHaveProperty('tokensEstimate');
-            expect(cyclesResult.meta).toHaveProperty('truncated');
-            expect(cyclesResult.meta.scope).toBe('src/features');
+            expect(result.data.result.meta).toHaveProperty('tokensEstimate');
+            expect(result.data.result.meta).toHaveProperty('truncated');
+            expect(result.data.result.meta.scope).toBe('src/features');
             expect(result.data.tool).toBe('ouroborosai_graph_cycles');
         });
 
@@ -145,11 +175,10 @@ describe('graphCycles Tool', () => {
                 store.addEdge({ id: `e${i}b`, from: `file:b${i}.ts`, to: `file:a${i}.ts`, kind: 'imports', confidence: 'high' });
             }
 
-            const tool = createGraphCyclesTool(() => detector);
-            const result = await tool.execute({ maxCycles: 2 });
-            const cyclesResult = result.data.result as GraphCyclesResult;
+            const tool = createGraphCyclesTool(mockManager as CodeGraphManager);
+            const result = await invokeTool(tool, { maxCycles: 2 });
             
-            expect(cyclesResult.meta.truncated).toBe(true);
+            expect(result.data.result.meta.truncated).toBe(true);
         });
     });
 });

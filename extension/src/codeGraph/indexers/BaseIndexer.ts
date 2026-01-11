@@ -235,14 +235,32 @@ export abstract class BaseIndexer {
 
     /**
      * Add file extension if the path doesn't have one
-     * This helps match imports like './utils' to 'utils.ts'
+     * Also handles ESM-style .js imports that should map to .ts source files
      */
     private addExtensionIfNeeded(filePath: string): string {
-        // If already has an extension, return as-is
         const lastPart = filePath.split('/').pop() || '';
+        
+        // Handle ESM-style .js/.jsx/.mjs/.cjs imports that should resolve to .ts/.tsx files
+        // In TypeScript projects with moduleResolution: NodeNext, imports use .js extension
+        // but the actual source files are .ts
+        if (lastPart.endsWith('.js')) {
+            return filePath.slice(0, -3); // Remove .js, let graph try .ts
+        }
+        if (lastPart.endsWith('.jsx')) {
+            return filePath.slice(0, -4); // Remove .jsx, let graph try .tsx
+        }
+        if (lastPart.endsWith('.mjs')) {
+            return filePath.slice(0, -4); // Remove .mjs, let graph try .mts or .ts
+        }
+        if (lastPart.endsWith('.cjs')) {
+            return filePath.slice(0, -4); // Remove .cjs, let graph try .cts or .ts
+        }
+        
+        // If already has a source extension (.ts, .tsx, etc.), return as-is
         if (lastPart.includes('.') && !lastPart.startsWith('.')) {
             return filePath;
         }
+        
         // Return without extension - the graph will try to match with various extensions
         return filePath;
     }

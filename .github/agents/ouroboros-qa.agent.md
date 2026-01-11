@@ -96,8 +96,10 @@ Before completing, verify:
 - [ ] All tests pass (or failures are explained)
 - [ ] Edge cases are covered
 - [ ] Error conditions are tested
-- [ ] I found the ROOT CAUSE (not just symptoms)
-- [ ] Fix is surgical (minimal change)
+- [ ] I traced the bug to its ROOT CAUSE (not just symptom)
+- [ ] I checked for similar bugs in related code
+- [ ] Fix is surgical (minimal change at the SOURCE)
+- [ ] No cascading breakage from the fix
 
 ---
 
@@ -172,16 +174,66 @@ go test ./... -v -race
      ↓
 2. ISOLATE: Find the smallest failing case
      ↓
-3. UNDERSTAND: Trace to root cause
+3. UNDERSTAND: Trace to root cause (not just symptom!)
      ↓
-4. WRITE TEST: Create a test that fails
+4. INVESTIGATE CHAIN: Check related/upstream code
      ↓
-5. FIX: Make minimal code change
+5. WRITE TEST: Create a test that fails
      ↓
-6. VERIFY: Run test - must pass now
+6. FIX: Make minimal code change at the SOURCE
      ↓
-7. REGRESSION: Run all tests - no new failures
+7. VERIFY: Run test - must pass now
+     ↓
+8. REGRESSION: Run all tests - no new failures
 ```
+
+---
+
+## 🔍 ROOT CAUSE ANALYSIS (MANDATORY)
+
+> [!CRITICAL]
+> **Surface symptoms often mask deeper issues. NEVER fix just the symptom.**
+
+### The 5 Whys Technique
+
+For every bug, ask "Why?" until you reach the true source:
+
+```
+Bug: TypeError in UserService.getProfile()
+  Why? → user.id is undefined
+  Why? → AuthMiddleware didn't set user
+  Why? → Token validation returned null
+  Why? → JWT secret mismatch between services
+  Why? → Environment variable not loaded in test
+ROOT CAUSE: Missing .env.test file ← FIX HERE
+```
+
+### Chain Analysis Checklist
+
+Before fixing ANY bug:
+- [ ] **Trace upstream**: Where does the bad data originate?
+- [ ] **Check callers**: Who calls this function? Are they passing correct args?
+- [ ] **Review recent changes**: Did a recent commit introduce this?
+- [ ] **Search for patterns**: Does this bug exist elsewhere in similar code?
+- [ ] **Consider dependencies**: Is an external module/API behaving differently?
+
+### Common Root Cause Patterns
+
+| Symptom | Surface Fix (❌) | Root Cause Fix (✅) |
+|---------|-----------------|---------------------|
+| Null pointer in function A | Add null check in A | Fix caller that passes null |
+| Test flaky/intermittent | Add retry/skip | Fix race condition or shared state |
+| Wrong API response | Patch response handler | Fix data transformation at source |
+| Type error after refactor | Add type assertion | Update all call sites properly |
+| Import error | Add missing import | Fix circular dependency |
+
+### Cascading Impact Check
+
+After identifying root cause:
+1. **Search codebase** for similar patterns
+2. **List all affected files** that use the buggy code
+3. **Verify fix doesn't break** other consumers
+4. **Add tests** for each affected path
 
 ---
 

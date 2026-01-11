@@ -78,24 +78,24 @@ export function registerTools(
 
         // v0.2 tools
         const pathTool = createGraphPathTool(codeGraphManager);
-        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_PATH, pathTool as unknown as vscode.LanguageModelTool<unknown>));
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_PATH, pathTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_PATH}`);
 
         const moduleTool = createGraphModuleTool(codeGraphManager);
-        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_MODULE, moduleTool as unknown as vscode.LanguageModelTool<unknown>));
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_MODULE, moduleTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_MODULE}`);
 
         const annotationsTool = createGraphAnnotationsTool(codeGraphManager);
-        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_ANNOTATIONS, annotationsTool as unknown as vscode.LanguageModelTool<unknown>));
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_ANNOTATIONS, annotationsTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_ANNOTATIONS}`);
 
         // v0.5 tools
-        const cyclesTool = createGraphCyclesTool(() => codeGraphManager.getCycleDetector());
-        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_CYCLES, cyclesTool as unknown as vscode.LanguageModelTool<unknown>));
+        const cyclesTool = createGraphCyclesTool(codeGraphManager);
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_CYCLES, cyclesTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_CYCLES}`);
 
-        const layersTool = createGraphLayersTool(() => codeGraphManager.getLayerAnalyzer());
-        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_LAYERS, layersTool as unknown as vscode.LanguageModelTool<unknown>));
+        const layersTool = createGraphLayersTool(codeGraphManager);
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_LAYERS, layersTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_LAYERS}`);
     }
 

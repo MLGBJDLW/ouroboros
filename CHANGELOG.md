@@ -5,12 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.4] - 2026-01-11
+
+### Fixed
+- **Code Graph Tool Invoke** — Fixed `TypeError: i.tool.invoke is not a function` by refactoring graph tools (`graphModule`, `graphPath`, `graphAnnotations`, `graphCycles`, `graphLayers`) to use proper `vscode.LanguageModelTool<T>` interface
+
+---
+
 ## [3.3.3] - 2026-01-11
 
 ### Fixed
 - **L2 Worker Tool Injection** — Fixed `preserveYamlFrontmatter` to inject Code Graph tools for L2 workers during Update Prompts
 - **Template Directory Creation** — Fixed recursive directory creation for nested template paths
 - **Removed phase_progress** — Cleaned up obsolete `ouroborosai_phase_progress` references from docs and README template
+- **ESM .js Import Resolution** — Fixed false "broken export" issues for TypeScript projects using `moduleResolution: NodeNext`:
+  - `BaseIndexer.addExtensionIfNeeded` now strips `.js`/`.jsx`/`.mjs`/`.cjs` extensions to find `.ts` source files
+  - `PathResolver.normalizeAndResolve` handles ESM-style `.js` imports mapping to `.ts` files
+  - `IssueDetector.detectBrokenExports` checks alternative extensions before reporting broken links
 
 ---
 

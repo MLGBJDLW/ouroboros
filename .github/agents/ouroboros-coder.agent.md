@@ -96,6 +96,26 @@ Full implementation: .ouroboros/subagent-docs/coder-auth-impl-2025-12-11.md
 - Use `--run` or `CI=true` flags for non-interactive execution
 - Verify the build passes
 
+### Step 5.5: Root Cause Analysis (For Bug Fixes)
+> [!IMPORTANT]
+> **Surface symptoms often mask deeper issues. Fix the ROOT CAUSE, not just the symptom.**
+
+When fixing bugs or errors:
+1. **Trace the chain**: Follow the error back through the call stack
+2. **Ask "Why?" 5 times**: Each answer reveals a deeper layer
+3. **Check related code**: The bug may originate in a different file/module
+4. **Look for patterns**: Similar bugs may exist elsewhere in the codebase
+5. **Consider cascading effects**: Your fix may break or fix other things
+
+| Symptom | Surface Fix (❌) | Root Cause Fix (✅) |
+|---------|-----------------|---------------------|
+| TypeError in function A | Add null check in A | Fix caller B that passes null |
+| Test fails intermittently | Skip the test | Fix race condition in async code |
+| API returns wrong data | Patch the response | Fix the data transformation logic |
+| Build error after merge | Revert the merge | Resolve the underlying conflict |
+
+**RULE**: Before implementing a fix, explain the root cause in your response.
+
 ### Step 6: Report Completion
 - Output the changes in ARTIFACT format
 - Confirm build/test status
