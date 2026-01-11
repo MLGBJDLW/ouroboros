@@ -7,73 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.3.1] - 2026-01-11
 
-### 🔧 Comprehensive Language Indexer Upgrade
+### Fixed
+- **Tree-sitter WASM** — Windows `file://` URL conversion
+- **Workspace Selection** — Tools register correctly after Marketplace install
+- **vscode.open** — Webview path-to-Uri conversion
+- **Hotspot Consistency** — Tree view now uses same logic as Overview (limit=10, exports fallback)
 
-Major improvements to all language indexers for better Code Graph detection.
-
-#### Fixes
-- **Tree-sitter WASM Init** — Fixed `file://` URL conversion for Windows paths
-- **Workspace Selection** — Tools now register correctly after Marketplace install
-- **vscode.open Command** — Fixed webview path-to-Uri conversion
-- **TreeSitterIndexer** — Extended `createEntrypointNode()` to support `test`, `job`, `component` types
-
-#### Improved
-
-**TypeScriptIndexer**
-- Comment removal, multiline imports, destructured exports
-- Next.js App Router detection, Vue/test file detection
-- Vite `import.meta.glob()`, Webpack `require.context()`
-- CSS imports, monorepo workspace imports (@org/package)
-- SvelteKit, Nuxt, Cypress, Storybook, tRPC, GraphQL, Electron detection
-- `isBarrelFile()` and `getImportConfidence()` methods
-
-**PythonIndexer**
-- Stdlib/common package filtering, improved entrypoint detection
-- `importlib.import_module()`, `__import__()` detection
-- Improved `__all__` parsing (tuple form), top-level variable exports
-- Streamlit, Jupyter, Strawberry GraphQL detection
-- Django management commands/views, task queues (dramatiq, huey, rq)
-- Click, Typer, FastAPI, Flask, Django, Celery framework detection
-
-**RustIndexer**
-- External crate filtering, chained `super::` support
-- Test detection (#[test], #[cfg(test)]), benchmark detection
-- build.rs, proc_macro detection
-- Actix, Rocket, Axum, Poem, Tonic gRPC, Lambda framework detection
-
-**GoIndexer**
-- Stdlib detection (comprehensive 80+ packages)
-- Internal/pkg/cmd package resolution, test file detection (*_test.go)
-- Benchmark (BenchmarkXxx) and Example (ExampleXxx) function detection
-- go:embed, go:generate directive tracking
-- Framework detection: Gin, Echo, Fiber, Chi, Gorilla, gRPC, Beego, Revel, Iris, FastHTTP, HTTPRouter
-- Microservice frameworks: go-kit, go-micro, Kratos, Buffalo
-- GraphQL: gqlgen, graphql-go
-- CLI: Cobra, urfave/cli, Kong, go-flags
-- Message queues: Asynq, Machinery, NSQ, NATS, Kafka
-- Database migrations: golang-migrate, Goose
-- AWS Lambda detection
-
-**JavaIndexer**
-- Extended external package list (60+ prefixes)
-- Static imports, Maven/Gradle structure detection
-- module-info.java (Java 9+ modules) detection
-- Framework detection: Spring Boot, Spring MVC/WebFlux, Micronaut, Quarkus, Jakarta/JAX-RS
-- Vert.x, Helidon framework detection
-- Test frameworks: JUnit 4/5, TestNG, Spock, Cucumber
-- Message listeners: Kafka, JMS, RabbitMQ, SQS
-- Spring Batch, Spring Scheduled detection
-- gRPC, Spring GraphQL detection
-- AWS Lambda, Azure Functions detection
-- Lombok, MapStruct annotation awareness
-
-**GenericIndexer**
-- Extended language support (60+ extensions)
-- Improved test file detection
-- More entrypoint patterns across languages
-
-#### Added
-- `'test' | 'job' | 'component'` entrypoint types in `TreeSitterIndexer.createEntrypointNode()`
+### Improved
+- **Language Indexers** — Comprehensive framework detection for Go (20+), Java (60+ packages), Python, Rust, TypeScript
+- **Code Graph Tools** — All 8 tools now injected for L0/L1/L2 agents via promptTransformer
+- **EntrypointType** — Added `test`, `job`, `component`, `middleware`, `story`
 
 ---
 

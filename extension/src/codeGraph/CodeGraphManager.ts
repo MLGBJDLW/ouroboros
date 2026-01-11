@@ -382,6 +382,7 @@ export class CodeGraphManager implements vscode.Disposable {
 
     /**
      * Get full file index for UI (tree view)
+     * Uses same hotspot logic as GraphQuery.findHotspots() for consistency
      */
     getFileIndex(options?: { hotspotLimit?: number }): {
         files: Array<{
@@ -399,6 +400,7 @@ export class CodeGraphManager implements vscode.Disposable {
         const entrypointNodes = this.store.getNodesByKind('entrypoint');
         const entrypointPaths = new Set(entrypointNodes.map((n) => n.path).filter(Boolean) as string[]);
 
+        // Count importers for each file (same logic as GraphQuery.findHotspots)
         const importerCounts = new Map<string, number>();
         for (const edge of this.store.getAllEdges()) {
             if (edge.to.startsWith('file:')) {
@@ -407,25 +409,47 @@ export class CodeGraphManager implements vscode.Disposable {
             }
         }
 
-        const hotspotLimit = Math.max(1, options?.hotspotLimit ?? 15);
-        const hotspotPaths = new Set(
-            [...importerCounts.entries()]
-                .sort((a, b) => b[1] - a[1])
+        // Use same default limit as GraphQuery.digest (10)
+        const hotspotLimit = Math.max(1, options?.hotspotLimit ?? 10);
+        
+        // Determine hotspots - files with most importers
+        let hotspotPaths: Set<string>;
+        const sortedByImporters = [...importerCounts.entries()]
+            .filter(([, count]) => count > 0)
+            .sort((a, b) => b[1] - a[1]);
+        
+        if (sortedByImporters.length > 0) {
+            // Primary: files with most importers
+            hotspotPaths = new Set(
+                sortedByImporters
+                    .slice(0, hotspotLimit)
+                    .map(([path]) => path)
+            );
+        } else {
+            // Fallback: files with most exports (same as GraphQuery.findHotspots)
+            const sortedByExports = fileNodes
+                .filter(n => n.path && ((n.meta?.exports as string[] | undefined)?.length ?? 0) > 0)
+                .sort((a, b) => {
+                    const aExports = (a.meta?.exports as string[] | undefined)?.length ?? 0;
+                    const bExports = (b.meta?.exports as string[] | undefined)?.length ?? 0;
+                    return bExports - aExports;
+                })
                 .slice(0, hotspotLimit)
-                .map(([path]) => path)
-        );
+                .map(n => n.path as string);
+            hotspotPaths = new Set(sortedByExports);
+        }
 
         const files = fileNodes
             .map((node) => {
-                const path = node.path ?? '';
+                const filePath = node.path ?? '';
                 const name = node.name;
                 return {
-                    path,
+                    path: filePath,
                     name,
-                    importers: importerCounts.get(path) ?? 0,
+                    importers: importerCounts.get(filePath) ?? 0,
                     exports: (node.meta?.exports as string[] | undefined)?.length ?? 0,
-                    isEntrypoint: entrypointPaths.has(path),
-                    isHotspot: hotspotPaths.has(path),
+                    isEntrypoint: entrypointPaths.has(filePath),
+                    isHotspot: hotspotPaths.has(filePath),
                     language: node.meta?.language as string | undefined,
                 };
             })
