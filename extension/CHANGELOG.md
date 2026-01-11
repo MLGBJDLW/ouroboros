@@ -2,441 +2,156 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.0] - 2026-01-10
+
+### 🚀 Code Graph v1.0 - Production Ready
+
+#### New Features
+- **8 LM Tools** for codebase structure analysis:
+  - `ouroborosai_graph_digest` — Compact codebase overview (~500 tokens)
+  - `ouroborosai_graph_issues` — Code quality issues with evidence
+  - `ouroborosai_graph_impact` — Change impact analysis
+  - `ouroborosai_graph_path` — Find dependency paths between modules
+  - `ouroborosai_graph_module` — Get detailed module information
+  - `ouroborosai_graph_annotations` — Manage manual annotations
+  - `ouroborosai_graph_cycles` — Detect circular dependencies
+  - `ouroborosai_graph_layers` — Architectural layer rule enforcement
+
+- **Unified Envelope Format** — All tools return consistent JSON structure:
+  - `{ success, data: { tool, version, requestId, generatedAt, workspace, result, meta } }`
+  - `nextQuerySuggestion` guides optimal query flow
+  - See `docs/code-graph/ENVELOPE.md` for full specification
+
+- **Performance** — QueryCache with LRU eviction, ParallelIndexer for batch processing
+
+- **Multi-Language** — TypeScript, Python, Rust, Go, Java via tree-sitter
+
+- **Framework Detection** — Express, Next.js, NestJS, FastAPI, Spring Boot, etc.
+
+#### Tests
+- 677 tests passing (+317 from v3.2.20)
+
+---
+
 ## [3.2.20] - 2026-01-10
 
 ### Fixed
-
-- **YAML Tools Field Formatting** — Fixed issue where user-customized `tools:` array was incorrectly formatted after Update Prompts:
-  - Single-line arrays now stay on one line (no unwanted newlines)
-  - L2 worker agents no longer affected by format corruption
-  - Added `parseToolsFromYaml()` for robust array parsing
-
-### Tests
-
-- Added 3 new test cases for tools array formatting
-- All 360 tests passing (54 promptTransformer tests)
+- **YAML Tools Field Formatting** — Single-line arrays preserved during Update Prompts
 
 ---
 
 ## [3.2.19] - 2026-01-10
 
 ### Added
-- **PRD Agent Support** — New `/ouroboros-prd` slash command for AI-guided PRD creation:
-  - Added to slash command autocomplete (now 6 commands total)
-  - Added `prd` workflow type to constants
-  - Added `ouroboros-prd.agent.md` and `ouroboros-prd.prompt.md` to promptTransformer
-
-### Tests
-- All 488 tests passing (357 extension + 131 webview)
+- **PRD Agent Support** — `/ouroboros-prd` slash command for AI-guided PRD creation
 
 ## [3.2.18] - 2026-01-02
 
 ### Added
-- **Slash Command Autocomplete** — Type `/` in the input box to see available slash commands.
-  - 5 commands: `/ouroboros`, `/ouroboros-init`, `/ouroboros-spec`, `/ouroboros-implement`, `/ouroboros-archive`
-  - Fuzzy matching: prioritizes commands that start with your input, then contains
-  - Keyboard navigation: ↑↓ to select, Tab to complete, Esc to cancel
-  - Auto-prepends agent instruction when sending slash commands (e.g., "Follow the prompt '.github/agents/ouroboros-spec.agent.md'")
-  - Native Avant-Garde styled dropdown matching the UI theme
-  - New `useSlashCommands` hook with 26 unit tests
-  - New `SlashCommandDropdown` component
-
-### Tests
-- All 488 tests passing (357 extension + 131 webview)
-
-## [3.2.17] - 2026-01-02
-
-### Added
-- **Slash Command Autocomplete** — Type `/` in the input box to see available slash commands.
-  - Fuzzy matching: prioritizes commands that start with your input, then contains
-  - Keyboard navigation: ↑↓ to select, Tab to complete, Esc to cancel
-  - Auto-prepends agent instruction when sending slash commands
-  - Native Avant-Garde styled dropdown matching the UI theme
-
-### Fixed
-- **Test Mock Update** — Added `onHistoryChange` mock to SidebarProvider tests to fix CI failures.
+- **Slash Command Autocomplete** — Type `/` for command suggestions with fuzzy matching and keyboard navigation
 
 ## [3.2.16] - 2026-01-02
 
 ### Fixed
-- **History Not Updating in Real-Time** — Fixed issue where interaction history wasn't refreshing automatically after user responses.
-  - Added `onHistoryChange` event emitter to `StateManager`
-  - `SidebarProvider` now listens to history changes and sends `historyUpdate` to webview
-  - History tab now updates immediately when new interactions are recorded
-  - Previously required VS Code restart to see new history entries
+- **History Real-Time Update** — History tab now updates immediately when new interactions are recorded
 
 ### Changed
-- **Sent Message Card Redesign** — Upgraded to "Native Avant-Garde" style matching the Handoff Card.
-  - Brutalist corners with VS Code theme integration
-  - Scanline texture overlay for tech aesthetic
-  - Status indicator with pulse animation
-  - Type-specific accent colors (info/success/warning)
-  - Monospace typography for system labels
-  - Checkmark animation on send confirmation
+- **Sent Message Card** — "Native Avant-Garde" style with scanline texture and pulse animation
 
 ## [3.2.15] - 2026-01-02
 
 ### Added
-- **UI Redesign**: "Handoff Card" V5 "Native Avant-Garde" - A complete overhaul of the pending request widget.
-  - **Native Theming**: Zero hardcoded colors; stricly uses VS Code theme variables for universal compatibility.
-  - **Dynamic Icons**: Agents now have context-aware identities (e.g., Hubot for God Mode, Code for Coder) powered by Codicons.
-  - **Idle State**: New pulsing idle animation and "SYSTEM_WAKE_MODE" status.
-  - **Visual upgrade**: Holographic overlays, scanlines, and circuit-like data streams.
-- **Input History Navigation**: Navigate through previous inputs using ↑/↓ arrow keys.
-  - New `useInputHistory` hook with localStorage persistence (max 50 entries).
-  - Works in Ask, Menu (custom input), and Confirm (custom input) components.
-  - Updated placeholder hints from "Ctrl+V to paste" to "↑↓ for history".
-  - 16 unit tests for the new hook.
+- **UI Redesign** — "Handoff Card" V5 with native theming, dynamic agent icons, holographic overlays
+- **Input History** — Navigate previous inputs with ↑/↓ arrow keys (localStorage persistence)
 
 ## [3.2.13] - 2025-12-29
 
 ### Added
-
-- **Copilot Usage Insights** — New card on Welcome page showing GitHub Copilot plan and quota:
-  - SVG circular progress ring showing usage percentage
-  - Shows "used" percentage (increasing) — more intuitive than "remaining"
-  - Precision to 0.1%
-  - Color-coded ring (green < 75%, orange < 90%, red ≥ 90%)
-  - Plan type display (Free/Pro/Enterprise)
-  - Reset countdown timer
-  - Manual refresh button (uses internal GitHub API)
-  - New `CopilotInsights` component with full test coverage
-  - New `copilotInsights` service for fetching data
-
-- **Linting Rules for Coder Agent** — Added universal code quality rules:
-  - Pass project linter before completion
-  - No lint suppression comments (`eslint-disable`, `noqa`, etc.)
-  - Avoid weak types (`any`, `Object`, `dynamic`)
-  - Match existing project code style
-  - Added `lint` gate to verification checklist
+- **Copilot Usage Insights** — Welcome page card showing plan type, quota usage, reset countdown
+- **Linting Rules** — Coder agent now enforces lint-clean code, no suppressions, strong typing
 
 ### Changed
-
-- **QA Agent** — Added `Lint-clean` rule to test design requirements
-
-- **Smart YAML Preservation** — Update Prompts now intelligently merges YAML:
-  - Preserves user-customized fields (`tools`, `description`)
-  - Updates other fields from new content
-  - Previously preserved entire YAML, now does field-level merge
-
-### Tests
-
-- Added 7 tests for `CopilotInsights` component
-- Added 7 tests for `copilotInsights` service
-- Updated `Welcome.test.tsx` to mock VSCode context
-- Added `authentication` API to vscode mock
-
----
+- **Smart YAML Preservation** — Update Prompts preserves user-customized fields (`tools`, `description`)
 
 ## [3.2.12] - 2025-12-25
 
 ### Changed
-
-- **Spec Agent Format Enforcement** — All 5 spec phase agents now have stronger format constraints to prevent template format changes:
-  - Added `FORMAT LOCK (IMMUTABLE)` sections with exact required formats
-  - Added `POST-CREATION VALIDATION` checklists
-  - Added `FORMAT VIOLATIONS (REDO REQUIRED)` consequence tables
-  - Fixed workflow steps from "Read Template" to "Copy Template"
-  - Removed duplicate format example sections
+- **Spec Agent Format Enforcement** — FORMAT LOCK sections prevent template format changes
 
 ### Fixed
-
-- **Multi-Workspace Command Bug** — Initialize and Update Prompts commands now correctly use the workspace selected in Welcome page:
-  - Commands accept optional `targetPath` parameter from Welcome page
-  - No longer shows workspace picker when called from Welcome page with selection
-  - Updates `selectedWorkspacePath` state after successful operation
-  - Fixes UI showing "Not Initialized" after Update Prompts in multi-root workspaces
-
----
+- **Multi-Workspace Commands** — Initialize/Update now use selected workspace correctly
 
 ## [3.2.11] - 2025-12-25
 
 ### Added
-
-- **Markdown Rendering** — Plan review content now renders as formatted Markdown:
-  - Headings, lists, code blocks with syntax highlighting
-  - Tables, blockquotes, links with external link handling
-  - GFM (GitHub Flavored Markdown) support via `remark-gfm`
-  - New `Markdown` component (`components/Markdown/`)
-
-- **Larger Plan Review Panel** — Full-width layout for better readability:
-  - Scrollable content area for long plans
-  - Expand/collapse toggle button
-  - Fixed action buttons at bottom
-
-### Changed
-
-- **Plan Review Layout** — Redesigned from chat bubble to dedicated panel:
-  - Header with title, mode badge, and collapse toggle
-  - Scrollable markdown content area with custom styling
-  - Action buttons with icons (Approve, Request Changes, Reject)
-
-### Dependencies
-
-- Added `react-markdown@^9.0.1` for markdown rendering
-- Added `remark-gfm@^4.0.0` for GitHub Flavored Markdown support
-
----
+- **Markdown Rendering** — Plan review renders formatted Markdown with GFM support
+- **Larger Plan Review Panel** — Full-width layout with expand/collapse toggle
 
 ## [3.2.10] - 2025-12-24
 
 ### Added
-
-- **Copilot-Style Attachment System** — Full support for file and image attachments in all input types:
-  - **Paste Images** — Ctrl+V to paste clipboard images directly
-  - **Drag & Drop** — Drop files onto any input area
-  - **File Picker** — Click attach button to browse files
-  - **Badge Display** — Images show thumbnails, files show icons with names
-  - **Preview Tooltip** — Hover over image badges for larger preview
-  - **Size Limits** — Max 5MB per file, up to 10 attachments
-  - **Type Detection** — Auto-detects image/code/file types
-  - **Send Confirmation** — Shows attachment count in sent message bubble
-
-- **Attachment Helper Module** — New `attachmentHelper.ts` for processing attachments:
-  - Converts image attachments to `LanguageModelDataPart` for Copilot vision support
-  - Converts code/file attachments to formatted markdown text blocks
-  - Handles base64 data URL decoding
-
-### Changed
-
-- **Input Areas** — All textarea inputs now support drag-over visual feedback
-- **Textarea Max Height** — Increased from 120px to 240px (~10-12 lines)
-- **Type Definitions** — Extended all response types to include `attachments` field
-
-### Fixed
-
-- **Attachment Passthrough** — Fixed attachments not being passed from webview to Copilot:
-  - All tools (ask, menu, confirm, planReview) now include attachments in output
-  - Image-only responses now show `[See attached image(s)]` instead of empty string
-  - Added debug logging for attachment processing
-
----
+- **Attachment System** — Paste images, drag & drop files, file picker (max 5MB, 10 attachments)
 
 ## [3.2.9] - 2025-12-23
 
 ### Fixed
-
-- **Custom Input Multiline Support** — Menu, Confirm, and Plan Review custom inputs now support Shift+Enter for new lines:
-  - Changed `<input type="text">` to `<textarea>` for all custom input fields
-  - Enter sends message, Shift+Enter inserts new line (consistent with Ask input)
-  - Auto-resize up to 120px height
-  - Updated shortcut hints to include "Shift+Enter for new line"
-
-- **Newline Escape Parsing** — Fixed `\n` literal strings not rendering as actual line breaks:
-  - Added `parseNewlines()` utility to convert `\n` to real newlines
-  - Applied to all question displays and plan text
-
----
+- **Multiline Custom Input** — Shift+Enter for new lines in Menu/Confirm/Plan Review
+- **Newline Parsing** — `\n` now renders as actual line breaks
 
 ## [3.2.8] - 2025-12-22
 
 ### Changed
-
-- **Chat-Style Request Cards** — All request types now use chat bubble layout with agent avatar
-- **Agent Avatar** — Ouroboros logo in semi-transparent bubble (replaces solid blue circle)
-- **Sent Message Bubble Size** — Increased to 520px width, 280px max height, 10 line clamp
-- **Request Cards Centered** — Cards now vertically centered instead of top-aligned
-- **Progress Bar** — Now shows tasks completion only (phases shown in timeline)
-- **Tab Shortcuts** — Changed from number keys to Alt+number to avoid input conflicts
-- **Send Button** — Replaced icon with Ouroboros logo
-- **Tabs Reduced** — Removed Agent Hierarchy tab (merged into Pending Requests)
-
-### Added
-
-- **Agent Activity Box** — Collapsible box in Pending Requests showing current agent and recent handoffs
-- **Test Coverage** — Improved coverage for updatePrompts.ts (100%) and SidebarProvider.ts (95%)
+- **Chat-Style UI** — Request cards use chat bubble layout with agent avatar
+- **Tab Shortcuts** — Changed to Alt+number to avoid input conflicts
 
 ### Removed
-
-- **`ouroborosai_phase_progress` Tool** — Removed redundant tool; progress now tracked via file system
-
-### Fixed
-
-- **Newline Parsing** — Question text now correctly renders `\n` as line breaks
-- **Keyboard Conflicts** — Arrow keys and number keys no longer interfere with text input
-
----
+- **`ouroborosai_phase_progress` Tool** — Progress now tracked via file system
 
 ## [3.2.7] - 2025-12-22
 
 ### Added
-
-- **Sent Message Confirmation** — Chat-style bubble shows what you sent to Copilot:
-  - Right-aligned bubble with tail (chat style)
-  - Color variants based on request type (blue/green/yellow)
-  - Shows timestamp (HH:MM) and type badge (Response/Selection/Confirmation/Review)
-  - Slide-in animation from right with bounce effect
-  - Check icon pop animation
-  - Fades out after 4 seconds
-  - 4-line text clamp with ellipsis for long messages
+- **Sent Message Confirmation** — Chat bubble shows what you sent with slide-in animation
 
 ### Fixed
-
-- **Multi-Workspace Spec Detection** — SpecWatcher now restarts when switching workspaces:
-  - Fixed "No specs yet" showing despite specs existing in selected workspace
-  - `selectWorkspace` message handler now calls `specWatcher.start()` with new path
-  - Added `setSpecWatcher()` method to SidebarProvider for workspace switching
-
-- **WorkflowProgress Tests** — Updated tests to match new `useSpecs` hook:
-  - Replaced `useWorkflow` mock with `useSpecs` mock
-  - Updated test cases for file-based spec data structure
-
----
+- **Multi-Workspace Spec Detection** — SpecWatcher restarts when switching workspaces
 
 ## [3.2.5] - 2025-12-22
 
 ### Added
-
-- **File-Based Workflow Progress** — Redesigned Workflow tab reads directly from `.ouroboros/specs/` folder:
-  - Active specs shown with phase indicators and progress bars
-  - Archived specs shown in "Recent Archives" section
-  - Real-time updates via FileSystemWatcher
-- **New Backend Services**:
-  - `specScanner.ts` — Scans specs folders for active/archived workflows
-  - `tasksParser.ts` — Parses `tasks.md` checkboxes for progress calculation
-  - `specWatcher.ts` — Watches file changes for live updates
-- **29 New Unit Tests** — Full test coverage for new services (323 total tests)
+- **File-Based Workflow Progress** — Reads directly from `.ouroboros/specs/` with FileSystemWatcher
 
 ### Changed
-
-- **Welcome Logo Effect** — Replaced CSS-based effects with clean SVG arc paths:
-  - Left arc: Purple (`#9C6ADE`) matching logo color
-  - Right arc: Blue (`#3794ff`) brand color
-  - Breathing scale animation (0.88 → 1.12)
-  - Flowing particle dots with color-shifting animation
-- **Workflow Card Border** — Updated gradient to use brand blue colors instead of rainbow
-
----
+- **Welcome Logo** — SVG arc paths with breathing animation and flowing particles
 
 ## [3.2.4] - 2025-12-21
 
-### Changed
-
-- **Menu Options Layout** — Options now display vertically instead of horizontally wrapping
-- **Custom Input Always Visible** — Custom input field always shows in menu requests
-- **Pending Request Centered** — Request card now displays centered in the panel
-- **Cancel Button Redesign** — Moved to header as X icon, more subtle
-
 ### Added
-
-- **Keyboard Shortcuts** — Full keyboard navigation support:
-  - Menu: Press 1-9 to select options, C for custom input
-  - Confirm: Y for yes, N for no
-  - All types: Esc to cancel
-  - Plan Review: Ctrl+Enter to approve
-- **Numbered Menu Options** — Each option shows its number for quick keyboard selection
-- **Request Type Visual Distinction** — Color-coded left border by type (blue/green/yellow)
-- **Empty State Animation** — Breathing animation on idle icon indicates waiting state
-- **Shortcut Hints** — Inline hints show available keyboard shortcuts
-
-### Fixed
-
-- **ESLint Warnings** — Fixed unused `prompt` parameters in `promptTransformer.ts`
-- **Test Type Safety** — Replaced `as any` with proper types in `promptTransformer.test.ts`
-
----
+- **Keyboard Shortcuts** — 1-9 for menu, Y/N for confirm, Esc to cancel, Ctrl+Enter to approve
 
 ## [3.2.3] - 2025-12-21
 
 ### Added
-
-- **Multi-Root Workspace Selector** — Choose which workspace to initialize in multi-root projects:
-  - Dropdown appears in Step 1 when multiple workspaces are open
-  - Shows initialization status (✓) for each workspace
-  - Selection persists across extension reloads
+- **Multi-Root Workspace Selector** — Choose workspace in multi-root projects
 
 ### Fixed
-
-- **Template Download on Update** — `.ouroboros/templates/` files now download during "Update Prompts"
-  - Previously only downloaded during initial setup via `fetchAndTransformPrompts()`
-  - Added template files loop to `smartUpdatePrompts()` in `promptTransformer.ts`
-
-- **Copilot Chat Step Detection** — "Start Ouroboros" step now shows ✓ after opening Copilot Chat
-  - Added `hasCopilotChatOpened` state tracking
-  - Step 2 badge updates from "2" to green "✓" after clicking "Open Copilot Chat"
-  - State persists across extension reloads
-
-- **State Update Bug** — Fixed workspace detection breaking after clicking "Open Copilot Chat"
-  - `stateUpdate` message now includes `projectName` and `isInitialized`
-
-### Changed
-
-- **Modernized Chat UI** — Upgraded Pending Requests interface:
-  - Message bubbles with gradient backgrounds and hover lift effect
-  - Larger textarea (min-height 60px → 100px) with focus glow
-  - Added "Shift+Enter for new line" hint
-  - Improved shadows and animations
-
----
+- **Template Download** — Templates now download during Update Prompts
+- **Copilot Chat Step** — Shows ✓ after opening Copilot Chat
 
 ## [3.2.2] - 2025-12-21
 
 ### Added
-
-- **Smart Prompt Update** — Update prompts while preserving your custom tools:
-  - New command `Ouroboros: Update Prompts (Preserve Custom Tools)`
-  - New command `Ouroboros: Check for Prompt Updates`
-  - "Update Prompts" button in Home tab after initialization
-  - Your custom `tools:` array in YAML frontmatter is preserved
-  - Version checking compares local vs GitHub release versions
-
-- **Agent Skills Support** — Extension now compatible with agentskills.io standard:
-  - Skill Suggestion CCL uses standard Type D format (`confirm = input('[y/n]: ')`)
-  - Skill name input uses Type C format (`feature = input(...)`)
-  - Full compatibility with `promptTransformer.ts` patterns
-
-### Fixed
-
-- Fixed LM Tools prefix to use lowercase `mlgbjdlw.ouroboros-ai/` (matches VS Code runtime)
-
----
+- **Smart Prompt Update** — Preserves custom `tools:` array during updates
+- **Agent Skills Support** — Compatible with agentskills.io standard
 
 ## [3.2.1] - 2025-12-21
 
 ### Changed
-
-- Renamed extension from `ouroboros` to `ouroboros-ai` (marketplace name conflict)
-- Renamed all tool names from `ouroboros_*` to `ouroborosai_*`
-- Changed publisher to `MLGBJDLW`
-
-### Fixed
-
-- Added `.vscodeignore` to reduce package size
-- Added `LICENSE.md` file
-
----
+- Renamed to `ouroboros-ai`, tools to `ouroborosai_*`, publisher to `MLGBJDLW`
 
 ## [3.2.0] - 2025-12-21
 
 ### Added
-
-- **6 LM Tools** for native Copilot integration:
-  - `ouroborosai_ask` - Get user input (task, question, feature)
-  - `ouroborosai_menu` - Present multiple choice options
-  - `ouroborosai_confirm` - Yes/No confirmation dialogs
-  - `ouroborosai_plan_review` - Document/plan review and approval
-  - `ouroborosai_phase_progress` - Report workflow phase progress
-  - `ouroborosai_agent_handoff` - Track agent level transitions
-
-- **React Webview UI** with 4 views:
-  - Pending Requests (key: 1)
-  - Workflow Progress (key: 2)
-  - Agent Hierarchy (key: 3)
-  - History (key: 4)
-
-- **Keyboard Navigation**:
-  - Press `1-4` to switch views
-  - Arrow keys for tab navigation
-  - Full ARIA accessibility
-
-- **Commands**:
-  - `Ouroboros: Initialize Project`
-  - `Ouroboros: Open Sidebar`
-  - `Ouroboros: Clear History`
-  - `Ouroboros: Cancel Current Request`
-
-### Technical
-
-- Minimum VS Code version: 1.95.0
-- Built with esbuild + Vite
-- 48 unit tests with vitest
+- **6 LM Tools** — ask, menu, confirm, plan_review, phase_progress, agent_handoff
+- **React Webview UI** — 4 tabs with keyboard navigation
+- **Commands** — Initialize, Open Sidebar, Clear History, Cancel Request
+- Minimum VS Code 1.95.0, 48 unit tests
