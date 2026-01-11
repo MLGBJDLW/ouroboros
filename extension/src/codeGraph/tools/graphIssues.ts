@@ -130,7 +130,7 @@ export function createGraphIssuesTool(
                         meta: result.meta,
                     };
                 } else {
-                    responseData = result;
+                    responseData = result as unknown as Record<string, unknown>;
                 }
 
                 const envelope = createSuccessEnvelope(
