@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.3.2] - 2026-01-11
 
 ### Fixed
-- **L2 Worker Tool Injection** — Fixed `preserveYamlFrontmatter` to also inject Code Graph tools for L2 workers during Update Prompts (was only injecting for orchestrators)
+- **L2 Worker Tool Injection** — Fixed `preserveYamlFrontmatter` to also inject Code Graph tools for L2 workers during Update Prompts
+- **Template Directory Creation** — Fixed recursive directory creation for nested template paths (`.ouroboros/specs/templates/`)
 
 ---
 

@@ -5,7 +5,8 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 ## [3.3.2] - 2026-01-11
 
 ### Fixed
-- **L2 Worker Tool Injection** — Fixed `preserveYamlFrontmatter` to also inject Code Graph tools for L2 workers during Update Prompts (was only injecting for orchestrators)
+- **L2 Worker Tool Injection** — Fixed `preserveYamlFrontmatter` to also inject Code Graph tools for L2 workers during Update Prompts
+- **Template Directory Creation** — Fixed recursive directory creation for nested template paths (`.ouroboros/specs/templates/`)
 
 ---
 

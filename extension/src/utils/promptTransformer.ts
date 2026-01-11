@@ -1405,9 +1405,19 @@ export async function fetchAndTransformPrompts(
         const content = await fetchFromGitHub(file);
         if (content) {
             const destUri = vscode.Uri.joinPath(workspaceRoot, file);
-            // Create parent directories
-            const parentDir = vscode.Uri.joinPath(destUri, '..');
-            await vscode.workspace.fs.createDirectory(parentDir);
+            
+            // Create all parent directories recursively
+            const pathParts = file.split('/');
+            let currentPath = workspaceRoot;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+                currentPath = vscode.Uri.joinPath(currentPath, pathParts[i]);
+                try {
+                    await vscode.workspace.fs.createDirectory(currentPath);
+                } catch {
+                    // Directory may already exist, ignore error
+                }
+            }
+            
             await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
             success++;
             logger.info(`Copied template: ${file}`);
@@ -1790,9 +1800,21 @@ export async function smartUpdatePrompts(
         const content = await fetchFromGitHub(file);
         if (content) {
             const destUri = vscode.Uri.joinPath(workspaceRoot, file);
-            // Create parent directories
-            const parentDir = vscode.Uri.joinPath(destUri, '..');
-            await vscode.workspace.fs.createDirectory(parentDir);
+            
+            // Create all parent directories recursively
+            // For path like .ouroboros/specs/templates/design-template.md
+            // We need to create .ouroboros, .ouroboros/specs, .ouroboros/specs/templates
+            const pathParts = file.split('/');
+            let currentPath = workspaceRoot;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+                currentPath = vscode.Uri.joinPath(currentPath, pathParts[i]);
+                try {
+                    await vscode.workspace.fs.createDirectory(currentPath);
+                } catch {
+                    // Directory may already exist, ignore error
+                }
+            }
+            
             // Always overwrite template files during update
             await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
             updated++;
