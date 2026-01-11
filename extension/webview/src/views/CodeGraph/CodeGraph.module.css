@@ -862,3 +862,72 @@
 .graphEmpty strong {
     color: var(--foreground);
 }
+
+
+/* Refresh Button States */
+.refreshBtn.refreshing {
+    background: color-mix(in srgb, var(--info) 15%, transparent);
+    border-color: var(--info);
+    color: var(--info);
+    cursor: wait;
+}
+
+.refreshBtn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+/* Spinning animation for refresh icon */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+/* Issue Detail List (for evidence/fix sections) */
+.issueDetailList {
+    margin: 0;
+    padding-left: var(--spacing-md);
+    list-style: disc;
+}
+
+.issueDetailList li {
+    padding: 2px 0;
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+
+/* Graph Stats Bar */
+.graphStatsBar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    color: var(--foreground-secondary);
+}
+
+.graphStat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.graphStatWarning {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--warning);
+    margin-left: auto;
+}

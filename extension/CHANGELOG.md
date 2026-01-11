@@ -2,6 +2,24 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.5] - 2026-01-11
+
+### Fixed
+- **Graph Refresh** — Fixed refresh button not updating data (cache invalidation issue)
+- **Graph Zoom** — Fixed graph shrinking to corner after refresh (now auto-fits to view)
+- **Issues Categories** — Dynamic issue type filtering (shows all detected types, not just 3 hardcoded)
+- **Real Dependency Edges** — Graph now displays actual import relationships instead of directory-based fake links
+
+### Added
+- **Auto-Refresh** — Graph data auto-refreshes every 2 minutes when visible
+- **Graph Stats Bar** — Shows node/edge counts with warning when no connections exist
+- **Backend Edge API** — New `getGraphEdges` message for fetching real import edges
+
+### Improved
+- **TypeScript Compilation** — Fixed multiple type errors in codeGraph tools
+
+---
+
 ## [3.3.4] - 2026-01-11
 
 ### Fixed

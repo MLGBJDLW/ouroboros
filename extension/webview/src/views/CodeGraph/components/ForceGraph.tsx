@@ -284,6 +284,10 @@ export function ForceGraph({
     useEffect(() => {
         pendingZoomRef.current = true;
         setIsStabilized(false);
+        // Reheat simulation when data changes
+        if (graphRef.current) {
+            graphRef.current.d3ReheatSimulation();
+        }
     }, [data]);
 
     useEffect(() => {
@@ -325,7 +329,11 @@ export function ForceGraph({
 
     useEffect(() => {
         if (fitVersion <= 0) return;
-        zoomToFit();
+        // Small delay to ensure graph has rendered
+        const timer = setTimeout(() => {
+            zoomToFit();
+        }, 50);
+        return () => clearTimeout(timer);
     }, [fitVersion, zoomToFit]);
 
     return (

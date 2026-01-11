@@ -209,7 +209,7 @@ export async function handleMessage(
                     if (filePath) {
                         // Convert relative path to absolute if needed
                         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                        let uri: vscode.Uri;
+                        let uri: typeof vscode.Uri.prototype;
                         
                         if (filePath.startsWith('/') || /^[a-zA-Z]:/.test(filePath)) {
                             // Absolute path
@@ -330,6 +330,81 @@ export async function handleMessage(
             break;
         }
 
+        case 'refreshGraph': {
+            logger.info('Refreshing graph (full re-index)');
+            if (codeGraphManager) {
+                try {
+                    // Notify webview that refresh is starting
+                    sidebarProvider.postMessage({
+                        type: 'graphRefreshStarted',
+                        payload: null,
+                    });
+                    
+                    // Invalidate cache before re-index
+                    codeGraphManager.invalidateCache();
+                    
+                    // Perform full re-index
+                    await codeGraphManager.fullIndex();
+                    
+                    // Invalidate cache again after re-index to ensure fresh data
+                    codeGraphManager.invalidateCache();
+                    
+                    // Send updated data (these will recompute, not use cache)
+                    const digest = codeGraphManager.getDigest();
+                    const issues = codeGraphManager.getIssues();
+                    const fileIndex = codeGraphManager.getFileIndex();
+                    
+                    // Get edges
+                    const store = codeGraphManager.getStore();
+                    const allEdges = store.getAllEdges();
+                    const edges = allEdges
+                        .filter(edge => 
+                            edge.kind === 'imports' && 
+                            edge.from.startsWith('file:') && 
+                            edge.to.startsWith('file:')
+                        )
+                        .map(edge => ({
+                            source: edge.from.slice(5),
+                            target: edge.to.slice(5),
+                            type: edge.kind,
+                        }));
+                    
+                    sidebarProvider.postMessage({
+                        type: 'graphDigest',
+                        payload: digest,
+                    });
+                    sidebarProvider.postMessage({
+                        type: 'graphIssues',
+                        payload: issues,
+                    });
+                    sidebarProvider.postMessage({
+                        type: 'graphFiles',
+                        payload: fileIndex,
+                    });
+                    sidebarProvider.postMessage({
+                        type: 'graphEdges',
+                        payload: { edges },
+                    });
+                    sidebarProvider.postMessage({
+                        type: 'graphRefreshCompleted',
+                        payload: null,
+                    });
+                } catch (error) {
+                    logger.error('Failed to refresh graph:', error);
+                    sidebarProvider.postMessage({
+                        type: 'graphError',
+                        payload: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                }
+            } else {
+                sidebarProvider.postMessage({
+                    type: 'graphError',
+                    payload: 'Code Graph not initialized',
+                });
+            }
+            break;
+        }
+
         case 'getGraphIssues': {
             logger.info('Getting graph issues');
             if (codeGraphManager) {
@@ -357,6 +432,47 @@ export async function handleMessage(
                     });
                 } catch (error) {
                     logger.error('Failed to get graph files:', error);
+                    sidebarProvider.postMessage({
+                        type: 'graphError',
+                        payload: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                }
+            } else {
+                sidebarProvider.postMessage({
+                    type: 'graphError',
+                    payload: 'Code Graph not initialized',
+                });
+            }
+            break;
+        }
+
+        case 'getGraphEdges': {
+            logger.info('Getting graph edges');
+            if (codeGraphManager) {
+                try {
+                    const store = codeGraphManager.getStore();
+                    const allEdges = store.getAllEdges();
+                    
+                    // Transform edges to a simpler format for the webview
+                    // Only include import edges between files
+                    const edges = allEdges
+                        .filter(edge => 
+                            edge.kind === 'imports' && 
+                            edge.from.startsWith('file:') && 
+                            edge.to.startsWith('file:')
+                        )
+                        .map(edge => ({
+                            source: edge.from.slice(5), // Remove 'file:' prefix
+                            target: edge.to.slice(5),
+                            type: edge.kind,
+                        }));
+                    
+                    sidebarProvider.postMessage({
+                        type: 'graphEdges',
+                        payload: { edges },
+                    });
+                } catch (error) {
+                    logger.error('Failed to get graph edges:', error);
                     sidebarProvider.postMessage({
                         type: 'graphError',
                         payload: error instanceof Error ? error.message : 'Unknown error',

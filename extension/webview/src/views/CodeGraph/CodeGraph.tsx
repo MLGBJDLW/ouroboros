@@ -3,7 +3,7 @@
  * Displays codebase structure, issues, and impact analysis
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useVSCode } from '../../context/VSCodeContext';
 import { Card, CardHeader, CardBody } from '../../components/Card';
 import { Icon } from '../../components/Icon';
@@ -71,6 +71,7 @@ export function CodeGraph() {
     const [graphData, setGraphData] = useState<GraphData | null>(null);
     const [fileNodes, setFileNodes] = useState<GraphNode[]>([]);
     const [fileIndex, setFileIndex] = useState<GraphFileIndex | null>(null);
+    const [realEdges, setRealEdges] = useState<Array<{ source: string; target: string; type: string }>>([]);
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
     const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
@@ -87,8 +88,12 @@ export function CodeGraph() {
     });
     const graphContainerRef = useRef<HTMLDivElement>(null);
 
-    // Build graph data from digest
-    const buildGraphData = useCallback((digest: GraphDigest, issues: GraphIssue[]): GraphData => {
+    // Build graph data from digest and real edges
+    const buildGraphData = useCallback((
+        digest: GraphDigest, 
+        issues: GraphIssue[],
+        edges: Array<{ source: string; target: string; type: string }>
+    ): GraphData => {
         const nodes: GraphNode[] = [];
         const links: GraphEdge[] = [];
         const nodeMap = new Map<string, GraphNode>();
@@ -106,6 +111,13 @@ export function CodeGraph() {
             issueCountMap.set(issue.file, count + 1);
         });
 
+        // Count importers from real edges
+        const importerCounts = new Map<string, number>();
+        edges.forEach(edge => {
+            const count = importerCounts.get(edge.target) || 0;
+            importerCounts.set(edge.target, count + 1);
+        });
+
         // Add hotspot nodes
         digest.hotspots.forEach((hotspot, index) => {
             const node: GraphNode = {
@@ -114,7 +126,7 @@ export function CodeGraph() {
                 name: hotspot.path.split('/').pop() || hotspot.path,
                 type: entrypointPaths.has(hotspot.path) ? 'entrypoint' : 'hotspot',
                 issueCount: issueCountMap.get(hotspot.path) || 0,
-                importers: hotspot.importers,
+                importers: importerCounts.get(hotspot.path) || hotspot.importers,
                 exports: hotspot.exports,
                 isEntrypoint: entrypointPaths.has(hotspot.path),
                 isHotspot: true,
@@ -134,7 +146,7 @@ export function CodeGraph() {
                     name: path.split('/').pop() || path,
                     type: 'entrypoint',
                     issueCount: issueCountMap.get(path) || 0,
-                    importers: 0,
+                    importers: importerCounts.get(path) || 0,
                     exports: 0,
                     isEntrypoint: true,
                     isHotspot: false,
@@ -146,21 +158,72 @@ export function CodeGraph() {
             }
         });
 
-        // If no nodes yet (no hotspots/entrypoints), show a placeholder message
-        // The graph will be empty but that's expected for projects without clear structure
-        
-        // Create links based on directory proximity
-        const sortedHotspots = [...digest.hotspots].sort((a, b) => b.importers - a.importers);
-        for (let i = 0; i < Math.min(sortedHotspots.length, 10); i++) {
-            for (let j = i + 1; j < Math.min(sortedHotspots.length, 10); j++) {
-                const source = sortedHotspots[i].path;
-                const target = sortedHotspots[j].path;
-                const sourceDir = source.split('/').slice(0, -1).join('/');
-                const targetDir = target.split('/').slice(0, -1).join('/');
-                if (sourceDir === targetDir || sourceDir.startsWith(targetDir) || targetDir.startsWith(sourceDir)) {
-                    links.push({ source, target, type: 'import', weight: 1 });
-                }
+        // Create links from real edges (only between nodes that exist in our graph)
+        const nodeIds = new Set(nodes.map(n => n.id));
+        edges.forEach(edge => {
+            if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
+                links.push({
+                    source: edge.source,
+                    target: edge.target,
+                    type: edge.type as 'import' | 'export' | 'reexport' | 'dynamic',
+                    weight: 1,
+                });
             }
+        });
+
+        // If we have nodes but no links between them, try to add links from edges
+        // that connect to nodes we have (even if one end is missing)
+        if (links.length === 0 && nodes.length > 1) {
+            // Find edges where at least one end is in our node set
+            const relevantEdges = edges.filter(edge => 
+                nodeIds.has(edge.source) || nodeIds.has(edge.target)
+            );
+            
+            // Add missing nodes that are connected to our hotspots/entrypoints
+            const nodesToAdd = new Set<string>();
+            relevantEdges.forEach(edge => {
+                if (nodeIds.has(edge.source) && !nodeIds.has(edge.target)) {
+                    nodesToAdd.add(edge.target);
+                }
+                if (nodeIds.has(edge.target) && !nodeIds.has(edge.source)) {
+                    nodesToAdd.add(edge.source);
+                }
+            });
+
+            // Add up to 20 connected nodes
+            let addedCount = 0;
+            nodesToAdd.forEach(path => {
+                if (addedCount >= 20) return;
+                const node: GraphNode = {
+                    id: path,
+                    path: path,
+                    name: path.split('/').pop() || path,
+                    type: 'file',
+                    issueCount: issueCountMap.get(path) || 0,
+                    importers: importerCounts.get(path) || 0,
+                    exports: 0,
+                    isEntrypoint: entrypointPaths.has(path),
+                    isHotspot: false,
+                    depth: nodes.length,
+                    val: 5,
+                };
+                nodes.push(node);
+                nodeMap.set(path, node);
+                addedCount++;
+            });
+
+            // Now add links with the expanded node set
+            const expandedNodeIds = new Set(nodes.map(n => n.id));
+            edges.forEach(edge => {
+                if (expandedNodeIds.has(edge.source) && expandedNodeIds.has(edge.target)) {
+                    links.push({
+                        source: edge.source,
+                        target: edge.target,
+                        type: edge.type as 'import' | 'export' | 'reexport' | 'dynamic',
+                        weight: 1,
+                    });
+                }
+            });
         }
 
         return { nodes, links };
@@ -189,14 +252,23 @@ export function CodeGraph() {
         }));
     }, []);
 
-    // Request graph data from extension
-    const refreshData = useCallback(() => {
+    // Request graph data from extension (fetch cached data)
+    const fetchData = useCallback(() => {
         setIsLoading(true);
         setIsFileIndexLoading(true);
         setError(null);
         vscode.postMessage({ type: 'getGraphDigest' });
         vscode.postMessage({ type: 'getGraphIssues' });
         vscode.postMessage({ type: 'getGraphFiles' });
+        vscode.postMessage({ type: 'getGraphEdges' });
+    }, [vscode]);
+
+    // Force refresh - triggers full re-index
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const refreshData = useCallback(() => {
+        setIsRefreshing(true);
+        setError(null);
+        vscode.postMessage({ type: 'refreshGraph' });
     }, [vscode]);
 
     // Add item to pending request context
@@ -335,7 +407,7 @@ export function CodeGraph() {
     }, [activeTab]);
 
     useEffect(() => {
-        refreshData();
+        fetchData();
 
         const handleMessage = (event: MessageEvent) => {
             const message = event.data;
@@ -348,23 +420,82 @@ export function CodeGraph() {
                 const indexPayload = message.payload as GraphFileIndex;
                 setFileIndex(indexPayload);
                 setIsFileIndexLoading(false);
+            } else if (message.type === 'graphEdges') {
+                setRealEdges(message.payload?.edges || []);
             } else if (message.type === 'graphError') {
                 setError(message.payload);
                 setIsLoading(false);
+                setIsRefreshing(false);
+            } else if (message.type === 'graphRefreshStarted') {
+                setIsRefreshing(true);
+            } else if (message.type === 'graphRefreshCompleted') {
+                setIsRefreshing(false);
+                setIsLoading(false);
+                setIsFileIndexLoading(false);
+                // Trigger graph to re-fit after data updates
+                setTimeout(() => {
+                    setFitVersion(v => v + 1);
+                }, 100);
             }
         };
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [refreshData]);
+    }, [fetchData, vscode]);
 
-    // Build graph data when digest/issues change
+    // Auto-refresh interval (every 2 minutes when tab is visible)
+    const AUTO_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
+    useEffect(() => {
+        let intervalId: ReturnType<typeof setInterval> | null = null;
+        
+        const startAutoRefresh = () => {
+            if (intervalId) return;
+            intervalId = setInterval(() => {
+                // Only auto-fetch cached data, don't trigger full re-index
+                if (!isRefreshing && !isLoading) {
+                    fetchData();
+                }
+            }, AUTO_REFRESH_INTERVAL);
+        };
+        
+        const stopAutoRefresh = () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        };
+        
+        // Start auto-refresh
+        startAutoRefresh();
+        
+        // Handle visibility change - pause when hidden, resume when visible
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+                // Fetch immediately when becoming visible
+                if (!isRefreshing && !isLoading) {
+                    fetchData();
+                }
+            }
+        };
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        return () => {
+            stopAutoRefresh();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchData, isRefreshing, isLoading]);
+
+    // Build graph data when digest/issues/edges change
     useEffect(() => {
         if (digest) {
-            const data = buildGraphData(digest, issues);
+            const data = buildGraphData(digest, issues, realEdges);
             setGraphData(data);
         }
-    }, [digest, issues, buildGraphData]);
+    }, [digest, issues, realEdges, buildGraphData]);
 
     useEffect(() => {
         if (fileIndex) {
@@ -489,6 +620,23 @@ export function CodeGraph() {
                             </div>
                         ) : (
                             <>
+                                {/* Graph Stats Bar */}
+                                <div className={styles.graphStatsBar}>
+                                    <span className={styles.graphStat}>
+                                        <Icon name="circle-filled" />
+                                        {graphData.nodes.length} nodes
+                                    </span>
+                                    <span className={styles.graphStat}>
+                                        <Icon name="git-merge" />
+                                        {graphData.links.length} edges
+                                    </span>
+                                    {graphData.links.length === 0 && (
+                                        <span className={styles.graphStatWarning}>
+                                            <Icon name="warning" />
+                                            No connections between displayed nodes
+                                        </span>
+                                    )}
+                                </div>
                                 {/* Graph Settings */}
                                 <div className={styles.graphSettings}>
                                     <button
@@ -654,9 +802,14 @@ export function CodeGraph() {
                     <Icon name="symbol-numeric" />
                     ~{digest.meta.tokensEstimate} tokens
                 </span>
-                <button className={styles.refreshBtn} onClick={refreshData} title="Re-index the codebase">
-                    <Icon name="refresh" />
-                    Refresh
+                <button 
+                    className={`${styles.refreshBtn} ${isRefreshing ? styles.refreshing : ''}`} 
+                    onClick={refreshData} 
+                    title="Re-index the codebase"
+                    disabled={isRefreshing}
+                >
+                    <Icon name={isRefreshing ? 'sync' : 'refresh'} className={isRefreshing ? styles.spinning : ''} />
+                    {isRefreshing ? 'Indexing...' : 'Refresh'}
                 </button>
             </div>
         </div>
@@ -790,9 +943,43 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
 }) {
     const [filter, setFilter] = useState<string>('all');
 
+    // Build dynamic issue categories from actual issues
+    const issueCategories = useMemo(() => {
+        const categories = new Map<string, number>();
+        issues.forEach(issue => {
+            const count = categories.get(issue.kind) || 0;
+            categories.set(issue.kind, count + 1);
+        });
+        return categories;
+    }, [issues]);
+
+    // Also include categories from digest.issues that might have 0 count in filtered issues
+    const allCategories = useMemo(() => {
+        const merged = new Map(issueCategories);
+        Object.entries(digest.issues).forEach(([kind, count]) => {
+            if (!merged.has(kind) && count > 0) {
+                merged.set(kind, count);
+            }
+        });
+        return merged;
+    }, [issueCategories, digest.issues]);
+
     const filteredIssues = filter === 'all'
         ? issues
         : issues.filter((i) => i.kind === filter);
+
+    // Human-readable labels for issue kinds
+    const kindLabelMap: Record<string, { label: string; icon: string; severity: 'info' | 'warning' | 'error' }> = {
+        HANDLER_UNREACHABLE: { label: 'Unreachable', icon: '🔸', severity: 'warning' },
+        DYNAMIC_EDGE_UNKNOWN: { label: 'Dynamic', icon: '🔹', severity: 'info' },
+        BROKEN_EXPORT_CHAIN: { label: 'Broken Export', icon: '🔴', severity: 'error' },
+        CIRCULAR_REEXPORT: { label: 'Circular Re-export', icon: '🔄', severity: 'warning' },
+        ORPHAN_EXPORT: { label: 'Orphan Export', icon: '📦', severity: 'info' },
+        ENTRY_MISSING_HANDLER: { label: 'Missing Handler', icon: '⚠️', severity: 'warning' },
+        NOT_REGISTERED: { label: 'Not Registered', icon: '📝', severity: 'info' },
+        CYCLE_RISK: { label: 'Cycle Risk', icon: '🔁', severity: 'warning' },
+        LAYER_VIOLATION: { label: 'Layer Violation', icon: '🏗️', severity: 'error' },
+    };
 
     if (issues.length === 0) {
         return (
@@ -815,32 +1002,30 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
                     title="Filter issues by type"
                 >
                     <option value="all">All Issues ({issues.length})</option>
-                    <option value="HANDLER_UNREACHABLE">
-                        🔸 Unreachable ({digest.issues.HANDLER_UNREACHABLE || 0})
-                    </option>
-                    <option value="DYNAMIC_EDGE_UNKNOWN">
-                        🔹 Dynamic ({digest.issues.DYNAMIC_EDGE_UNKNOWN || 0})
-                    </option>
-                    <option value="BROKEN_EXPORT_CHAIN">
-                        🔴 Broken ({digest.issues.BROKEN_EXPORT_CHAIN || 0})
-                    </option>
+                    {Array.from(allCategories.entries())
+                        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+                        .map(([kind, count]) => {
+                            const info = kindLabelMap[kind] || { label: kind, icon: '•', severity: 'info' };
+                            return (
+                                <option key={kind} value={kind}>
+                                    {info.icon} {info.label} ({count})
+                                </option>
+                            );
+                        })}
                 </select>
             </div>
 
-            {/* Legend */}
+            {/* Dynamic Legend based on actual issue types */}
             <div className={styles.legend}>
-                <span className={styles.legendItem}>
-                    <span className={`${styles.legendDot} ${styles.warning}`} />
-                    Unreachable = Dead code
-                </span>
-                <span className={styles.legendItem}>
-                    <span className={`${styles.legendDot} ${styles.info}`} />
-                    Dynamic = Needs annotation
-                </span>
-                <span className={styles.legendItem}>
-                    <span className={`${styles.legendDot} ${styles.error}`} />
-                    Broken = Fix required
-                </span>
+                {Array.from(allCategories.keys()).slice(0, 4).map(kind => {
+                    const info = kindLabelMap[kind] || { label: kind, icon: '•', severity: 'info' };
+                    return (
+                        <span key={kind} className={styles.legendItem}>
+                            <span className={`${styles.legendDot} ${styles[info.severity]}`} />
+                            {info.label}
+                        </span>
+                    );
+                })}
             </div>
 
             {/* Issue List */}

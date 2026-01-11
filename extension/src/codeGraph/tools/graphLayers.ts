@@ -213,7 +213,7 @@ export function createGraphLayersTool(
                         };
 
                         if (groupByRule) {
-                            (result as Record<string, unknown>).groupedViolations = violationsData;
+                            (result as unknown as Record<string, unknown>).groupedViolations = violationsData;
                         }
 
                         logger.debug('Layers check result', {
