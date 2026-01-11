@@ -5,10 +5,14 @@
  * Handles:
  * - crate::, super::, self:: module paths
  * - mod declarations (inline and file-based)
- * - pub exports (fn, struct, enum, trait, impl, type, const, static)
- * - Framework detection (Actix, Rocket, Axum, Warp, Tide)
- * - Test detection (#[test], #[cfg(test)])
+ * - #[path = "..."] custom module paths
+ * - pub exports (fn, struct, enum, trait, impl, type, const, static, macro)
+ * - pub use re-exports
+ * - Framework detection (Actix, Rocket, Axum, Warp, Tide, Tonic)
+ * - Test detection (#[test], #[cfg(test)], #[tokio::test])
  * - Async runtime detection (tokio, async-std)
+ * - CLI detection (clap, structopt, argh)
+ * - Procedural macro detection
  */
 
 import { TreeSitterIndexer, type TreeSitterIndexerOptions } from './TreeSitterIndexer';
@@ -17,20 +21,49 @@ import type { ParsedNode, SupportedLanguage } from '../parsers/TreeSitterManager
 
 // Standard library and common external crates to skip
 const EXTERNAL_CRATES = new Set([
-    'std', 'core', 'alloc', 'proc_macro',
-    // Common crates
-    'serde', 'serde_json', 'serde_yaml', 'tokio', 'async_std', 'futures',
-    'anyhow', 'thiserror', 'log', 'tracing', 'env_logger',
-    'clap', 'structopt', 'argh',
-    'reqwest', 'hyper', 'http', 'url',
-    'regex', 'lazy_static', 'once_cell',
-    'chrono', 'time', 'uuid',
-    'rand', 'num', 'itertools',
-    'diesel', 'sqlx', 'sea_orm', 'rusqlite',
-    'actix', 'actix_web', 'actix_rt', 'rocket', 'axum', 'warp', 'tide',
-    'tower', 'tonic', 'prost',
-    'bytes', 'parking_lot', 'crossbeam',
-    'rayon', 'dashmap', 'arc_swap',
+    // Rust std
+    'std', 'core', 'alloc', 'proc_macro', 'test',
+    // Serialization
+    'serde', 'serde_json', 'serde_yaml', 'serde_derive', 'bincode', 'postcard',
+    // Async
+    'tokio', 'async_std', 'futures', 'futures_util', 'async_trait', 'pin_project',
+    // Error handling
+    'anyhow', 'thiserror', 'eyre', 'color_eyre', 'miette',
+    // Logging
+    'log', 'tracing', 'tracing_subscriber', 'env_logger', 'pretty_env_logger', 'fern',
+    // CLI
+    'clap', 'structopt', 'argh', 'pico_args', 'lexopt',
+    // HTTP
+    'reqwest', 'hyper', 'http', 'url', 'ureq',
+    // Regex/parsing
+    'regex', 'nom', 'pest', 'logos', 'winnow',
+    // Utils
+    'lazy_static', 'once_cell', 'parking_lot', 'crossbeam', 'rayon',
+    'itertools', 'either', 'derive_more', 'strum', 'bitflags',
+    // Time
+    'chrono', 'time', 'humantime',
+    // UUID/random
+    'uuid', 'rand', 'getrandom',
+    // Numbers
+    'num', 'num_traits', 'num_derive', 'rust_decimal',
+    // Database
+    'diesel', 'sqlx', 'sea_orm', 'rusqlite', 'tokio_postgres', 'deadpool',
+    // Web frameworks
+    'actix', 'actix_web', 'actix_rt', 'actix_service',
+    'rocket', 'axum', 'warp', 'tide', 'poem', 'salvo',
+    'tower', 'tower_http', 'tower_service',
+    // gRPC
+    'tonic', 'prost', 'prost_types',
+    // Concurrency
+    'bytes', 'dashmap', 'arc_swap', 'flume', 'kanal',
+    // Config
+    'config', 'dotenv', 'dotenvy', 'figment',
+    // Testing
+    'proptest', 'quickcheck', 'criterion', 'mockall', 'wiremock',
+    // Crypto
+    'sha2', 'md5', 'hmac', 'aes', 'rsa', 'ring', 'rustls',
+    // Compression
+    'flate2', 'zstd', 'lz4', 'brotli',
 ]);
 
 export class RustIndexer extends TreeSitterIndexer {
@@ -237,6 +270,15 @@ export class RustIndexer extends TreeSitterIndexer {
         let framework: string | null = null;
         let hasTestAttribute = false;
         let hasCfgTest = false;
+        let hasBenchmark = false;
+        let isProcMacro = false;
+        let isBuildScript = false;
+        const fileName = filePath.split('/').pop() ?? filePath;
+
+        // Check for build.rs
+        if (fileName === 'build.rs') {
+            isBuildScript = true;
+        }
 
         this.walkTree(rootNode, (node) => {
             // fn main()
@@ -256,7 +298,7 @@ export class RustIndexer extends TreeSitterIndexer {
                     hasMain = true;
                 }
                 
-                // Framework detection
+                // Actix
                 if (attrText.includes('actix_web::main') || attrText.includes('actix_rt::main')) {
                     framework = 'actix';
                     hasMain = true;
@@ -268,19 +310,34 @@ export class RustIndexer extends TreeSitterIndexer {
                 }
                 
                 // Rocket routes
-                if (attrText.includes('rocket::')) {
+                if (attrText.includes('rocket::') || attrText.includes('#[launch]')) {
                     framework = 'rocket';
                 }
                 
                 // Axum
-                if (attrText.includes('axum::')) {
+                if (attrText.includes('axum::') || attrText.includes('debug_handler')) {
                     framework = 'axum';
+                }
+                
+                // Poem
+                if (attrText.includes('poem::') || attrText.includes('#[handler]')) {
+                    framework = 'poem';
+                }
+                
+                // Tonic gRPC
+                if (attrText.includes('tonic::') || attrText.includes('#[tonic::async_trait]')) {
+                    framework = 'tonic';
                 }
                 
                 // Test attributes
                 if (attrText.includes('#[test]') || attrText.includes('#[tokio::test]') || 
-                    attrText.includes('#[async_std::test]')) {
+                    attrText.includes('#[async_std::test]') || attrText.includes('#[rstest]')) {
                     hasTestAttribute = true;
+                }
+                
+                // Benchmark
+                if (attrText.includes('#[bench]') || attrText.includes('criterion::')) {
+                    hasBenchmark = true;
                 }
                 
                 // #[cfg(test)]
@@ -289,11 +346,38 @@ export class RustIndexer extends TreeSitterIndexer {
                 }
                 
                 // CLI frameworks
-                if (attrText.includes('clap::') || attrText.includes('structopt::')) {
+                if (attrText.includes('clap::') || attrText.includes('structopt::') || 
+                    attrText.includes('#[derive(Parser)]') || attrText.includes('#[derive(Clap)]')) {
                     framework = framework || 'cli';
+                }
+                
+                // Procedural macros
+                if (attrText.includes('#[proc_macro]') || attrText.includes('#[proc_macro_derive]') ||
+                    attrText.includes('#[proc_macro_attribute]')) {
+                    isProcMacro = true;
+                }
+                
+                // Lambda/serverless
+                if (attrText.includes('lambda_runtime::') || attrText.includes('#[lambda]')) {
+                    framework = 'lambda';
                 }
             }
         });
+
+        // Build script
+        if (isBuildScript) {
+            return this.createEntrypointNode(filePath, 'main', 'build-script');
+        }
+
+        // Procedural macro crate
+        if (isProcMacro) {
+            return this.createEntrypointNode(filePath, 'main', 'proc-macro');
+        }
+
+        // Benchmark files
+        if (hasBenchmark || filePath.includes('/benches/')) {
+            return this.createEntrypointNode(filePath, 'test', 'criterion');
+        }
 
         // Test files
         if (isTestFile || hasTestAttribute || hasCfgTest) {
@@ -303,6 +387,9 @@ export class RustIndexer extends TreeSitterIndexer {
         if (hasMain) {
             if (framework === 'cli') {
                 return this.createEntrypointNode(filePath, 'command', 'clap');
+            }
+            if (framework === 'lambda') {
+                return this.createEntrypointNode(filePath, 'api', 'lambda');
             }
             if (framework) {
                 return this.createEntrypointNode(filePath, 'api', framework);

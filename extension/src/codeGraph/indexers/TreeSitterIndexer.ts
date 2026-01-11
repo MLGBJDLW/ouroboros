@@ -254,14 +254,21 @@ export abstract class TreeSitterIndexer extends BaseIndexer {
      */
     protected createEntrypointNode(
         filePath: string,
-        type: 'main' | 'api' | 'command',
+        type: 'main' | 'api' | 'command' | 'test' | 'job' | 'component',
         framework?: string
     ): GraphNode {
-        const typeLabels = { main: 'Main', api: 'API', command: 'CLI' };
+        const typeLabels: Record<string, string> = { 
+            main: 'Main', 
+            api: 'API', 
+            command: 'CLI', 
+            test: 'Test',
+            job: 'Job',
+            component: 'Component',
+        };
         return {
             id: `entrypoint:${type}:${filePath}`,
             kind: 'entrypoint',
-            name: `${typeLabels[type]}: ${this.getFileName(filePath)}`,
+            name: `${typeLabels[type] || type}: ${this.getFileName(filePath)}`,
             path: filePath,
             meta: {
                 entrypointType: type,

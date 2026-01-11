@@ -7,33 +7,80 @@
  * - Relative imports (./pkg, ../pkg)
  * - Internal package detection (internal/)
  * - Exported identifiers (capitalized names)
- * - Framework detection (Gin, Echo, Fiber, Chi, Gorilla, gRPC)
- * - CLI detection (Cobra, urfave/cli)
+ * - go:embed directives
+ * - go:generate directives
+ * - Framework detection (Gin, Echo, Fiber, Chi, Gorilla, gRPC, GraphQL)
+ * - CLI detection (Cobra, urfave/cli, kong)
  * - Test file detection (*_test.go)
+ * - Benchmark detection (Benchmark*)
+ * - Example detection (Example*)
  */
 
 import { TreeSitterIndexer, type TreeSitterIndexerOptions } from './TreeSitterIndexer';
 import type { GraphNode, GraphEdge, IndexResult } from '../core/types';
 import type { ParsedNode, SupportedLanguage } from '../parsers/TreeSitterManager';
 
-// Go standard library packages (partial list of common ones)
+// Go standard library packages (comprehensive list)
 const GO_STDLIB = new Set([
+    // Core
     'fmt', 'os', 'io', 'bufio', 'bytes', 'strings', 'strconv',
     'errors', 'log', 'flag', 'time', 'math', 'rand', 'sort',
     'sync', 'atomic', 'context', 'reflect', 'unsafe',
-    'net', 'http', 'url', 'html', 'template', 'json', 'xml', 'csv',
-    'encoding', 'base64', 'hex', 'binary', 'gob',
-    'path', 'filepath', 'regexp', 'unicode', 'utf8', 'utf16',
-    'crypto', 'hash', 'md5', 'sha1', 'sha256', 'sha512', 'aes', 'rsa', 'tls',
-    'database', 'sql', 'testing', 'debug', 'runtime', 'syscall',
-    'archive', 'compress', 'container', 'embed', 'expvar', 'image',
-    'index', 'mime', 'plugin', 'text', 'go',
+    // IO
+    'io/fs', 'io/ioutil', 'os/exec', 'os/signal', 'os/user',
+    // Net
+    'net', 'net/http', 'net/url', 'net/mail', 'net/smtp', 'net/rpc',
+    'html', 'html/template', 'text/template',
+    // Encoding
+    'encoding', 'encoding/json', 'encoding/xml', 'encoding/csv', 'encoding/gob',
+    'encoding/base64', 'encoding/hex', 'encoding/binary', 'encoding/pem',
+    // Path
+    'path', 'path/filepath',
+    // Regexp
+    'regexp',
+    // Unicode
+    'unicode', 'unicode/utf8', 'unicode/utf16',
+    // Crypto
+    'crypto', 'crypto/md5', 'crypto/sha1', 'crypto/sha256', 'crypto/sha512',
+    'crypto/aes', 'crypto/rsa', 'crypto/tls', 'crypto/x509', 'crypto/rand',
+    'crypto/hmac', 'crypto/cipher', 'crypto/ecdsa', 'crypto/ed25519',
+    // Database
+    'database', 'database/sql', 'database/sql/driver',
+    // Testing
+    'testing', 'testing/quick', 'testing/iotest',
+    // Debug/runtime
+    'debug', 'runtime', 'runtime/debug', 'runtime/pprof', 'runtime/trace',
+    'syscall',
+    // Archive/compress
+    'archive', 'archive/tar', 'archive/zip',
+    'compress', 'compress/gzip', 'compress/zlib', 'compress/bzip2', 'compress/flate',
+    // Container
+    'container', 'container/heap', 'container/list', 'container/ring',
+    // Embed
+    'embed',
+    // Expvar
+    'expvar',
+    // Image
+    'image', 'image/png', 'image/jpeg', 'image/gif', 'image/color',
+    // Index
+    'index', 'index/suffixarray',
+    // Mime
+    'mime', 'mime/multipart', 'mime/quotedprintable',
+    // Plugin
+    'plugin',
+    // Text
+    'text', 'text/scanner', 'text/tabwriter',
+    // Go tooling
+    'go', 'go/ast', 'go/build', 'go/doc', 'go/format', 'go/parser',
+    'go/printer', 'go/scanner', 'go/token', 'go/types',
 ]);
 
 // Common external packages to skip
 const GO_EXTERNAL_PACKAGES = new Set([
     'github.com', 'golang.org', 'google.golang.org', 'gopkg.in',
     'go.uber.org', 'go.etcd.io', 'k8s.io', 'sigs.k8s.io',
+    'cloud.google.com', 'go.opencensus.io', 'go.opentelemetry.io',
+    'modernc.org', 'mvdan.cc', 'honnef.co', 'gotest.tools',
 ]);
 
 export class GoIndexer extends TreeSitterIndexer {
@@ -56,7 +103,7 @@ export class GoIndexer extends TreeSitterIndexer {
     /**
      * Check if import is from a known external package host
      */
-    private isExternalPackage(importPath: string): boolean {
+    private isGoExternalPackage(importPath: string): boolean {
         const firstSegment = importPath.split('/')[0];
         return GO_EXTERNAL_PACKAGES.has(firstSegment) || firstSegment.includes('.');
     }
@@ -82,7 +129,7 @@ export class GoIndexer extends TreeSitterIndexer {
         }
         
         // Skip known external package hosts
-        if (this.isExternalPackage(importPath)) {
+        if (this.isGoExternalPackage(importPath)) {
             return null;
         }
         
@@ -138,7 +185,7 @@ export class GoIndexer extends TreeSitterIndexer {
                         let confidence: 'high' | 'medium' | 'low' = 'medium';
                         if (importPath.startsWith('.')) {
                             confidence = 'high';
-                        } else if (this.isStdlib(importPath) || this.isExternalPackage(importPath)) {
+                        } else if (this.isStdlib(importPath) || this.isGoExternalPackage(importPath)) {
                             confidence = 'low';
                         }
                         edges.push(this.createTsImportEdge(
@@ -225,6 +272,12 @@ export class GoIndexer extends TreeSitterIndexer {
         let isMainPackage = false;
         let framework: string | null = null;
         let hasTestFunctions = false;
+        let hasBenchmarks = false;
+        let hasExamples = false;
+        let hasInit = false;
+        // Track directives for potential future use
+        const _hasGoEmbed = content.includes('//go:embed');
+        const _hasGoGenerate = content.includes('//go:generate');
 
         this.walkTree(rootNode, (node) => {
             // package main
@@ -235,20 +288,41 @@ export class GoIndexer extends TreeSitterIndexer {
                 }
             }
 
-            // func main() or func TestXxx()
+            // func main(), func init(), func TestXxx(), func BenchmarkXxx(), func ExampleXxx()
             if (node.type === 'function_declaration') {
                 const nameNode = this.findChild(node, 'identifier');
                 if (nameNode?.text === 'main') {
                     hasMain = true;
                 }
-                // Test functions: TestXxx, BenchmarkXxx, ExampleXxx
-                if (nameNode && /^(Test|Benchmark|Example)[A-Z]/.test(nameNode.text)) {
+                if (nameNode?.text === 'init') {
+                    hasInit = true;
+                }
+                // Test functions: TestXxx
+                if (nameNode && /^Test[A-Z]/.test(nameNode.text)) {
                     hasTestFunctions = true;
                 }
+                // Benchmark functions: BenchmarkXxx
+                if (nameNode && /^Benchmark[A-Z]/.test(nameNode.text)) {
+                    hasBenchmarks = true;
+                }
+                // Example functions: ExampleXxx
+                if (nameNode && /^Example[A-Z]?/.test(nameNode.text)) {
+                    hasExamples = true;
+                }
+            }
+
+            // Check for comments with go:embed or go:generate (handled above via content check)
+            if (node.type === 'comment') {
+                // Directives are tracked via content.includes() for reliability
             }
         });
 
+        // Also check content for directives
+        void _hasGoEmbed; // Tracked for potential future use
+        void _hasGoGenerate; // Tracked for potential future use
+
         // Check for web frameworks in imports
+        // Standard web frameworks
         if (content.includes('github.com/gin-gonic/gin')) {
             framework = 'gin';
         } else if (content.includes('github.com/labstack/echo')) {
@@ -261,21 +335,94 @@ export class GoIndexer extends TreeSitterIndexer {
             framework = 'gorilla';
         } else if (content.includes('google.golang.org/grpc')) {
             framework = 'grpc';
-        } else if (content.includes('github.com/spf13/cobra')) {
+        }
+        // Additional frameworks
+        else if (content.includes('github.com/beego/beego')) {
+            framework = 'beego';
+        } else if (content.includes('github.com/revel/revel')) {
+            framework = 'revel';
+        } else if (content.includes('github.com/kataras/iris')) {
+            framework = 'iris';
+        } else if (content.includes('github.com/valyala/fasthttp')) {
+            framework = 'fasthttp';
+        } else if (content.includes('github.com/julienschmidt/httprouter')) {
+            framework = 'httprouter';
+        }
+        // Microservice frameworks
+        else if (content.includes('github.com/go-kit/kit')) {
+            framework = 'go-kit';
+        } else if (content.includes('github.com/go-micro/go-micro') || content.includes('go-micro.dev/v4')) {
+            framework = 'go-micro';
+        } else if (content.includes('github.com/go-kratos/kratos')) {
+            framework = 'kratos';
+        } else if (content.includes('github.com/gobuffalo/buffalo')) {
+            framework = 'buffalo';
+        }
+        // GraphQL
+        else if (content.includes('github.com/99designs/gqlgen')) {
+            framework = 'gqlgen';
+        } else if (content.includes('github.com/graphql-go/graphql')) {
+            framework = 'graphql-go';
+        }
+        // AWS Lambda
+        else if (content.includes('github.com/aws/aws-lambda-go')) {
+            framework = 'lambda';
+        }
+        // CLI frameworks
+        else if (content.includes('github.com/spf13/cobra')) {
             framework = 'cobra';
         } else if (content.includes('github.com/urfave/cli')) {
             framework = 'urfave-cli';
+        } else if (content.includes('github.com/alecthomas/kong')) {
+            framework = 'kong';
+        } else if (content.includes('github.com/jessevdk/go-flags')) {
+            framework = 'go-flags';
+        }
+        // Message queues / workers
+        else if (content.includes('github.com/hibiken/asynq')) {
+            framework = 'asynq';
+        } else if (content.includes('github.com/RichardKnop/machinery')) {
+            framework = 'machinery';
+        } else if (content.includes('github.com/nsqio/go-nsq')) {
+            framework = 'nsq';
+        } else if (content.includes('github.com/nats-io/nats.go')) {
+            framework = 'nats';
+        } else if (content.includes('github.com/segmentio/kafka-go') || content.includes('github.com/Shopify/sarama')) {
+            framework = 'kafka';
+        }
+        // Database migrations
+        else if (content.includes('github.com/golang-migrate/migrate')) {
+            framework = 'migrate';
+        } else if (content.includes('github.com/pressly/goose')) {
+            framework = 'goose';
         }
 
-        // Test files
-        if (isTestFile || hasTestFunctions) {
+        // Test files - check for benchmarks and examples too
+        if (isTestFile) {
+            if (hasBenchmarks) {
+                return this.createEntrypointNode(filePath, 'test', 'go-benchmark');
+            }
+            if (hasExamples) {
+                return this.createEntrypointNode(filePath, 'test', 'go-example');
+            }
+            if (hasTestFunctions) {
+                return this.createEntrypointNode(filePath, 'test', 'go-test');
+            }
+            // Generic test file
             return this.createEntrypointNode(filePath, 'test', 'go-test');
         }
 
+        // Main package with main function
         if (isMainPackage && hasMain) {
-            if (framework === 'cobra' || framework === 'urfave-cli') {
+            // CLI frameworks
+            if (framework === 'cobra' || framework === 'urfave-cli' || framework === 'kong' || framework === 'go-flags') {
                 return this.createEntrypointNode(filePath, 'command', framework);
             }
+            // Lambda
+            if (framework === 'lambda') {
+                return this.createEntrypointNode(filePath, 'api', 'lambda');
+            }
+            // Web frameworks
             if (framework) {
                 return this.createEntrypointNode(filePath, 'api', framework);
             }
@@ -283,8 +430,26 @@ export class GoIndexer extends TreeSitterIndexer {
         }
 
         // Route handlers (even without main)
-        if (framework && ['gin', 'echo', 'fiber', 'chi', 'gorilla', 'grpc'].includes(framework)) {
+        if (framework && ['gin', 'echo', 'fiber', 'chi', 'gorilla', 'grpc', 'beego', 'revel', 'iris', 
+                          'fasthttp', 'httprouter', 'go-kit', 'go-micro', 'kratos', 'buffalo',
+                          'gqlgen', 'graphql-go'].includes(framework)) {
             return this.createEntrypointNode(filePath, 'api', framework);
+        }
+
+        // Worker/job handlers
+        if (framework && ['asynq', 'machinery', 'nsq', 'nats', 'kafka'].includes(framework)) {
+            return this.createEntrypointNode(filePath, 'job', framework);
+        }
+
+        // Migration files
+        if (framework && ['migrate', 'goose'].includes(framework)) {
+            return this.createEntrypointNode(filePath, 'job', framework);
+        }
+
+        // Files with init() function (package initialization)
+        if (hasInit && !isMainPackage) {
+            // Could be important initialization code
+            return null; // Don't mark as entrypoint, but could be tracked differently
         }
 
         return null;

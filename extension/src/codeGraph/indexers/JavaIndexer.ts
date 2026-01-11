@@ -26,22 +26,51 @@ const JAVA_EXTERNAL_PACKAGES = [
     'org.springframework.',
     // Testing
     'org.junit.', 'org.testng.', 'org.mockito.', 'org.assertj.', 'org.hamcrest.',
+    'org.spockframework.', 'io.cucumber.', 'org.jbehave.',
     // Apache Commons
     'org.apache.commons.', 'org.apache.logging.', 'org.apache.http.',
+    'org.apache.kafka.', 'org.apache.camel.', 'org.apache.poi.',
     // Google
     'com.google.common.', 'com.google.gson.', 'com.google.inject.',
+    'com.google.protobuf.', 'com.google.cloud.',
     // Jackson
     'com.fasterxml.jackson.',
     // Lombok
     'lombok.',
-    // SLF4J/Logback
-    'org.slf4j.', 'ch.qos.logback.',
-    // Hibernate
-    'org.hibernate.',
+    // SLF4J/Logback/Log4j
+    'org.slf4j.', 'ch.qos.logback.', 'org.apache.log4j.', 'org.apache.logging.log4j.',
+    // Hibernate/JPA
+    'org.hibernate.', 'javax.persistence.', 'jakarta.persistence.',
+    // MyBatis
+    'org.mybatis.', 'org.apache.ibatis.',
     // Other common
     'io.netty.', 'io.grpc.', 'io.micrometer.',
     'reactor.', 'rx.', 'io.reactivex.',
     'okhttp3.', 'retrofit2.',
+    // Micronaut
+    'io.micronaut.',
+    // Quarkus
+    'io.quarkus.',
+    // Vert.x
+    'io.vertx.',
+    // Helidon
+    'io.helidon.',
+    // AWS SDK
+    'software.amazon.', 'com.amazonaws.',
+    // Azure SDK
+    'com.azure.', 'com.microsoft.azure.',
+    // Validation
+    'javax.validation.', 'jakarta.validation.', 'org.hibernate.validator.',
+    // Security
+    'org.springframework.security.', 'io.jsonwebtoken.',
+    // Serialization
+    'com.google.protobuf.', 'org.apache.avro.', 'org.apache.thrift.',
+    // Metrics/Tracing
+    'io.opentelemetry.', 'io.opentracing.', 'io.prometheus.',
+    // MapStruct
+    'org.mapstruct.',
+    // Swagger/OpenAPI
+    'io.swagger.', 'org.springdoc.',
 ];
 
 export class JavaIndexer extends TreeSitterIndexer {
@@ -55,7 +84,7 @@ export class JavaIndexer extends TreeSitterIndexer {
     /**
      * Check if import is from an external package
      */
-    private isExternalPackage(importPath: string): boolean {
+    private isJavaExternalPackage(importPath: string): boolean {
         return JAVA_EXTERNAL_PACKAGES.some(prefix => importPath.startsWith(prefix));
     }
 
@@ -82,7 +111,7 @@ export class JavaIndexer extends TreeSitterIndexer {
         }
         
         // Skip external packages
-        if (this.isExternalPackage(cleanPath)) {
+        if (this.isJavaExternalPackage(cleanPath)) {
             return null;
         }
         
@@ -137,7 +166,7 @@ export class JavaIndexer extends TreeSitterIndexer {
                 const pathNode = this.findDescendant(node, 'scoped_identifier');
                 if (pathNode) {
                     const importPath = isStatic ? `static ${pathNode.text}` : pathNode.text;
-                    const isExternal = this.isExternalPackage(pathNode.text);
+                    const isExternal = this.isJavaExternalPackage(pathNode.text);
                     edges.push(this.createTsImportEdge(
                         filePath,
                         importPath,
@@ -224,7 +253,14 @@ export class JavaIndexer extends TreeSitterIndexer {
         let hasMain = false;
         let framework: string | null = null;
         let hasTestAnnotations = false;
+        let isModuleInfo = false;
         const annotations: string[] = [];
+        const fileName = this.getFileName(filePath);
+
+        // Check for module-info.java (Java 9+ modules)
+        if (fileName === 'module-info.java') {
+            isModuleInfo = true;
+        }
 
         this.walkTree(rootNode, (node) => {
             // public static void main(String[] args)
@@ -255,53 +291,150 @@ export class JavaIndexer extends TreeSitterIndexer {
                 if (/@(Request|Get|Post|Put|Delete|Patch)Mapping/.test(annotationText)) {
                     framework = framework || 'spring';
                 }
+                // Spring WebFlux
+                if (annotationText.includes('RouterFunction') || annotationText.includes('WebFluxTest')) {
+                    framework = framework || 'spring-webflux';
+                }
                 // Micronaut
-                if (annotationText.includes('MicronautApplication') || annotationText.includes('@Controller')) {
+                if (annotationText.includes('MicronautApplication')) {
+                    framework = 'micronaut';
+                }
+                if (annotationText.includes('@Controller') && !framework) {
+                    // Could be Micronaut or Spring
                     framework = framework || 'micronaut';
                 }
                 // Quarkus
-                if (annotationText.includes('QuarkusMain') || annotationText.includes('@Path')) {
+                if (annotationText.includes('QuarkusMain')) {
+                    framework = 'quarkus';
+                }
+                if (annotationText.includes('@Path') && !framework) {
                     framework = framework || 'quarkus';
                 }
                 // Jakarta/JAX-RS
-                if (/@(Path|GET|POST|PUT|DELETE)/.test(annotationText)) {
+                if (/@(Path|GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)/.test(annotationText)) {
                     framework = framework || 'jakarta';
                 }
-                // Test annotations
-                if (/@(Test|ParameterizedTest|RepeatedTest|BeforeEach|AfterEach|BeforeAll|AfterAll)/.test(annotationText)) {
+                // Vert.x
+                if (annotationText.includes('Verticle') || content.includes('io.vertx')) {
+                    framework = framework || 'vertx';
+                }
+                // Helidon
+                if (content.includes('io.helidon')) {
+                    framework = framework || 'helidon';
+                }
+                // Test annotations - JUnit 5
+                if (/@(Test|ParameterizedTest|RepeatedTest|BeforeEach|AfterEach|BeforeAll|AfterAll|Nested|DisplayName)/.test(annotationText)) {
+                    hasTestAnnotations = true;
+                }
+                // Test annotations - JUnit 4
+                if (/@(Test|Before|After|BeforeClass|AfterClass|Ignore|RunWith)/.test(annotationText)) {
+                    hasTestAnnotations = true;
+                }
+                // TestNG
+                if (/@(Test|BeforeMethod|AfterMethod|BeforeClass|AfterClass|BeforeSuite|AfterSuite|DataProvider)/.test(annotationText)) {
+                    hasTestAnnotations = true;
+                }
+                // Spock
+                if (content.includes('spock.lang.Specification')) {
+                    hasTestAnnotations = true;
+                }
+                // Cucumber
+                if (/@(Given|When|Then|And|But|Before|After)/.test(annotationText)) {
                     hasTestAnnotations = true;
                 }
                 // Scheduled tasks
                 if (annotationText.includes('Scheduled')) {
                     framework = framework || 'spring-scheduled';
                 }
-                // Message listeners
-                if (annotationText.includes('KafkaListener') || annotationText.includes('JmsListener') || 
-                    annotationText.includes('RabbitListener')) {
-                    framework = framework || 'messaging';
+                // Message listeners - Kafka
+                if (annotationText.includes('KafkaListener')) {
+                    framework = framework || 'kafka';
+                }
+                // Message listeners - JMS
+                if (annotationText.includes('JmsListener')) {
+                    framework = framework || 'jms';
+                }
+                // Message listeners - RabbitMQ
+                if (annotationText.includes('RabbitListener')) {
+                    framework = framework || 'rabbitmq';
+                }
+                // Message listeners - SQS
+                if (annotationText.includes('SqsListener')) {
+                    framework = framework || 'sqs';
+                }
+                // Batch processing
+                if (annotationText.includes('EnableBatchProcessing') || annotationText.includes('@Job')) {
+                    framework = framework || 'spring-batch';
+                }
+                // gRPC
+                if (annotationText.includes('GrpcService') || content.includes('io.grpc')) {
+                    framework = framework || 'grpc';
+                }
+                // GraphQL
+                if (/@(QueryMapping|MutationMapping|SubscriptionMapping|SchemaMapping)/.test(annotationText)) {
+                    framework = framework || 'spring-graphql';
+                }
+                // Entity/Repository (JPA)
+                if (annotationText.includes('@Entity') || annotationText.includes('@Repository')) {
+                    // Don't set framework, but note it's a data class
+                }
+                // Lombok annotations (informational)
+                if (/@(Data|Getter|Setter|Builder|NoArgsConstructor|AllArgsConstructor|Value|Slf4j|Log4j2)/.test(annotationText)) {
+                    // Lombok - informational only
+                }
+                // MapStruct
+                if (annotationText.includes('@Mapper')) {
+                    // MapStruct mapper
+                }
+                // AWS Lambda
+                if (content.includes('com.amazonaws.services.lambda') || content.includes('RequestHandler')) {
+                    framework = framework || 'lambda';
+                }
+                // Azure Functions
+                if (annotationText.includes('@FunctionName')) {
+                    framework = framework || 'azure-functions';
                 }
             }
         });
 
+        // Module info file
+        if (isModuleInfo) {
+            return this.createEntrypointNode(filePath, 'main', 'java-module');
+        }
+
         // Test files
         if (isTestFile || hasTestAnnotations) {
-            return this.createEntrypointNode(filePath, 'test', 'junit');
+            let testFramework = 'junit';
+            if (content.includes('org.testng')) {
+                testFramework = 'testng';
+            } else if (content.includes('spock.lang')) {
+                testFramework = 'spock';
+            } else if (content.includes('io.cucumber')) {
+                testFramework = 'cucumber';
+            }
+            return this.createEntrypointNode(filePath, 'test', testFramework);
         }
 
         if (hasMain) {
             if (framework) {
+                if (framework === 'lambda' || framework === 'azure-functions') {
+                    return this.createEntrypointNode(filePath, 'api', framework);
+                }
                 return this.createEntrypointNode(filePath, 'api', framework);
             }
             return this.createEntrypointNode(filePath, 'main');
         }
 
         if (framework) {
-            if (framework === 'spring-scheduled') {
+            // Scheduled/batch jobs
+            if (framework === 'spring-scheduled' || framework === 'spring-batch') {
                 return this.createEntrypointNode(filePath, 'job', 'spring');
             }
-            if (framework === 'messaging') {
-                return this.createEntrypointNode(filePath, 'job', 'messaging');
+            // Message listeners
+            if (['kafka', 'jms', 'rabbitmq', 'sqs'].includes(framework)) {
+                return this.createEntrypointNode(filePath, 'job', framework);
             }
+            // API frameworks
             return this.createEntrypointNode(filePath, 'api', framework);
         }
 

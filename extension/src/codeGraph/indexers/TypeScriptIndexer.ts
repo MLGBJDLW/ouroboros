@@ -1,20 +1,24 @@
 /**
  * TypeScript/JavaScript Indexer
  * Parses TS/JS files to extract imports, exports, and symbols
+ * 
+ * Handles:
+ * - ES6 imports (static, dynamic, side-effect)
+ * - CommonJS require()
+ * - Re-exports (named, default, barrel)
+ * - Vite import.meta.glob()
+ * - Webpack require.context()
+ * - CSS/SCSS imports
+ * - Monorepo workspace imports (@org/package)
+ * - Path aliases (@/, ~/, src/)
+ * - Framework detection (Next.js, Express, NestJS, Vue, React, Svelte)
+ * - Test detection (Jest, Vitest, Mocha, Cypress)
  */
 
 import type { IndexResult, GraphNode, GraphEdge, Confidence, EntrypointType } from '../core/types';
 import { BaseIndexer, type IndexerOptions } from './BaseIndexer';
 
 // Improved regex patterns for import detection
-// These handle more edge cases while avoiding false positives in comments/strings
-
-// Static imports - handles multiline and various formats
-// import x from 'y'
-// import { x } from 'y'
-// import * as x from 'y'
-// import type { x } from 'y'
-// import 'y' (side-effect import)
 const IMPORT_PATTERNS = [
     // Standard imports with from clause
     /import\s+(?:type\s+)?(?:\{[\s\S]*?\}|\*\s+as\s+\w+|\w+)(?:\s*,\s*(?:\{[\s\S]*?\}|\*\s+as\s+\w+|\w+))*\s+from\s+['"]([^'"]+)['"]/g,
@@ -28,14 +32,30 @@ const DYNAMIC_IMPORT_REGEX = /import\s*\(\s*['"`]([^'"`]+)['"`]\s*\)/g;
 // Require calls: require('module') or require("module")
 const REQUIRE_REGEX = /(?:^|[^.\w])require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
+// Vite import.meta.glob patterns
+const VITE_GLOB_REGEX = /import\.meta\.glob(?:Eager)?\s*\(\s*['"`]([^'"`]+)['"`]/g;
+
+// Webpack require.context
+const WEBPACK_CONTEXT_REGEX = /require\.context\s*\(\s*['"]([^'"]+)['"]/g;
+
+// CSS/SCSS imports
+const CSS_IMPORT_REGEX = /@import\s+['"]([^'"]+)['"]/g;
+
 // Export patterns
 const EXPORT_NAMED_REGEX = /export\s+(?:const|let|var|function|class|interface|type|enum|abstract\s+class)\s+(\w+)/g;
 const EXPORT_DEFAULT_REGEX = /export\s+default\s+(?:function\s+|class\s+|abstract\s+class\s+)?(\w+)?/g;
 const EXPORT_DESTRUCTURE_REGEX = /export\s+(?:const|let|var)\s+\{([^}]+)\}/g;
+const EXPORT_LIST_REGEX = /export\s+\{([^}]+)\}(?!\s+from)/g;
 
 // Re-export patterns
 const REEXPORT_REGEX = /export\s+(?:\{[\s\S]*?\}|\*(?:\s+as\s+\w+)?)\s+from\s+['"]([^'"]+)['"]/g;
 const REEXPORT_DEFAULT_REGEX = /export\s+\{\s*default(?:\s+as\s+\w+)?\s*\}\s+from\s+['"]([^'"]+)['"]/g;
+
+// Monorepo workspace patterns
+const WORKSPACE_PATTERNS = [
+    /^@[\w-]+\/[\w-]+/,  // @org/package
+    /^@[\w-]+$/,         // @alias
+];
 
 // Framework detection patterns
 const FRAMEWORK_PATTERNS: Array<{
@@ -44,26 +64,42 @@ const FRAMEWORK_PATTERNS: Array<{
     entrypointType: EntrypointType;
 }> = [
     // Next.js App Router
-    { pattern: /export\s+(?:default\s+)?(?:async\s+)?function\s+(?:Page|Layout|Loading|Error|NotFound)\b/g, framework: 'nextjs', entrypointType: 'page' },
-    { pattern: /export\s+(?:const|let|function)\s+(?:generateMetadata|generateStaticParams)\b/g, framework: 'nextjs', entrypointType: 'page' },
+    { pattern: /export\s+(?:default\s+)?(?:async\s+)?function\s+(?:Page|Layout|Loading|Error|NotFound|Template)\b/g, framework: 'nextjs', entrypointType: 'page' },
+    { pattern: /export\s+(?:const|let|function)\s+(?:generateMetadata|generateStaticParams|generateViewport)\b/g, framework: 'nextjs', entrypointType: 'page' },
+    { pattern: /export\s+const\s+(?:dynamic|revalidate|runtime|preferredRegion|maxDuration)\s*=/g, framework: 'nextjs', entrypointType: 'page' },
     // Next.js Pages Router
     { pattern: /export\s+(?:default\s+)?(?:async\s+)?function\s+(?:getServerSideProps|getStaticProps|getStaticPaths)\b/g, framework: 'nextjs', entrypointType: 'page' },
     // Next.js API Routes (App Router)
     { pattern: /export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s*\(/g, framework: 'nextjs', entrypointType: 'api' },
     // Next.js API Routes (Pages Router)
     { pattern: /export\s+default\s+(?:async\s+)?function\s+handler/g, framework: 'nextjs', entrypointType: 'api' },
+    // Next.js Middleware
+    { pattern: /export\s+(?:async\s+)?function\s+middleware\s*\(/g, framework: 'nextjs', entrypointType: 'middleware' },
     // Express/Koa/Fastify routes
     { pattern: /(?:app|router|server)\s*\.\s*(?:get|post|put|delete|patch|use|all)\s*\(/g, framework: 'express', entrypointType: 'route' },
     // NestJS decorators
-    { pattern: /@(?:Controller|Get|Post|Put|Delete|Patch|Module|Injectable)\s*\(/g, framework: 'nestjs', entrypointType: 'route' },
+    { pattern: /@(?:Controller|Get|Post|Put|Delete|Patch|Module|Injectable|Guard|Interceptor|Pipe|ExceptionFilter)\s*\(/g, framework: 'nestjs', entrypointType: 'route' },
     // CLI frameworks
     { pattern: /\.command\s*\(|program\.(?:option|argument|action|parse)|yargs\.|commander\./g, framework: 'cli', entrypointType: 'command' },
-    // React components (for component detection)
-    { pattern: /export\s+(?:default\s+)?(?:function|const)\s+\w+.*?(?:React\.FC|JSX\.Element|ReactNode)/g, framework: 'react', entrypointType: 'component' },
+    // React components
+    { pattern: /export\s+(?:default\s+)?(?:function|const)\s+\w+.*?(?:React\.FC|JSX\.Element|ReactNode|ReactElement)/g, framework: 'react', entrypointType: 'component' },
+    { pattern: /export\s+default\s+function\s+\w+\s*\([^)]*\)\s*(?::\s*(?:JSX\.Element|React\.))?/g, framework: 'react', entrypointType: 'component' },
     // Vue components
-    { pattern: /defineComponent\s*\(|<script\s+setup/g, framework: 'vue', entrypointType: 'component' },
-    // Test files
-    { pattern: /(?:describe|it|test|expect)\s*\(|jest\.|vitest\.|@testing-library/g, framework: 'test', entrypointType: 'test' },
+    { pattern: /defineComponent\s*\(|<script\s+setup|export\s+default\s+\{[^}]*(?:setup|render)\s*[:(]/g, framework: 'vue', entrypointType: 'component' },
+    // Svelte components
+    { pattern: /<script(?:\s+lang="ts")?>|export\s+let\s+\w+/g, framework: 'svelte', entrypointType: 'component' },
+    // Test files - multiple frameworks
+    { pattern: /(?:describe|it|test|expect)\s*\(|jest\.|vitest\.|@testing-library|cy\.|Cypress\./g, framework: 'test', entrypointType: 'test' },
+    // Storybook
+    { pattern: /export\s+(?:default|const)\s+(?:meta|default)\s*[=:]\s*\{[^}]*(?:title|component)\s*:/g, framework: 'storybook', entrypointType: 'story' },
+    // GraphQL resolvers
+    { pattern: /(?:Query|Mutation|Subscription)\s*:\s*\{|@Resolver\s*\(/g, framework: 'graphql', entrypointType: 'api' },
+    // tRPC routers
+    { pattern: /createTRPCRouter|publicProcedure|protectedProcedure/g, framework: 'trpc', entrypointType: 'api' },
+    // Serverless functions
+    { pattern: /export\s+(?:const|async\s+function)\s+handler\s*[=:]/g, framework: 'serverless', entrypointType: 'api' },
+    // Electron
+    { pattern: /(?:ipcMain|ipcRenderer|BrowserWindow|app\.on)/g, framework: 'electron', entrypointType: 'main' },
 ];
 
 export class TypeScriptIndexer extends BaseIndexer {
@@ -72,7 +108,7 @@ export class TypeScriptIndexer extends BaseIndexer {
     }
 
     get extensions(): string[] {
-        return ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
+        return ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
     }
 
     supports(filePath: string): boolean {
@@ -110,10 +146,16 @@ export class TypeScriptIndexer extends BaseIndexer {
             const exports = this.extractExports(cleanContent);
             fileNode.meta = { ...fileNode.meta, exports };
 
+            // Check if barrel file
+            const isBarrel = this.isBarrelFile(cleanContent, filePath);
+            if (isBarrel) {
+                fileNode.meta = { ...fileNode.meta, isBarrel: true };
+            }
+
             nodes.push(fileNode);
 
             // Create entrypoint node if detected
-            if (detection && detection.entrypointType !== 'test' && detection.entrypointType !== 'component') {
+            if (detection && !['test', 'component', 'story'].includes(detection.entrypointType)) {
                 nodes.push({
                     id: `entrypoint:${filePath}`,
                     kind: 'entrypoint',
@@ -127,7 +169,7 @@ export class TypeScriptIndexer extends BaseIndexer {
             }
 
             // Extract imports (use original content for line numbers)
-            const imports = this.extractImports(content, cleanContent);
+            const imports = this.extractImports(content, cleanContent, filePath);
             for (const imp of imports) {
                 const resolvedPath = this.normalizeImportPath(imp.path, filePath);
                 if (resolvedPath) {
@@ -181,6 +223,8 @@ export class TypeScriptIndexer extends BaseIndexer {
         let result = content.replace(/\/\/.*$/gm, '');
         // Remove multi-line comments
         result = result.replace(/\/\*[\s\S]*?\*\//g, '');
+        // Remove template literal comments (basic)
+        result = result.replace(/`[^`]*`/g, (match) => '`' + ' '.repeat(match.length - 2) + '`');
         return result;
     }
 
@@ -189,14 +233,51 @@ export class TypeScriptIndexer extends BaseIndexer {
      */
     private detectLanguage(filePath: string): string {
         if (filePath.endsWith('.tsx')) return 'tsx';
-        if (filePath.endsWith('.ts')) return 'typescript';
+        if (filePath.endsWith('.ts') || filePath.endsWith('.mts') || filePath.endsWith('.cts')) return 'typescript';
         if (filePath.endsWith('.jsx')) return 'jsx';
         if (filePath.endsWith('.mjs')) return 'esm';
         if (filePath.endsWith('.cjs')) return 'commonjs';
         return 'javascript';
     }
 
-    private extractImports(originalContent: string, cleanContent: string): Array<{
+    /**
+     * Check if file is a barrel file (index with only exports)
+     */
+    private isBarrelFile(content: string, filePath: string): boolean {
+        if (!filePath.match(/index\.(tsx?|jsx?|mjs)$/)) return false;
+        
+        const lines = content.split('\n');
+        const hasOnlyExportsAndImports = lines.every((line) => {
+            const trimmed = line.trim();
+            return (
+                trimmed === '' ||
+                trimmed.startsWith('//') ||
+                trimmed.startsWith('/*') ||
+                trimmed.startsWith('*') ||
+                trimmed.startsWith('export') ||
+                trimmed.startsWith('import') ||
+                trimmed.startsWith("'use") ||
+                trimmed.startsWith('"use')
+            );
+        });
+        return hasOnlyExportsAndImports && content.includes('export');
+    }
+
+    /**
+     * Determine import confidence based on path type
+     */
+    private getImportConfidence(importPath: string): Confidence {
+        // Relative imports are high confidence
+        if (importPath.startsWith('.')) return 'high';
+        // Workspace/monorepo imports
+        if (WORKSPACE_PATTERNS.some(p => p.test(importPath))) return 'medium';
+        // Path aliases
+        if (importPath.startsWith('@/') || importPath.startsWith('~/') || importPath.startsWith('src/')) return 'high';
+        // Node built-ins and external packages
+        return 'low';
+    }
+
+    private extractImports(originalContent: string, cleanContent: string, _filePath: string): Array<{
         path: string;
         confidence: Confidence;
         reason: string;
@@ -222,7 +303,7 @@ export class TypeScriptIndexer extends BaseIndexer {
                     seenPaths.add(importPath);
                     imports.push({
                         path: importPath,
-                        confidence: 'high',
+                        confidence: this.getImportConfidence(importPath),
                         reason: 'static import',
                         isDynamic: false,
                         line: this.getLineNumber(originalContent, match.index),
@@ -256,8 +337,58 @@ export class TypeScriptIndexer extends BaseIndexer {
                 seenPaths.add(importPath);
                 imports.push({
                     path: importPath,
-                    confidence: 'high',
+                    confidence: this.getImportConfidence(importPath),
                     reason: 'require',
+                    isDynamic: false,
+                    line: this.getLineNumber(originalContent, match.index),
+                });
+            }
+        }
+
+        // Vite import.meta.glob
+        VITE_GLOB_REGEX.lastIndex = 0;
+        while ((match = VITE_GLOB_REGEX.exec(cleanContent)) !== null) {
+            const globPattern = match[1];
+            // Extract base directory from glob pattern
+            const basePath = globPattern.replace(/\/\*.*$/, '').replace(/^\.\/?/, '');
+            if (basePath && !seenPaths.has(basePath)) {
+                seenPaths.add(basePath);
+                imports.push({
+                    path: './' + basePath,
+                    confidence: 'low',
+                    reason: 'vite glob',
+                    isDynamic: true,
+                    line: this.getLineNumber(originalContent, match.index),
+                });
+            }
+        }
+
+        // Webpack require.context
+        WEBPACK_CONTEXT_REGEX.lastIndex = 0;
+        while ((match = WEBPACK_CONTEXT_REGEX.exec(cleanContent)) !== null) {
+            const contextPath = match[1];
+            if (!seenPaths.has(contextPath)) {
+                seenPaths.add(contextPath);
+                imports.push({
+                    path: contextPath,
+                    confidence: 'low',
+                    reason: 'webpack context',
+                    isDynamic: true,
+                    line: this.getLineNumber(originalContent, match.index),
+                });
+            }
+        }
+
+        // CSS imports in CSS/SCSS files
+        CSS_IMPORT_REGEX.lastIndex = 0;
+        while ((match = CSS_IMPORT_REGEX.exec(cleanContent)) !== null) {
+            const cssPath = match[1];
+            if (!seenPaths.has(cssPath)) {
+                seenPaths.add(cssPath);
+                imports.push({
+                    path: cssPath,
+                    confidence: 'medium',
+                    reason: 'css import',
                     isDynamic: false,
                     line: this.getLineNumber(originalContent, match.index),
                 });
@@ -296,6 +427,21 @@ export class TypeScriptIndexer extends BaseIndexer {
         EXPORT_DESTRUCTURE_REGEX.lastIndex = 0;
         while ((match = EXPORT_DESTRUCTURE_REGEX.exec(content)) !== null) {
             const names = match[1].split(',').map(n => n.trim().split(':')[0].trim());
+            for (const name of names) {
+                if (name && !seen.has(name)) {
+                    seen.add(name);
+                    exports.push(name);
+                }
+            }
+        }
+
+        // Export list: export { a, b, c }
+        EXPORT_LIST_REGEX.lastIndex = 0;
+        while ((match = EXPORT_LIST_REGEX.exec(content)) !== null) {
+            const names = match[1].split(',').map(n => {
+                const parts = n.trim().split(/\s+as\s+/);
+                return parts[parts.length - 1].trim();
+            });
             for (const name of names) {
                 if (name && !seen.has(name)) {
                     seen.add(name);
@@ -349,6 +495,15 @@ export class TypeScriptIndexer extends BaseIndexer {
             if (filePath.match(/layout\.(tsx?|jsx?)$/)) {
                 return { framework: 'nextjs', entrypointType: 'layout' };
             }
+            if (filePath.match(/loading\.(tsx?|jsx?)$/)) {
+                return { framework: 'nextjs', entrypointType: 'page' };
+            }
+            if (filePath.match(/error\.(tsx?|jsx?)$/)) {
+                return { framework: 'nextjs', entrypointType: 'page' };
+            }
+            if (filePath.match(/middleware\.(ts|js)$/)) {
+                return { framework: 'nextjs', entrypointType: 'middleware' };
+            }
         }
 
         // Next.js Pages Router
@@ -356,14 +511,37 @@ export class TypeScriptIndexer extends BaseIndexer {
             if (filePath.includes('/api/')) {
                 return { framework: 'nextjs', entrypointType: 'api' };
             }
-            if (!filePath.includes('_app') && !filePath.includes('_document')) {
+            if (!filePath.includes('_app') && !filePath.includes('_document') && !filePath.includes('_error')) {
                 return { framework: 'nextjs', entrypointType: 'page' };
             }
         }
 
+        // Nuxt pages
+        if (filePath.includes('/pages/') && filePath.endsWith('.vue')) {
+            return { framework: 'nuxt', entrypointType: 'page' };
+        }
+
+        // SvelteKit routes
+        if (filePath.includes('/routes/') && filePath.match(/\+(?:page|layout|server|error)\.(svelte|ts|js)$/)) {
+            if (filePath.includes('+server')) {
+                return { framework: 'sveltekit', entrypointType: 'api' };
+            }
+            return { framework: 'sveltekit', entrypointType: 'page' };
+        }
+
         // Test files
-        if (filePath.match(/\.(test|spec)\.(tsx?|jsx?)$/) || filePath.includes('__tests__')) {
+        if (filePath.match(/\.(test|spec)\.(tsx?|jsx?)$/) || 
+            filePath.includes('__tests__') ||
+            filePath.includes('.stories.')) {
+            if (filePath.includes('.stories.')) {
+                return { framework: 'storybook', entrypointType: 'story' };
+            }
             return { framework: 'test', entrypointType: 'test' };
+        }
+
+        // Cypress tests
+        if (filePath.includes('/cypress/') && filePath.match(/\.(cy|spec)\.(tsx?|jsx?)$/)) {
+            return { framework: 'cypress', entrypointType: 'test' };
         }
 
         // Check content patterns
@@ -375,33 +553,20 @@ export class TypeScriptIndexer extends BaseIndexer {
         }
 
         // Check for barrel files (index.ts with only exports)
-        if (filePath.match(/index\.(tsx?|jsx?)$/)) {
-            const lines = content.split('\n');
-            const hasOnlyExportsAndImports = lines.every((line) => {
-                const trimmed = line.trim();
-                return (
-                    trimmed === '' ||
-                    trimmed.startsWith('//') ||
-                    trimmed.startsWith('/*') ||
-                    trimmed.startsWith('*') ||
-                    trimmed.startsWith('export') ||
-                    trimmed.startsWith('import') ||
-                    trimmed.startsWith("'use") ||
-                    trimmed.startsWith('"use')
-                );
-            });
-            if (hasOnlyExportsAndImports && content.includes('export')) {
-                return { framework: 'barrel', entrypointType: 'barrel' };
-            }
+        if (this.isBarrelFile(content, filePath)) {
+            return { framework: 'barrel', entrypointType: 'barrel' };
         }
 
         // Main entry files
         if (filePath.match(/(?:^|\/)(?:main|index|app|server)\.(tsx?|jsx?|mjs)$/)) {
-            if (content.includes('createServer') || content.includes('listen(')) {
+            if (content.includes('createServer') || content.includes('listen(') || content.includes('createApp')) {
                 return { framework: 'server', entrypointType: 'main' };
             }
-            if (content.includes('createRoot') || content.includes('ReactDOM')) {
+            if (content.includes('createRoot') || content.includes('ReactDOM') || content.includes('hydrateRoot')) {
                 return { framework: 'react', entrypointType: 'main' };
+            }
+            if (content.includes('createApp') && content.includes('vue')) {
+                return { framework: 'vue', entrypointType: 'main' };
             }
         }
 

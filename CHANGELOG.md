@@ -15,18 +15,65 @@ Major improvements to all language indexers for better Code Graph detection.
 - **Tree-sitter WASM Init** — Fixed `file://` URL conversion for Windows paths
 - **Workspace Selection** — Tools now register correctly after Marketplace install
 - **vscode.open Command** — Fixed webview path-to-Uri conversion
+- **TreeSitterIndexer** — Extended `createEntrypointNode()` to support `test`, `job`, `component` types
 
 #### Improved
-- **BaseIndexer** — Enhanced `normalizeImportPath()` with path alias support (@/, ~/, src/), improved external package detection
-- **TypeScriptIndexer** — Comment removal, multiline imports, destructured exports, Next.js App Router detection, Vue/test file detection
-- **PythonIndexer** — Stdlib/common package filtering, improved entrypoint detection (click, typer, fastapi, flask, django, celery)
-- **RustIndexer** — External crate filtering, chained `super::` support, test detection (#[test], #[cfg(test)]), framework detection (Actix, Rocket, Axum)
-- **GoIndexer** — Stdlib detection, internal/pkg/cmd package resolution, test file detection (*_test.go), framework detection (Gin, Echo, Fiber, Chi, gRPC)
-- **JavaIndexer** — Extended external package list, static imports, Maven/Gradle structure detection, framework detection (Spring, Micronaut, Quarkus, Jakarta)
-- **GenericIndexer** — Extended language support (60+ extensions), improved test file detection, more entrypoint patterns
+
+**TypeScriptIndexer**
+- Comment removal, multiline imports, destructured exports
+- Next.js App Router detection, Vue/test file detection
+- Vite `import.meta.glob()`, Webpack `require.context()`
+- CSS imports, monorepo workspace imports (@org/package)
+- SvelteKit, Nuxt, Cypress, Storybook, tRPC, GraphQL, Electron detection
+- `isBarrelFile()` and `getImportConfidence()` methods
+
+**PythonIndexer**
+- Stdlib/common package filtering, improved entrypoint detection
+- `importlib.import_module()`, `__import__()` detection
+- Improved `__all__` parsing (tuple form), top-level variable exports
+- Streamlit, Jupyter, Strawberry GraphQL detection
+- Django management commands/views, task queues (dramatiq, huey, rq)
+- Click, Typer, FastAPI, Flask, Django, Celery framework detection
+
+**RustIndexer**
+- External crate filtering, chained `super::` support
+- Test detection (#[test], #[cfg(test)]), benchmark detection
+- build.rs, proc_macro detection
+- Actix, Rocket, Axum, Poem, Tonic gRPC, Lambda framework detection
+
+**GoIndexer**
+- Stdlib detection (comprehensive 80+ packages)
+- Internal/pkg/cmd package resolution, test file detection (*_test.go)
+- Benchmark (BenchmarkXxx) and Example (ExampleXxx) function detection
+- go:embed, go:generate directive tracking
+- Framework detection: Gin, Echo, Fiber, Chi, Gorilla, gRPC, Beego, Revel, Iris, FastHTTP, HTTPRouter
+- Microservice frameworks: go-kit, go-micro, Kratos, Buffalo
+- GraphQL: gqlgen, graphql-go
+- CLI: Cobra, urfave/cli, Kong, go-flags
+- Message queues: Asynq, Machinery, NSQ, NATS, Kafka
+- Database migrations: golang-migrate, Goose
+- AWS Lambda detection
+
+**JavaIndexer**
+- Extended external package list (60+ prefixes)
+- Static imports, Maven/Gradle structure detection
+- module-info.java (Java 9+ modules) detection
+- Framework detection: Spring Boot, Spring MVC/WebFlux, Micronaut, Quarkus, Jakarta/JAX-RS
+- Vert.x, Helidon framework detection
+- Test frameworks: JUnit 4/5, TestNG, Spock, Cucumber
+- Message listeners: Kafka, JMS, RabbitMQ, SQS
+- Spring Batch, Spring Scheduled detection
+- gRPC, Spring GraphQL detection
+- AWS Lambda, Azure Functions detection
+- Lombok, MapStruct annotation awareness
+
+**GenericIndexer**
+- Extended language support (60+ extensions)
+- Improved test file detection
+- More entrypoint patterns across languages
 
 #### Added
-- `'component' | 'test'` entrypoint types in `types.ts`
+- `'test' | 'job' | 'component'` entrypoint types in `TreeSitterIndexer.createEntrypointNode()`
 
 ---
 
