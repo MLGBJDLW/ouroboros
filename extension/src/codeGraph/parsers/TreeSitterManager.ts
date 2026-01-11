@@ -43,6 +43,8 @@ export interface TreeSitterParser {
 // Lazy-loaded tree-sitter module
 let TreeSitter: any = null;
 let treeSitterInitialized = false;
+let treeSitterInitFailed = false; // Track if init already failed
+let initErrorLogged = false; // Only log error once
 
 export class TreeSitterManager {
     private parsers: Map<SupportedLanguage, TreeSitterParser> = new Map();
@@ -59,6 +61,7 @@ export class TreeSitterManager {
      */
     async initialize(): Promise<void> {
         if (treeSitterInitialized) return;
+        if (treeSitterInitFailed) throw new Error('Tree-sitter init previously failed');
 
         try {
             // Dynamic import for web-tree-sitter
@@ -85,7 +88,11 @@ export class TreeSitterManager {
             treeSitterInitialized = true;
             logger.info('Tree-sitter initialized');
         } catch (error) {
-            logger.error('Failed to initialize tree-sitter:', error);
+            treeSitterInitFailed = true;
+            if (!initErrorLogged) {
+                logger.debug('Tree-sitter not available in this environment');
+                initErrorLogged = true;
+            }
             throw error;
         }
     }

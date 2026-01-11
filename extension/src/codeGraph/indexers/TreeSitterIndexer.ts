@@ -17,6 +17,8 @@ export interface TreeSitterIndexerOptions extends IndexerOptions {
 export abstract class TreeSitterIndexer extends BaseIndexer {
     protected tsManager: TreeSitterManager;
     protected initialized = false;
+    protected treeSitterAvailable = true; // Track if tree-sitter works
+    private static loggedLanguages = new Set<string>(); // Only log once per language
     
     abstract readonly language: SupportedLanguage;
     abstract readonly supportedExtensions: string[];
@@ -31,13 +33,22 @@ export abstract class TreeSitterIndexer extends BaseIndexer {
     }
 
     async indexFile(filePath: string, content: string): Promise<IndexResult> {
+        // If tree-sitter already failed for this language, use fallback directly
+        if (!this.treeSitterAvailable) {
+            return this.fallbackParse(filePath, content);
+        }
+
         // Initialize tree-sitter if needed
         if (!this.initialized) {
             try {
                 await this.tsManager.loadLanguage(this.language);
                 this.initialized = true;
             } catch (error) {
-                logger.warn(`Tree-sitter not available for ${this.language}, using fallback`);
+                this.treeSitterAvailable = false;
+                if (!TreeSitterIndexer.loggedLanguages.has(this.language)) {
+                    logger.warn(`Tree-sitter not available for ${this.language}, using fallback`);
+                    TreeSitterIndexer.loggedLanguages.add(this.language);
+                }
                 return this.fallbackParse(filePath, content);
             }
         }

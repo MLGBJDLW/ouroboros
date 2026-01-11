@@ -18,6 +18,8 @@ export class PythonIndexer extends BaseIndexer {
     readonly supportedExtensions = ['.py', '.pyi'];
     private tsManager: TreeSitterManager;
     private initialized = false;
+    private treeSitterAvailable = true; // Track if tree-sitter works
+    private loggedFallback = false; // Only log once
 
     constructor(options: PythonIndexerOptions) {
         super(options);
@@ -32,13 +34,22 @@ export class PythonIndexer extends BaseIndexer {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
 
+        // If tree-sitter already failed, use fallback directly
+        if (!this.treeSitterAvailable) {
+            return this.fallbackParse(filePath, content);
+        }
+
         // Initialize tree-sitter if needed
         if (!this.initialized) {
             try {
                 await this.tsManager.loadLanguage('python');
                 this.initialized = true;
             } catch (error) {
-                logger.warn('Tree-sitter not available, using fallback parsing');
+                this.treeSitterAvailable = false;
+                if (!this.loggedFallback) {
+                    logger.warn('Tree-sitter not available for Python, using fallback parsing');
+                    this.loggedFallback = true;
+                }
                 return this.fallbackParse(filePath, content);
             }
         }
