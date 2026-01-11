@@ -502,7 +502,7 @@ tools: ['read']
         expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_ask');
     });
 
-    it('should keep L2 worker tools on a single line (not wrapped)', () => {
+    it('should keep L2 worker tools on a single line and inject Code Graph tools', () => {
         const existingContent = `---
 description: "Worker Agent"
 tools: ['vscode', 'read', 'search', 'web', 'basic-memory/search']
@@ -519,9 +519,14 @@ tools: ['read']
         const result = preserveYamlFrontmatter(existingContent, newContent, false);
 
         // The tools should be on a single line, not wrapped
-        expect(result).toContain("tools: ['vscode', 'read', 'search', 'web', 'basic-memory/search']");
         expect(result).not.toContain('tools:\n');
         expect(result).toContain('Worker Agent');
+        // Should preserve user tools
+        expect(result).toContain('vscode');
+        expect(result).toContain('basic-memory/search');
+        // Should inject Code Graph tools for L2 workers
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_digest');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_issues');
     });
 });
 

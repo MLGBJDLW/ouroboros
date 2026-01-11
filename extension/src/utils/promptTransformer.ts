@@ -1599,6 +1599,7 @@ function mergeYamlContent(existingYaml: string, newYaml: string): string {
  * 3. Merge YAML: use new YAML as base, preserve user-customized fields (tools, description)
  * 4. Combine merged YAML with new body
  * 5. Re-inject Ouroboros tools if needed (for orchestrator files)
+ * 6. Re-inject Code Graph tools for worker files
  */
 export function preserveYamlFrontmatter(
     existingContent: string,
@@ -1624,9 +1625,13 @@ export function preserveYamlFrontmatter(
     // Build merged content: merged YAML + new body
     let mergedContent = `---\n${mergedYamlContent}\n---\n${newYaml.body}`;
 
-    // For orchestrators, ensure Ouroboros tools are present in YAML
+    // Re-inject tools after YAML merge (since user's tools field may have been preserved)
     if (isOrchestrator) {
+        // For orchestrators, inject all Ouroboros tools (CCL + Code Graph)
         mergedContent = injectOuroborosTools(mergedContent);
+    } else {
+        // For workers, inject Code Graph tools only
+        mergedContent = injectWorkerGraphTools(mergedContent);
     }
 
     return mergedContent;
