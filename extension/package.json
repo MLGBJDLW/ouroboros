@@ -370,6 +370,122 @@
                         }
                     }
                 }
+            },
+            {
+                "name": "ouroborosai_graph_path",
+                "displayName": "Code Graph Path",
+                "toolReferenceName": "ouroborosai_graph_path",
+                "description": "Find dependency paths between two modules",
+                "modelDescription": "Use this tool to trace import chains between modules. Returns shortest paths showing how modules are connected. Useful for understanding dependencies and finding unexpected connections. Returns up to 3 paths by default.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "from",
+                        "to"
+                    ],
+                    "properties": {
+                        "from": {
+                            "type": "string",
+                            "description": "Source file path"
+                        },
+                        "to": {
+                            "type": "string",
+                            "description": "Target file path"
+                        },
+                        "maxDepth": {
+                            "type": "number",
+                            "description": "Maximum path depth (1-10, default: 5)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_module",
+                "displayName": "Code Graph Module",
+                "toolReferenceName": "ouroborosai_graph_module",
+                "description": "Get detailed information about a specific module",
+                "modelDescription": "Use this tool to understand a module's role in the codebase. Returns: imports, importedBy (dependents), exports, re-exports, related entrypoints, and whether it's a barrel file. Helps understand module structure and dependencies.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "target"
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "File path to analyze"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_annotations",
+                "displayName": "Code Graph Annotations",
+                "toolReferenceName": "ouroborosai_graph_annotations",
+                "description": "Manage manual annotations for the code graph",
+                "modelDescription": "Use this tool to add hints for dynamic imports, mark custom entrypoints, or ignore false positive issues. Actions: list (show all), addEdge (manual import hint), addEntrypoint (mark as entry), addIgnore (suppress issue). Annotations persist in .ouroboros/graph/annotations.json.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "action"
+                    ],
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": [
+                                "list",
+                                "addEdge",
+                                "addEntrypoint",
+                                "addIgnore",
+                                "remove"
+                            ],
+                            "description": "Action to perform"
+                        },
+                        "from": {
+                            "type": "string",
+                            "description": "Source file (for addEdge)"
+                        },
+                        "to": {
+                            "type": "string",
+                            "description": "Target file (for addEdge)"
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "File path (for addEntrypoint)"
+                        },
+                        "entrypointType": {
+                            "type": "string",
+                            "enum": [
+                                "route",
+                                "page",
+                                "command",
+                                "job",
+                                "api",
+                                "main"
+                            ],
+                            "description": "Entrypoint type"
+                        },
+                        "name": {
+                            "type": "string",
+                            "description": "Display name"
+                        },
+                        "issueKind": {
+                            "type": "string",
+                            "description": "Issue type to ignore"
+                        },
+                        "ignorePath": {
+                            "type": "string",
+                            "description": "Path pattern to ignore"
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Reason for annotation"
+                        }
+                    }
+                }
             }
         ]
     },

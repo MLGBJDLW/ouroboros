@@ -8,9 +8,13 @@ import type {
     DigestResult,
     IssueListResult,
     ImpactResult,
+    PathResult,
+    ModuleResult,
     IssueKind,
     IssueSeverity,
     GraphNode,
+    EdgeKind,
+    Confidence,
 } from './types';
 
 const CHARS_PER_TOKEN = 4;
@@ -30,6 +34,15 @@ export interface IssueQueryOptions {
 export interface ImpactOptions {
     depth?: number;
     limit?: number;
+}
+
+export interface PathQueryOptions {
+    maxDepth?: number;
+    maxPaths?: number;
+}
+
+export interface ModuleQueryOptions {
+    includeTransitive?: boolean;
 }
 
 export class GraphQuery {
@@ -68,6 +81,8 @@ export class GraphQuery {
             HANDLER_UNREACHABLE: 0,
             DYNAMIC_EDGE_UNKNOWN: 0,
             BROKEN_EXPORT_CHAIN: 0,
+            CIRCULAR_REEXPORT: 0,
+            ORPHAN_EXPORT: 0,
         };
 
         for (const issue of filteredIssues) {
@@ -452,5 +467,223 @@ export class GraphQuery {
     private estimateTokens(data: unknown): number {
         const json = JSON.stringify(data);
         return Math.ceil(json.length / CHARS_PER_TOKEN);
+    }
+
+    // ============================================
+    // Path Query (v0.2)
+    // ============================================
+
+    path(from: string, to: string, options?: PathQueryOptions): PathResult {
+        const maxDepth = Math.min(options?.maxDepth ?? 5, 10);
+        const maxPaths = Math.min(options?.maxPaths ?? 3, 10);
+
+        const fromId = this.resolveTarget(from);
+        const toId = this.resolveTarget(to);
+
+        if (!fromId || !toId) {
+            return {
+                from,
+                to,
+                paths: [],
+                connected: false,
+                shortestPath: null,
+                meta: {
+                    tokensEstimate: 100,
+                    truncated: false,
+                    maxDepthReached: false,
+                },
+            };
+        }
+
+        const paths = this.findPaths(fromId, toId, maxDepth, maxPaths);
+        const connected = paths.length > 0;
+        const shortestPath = connected ? Math.min(...paths.map((p) => p.length)) : null;
+
+        const result: PathResult = {
+            from,
+            to,
+            paths: paths.map((p) => ({
+                nodes: p.nodes.map((id) => {
+                    const node = this.store.getNode(id);
+                    return node?.path ?? id;
+                }),
+                edges: p.edges,
+                length: p.length,
+            })),
+            connected,
+            shortestPath,
+            meta: {
+                tokensEstimate: 0,
+                truncated: paths.length >= maxPaths,
+                maxDepthReached: paths.some((p) => p.length >= maxDepth),
+            },
+        };
+
+        result.meta.tokensEstimate = this.estimateTokens(result);
+        return result;
+    }
+
+    private findPaths(
+        fromId: string,
+        toId: string,
+        maxDepth: number,
+        maxPaths: number
+    ): Array<{ nodes: string[]; edges: string[]; length: number }> {
+        const paths: Array<{ nodes: string[]; edges: string[]; length: number }> = [];
+        
+        // BFS to find shortest paths
+        const queue: Array<{ nodeId: string; path: string[]; edges: string[] }> = [
+            { nodeId: fromId, path: [fromId], edges: [] },
+        ];
+        const visited = new Map<string, number>(); // nodeId -> shortest distance
+        visited.set(fromId, 0);
+
+        while (queue.length > 0 && paths.length < maxPaths) {
+            const current = queue.shift()!;
+            
+            if (current.path.length > maxDepth) continue;
+
+            if (current.nodeId === toId) {
+                paths.push({
+                    nodes: current.path,
+                    edges: current.edges,
+                    length: current.path.length - 1,
+                });
+                continue;
+            }
+
+            const edges = this.store.getEdgesFrom(current.nodeId);
+            for (const edge of edges) {
+                if (edge.to === 'unknown') continue;
+                
+                const newDist = current.path.length;
+                const prevDist = visited.get(edge.to);
+                
+                // Allow revisiting if we found a path of same length (for multiple paths)
+                if (prevDist === undefined || newDist <= prevDist + 1) {
+                    visited.set(edge.to, newDist);
+                    queue.push({
+                        nodeId: edge.to,
+                        path: [...current.path, edge.to],
+                        edges: [...current.edges, edge.id],
+                    });
+                }
+            }
+        }
+
+        return paths;
+    }
+
+    // ============================================
+    // Module Query (v0.2)
+    // ============================================
+
+    module(target: string, _options?: ModuleQueryOptions): ModuleResult {
+        const nodeId = this.resolveTarget(target);
+        const node = nodeId ? this.store.getNode(nodeId) : undefined;
+
+        if (!nodeId || !node) {
+            return this.emptyModuleResult(target);
+        }
+
+        // Get imports (outgoing edges)
+        const importEdges = this.store.getEdgesFrom(nodeId);
+        const imports: ModuleResult['imports'] = importEdges
+            .filter((e) => e.kind === 'imports' && e.to !== 'unknown')
+            .map((e) => {
+                const targetNode = this.store.getNode(e.to);
+                return {
+                    path: targetNode?.path ?? e.to,
+                    kind: e.kind,
+                    confidence: e.confidence,
+                };
+            });
+
+        // Get importedBy (incoming edges)
+        const importedByEdges = this.store.getEdgesTo(nodeId);
+        const importedBy: ModuleResult['importedBy'] = importedByEdges
+            .filter((e) => e.kind === 'imports')
+            .map((e) => {
+                const sourceNode = this.store.getNode(e.from);
+                return {
+                    path: sourceNode?.path ?? e.from,
+                    kind: e.kind,
+                };
+            });
+
+        // Get exports
+        const exports = (node.meta?.exports as string[]) ?? [];
+
+        // Get re-exports
+        const reexportEdges = importEdges.filter((e) => e.kind === 'reexports');
+        const reexports: ModuleResult['reexports'] = reexportEdges.map((e) => {
+            const targetNode = this.store.getNode(e.to);
+            return {
+                source: targetNode?.path ?? e.to,
+                symbols: '*', // Would need barrel analyzer for detailed info
+            };
+        });
+
+        // Check if barrel file
+        const isBarrel = node.meta?.entrypointType === 'barrel' ||
+            (node.path?.endsWith('index.ts') && reexports.length > 0);
+
+        // Get related entrypoints
+        const entrypoints = this.getRelatedEntrypoints(nodeId);
+
+        const result: ModuleResult = {
+            id: nodeId,
+            path: node.path,
+            name: node.name,
+            kind: node.kind,
+            imports,
+            importedBy,
+            exports,
+            reexports,
+            entrypoints,
+            isBarrel,
+            meta: {
+                tokensEstimate: 0,
+                framework: node.meta?.framework as string | undefined,
+            },
+        };
+
+        result.meta.tokensEstimate = this.estimateTokens(result);
+        return result;
+    }
+
+    private getRelatedEntrypoints(nodeId: string): ModuleResult['entrypoints'] {
+        const entrypoints = this.store.getNodesByKind('entrypoint');
+        const related: ModuleResult['entrypoints'] = [];
+
+        for (const ep of entrypoints) {
+            // Check if this entrypoint is for the same file
+            if (ep.path === this.store.getNode(nodeId)?.path) {
+                related.push({
+                    type: (ep.meta?.entrypointType as string) ?? 'unknown',
+                    name: ep.name,
+                });
+            }
+        }
+
+        return related;
+    }
+
+    private emptyModuleResult(target: string): ModuleResult {
+        return {
+            id: `file:${target}`,
+            path: target,
+            name: target.split('/').pop() ?? target,
+            kind: 'file',
+            imports: [],
+            importedBy: [],
+            exports: [],
+            reexports: [],
+            entrypoints: [],
+            isBarrel: false,
+            meta: {
+                tokensEstimate: 100,
+            },
+        };
     }
 }

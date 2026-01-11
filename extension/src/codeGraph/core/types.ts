@@ -22,7 +22,9 @@ export type EdgeKind =
 export type IssueKind =
     | 'HANDLER_UNREACHABLE'
     | 'DYNAMIC_EDGE_UNKNOWN'
-    | 'BROKEN_EXPORT_CHAIN';
+    | 'BROKEN_EXPORT_CHAIN'
+    | 'CIRCULAR_REEXPORT'
+    | 'ORPHAN_EXPORT';
 
 export type IssueSeverity = 'info' | 'warning' | 'error';
 
@@ -238,5 +240,84 @@ export interface ImpactResult {
         tokensEstimate: number;
         truncated: boolean;
         depthReached: number;
+    };
+}
+
+// ============================================
+// v0.2 Query Result Types
+// ============================================
+
+export interface PathResult {
+    from: string;
+    to: string;
+    paths: Array<{
+        nodes: string[];
+        edges: string[];
+        length: number;
+    }>;
+    connected: boolean;
+    shortestPath: number | null;
+    meta: {
+        tokensEstimate: number;
+        truncated: boolean;
+        maxDepthReached: boolean;
+    };
+}
+
+export interface ModuleResult {
+    id: string;
+    path: string | undefined;
+    name: string;
+    kind: NodeKind;
+    imports: Array<{
+        path: string;
+        kind: EdgeKind;
+        confidence: Confidence;
+    }>;
+    importedBy: Array<{
+        path: string;
+        kind: EdgeKind;
+    }>;
+    exports: string[];
+    reexports: Array<{
+        source: string;
+        symbols: string[] | '*';
+    }>;
+    entrypoints: Array<{
+        type: string;
+        name: string;
+    }>;
+    isBarrel: boolean;
+    meta: {
+        tokensEstimate: number;
+        framework?: string;
+    };
+}
+
+export interface AnnotationsResult {
+    edges: Array<{
+        from: string;
+        to: string;
+        kind: string;
+        reason: string;
+    }>;
+    entrypoints: Array<{
+        path: string;
+        type: string;
+        name: string;
+    }>;
+    ignores: Array<{
+        issueKind: IssueKind;
+        path: string;
+        reason: string;
+    }>;
+    stats: {
+        totalEdges: number;
+        totalEntrypoints: number;
+        totalIgnores: number;
+    };
+    meta: {
+        tokensEstimate: number;
+        filePath: string;
     };
 }

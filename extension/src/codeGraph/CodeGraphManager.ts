@@ -6,11 +6,14 @@
 import * as vscode from 'vscode';
 import { GraphStore } from './core/GraphStore';
 import { GraphQuery } from './core/GraphQuery';
+import { PathResolver } from './core/PathResolver';
 import { TypeScriptIndexer } from './indexers/TypeScriptIndexer';
 import { EntrypointDetector } from './indexers/EntrypointDetector';
+import { BarrelAnalyzer } from './indexers/BarrelAnalyzer';
 import { IssueDetector } from './analyzers/IssueDetector';
 import { IncrementalWatcher } from './watcher/IncrementalWatcher';
-import type { DigestResult, IssueListResult, ImpactResult, GraphConfig } from './core/types';
+import { AnnotationManager } from './annotations/AnnotationManager';
+import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig } from './core/types';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('CodeGraphManager');
@@ -35,9 +38,12 @@ const DEFAULT_CONFIG: GraphConfig = {
 export class CodeGraphManager implements vscode.Disposable {
     private store: GraphStore;
     private query: GraphQuery;
+    private pathResolver: PathResolver;
     private indexers: TypeScriptIndexer[];
     private entrypointDetector: EntrypointDetector;
+    private barrelAnalyzer: BarrelAnalyzer;
     private issueDetector: IssueDetector;
+    private annotationManager: AnnotationManager;
     private watcher: IncrementalWatcher | null = null;
     private config: GraphConfig;
     private workspaceRoot: string;
@@ -50,8 +56,11 @@ export class CodeGraphManager implements vscode.Disposable {
         
         this.store = new GraphStore();
         this.query = new GraphQuery(this.store);
+        this.pathResolver = new PathResolver(workspaceRoot);
+        this.barrelAnalyzer = new BarrelAnalyzer(this.store);
         this.entrypointDetector = new EntrypointDetector();
         this.issueDetector = new IssueDetector(this.store);
+        this.annotationManager = new AnnotationManager(workspaceRoot);
         
         this.indexers = [
             new TypeScriptIndexer({
@@ -70,6 +79,14 @@ export class CodeGraphManager implements vscode.Disposable {
      */
     async initialize(): Promise<void> {
         logger.info('Initializing Code Graph...');
+        
+        // Load tsconfig for path resolution
+        const tsconfig = await PathResolver.loadTSConfig(this.workspaceRoot);
+        this.pathResolver.updateConfig(tsconfig);
+        
+        // Load annotations
+        await this.annotationManager.load();
+        
         await this.fullIndex();
         this.startWatcher();
         logger.info('Code Graph initialized');
@@ -126,7 +143,35 @@ export class CodeGraphManager implements vscode.Disposable {
 
             // Detect issues
             const issues = this.issueDetector.detectAll();
-            this.store.setIssues(issues);
+            
+            // Detect barrel-related issues
+            const barrelIssues = this.barrelAnalyzer.detectCircularReexports();
+            
+            // Filter out ignored issues
+            const allIssues = [...issues, ...barrelIssues];
+            const filteredIssues = [];
+            for (const issue of allIssues) {
+                const shouldIgnore = await this.annotationManager.shouldIgnore(
+                    issue.kind,
+                    issue.meta?.filePath ?? ''
+                );
+                if (!shouldIgnore) {
+                    filteredIssues.push(issue);
+                }
+            }
+            
+            this.store.setIssues(filteredIssues);
+            
+            // Add annotation edges and entrypoints
+            const annotationEdges = await this.annotationManager.getGraphEdges();
+            for (const edge of annotationEdges) {
+                this.store.addEdge(edge);
+            }
+            
+            const annotationEntrypoints = await this.annotationManager.getGraphEntrypoints();
+            for (const ep of annotationEntrypoints) {
+                this.store.addNode(ep);
+            }
 
             const duration = Date.now() - startTime;
             this.store.updateMeta({
@@ -135,7 +180,7 @@ export class CodeGraphManager implements vscode.Disposable {
                 fileCount,
             });
 
-            logger.info(`Indexed ${fileCount} files in ${duration}ms, found ${issues.length} issues`);
+            logger.info(`Indexed ${fileCount} files in ${duration}ms, found ${filteredIssues.length} issues`);
         } finally {
             this.isIndexing = false;
         }
@@ -200,6 +245,48 @@ export class CodeGraphManager implements vscode.Disposable {
      */
     getImpact(target: string, depth?: number): ImpactResult {
         return this.query.impact(target, { depth });
+    }
+
+    /**
+     * Get path between modules (v0.2)
+     */
+    getPath(from: string, to: string, maxDepth?: number): PathResult {
+        return this.query.path(from, to, { maxDepth });
+    }
+
+    /**
+     * Get module details (v0.2)
+     */
+    getModule(target: string): ModuleResult {
+        return this.query.module(target);
+    }
+
+    /**
+     * Get annotation manager (v0.2)
+     */
+    getAnnotationManager(): AnnotationManager {
+        return this.annotationManager;
+    }
+
+    /**
+     * Get path resolver (v0.2)
+     */
+    getPathResolver(): PathResolver {
+        return this.pathResolver;
+    }
+
+    /**
+     * Get barrel analyzer (v0.2)
+     */
+    getBarrelAnalyzer(): BarrelAnalyzer {
+        return this.barrelAnalyzer;
+    }
+
+    /**
+     * Get query instance (for tools)
+     */
+    getQuery(): GraphQuery {
+        return this.query;
     }
 
     // ============================================
