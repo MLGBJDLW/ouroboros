@@ -215,22 +215,43 @@ export class PathResolver {
 
     /**
      * Try to resolve path with various extensions
+     * Handles ESM-style imports where .js extension maps to .ts source files
      */
     private normalizeAndResolve(basePath: string): string | null {
         const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', ''];
         const indexFiles = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
 
-        // Try exact path with extensions
+        // Handle ESM-style .js imports that should resolve to .ts files
+        // e.g., import './foo.js' should resolve to './foo.ts' in TypeScript projects
+        let normalizedBasePath = basePath;
+        if (basePath.endsWith('.js')) {
+            normalizedBasePath = basePath.slice(0, -3); // Remove .js
+        } else if (basePath.endsWith('.jsx')) {
+            normalizedBasePath = basePath.slice(0, -4); // Remove .jsx
+        } else if (basePath.endsWith('.mjs')) {
+            normalizedBasePath = basePath.slice(0, -4); // Remove .mjs
+        } else if (basePath.endsWith('.cjs')) {
+            normalizedBasePath = basePath.slice(0, -4); // Remove .cjs
+        }
+
+        // Try exact path with extensions (using normalized path without .js)
         for (const ext of extensions) {
-            const fullPath = basePath + ext;
+            const fullPath = normalizedBasePath + ext;
             if (this.fileExists(fullPath)) {
                 return fullPath;
             }
         }
 
+        // Also try the original path if it was different (for actual .js files)
+        if (normalizedBasePath !== basePath) {
+            if (this.fileExists(basePath)) {
+                return basePath;
+            }
+        }
+
         // Try as directory with index file
         for (const indexFile of indexFiles) {
-            const fullPath = path.join(basePath, indexFile);
+            const fullPath = path.join(normalizedBasePath, indexFile);
             if (this.fileExists(fullPath)) {
                 return fullPath;
             }

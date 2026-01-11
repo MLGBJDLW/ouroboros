@@ -123,6 +123,14 @@ export class IssueDetector {
                 
                 // Check if target exists
                 if (!toNode) {
+                    // Try to find the node with alternative extensions
+                    // This handles ESM-style .js imports that map to .ts source files
+                    const alternativeNode = this.findNodeWithAlternativeExtension(edge.to);
+                    if (alternativeNode) {
+                        // Not broken, just using ESM-style extension
+                        continue;
+                    }
+                    
                     const fromNode = this.store.getNode(edge.from);
                     
                     issues.push({
@@ -150,6 +158,61 @@ export class IssueDetector {
         }
 
         return issues;
+    }
+
+    /**
+     * Find a node with alternative file extension
+     * Handles ESM-style .js imports that should resolve to .ts files
+     */
+    private findNodeWithAlternativeExtension(nodeId: string): GraphNode | undefined {
+        // Extract path from node ID (format: "file:path/to/file.js")
+        if (!nodeId.startsWith('file:')) {
+            return undefined;
+        }
+        
+        const filePath = nodeId.slice(5); // Remove "file:" prefix
+        
+        // Try alternative extensions
+        const extensionMappings: Array<[string, string[]]> = [
+            ['.js', ['.ts', '.tsx', '.mts']],
+            ['.jsx', ['.tsx', '.ts']],
+            ['.mjs', ['.mts', '.ts']],
+            ['.cjs', ['.cts', '.ts']],
+        ];
+        
+        for (const [fromExt, toExts] of extensionMappings) {
+            if (filePath.endsWith(fromExt)) {
+                const basePath = filePath.slice(0, -fromExt.length);
+                for (const toExt of toExts) {
+                    const altPath = basePath + toExt;
+                    const altNode = this.store.getNode(`file:${altPath}`);
+                    if (altNode) {
+                        return altNode;
+                    }
+                }
+            }
+        }
+        
+        // Also try without extension (for imports like './foo' that might be './foo.ts')
+        if (!filePath.includes('.') || filePath.split('/').pop()?.startsWith('.')) {
+            const sourceExts = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.mjs'];
+            for (const ext of sourceExts) {
+                const altNode = this.store.getNode(`file:${filePath}${ext}`);
+                if (altNode) {
+                    return altNode;
+                }
+            }
+            // Try index files
+            const indexFiles = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
+            for (const indexFile of indexFiles) {
+                const altNode = this.store.getNode(`file:${filePath}/${indexFile}`);
+                if (altNode) {
+                    return altNode;
+                }
+            }
+        }
+        
+        return undefined;
     }
 
     /**
