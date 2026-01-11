@@ -8,6 +8,37 @@
 2. **Digest → Detail** - Always start with overview, drill down on demand
 3. **Actionable Output** - Results include next steps, not just data
 4. **Truncation Transparency** - Always indicate if output was cut
+5. **Unified Envelope** - All tools return consistent response format
+
+---
+
+## Response Envelope (v1.0)
+
+All tools return responses wrapped in a standardized envelope:
+
+```json
+{
+    "success": true,
+    "data": {
+        "tool": "ouroborosai_graph_digest",
+        "version": "1.0",
+        "requestId": "a1b2c3d4",
+        "generatedAt": "2026-01-10T12:00:00.000Z",
+        "workspace": { "root": "/path/to/project", "repoName": "project" },
+        "result": { /* tool-specific output */ },
+        "meta": {
+            "approxTokens": 480,
+            "truncated": false,
+            "limits": { "maxItems": 10 },
+            "nextQuerySuggestion": [
+                { "tool": "ouroborosai_graph_issues", "args": { "severity": "error" } }
+            ]
+        }
+    }
+}
+```
+
+See [ENVELOPE.md](./ENVELOPE.md) for full specification.
 
 ---
 

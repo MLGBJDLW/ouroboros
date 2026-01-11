@@ -7,6 +7,13 @@ import * as vscode from 'vscode';
 import { z } from 'zod';
 import type { CodeGraphManager } from '../CodeGraphManager';
 import { createLogger } from '../../utils/logger';
+import {
+    createSuccessEnvelope,
+    createErrorEnvelope,
+    envelopeToResult,
+    getWorkspaceContext,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 const logger = createLogger('GraphIssuesTool');
 
@@ -34,6 +41,7 @@ export function createGraphIssuesTool(
             _token: vscode.CancellationToken
         ): Promise<vscode.LanguageModelToolResult> {
             const input = options.input;
+            const workspace = getWorkspaceContext();
 
             logger.info('Graph issues requested', input);
 
@@ -41,14 +49,14 @@ export function createGraphIssuesTool(
                 // Validate input
                 const parsed = GraphIssuesInputSchema.safeParse(input);
                 if (!parsed.success) {
-                    return new vscode.LanguageModelToolResult([
-                        new vscode.LanguageModelTextPart(
-                            JSON.stringify({
-                                success: false,
-                                error: 'Invalid input: ' + parsed.error.message,
-                            })
-                        ),
-                    ]);
+                    const envelope = createErrorEnvelope(
+                        TOOLS.GRAPH_ISSUES,
+                        'INVALID_INPUT',
+                        'Invalid input: ' + parsed.error.message,
+                        workspace,
+                        { errors: parsed.error.errors }
+                    );
+                    return envelopeToResult(envelope);
                 }
 
                 const result = manager.getIssues({
@@ -64,24 +72,32 @@ export function createGraphIssuesTool(
                     tokensEstimate: result.meta.tokensEstimate,
                 });
 
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(
-                        JSON.stringify({
-                            success: true,
-                            data: result,
-                        })
-                    ),
-                ]);
+                const envelope = createSuccessEnvelope(
+                    TOOLS.GRAPH_ISSUES,
+                    result,
+                    workspace,
+                    {
+                        truncated: result.stats.returned < result.stats.total,
+                        limits: { maxItems: parsed.data.limit ?? 20 },
+                        nextQuerySuggestion: result.stats.returned < result.stats.total
+                            ? [{
+                                tool: TOOLS.GRAPH_ISSUES,
+                                args: { ...parsed.data, limit: (parsed.data.limit ?? 20) + 20 },
+                                reason: `${result.stats.total - result.stats.returned} more issues available`,
+                            }]
+                            : undefined,
+                    }
+                );
+                return envelopeToResult(envelope);
             } catch (error) {
                 logger.error('Graph issues error:', error);
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(
-                        JSON.stringify({
-                            success: false,
-                            error: error instanceof Error ? error.message : 'Unknown error',
-                        })
-                    ),
-                ]);
+                const envelope = createErrorEnvelope(
+                    TOOLS.GRAPH_ISSUES,
+                    'INTERNAL_ERROR',
+                    error instanceof Error ? error.message : 'Unknown error',
+                    workspace
+                );
+                return envelopeToResult(envelope);
             }
         },
     };

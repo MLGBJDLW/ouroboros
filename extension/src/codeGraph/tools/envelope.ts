@@ -196,8 +196,18 @@ export function envelopeToResult<T>(envelope: ToolEnvelope<T>): vscode.LanguageM
  * Get workspace context from VS Code
  */
 export function getWorkspaceContext(workspaceRoot?: string): WorkspaceContext {
-    const folders = vscode.workspace.workspaceFolders;
-    const root = workspaceRoot ?? folders?.[0]?.uri.fsPath ?? '';
+    let root = workspaceRoot ?? '';
+    
+    // Try to get from VS Code workspace if available
+    try {
+        const folders = vscode.workspace?.workspaceFolders;
+        if (!workspaceRoot && folders?.[0]?.uri?.fsPath) {
+            root = folders[0].uri.fsPath;
+        }
+    } catch {
+        // VS Code API not available (e.g., in tests)
+    }
+    
     const repoName = root.split(/[/\\]/).pop() ?? 'unknown';
     
     return {

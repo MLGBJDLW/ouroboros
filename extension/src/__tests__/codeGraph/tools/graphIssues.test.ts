@@ -76,7 +76,8 @@ describe('createGraphIssuesTool', () => {
 
         const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(true);
-        expect(output.data.issues).toHaveLength(1);
+        expect(output.data.result.issues).toHaveLength(1);
+        expect(output.data.tool).toBe('ouroborosai_graph_issues');
         expect(mockManager.getIssues).toHaveBeenCalled();
     });
 
@@ -121,6 +122,7 @@ describe('createGraphIssuesTool', () => {
 
         const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
-        expect(output.error).toBe('Test error');
+        expect(output.data.result.error.message).toBe('Test error');
+        expect(output.data.result.error.code).toBe('INTERNAL_ERROR');
     });
 });

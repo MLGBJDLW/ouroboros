@@ -38,8 +38,9 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => null);
             const result = await tool.execute({ action: 'check' });
             
-            expect(result.stats).toEqual({});
-            expect(result.meta.action).toBe('check');
+            expect(result.success).toBe(true);
+            expect(result.data.result.stats).toEqual({});
+            expect(result.data.result.meta.action).toBe('check');
         });
 
         it('should return empty violations when no rules violated', async () => {
@@ -54,8 +55,9 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'check' });
             
-            expect(result.violations).toHaveLength(0);
-            expect(result.stats.totalViolations).toBe(0);
+            expect(result.success).toBe(true);
+            expect(result.data.result.violations).toHaveLength(0);
+            expect(result.data.result.stats.totalViolations).toBe(0);
         });
 
         it('should detect violations', async () => {
@@ -70,11 +72,12 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'check' });
             
-            expect(result.violations).toHaveLength(1);
-            expect(result.violations![0].rule).toBe('UI cannot import DB');
-            expect(result.violations![0].sourceFile).toBe('src/ui/Button.tsx');
-            expect(result.violations![0].targetFile).toBe('src/db/connection.ts');
-            expect(result.violations![0].severity).toBe('error');
+            expect(result.success).toBe(true);
+            expect(result.data.result.violations).toHaveLength(1);
+            expect(result.data.result.violations![0].rule).toBe('UI cannot import DB');
+            expect(result.data.result.violations![0].sourceFile).toBe('src/ui/Button.tsx');
+            expect(result.data.result.violations![0].targetFile).toBe('src/db/connection.ts');
+            expect(result.data.result.violations![0].severity).toBe('error');
         });
 
         it('should use custom rules when provided', async () => {
@@ -90,8 +93,9 @@ describe('graphLayers Tool', () => {
                 ],
             });
             
-            expect(result.violations).toHaveLength(1);
-            expect(result.violations![0].rule).toBe('UI cannot import API');
+            expect(result.success).toBe(true);
+            expect(result.data.result.violations).toHaveLength(1);
+            expect(result.data.result.violations![0].rule).toBe('UI cannot import API');
         });
 
         it('should count errors and warnings', async () => {
@@ -109,9 +113,10 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'check' });
             
-            expect(result.stats.totalViolations).toBe(2);
-            expect(result.stats.errorCount).toBe(1);
-            expect(result.stats.warningCount).toBe(1);
+            expect(result.success).toBe(true);
+            expect(result.data.result.stats.totalViolations).toBe(2);
+            expect(result.data.result.stats.errorCount).toBe(1);
+            expect(result.data.result.stats.warningCount).toBe(1);
         });
 
         it('should respect scope option', async () => {
@@ -128,8 +133,9 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'check', scope: 'src/ui/**' });
             
-            expect(result.violations).toHaveLength(1);
-            expect(result.violations![0].sourceFile).toBe('src/ui/Button.tsx');
+            expect(result.success).toBe(true);
+            expect(result.data.result.violations).toHaveLength(1);
+            expect(result.data.result.violations![0].sourceFile).toBe('src/ui/Button.tsx');
         });
     });
 
@@ -143,18 +149,20 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'list' });
             
-            expect(result.rules).toHaveLength(2);
-            expect(result.rules![0].name).toBe('Rule 1');
-            expect(result.rules![1].name).toBe('Rule 2');
-            expect(result.stats.rulesCount).toBe(2);
+            expect(result.success).toBe(true);
+            expect(result.data.result.rules).toHaveLength(2);
+            expect(result.data.result.rules![0].name).toBe('Rule 1');
+            expect(result.data.result.rules![1].name).toBe('Rule 2');
+            expect(result.data.result.stats.rulesCount).toBe(2);
         });
 
         it('should return empty rules when none configured', async () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'list' });
             
-            expect(result.rules).toHaveLength(0);
-            expect(result.stats.rulesCount).toBe(0);
+            expect(result.success).toBe(true);
+            expect(result.data.result.rules).toHaveLength(0);
+            expect(result.data.result.stats.rulesCount).toBe(0);
         });
     });
 
@@ -167,8 +175,9 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'suggest' });
             
-            expect(result.suggestions).toBeDefined();
-            expect(result.suggestions!.length).toBeGreaterThan(0);
+            expect(result.success).toBe(true);
+            expect(result.data.result.suggestions).toBeDefined();
+            expect(result.data.result.suggestions!.length).toBeGreaterThan(0);
         });
 
         it('should return empty suggestions for flat structure', async () => {
@@ -178,7 +187,8 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'suggest' });
             
-            expect(result.suggestions).toHaveLength(0);
+            expect(result.success).toBe(true);
+            expect(result.data.result.suggestions).toHaveLength(0);
         });
     });
 
@@ -187,7 +197,8 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'unknown' as 'check' });
             
-            expect(result.stats).toEqual({});
+            expect(result.success).toBe(true);
+            expect(result.data.result.stats).toEqual({});
         });
     });
 
@@ -196,28 +207,35 @@ describe('graphLayers Tool', () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'check' });
             
-            expect(result.meta.tokensEstimate).toBeDefined();
-            expect(typeof result.meta.tokensEstimate).toBe('number');
+            expect(result.data.result.meta.tokensEstimate).toBeDefined();
+            expect(typeof result.data.result.meta.tokensEstimate).toBe('number');
         });
 
         it('should include action in meta', async () => {
             const tool = createGraphLayersTool(() => analyzer);
             
             const checkResult = await tool.execute({ action: 'check' });
-            expect(checkResult.meta.action).toBe('check');
+            expect(checkResult.data.result.meta.action).toBe('check');
             
             const listResult = await tool.execute({ action: 'list' });
-            expect(listResult.meta.action).toBe('list');
+            expect(listResult.data.result.meta.action).toBe('list');
             
             const suggestResult = await tool.execute({ action: 'suggest' });
-            expect(suggestResult.meta.action).toBe('suggest');
+            expect(suggestResult.data.result.meta.action).toBe('suggest');
         });
 
         it('should include scope in meta when provided', async () => {
             const tool = createGraphLayersTool(() => analyzer);
             const result = await tool.execute({ action: 'check', scope: 'src/features' });
             
-            expect(result.meta.scope).toBe('src/features');
+            expect(result.data.result.meta.scope).toBe('src/features');
+        });
+
+        it('should include tool name in envelope', async () => {
+            const tool = createGraphLayersTool(() => analyzer);
+            const result = await tool.execute({ action: 'check' });
+            
+            expect(result.data.tool).toBe('ouroborosai_graph_layers');
         });
     });
 });

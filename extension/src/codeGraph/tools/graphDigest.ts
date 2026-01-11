@@ -7,6 +7,13 @@ import * as vscode from 'vscode';
 import { z } from 'zod';
 import type { CodeGraphManager } from '../CodeGraphManager';
 import { createLogger } from '../../utils/logger';
+import {
+    createSuccessEnvelope,
+    createErrorEnvelope,
+    envelopeToResult,
+    getWorkspaceContext,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 const logger = createLogger('GraphDigestTool');
 
@@ -25,6 +32,7 @@ export function createGraphDigestTool(
             _token: vscode.CancellationToken
         ): Promise<vscode.LanguageModelToolResult> {
             const input = options.input;
+            const workspace = getWorkspaceContext();
 
             logger.info('Graph digest requested', { scope: input.scope });
 
@@ -32,14 +40,14 @@ export function createGraphDigestTool(
                 // Validate input
                 const parsed = GraphDigestInputSchema.safeParse(input);
                 if (!parsed.success) {
-                    return new vscode.LanguageModelToolResult([
-                        new vscode.LanguageModelTextPart(
-                            JSON.stringify({
-                                success: false,
-                                error: 'Invalid input: ' + parsed.error.message,
-                            })
-                        ),
-                    ]);
+                    const envelope = createErrorEnvelope(
+                        TOOLS.GRAPH_DIGEST,
+                        'INVALID_INPUT',
+                        'Invalid input: ' + parsed.error.message,
+                        workspace,
+                        { errors: parsed.error.errors }
+                    );
+                    return envelopeToResult(envelope);
                 }
 
                 const result = manager.getDigest(parsed.data.scope);
@@ -50,24 +58,33 @@ export function createGraphDigestTool(
                     tokensEstimate: result.meta.tokensEstimate,
                 });
 
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(
-                        JSON.stringify({
-                            success: true,
-                            data: result,
-                        })
-                    ),
-                ]);
+                const envelope = createSuccessEnvelope(
+                    TOOLS.GRAPH_DIGEST,
+                    result,
+                    workspace,
+                    {
+                        truncated: result.meta.truncated ?? false,
+                        limits: { maxItems: 10 },
+                        nextQuerySuggestion: result.issues.HANDLER_UNREACHABLE > 0 ||
+                            result.issues.BROKEN_EXPORT_CHAIN > 0
+                            ? [{
+                                tool: TOOLS.GRAPH_ISSUES,
+                                args: { severity: 'error', limit: 20 },
+                                reason: 'Issues detected - review errors first',
+                            }]
+                            : undefined,
+                    }
+                );
+                return envelopeToResult(envelope);
             } catch (error) {
                 logger.error('Graph digest error:', error);
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(
-                        JSON.stringify({
-                            success: false,
-                            error: error instanceof Error ? error.message : 'Unknown error',
-                        })
-                    ),
-                ]);
+                const envelope = createErrorEnvelope(
+                    TOOLS.GRAPH_DIGEST,
+                    'INTERNAL_ERROR',
+                    error instanceof Error ? error.message : 'Unknown error',
+                    workspace
+                );
+                return envelopeToResult(envelope);
             }
         },
     };

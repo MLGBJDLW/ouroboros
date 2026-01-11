@@ -80,7 +80,9 @@ describe('createGraphDigestTool', () => {
 
         const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(true);
-        expect(output.data.summary.files).toBe(10);
+        expect(output.data.result.summary.files).toBe(10);
+        expect(output.data.tool).toBe('ouroborosai_graph_digest');
+        expect(output.data.meta).toHaveProperty('approxTokens');
         expect(mockManager.getDigest).toHaveBeenCalledWith(undefined);
     });
 
@@ -113,6 +115,7 @@ describe('createGraphDigestTool', () => {
 
         const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
-        expect(output.error).toBe('Test error');
+        expect(output.data.result.error.message).toBe('Test error');
+        expect(output.data.result.error.code).toBe('INTERNAL_ERROR');
     });
 });

@@ -5,6 +5,12 @@
 
 import type * as vscode from 'vscode';
 import type { CycleDetector } from '../analyzers/CycleDetector';
+import {
+    createSuccessEnvelope,
+    getWorkspaceContext,
+    type ToolEnvelope,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 export interface GraphCyclesInput {
     scope?: string;
@@ -36,7 +42,7 @@ export interface GraphCyclesTool {
     name: string;
     description: string;
     inputSchema: object;
-    execute: (input: GraphCyclesInput) => Promise<GraphCyclesResult>;
+    execute: (input: GraphCyclesInput) => Promise<ToolEnvelope<GraphCyclesResult>>;
 }
 
 export function createGraphCyclesTool(
@@ -71,15 +77,22 @@ Examples:
             },
         },
 
-        async execute(input: GraphCyclesInput): Promise<GraphCyclesResult> {
+        async execute(input: GraphCyclesInput): Promise<ToolEnvelope<GraphCyclesResult>> {
+            const workspace = getWorkspaceContext();
             const detector = getCycleDetector();
 
             if (!detector) {
-                return {
+                const emptyResult: GraphCyclesResult = {
                     cycles: [],
                     stats: { totalCycles: 0, errorCount: 0, warningCount: 0 },
                     meta: { tokensEstimate: 50, truncated: false, scope: null },
                 };
+                return createSuccessEnvelope(
+                    TOOLS.GRAPH_CYCLES,
+                    emptyResult,
+                    workspace,
+                    { truncated: false, limits: {} }
+                );
             }
 
             const cycles = detector.findCycles({
@@ -93,8 +106,9 @@ Examples:
 
             // Estimate tokens
             const tokensEstimate = Math.ceil(JSON.stringify(cycles).length / 4);
+            const truncated = cycles.length >= (input.maxCycles ?? 20);
 
-            return {
+            const result: GraphCyclesResult = {
                 cycles: cycles.map(c => ({
                     nodes: c.nodes.map(n => n.replace(/^(file|module):/, '')),
                     length: c.length,
@@ -109,10 +123,33 @@ Examples:
                 },
                 meta: {
                     tokensEstimate,
-                    truncated: cycles.length >= (input.maxCycles ?? 20),
+                    truncated,
                     scope: input.scope ?? null,
                 },
             };
+
+            return createSuccessEnvelope(
+                TOOLS.GRAPH_CYCLES,
+                result,
+                workspace,
+                {
+                    truncated,
+                    limits: { maxItems: input.maxCycles ?? 20 },
+                    nextQuerySuggestion: errorCount > 0
+                        ? [{
+                            tool: TOOLS.GRAPH_PATH,
+                            args: { from: result.cycles[0]?.nodes[0], to: result.cycles[0]?.nodes[1] },
+                            reason: 'Trace cycle path for first error-level cycle',
+                        }]
+                        : truncated
+                            ? [{
+                                tool: TOOLS.GRAPH_CYCLES,
+                                args: { ...input, scope: input.scope, maxCycles: (input.maxCycles ?? 20) + 10 },
+                                reason: 'More cycles available',
+                            }]
+                            : undefined,
+                }
+            );
         },
     };
 }

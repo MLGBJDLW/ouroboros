@@ -75,8 +75,9 @@ describe('createGraphImpactTool', () => {
 
         const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(true);
-        expect(output.data.target).toBe('src/utils.ts');
-        expect(output.data.directDependents).toHaveLength(2);
+        expect(output.data.result.target).toBe('src/utils.ts');
+        expect(output.data.result.directDependents).toHaveLength(2);
+        expect(output.data.tool).toBe('ouroborosai_graph_impact');
         expect(mockManager.getImpact).toHaveBeenCalledWith('src/utils.ts', undefined);
     });
 
@@ -109,7 +110,8 @@ describe('createGraphImpactTool', () => {
 
         const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
-        expect(output.error).toBe('Test error');
+        expect(output.data.result.error.message).toBe('Test error');
+        expect(output.data.result.error.code).toBe('INTERNAL_ERROR');
     });
 
     it('should reject invalid input', async () => {
@@ -124,6 +126,6 @@ describe('createGraphImpactTool', () => {
 
         const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
         expect(output.success).toBe(false);
-        expect(output.error).toContain('Invalid input');
+        expect(output.data.result.error.code).toBe('INVALID_INPUT');
     });
 });

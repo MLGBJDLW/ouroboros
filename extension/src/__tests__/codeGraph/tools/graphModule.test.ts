@@ -38,7 +38,9 @@ describe('createGraphModuleTool', () => {
         const tool = createGraphModuleTool(mockManager);
         const result = await tool.execute({ target: 'src/utils/helpers.ts' });
 
-        expect(result).toEqual(mockResult);
+        expect(result.success).toBe(true);
+        expect(result.data.result).toEqual(mockResult);
+        expect(result.data.tool).toBe('ouroborosai_graph_module');
         expect(mockQuery.module).toHaveBeenCalledWith('src/utils/helpers.ts', {
             includeTransitive: undefined,
         });
@@ -74,10 +76,11 @@ describe('createGraphModuleTool', () => {
         const tool = createGraphModuleTool(nullManager);
         const result = await tool.execute({ target: 'src/test.ts' });
 
-        expect(result.id).toBe('file:src/test.ts');
-        expect(result.path).toBe('src/test.ts');
-        expect(result.imports).toHaveLength(0);
-        expect(result.isBarrel).toBe(false);
+        expect(result.success).toBe(true);
+        expect(result.data.result.id).toBe('file:src/test.ts');
+        expect(result.data.result.path).toBe('src/test.ts');
+        expect(result.data.result.imports).toHaveLength(0);
+        expect(result.data.result.isBarrel).toBe(false);
     });
 
     it('should have correct tool metadata', () => {

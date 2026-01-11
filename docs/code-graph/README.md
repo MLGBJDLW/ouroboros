@@ -55,6 +55,7 @@ This keeps token usage stable and predictable.
 | [Tools Reference](./TOOLS.md) | LM Tools API specification |
 | [Issue Taxonomy](./ISSUES.md) | Missing Links classification |
 | [Upgrade Path](./UPGRADE_PATH.md) | Roadmap from MVP to full system |
+| [Envelope Format](./ENVELOPE.md) | Unified response format specification |
 
 ## Quick Start (After Implementation)
 

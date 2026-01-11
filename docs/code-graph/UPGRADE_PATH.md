@@ -4,14 +4,14 @@
 
 ## Version Overview
 
-| Version | Focus | Timeline | Key Features |
-|---------|-------|----------|--------------|
-| MVP (v0.1) | Core Value | 2-3 weeks | TS indexing, 3 issues, 3 tools |
-| v0.2 | Accuracy | 2 weeks | tsconfig paths, barrel handling |
-| v0.3 | Frameworks | 3 weeks | Express, Next.js, NestJS adapters |
-| v0.4 | Multi-lang | 3 weeks | Python, generic fallback |
-| v0.5 | Architecture | 2 weeks | Cycles, layer rules |
-| v1.0 | Production | 2 weeks | Polish, performance, docs |
+| Version | Focus | Status | Key Features |
+|---------|-------|--------|--------------|
+| MVP (v0.1) | Core Value | ✅ Done | TS indexing, 3 issues, 3 tools |
+| v0.2 | Accuracy | ✅ Done | tsconfig paths, barrel handling, annotations |
+| v0.3 | Frameworks | ✅ Done | Express, Next.js, NestJS, CLI adapters |
+| v0.4 | Multi-lang | ✅ Done | Python, Rust, Go, Java + tree-sitter |
+| v0.5 | Architecture | ✅ Done | Cycles, layer rules |
+| v1.0 | Production | ✅ Done | Query cache, parallel indexing, unified envelope |
 
 ---
 

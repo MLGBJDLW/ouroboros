@@ -40,10 +40,12 @@ describe('createGraphAnnotationsTool', () => {
             const tool = createGraphAnnotationsTool(mockManager);
             const result = await tool.execute({ action: 'list' });
 
-            expect(result).toHaveProperty('edges');
-            expect(result).toHaveProperty('entrypoints');
-            expect(result).toHaveProperty('ignores');
-            expect(result).toHaveProperty('stats');
+            expect(result.success).toBe(true);
+            expect(result.data.result).toHaveProperty('edges');
+            expect(result.data.result).toHaveProperty('entrypoints');
+            expect(result.data.result).toHaveProperty('ignores');
+            expect(result.data.result).toHaveProperty('stats');
+            expect(result.data.tool).toBe('ouroborosai_graph_annotations');
         });
     });
 
@@ -58,7 +60,10 @@ describe('createGraphAnnotationsTool', () => {
                 reason: 'dynamic require',
             });
 
-            expect(result).toEqual({ success: true, message: expect.stringContaining('Added edge') });
+            expect(result.success).toBe(true);
+            expect(result.data.result).toHaveProperty('success', true);
+            expect(result.data.result).toHaveProperty('message');
+            expect((result.data.result as { message: string }).message).toContain('Added edge');
             expect(mockAnnotationManager.addEdge).toHaveBeenCalled();
         });
 
@@ -66,7 +71,9 @@ describe('createGraphAnnotationsTool', () => {
             const tool = createGraphAnnotationsTool(mockManager);
             const result = await tool.execute({ action: 'addEdge' });
 
-            expect(result).toEqual({ success: false, message: expect.stringContaining('required') });
+            expect(result.success).toBe(false);
+            expect(result.data.result).toHaveProperty('error');
+            expect((result.data.result as { error: { code: string } }).error.code).toBe('MISSING_PARAMS');
         });
     });
 
@@ -80,7 +87,9 @@ describe('createGraphAnnotationsTool', () => {
                 name: 'Cleanup Worker',
             });
 
-            expect(result).toEqual({ success: true, message: expect.stringContaining('Added entrypoint') });
+            expect(result.success).toBe(true);
+            expect(result.data.result).toHaveProperty('success', true);
+            expect((result.data.result as { message: string }).message).toContain('Added entrypoint');
             expect(mockAnnotationManager.addEntrypoint).toHaveBeenCalled();
         });
 
@@ -88,7 +97,8 @@ describe('createGraphAnnotationsTool', () => {
             const tool = createGraphAnnotationsTool(mockManager);
             const result = await tool.execute({ action: 'addEntrypoint', path: 'test.ts' });
 
-            expect(result).toEqual({ success: false, message: expect.stringContaining('required') });
+            expect(result.success).toBe(false);
+            expect((result.data.result as { error: { code: string } }).error.code).toBe('MISSING_PARAMS');
         });
     });
 
@@ -102,7 +112,9 @@ describe('createGraphAnnotationsTool', () => {
                 ignoreReason: 'Legacy code',
             });
 
-            expect(result).toEqual({ success: true, message: expect.stringContaining('Added ignore') });
+            expect(result.success).toBe(true);
+            expect(result.data.result).toHaveProperty('success', true);
+            expect((result.data.result as { message: string }).message).toContain('Added ignore');
             expect(mockAnnotationManager.addIgnore).toHaveBeenCalled();
         });
 
@@ -110,7 +122,8 @@ describe('createGraphAnnotationsTool', () => {
             const tool = createGraphAnnotationsTool(mockManager);
             const result = await tool.execute({ action: 'addIgnore' });
 
-            expect(result).toEqual({ success: false, message: expect.stringContaining('required') });
+            expect(result.success).toBe(false);
+            expect((result.data.result as { error: { code: string } }).error.code).toBe('MISSING_PARAMS');
         });
     });
 
@@ -124,7 +137,8 @@ describe('createGraphAnnotationsTool', () => {
                 to: 'b.ts',
             });
 
-            expect(result).toEqual({ success: true, message: 'Edge removed' });
+            expect(result.success).toBe(true);
+            expect(result.data.result).toEqual({ success: true, message: 'Edge removed' });
         });
 
         it('should remove entrypoint', async () => {
@@ -135,7 +149,8 @@ describe('createGraphAnnotationsTool', () => {
                 path: 'main.ts',
             });
 
-            expect(result).toEqual({ success: true, message: 'Entrypoint removed' });
+            expect(result.success).toBe(true);
+            expect(result.data.result).toEqual({ success: true, message: 'Entrypoint removed' });
         });
 
         it('should remove ignore rule', async () => {
@@ -147,7 +162,8 @@ describe('createGraphAnnotationsTool', () => {
                 ignorePath: 'legacy/*',
             });
 
-            expect(result).toEqual({ success: true, message: 'Ignore rule removed' });
+            expect(result.success).toBe(true);
+            expect(result.data.result).toEqual({ success: true, message: 'Ignore rule removed' });
         });
     });
 
@@ -157,14 +173,16 @@ describe('createGraphAnnotationsTool', () => {
             const tool = createGraphAnnotationsTool(nullManager);
             const result = await tool.execute({ action: 'list' });
 
-            expect(result).toEqual({ success: false, message: expect.stringContaining('not available') });
+            expect(result.success).toBe(false);
+            expect((result.data.result as { error: { code: string } }).error.code).toBe('NOT_AVAILABLE');
         });
 
         it('should handle unknown action', async () => {
             const tool = createGraphAnnotationsTool(mockManager);
             const result = await tool.execute({ action: 'unknown' as 'list' });
 
-            expect(result).toEqual({ success: false, message: expect.stringContaining('Unknown action') });
+            expect(result.success).toBe(false);
+            expect((result.data.result as { error: { code: string } }).error.code).toBe('UNKNOWN_ACTION');
         });
     });
 

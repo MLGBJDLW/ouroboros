@@ -7,6 +7,13 @@ import * as vscode from 'vscode';
 import { z } from 'zod';
 import type { CodeGraphManager } from '../CodeGraphManager';
 import { createLogger } from '../../utils/logger';
+import {
+    createSuccessEnvelope,
+    createErrorEnvelope,
+    envelopeToResult,
+    getWorkspaceContext,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 const logger = createLogger('GraphImpactTool');
 
@@ -31,6 +38,7 @@ export function createGraphImpactTool(
             _token: vscode.CancellationToken
         ): Promise<vscode.LanguageModelToolResult> {
             const input = options.input;
+            const workspace = getWorkspaceContext();
 
             logger.info('Graph impact requested', input);
 
@@ -38,14 +46,14 @@ export function createGraphImpactTool(
                 // Validate input
                 const parsed = GraphImpactInputSchema.safeParse(input);
                 if (!parsed.success) {
-                    return new vscode.LanguageModelToolResult([
-                        new vscode.LanguageModelTextPart(
-                            JSON.stringify({
-                                success: false,
-                                error: 'Invalid input: ' + parsed.error.message,
-                            })
-                        ),
-                    ]);
+                    const envelope = createErrorEnvelope(
+                        TOOLS.GRAPH_IMPACT,
+                        'INVALID_INPUT',
+                        'Invalid input: ' + parsed.error.message,
+                        workspace,
+                        { errors: parsed.error.errors }
+                    );
+                    return envelopeToResult(envelope);
                 }
 
                 const result = manager.getImpact(parsed.data.target, parsed.data.depth);
@@ -57,24 +65,33 @@ export function createGraphImpactTool(
                     tokensEstimate: result.meta.tokensEstimate,
                 });
 
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(
-                        JSON.stringify({
-                            success: true,
-                            data: result,
-                        })
-                    ),
-                ]);
+                const envelope = createSuccessEnvelope(
+                    TOOLS.GRAPH_IMPACT,
+                    result,
+                    workspace,
+                    {
+                        truncated: result.meta.truncated ?? false,
+                        limits: { maxDepth: parsed.data.depth ?? 2 },
+                        nextQuerySuggestion: result.riskAssessment.level === 'high' ||
+                            result.riskAssessment.level === 'critical'
+                            ? [{
+                                tool: TOOLS.GRAPH_PATH,
+                                args: { from: result.target, to: result.affectedEntrypoints[0]?.path },
+                                reason: 'High risk - trace dependency path to entrypoint',
+                            }]
+                            : undefined,
+                    }
+                );
+                return envelopeToResult(envelope);
             } catch (error) {
                 logger.error('Graph impact error:', error);
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(
-                        JSON.stringify({
-                            success: false,
-                            error: error instanceof Error ? error.message : 'Unknown error',
-                        })
-                    ),
-                ]);
+                const envelope = createErrorEnvelope(
+                    TOOLS.GRAPH_IMPACT,
+                    'INTERNAL_ERROR',
+                    error instanceof Error ? error.message : 'Unknown error',
+                    workspace
+                );
+                return envelopeToResult(envelope);
             }
         },
     };

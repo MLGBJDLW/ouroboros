@@ -6,6 +6,13 @@
 import type * as vscode from 'vscode';
 import type { AnnotationManager } from '../annotations/AnnotationManager';
 import type { AnnotationsResult, IssueKind, EntrypointType, Confidence } from '../core/types';
+import {
+    createSuccessEnvelope,
+    createErrorEnvelope,
+    getWorkspaceContext,
+    type ToolEnvelope,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 export type AnnotationAction = 'list' | 'addEdge' | 'addEntrypoint' | 'addIgnore' | 'remove';
 
@@ -32,7 +39,7 @@ export interface GraphAnnotationsTool {
     name: string;
     description: string;
     inputSchema: object;
-    execute: (input: GraphAnnotationsInput) => Promise<AnnotationsResult | { success: boolean; message: string }>;
+    execute: (input: GraphAnnotationsInput) => Promise<ToolEnvelope<AnnotationsResult | { success: boolean; message: string }>>;
 }
 
 export function createGraphAnnotationsTool(
@@ -115,23 +122,49 @@ Examples:
             },
         },
 
-        async execute(input: GraphAnnotationsInput): Promise<AnnotationsResult | { success: boolean; message: string }> {
+        async execute(input: GraphAnnotationsInput): Promise<ToolEnvelope<AnnotationsResult | { success: boolean; message: string }>> {
+            const workspace = getWorkspaceContext();
             const annotationManager = manager.getAnnotationManager();
             
             if (!annotationManager) {
-                return {
-                    success: false,
-                    message: 'Annotation manager not available',
-                };
+                return createErrorEnvelope(
+                    TOOLS.GRAPH_ANNOTATIONS,
+                    'NOT_AVAILABLE',
+                    'Annotation manager not available',
+                    workspace
+                );
             }
 
             switch (input.action) {
-                case 'list':
-                    return listAnnotations(annotationManager);
+                case 'list': {
+                    const result = await listAnnotations(annotationManager);
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_ANNOTATIONS,
+                        result,
+                        workspace,
+                        {
+                            truncated: false,
+                            limits: {},
+                            nextQuerySuggestion: result.stats.totalEdges === 0 && result.stats.totalEntrypoints === 0
+                                ? [{
+                                    tool: TOOLS.GRAPH_ISSUES,
+                                    args: { kind: 'DYNAMIC_EDGE_UNKNOWN', limit: 10 },
+                                    reason: 'No annotations yet - check for dynamic edges to annotate',
+                                }]
+                                : undefined,
+                        }
+                    );
+                }
 
                 case 'addEdge':
                     if (!input.from || !input.to) {
-                        return { success: false, message: 'from and to are required for addEdge' };
+                        return createErrorEnvelope(
+                            TOOLS.GRAPH_ANNOTATIONS,
+                            'MISSING_PARAMS',
+                            'from and to are required for addEdge',
+                            workspace,
+                            { required: ['from', 'to'] }
+                        );
                     }
                     await annotationManager.addEdge({
                         from: input.from,
@@ -140,47 +173,101 @@ Examples:
                         confidence: 'high' as Confidence,
                         reason: input.reason ?? 'manual annotation',
                     });
-                    return { success: true, message: `Added edge: ${input.from} → ${input.to}` };
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_ANNOTATIONS,
+                        { success: true, message: `Added edge: ${input.from} → ${input.to}` },
+                        workspace,
+                        { truncated: false, limits: {} }
+                    );
 
                 case 'addEntrypoint':
                     if (!input.path || !input.entrypointType || !input.name) {
-                        return { success: false, message: 'path, entrypointType, and name are required for addEntrypoint' };
+                        return createErrorEnvelope(
+                            TOOLS.GRAPH_ANNOTATIONS,
+                            'MISSING_PARAMS',
+                            'path, entrypointType, and name are required for addEntrypoint',
+                            workspace,
+                            { required: ['path', 'entrypointType', 'name'] }
+                        );
                     }
                     await annotationManager.addEntrypoint({
                         path: input.path,
                         type: input.entrypointType,
                         name: input.name,
                     });
-                    return { success: true, message: `Added entrypoint: ${input.name} (${input.path})` };
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_ANNOTATIONS,
+                        { success: true, message: `Added entrypoint: ${input.name} (${input.path})` },
+                        workspace,
+                        { truncated: false, limits: {} }
+                    );
 
                 case 'addIgnore':
                     if (!input.issueKind || !input.ignorePath) {
-                        return { success: false, message: 'issueKind and ignorePath are required for addIgnore' };
+                        return createErrorEnvelope(
+                            TOOLS.GRAPH_ANNOTATIONS,
+                            'MISSING_PARAMS',
+                            'issueKind and ignorePath are required for addIgnore',
+                            workspace,
+                            { required: ['issueKind', 'ignorePath'] }
+                        );
                     }
                     await annotationManager.addIgnore({
                         issueKind: input.issueKind,
                         path: input.ignorePath,
                         reason: input.ignoreReason ?? 'manual ignore',
                     });
-                    return { success: true, message: `Added ignore rule: ${input.issueKind} for ${input.ignorePath}` };
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_ANNOTATIONS,
+                        { success: true, message: `Added ignore rule: ${input.issueKind} for ${input.ignorePath}` },
+                        workspace,
+                        { truncated: false, limits: {} }
+                    );
 
                 case 'remove':
                     if (input.removeType === 'edge' && input.from && input.to) {
                         const removed = await annotationManager.removeEdge(input.from, input.to);
-                        return { success: removed, message: removed ? 'Edge removed' : 'Edge not found' };
+                        return createSuccessEnvelope(
+                            TOOLS.GRAPH_ANNOTATIONS,
+                            { success: removed, message: removed ? 'Edge removed' : 'Edge not found' },
+                            workspace,
+                            { truncated: false, limits: {} }
+                        );
                     }
                     if (input.removeType === 'entrypoint' && input.path) {
                         const removed = await annotationManager.removeEntrypoint(input.path);
-                        return { success: removed, message: removed ? 'Entrypoint removed' : 'Entrypoint not found' };
+                        return createSuccessEnvelope(
+                            TOOLS.GRAPH_ANNOTATIONS,
+                            { success: removed, message: removed ? 'Entrypoint removed' : 'Entrypoint not found' },
+                            workspace,
+                            { truncated: false, limits: {} }
+                        );
                     }
                     if (input.removeType === 'ignore' && input.issueKind && input.ignorePath) {
                         const removed = await annotationManager.removeIgnore(input.issueKind, input.ignorePath);
-                        return { success: removed, message: removed ? 'Ignore rule removed' : 'Ignore rule not found' };
+                        return createSuccessEnvelope(
+                            TOOLS.GRAPH_ANNOTATIONS,
+                            { success: removed, message: removed ? 'Ignore rule removed' : 'Ignore rule not found' },
+                            workspace,
+                            { truncated: false, limits: {} }
+                        );
                     }
-                    return { success: false, message: 'Invalid remove parameters' };
+                    return createErrorEnvelope(
+                        TOOLS.GRAPH_ANNOTATIONS,
+                        'INVALID_PARAMS',
+                        'Invalid remove parameters',
+                        workspace,
+                        { removeType: input.removeType }
+                    );
 
                 default:
-                    return { success: false, message: `Unknown action: ${input.action}` };
+                    return createErrorEnvelope(
+                        TOOLS.GRAPH_ANNOTATIONS,
+                        'UNKNOWN_ACTION',
+                        `Unknown action: ${input.action}`,
+                        workspace,
+                        { action: input.action }
+                    );
             }
         },
     };

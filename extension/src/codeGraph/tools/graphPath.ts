@@ -6,6 +6,13 @@
 import type * as vscode from 'vscode';
 import type { GraphQuery } from '../core/GraphQuery';
 import type { PathResult } from '../core/types';
+import {
+    createSuccessEnvelope,
+    createErrorEnvelope,
+    getWorkspaceContext,
+    type ToolEnvelope,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 export interface GraphPathInput {
     from: string;
@@ -18,7 +25,7 @@ export interface GraphPathTool {
     name: string;
     description: string;
     inputSchema: object;
-    execute: (input: GraphPathInput) => Promise<PathResult>;
+    execute: (input: GraphPathInput) => Promise<ToolEnvelope<PathResult>>;
 }
 
 export function createGraphPathTool(
@@ -57,11 +64,12 @@ Examples:
             },
         },
 
-        async execute(input: GraphPathInput): Promise<PathResult> {
+        async execute(input: GraphPathInput): Promise<ToolEnvelope<PathResult>> {
+            const workspace = getWorkspaceContext();
             const query = manager.getQuery();
             
             if (!query) {
-                return {
+                const emptyResult: PathResult = {
                     from: input.from,
                     to: input.to,
                     paths: [],
@@ -73,12 +81,44 @@ Examples:
                         maxDepthReached: false,
                     },
                 };
+                return createSuccessEnvelope(
+                    TOOLS.GRAPH_PATH,
+                    emptyResult,
+                    workspace,
+                    { truncated: false, limits: {} }
+                );
             }
 
-            return query.path(input.from, input.to, {
+            const result = query.path(input.from, input.to, {
                 maxDepth: input.maxDepth,
                 maxPaths: input.maxPaths,
             });
+
+            return createSuccessEnvelope(
+                TOOLS.GRAPH_PATH,
+                result,
+                workspace,
+                {
+                    truncated: result.meta.truncated ?? false,
+                    limits: {
+                        maxDepth: input.maxDepth ?? 5,
+                        maxItems: input.maxPaths ?? 3,
+                    },
+                    nextQuerySuggestion: result.connected && result.paths.length > 0
+                        ? [{
+                            tool: TOOLS.GRAPH_IMPACT,
+                            args: { target: input.from, depth: 2 },
+                            reason: 'Analyze full impact of changes to source',
+                        }]
+                        : !result.connected
+                            ? [{
+                                tool: TOOLS.GRAPH_MODULE,
+                                args: { target: input.from },
+                                reason: 'Modules not connected - inspect source module',
+                            }]
+                            : undefined,
+                }
+            );
         },
     };
 }

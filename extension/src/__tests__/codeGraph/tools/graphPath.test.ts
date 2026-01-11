@@ -43,7 +43,9 @@ describe('createGraphPathTool', () => {
         const tool = createGraphPathTool(mockManager);
         const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
 
-        expect(result).toEqual(mockResult);
+        expect(result.success).toBe(true);
+        expect(result.data.result).toEqual(mockResult);
+        expect(result.data.tool).toBe('ouroborosai_graph_path');
         expect(mockQuery.path).toHaveBeenCalledWith('src/a.ts', 'src/b.ts', {
             maxDepth: undefined,
             maxPaths: undefined,
@@ -76,9 +78,10 @@ describe('createGraphPathTool', () => {
         const tool = createGraphPathTool(nullManager);
         const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
 
-        expect(result.connected).toBe(false);
-        expect(result.paths).toHaveLength(0);
-        expect(result.shortestPath).toBeNull();
+        expect(result.success).toBe(true);
+        expect(result.data.result.connected).toBe(false);
+        expect(result.data.result.paths).toHaveLength(0);
+        expect(result.data.result.shortestPath).toBeNull();
     });
 
     it('should have correct tool metadata', () => {

@@ -6,6 +6,12 @@
 import type * as vscode from 'vscode';
 import type { GraphQuery } from '../core/GraphQuery';
 import type { ModuleResult } from '../core/types';
+import {
+    createSuccessEnvelope,
+    getWorkspaceContext,
+    type ToolEnvelope,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 export interface GraphModuleInput {
     target: string;
@@ -16,7 +22,7 @@ export interface GraphModuleTool {
     name: string;
     description: string;
     inputSchema: object;
-    execute: (input: GraphModuleInput) => Promise<ModuleResult>;
+    execute: (input: GraphModuleInput) => Promise<ToolEnvelope<ModuleResult>>;
 }
 
 export function createGraphModuleTool(
@@ -48,11 +54,12 @@ Examples:
             },
         },
 
-        async execute(input: GraphModuleInput): Promise<ModuleResult> {
+        async execute(input: GraphModuleInput): Promise<ToolEnvelope<ModuleResult>> {
+            const workspace = getWorkspaceContext();
             const query = manager.getQuery();
             
             if (!query) {
-                return {
+                const emptyResult: ModuleResult = {
                     id: `file:${input.target}`,
                     path: input.target,
                     name: input.target.split('/').pop() ?? input.target,
@@ -67,11 +74,40 @@ Examples:
                         tokensEstimate: 100,
                     },
                 };
+                return createSuccessEnvelope(
+                    TOOLS.GRAPH_MODULE,
+                    emptyResult,
+                    workspace,
+                    { truncated: false, limits: {} }
+                );
             }
 
-            return query.module(input.target, {
+            const result = query.module(input.target, {
                 includeTransitive: input.includeTransitive,
             });
+
+            return createSuccessEnvelope(
+                TOOLS.GRAPH_MODULE,
+                result,
+                workspace,
+                {
+                    truncated: false,
+                    limits: {},
+                    nextQuerySuggestion: result.importedBy.length > 5
+                        ? [{
+                            tool: TOOLS.GRAPH_IMPACT,
+                            args: { target: input.target, depth: 2 },
+                            reason: `High importer count (${result.importedBy.length}) - analyze impact`,
+                        }]
+                        : result.isBarrel
+                            ? [{
+                                tool: TOOLS.GRAPH_PATH,
+                                args: { from: result.imports[0]?.path, to: input.target },
+                                reason: 'Barrel file detected - trace re-export chain',
+                            }]
+                            : undefined,
+                }
+            );
         },
     };
 }

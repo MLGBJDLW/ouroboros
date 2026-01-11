@@ -5,6 +5,12 @@
 
 import type * as vscode from 'vscode';
 import type { LayerAnalyzer, LayerRule } from '../analyzers/LayerAnalyzer';
+import {
+    createSuccessEnvelope,
+    getWorkspaceContext,
+    type ToolEnvelope,
+} from './envelope';
+import { TOOLS } from '../../constants';
 
 export interface GraphLayersInput {
     action: 'check' | 'list' | 'suggest';
@@ -52,7 +58,7 @@ export interface GraphLayersTool {
     name: string;
     description: string;
     inputSchema: object;
-    execute: (input: GraphLayersInput) => Promise<GraphLayersResult>;
+    execute: (input: GraphLayersInput) => Promise<ToolEnvelope<GraphLayersResult>>;
 }
 
 export function createGraphLayersTool(
@@ -103,14 +109,21 @@ Examples:
             },
         },
 
-        async execute(input: GraphLayersInput): Promise<GraphLayersResult> {
+        async execute(input: GraphLayersInput): Promise<ToolEnvelope<GraphLayersResult>> {
+            const workspace = getWorkspaceContext();
             const analyzer = getLayerAnalyzer();
 
             if (!analyzer) {
-                return {
+                const emptyResult: GraphLayersResult = {
                     stats: {},
                     meta: { tokensEstimate: 50, action: input.action, scope: null },
                 };
+                return createSuccessEnvelope(
+                    TOOLS.GRAPH_LAYERS,
+                    emptyResult,
+                    workspace,
+                    { truncated: false, limits: {} }
+                );
             }
 
             switch (input.action) {
@@ -121,7 +134,7 @@ Examples:
                     const errorCount = violations.filter(v => v.rule.severity === 'error').length;
                     const warningCount = violations.filter(v => v.rule.severity === 'warning').length;
 
-                    return {
+                    const result: GraphLayersResult = {
                         violations: violations.map(v => ({
                             rule: v.rule.name,
                             sourceFile: v.sourceFile,
@@ -141,11 +154,34 @@ Examples:
                             scope: input.scope ?? null,
                         },
                     };
+
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_LAYERS,
+                        result,
+                        workspace,
+                        {
+                            truncated: false,
+                            limits: {},
+                            nextQuerySuggestion: errorCount > 0
+                                ? [{
+                                    tool: TOOLS.GRAPH_PATH,
+                                    args: { from: violations[0]?.sourceFile, to: violations[0]?.targetFile },
+                                    reason: 'Trace violation path for first error',
+                                }]
+                                : rules.length === 0
+                                    ? [{
+                                        tool: TOOLS.GRAPH_LAYERS,
+                                        args: { action: 'suggest' },
+                                        reason: 'No rules configured - get suggestions',
+                                    }]
+                                    : undefined,
+                        }
+                    );
                 }
 
                 case 'list': {
                     const rules = analyzer.getRules();
-                    return {
+                    const result: GraphLayersResult = {
                         rules: rules.map(r => ({
                             name: r.name,
                             from: r.from,
@@ -160,11 +196,32 @@ Examples:
                             scope: null,
                         },
                     };
+
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_LAYERS,
+                        result,
+                        workspace,
+                        {
+                            truncated: false,
+                            limits: {},
+                            nextQuerySuggestion: rules.length === 0
+                                ? [{
+                                    tool: TOOLS.GRAPH_LAYERS,
+                                    args: { action: 'suggest' },
+                                    reason: 'No rules configured - get suggestions',
+                                }]
+                                : [{
+                                    tool: TOOLS.GRAPH_LAYERS,
+                                    args: { action: 'check' },
+                                    reason: 'Check for violations with current rules',
+                                }],
+                        }
+                    );
                 }
 
                 case 'suggest': {
                     const suggestions = analyzer.suggestRules();
-                    return {
+                    const result: GraphLayersResult = {
                         suggestions: suggestions.map(r => ({
                             name: r.name,
                             from: r.from,
@@ -179,13 +236,37 @@ Examples:
                             scope: null,
                         },
                     };
+
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_LAYERS,
+                        result,
+                        workspace,
+                        {
+                            truncated: false,
+                            limits: {},
+                            nextQuerySuggestion: suggestions.length > 0
+                                ? [{
+                                    tool: TOOLS.GRAPH_LAYERS,
+                                    args: { action: 'check', rules: suggestions.slice(0, 3) },
+                                    reason: 'Test suggested rules for violations',
+                                }]
+                                : undefined,
+                        }
+                    );
                 }
 
-                default:
-                    return {
+                default: {
+                    const emptyResult: GraphLayersResult = {
                         stats: {},
                         meta: { tokensEstimate: 50, action: input.action, scope: null },
                     };
+                    return createSuccessEnvelope(
+                        TOOLS.GRAPH_LAYERS,
+                        emptyResult,
+                        workspace,
+                        { truncated: false, limits: {} }
+                    );
+                }
             }
         },
     };
