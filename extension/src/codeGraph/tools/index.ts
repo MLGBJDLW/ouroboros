@@ -9,13 +9,13 @@ export { createGraphIssuesTool, GraphIssuesInputSchema, type GraphIssuesInput } 
 export { createGraphImpactTool, GraphImpactInputSchema, type GraphImpactInput } from './graphImpact';
 
 // v0.2 Tools
-export { createGraphPathTool, registerGraphPathTool, type GraphPathInput } from './graphPath';
-export { createGraphModuleTool, registerGraphModuleTool, type GraphModuleInput } from './graphModule';
-export { createGraphAnnotationsTool, registerGraphAnnotationsTool, type GraphAnnotationsInput } from './graphAnnotations';
+export { createGraphPathTool, type GraphPathInput } from './graphPath';
+export { createGraphModuleTool, type GraphModuleInput } from './graphModule';
+export { createGraphAnnotationsTool, type GraphAnnotationsInput } from './graphAnnotations';
 
 // v0.5 Tools
-export { createGraphCyclesTool, registerGraphCyclesTool, type GraphCyclesInput, type GraphCyclesResult } from './graphCycles';
-export { createGraphLayersTool, registerGraphLayersTool, type GraphLayersInput, type GraphLayersResult } from './graphLayers';
+export { createGraphCyclesTool, type GraphCyclesInput, type GraphCyclesResult } from './graphCycles';
+export { createGraphLayersTool, type GraphLayersInput, type GraphLayersResult } from './graphLayers';
 
 // v1.0 Envelope
 export {

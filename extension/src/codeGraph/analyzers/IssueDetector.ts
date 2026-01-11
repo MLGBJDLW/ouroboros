@@ -4,7 +4,7 @@
  */
 
 import type { GraphStore } from '../core/GraphStore';
-import type { GraphIssue, IssueSeverity } from '../core/types';
+import type { GraphIssue, IssueSeverity, GraphNode } from '../core/types';
 import { ReachabilityAnalyzer } from './ReachabilityAnalyzer';
 
 export class IssueDetector {

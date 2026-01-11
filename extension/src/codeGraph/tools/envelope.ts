@@ -41,6 +41,15 @@ export interface ResponseMeta {
     limits: {
         maxItems?: number;
         maxDepth?: number;
+        // Additional limit types for specific tools
+        hotspotLimit?: number;
+        entrypointLimit?: number;
+        dependentLimit?: number;
+        maxCycles?: number;
+        importLimit?: number;
+        exportLimit?: number;
+        importedByLimit?: number;
+        maxPaths?: number;
     };
     nextQuerySuggestion?: NextQuerySuggestion[];
     page?: PageInfo;
