@@ -80,7 +80,6 @@ When `ouroboros_ask` tool is available, use these tools instead of Python comman
 | Menu | `ouroboros_menu` | `{ "question": "Choose:", "options": ["A", "B"] }` |
 | Confirm | `ouroboros_confirm` | `{ "question": "Proceed?" }` |
 | Review | `ouroboros_plan_review` | `{ "plan": "...", "title": "Review" }` |
-| Progress | `ouroboros_phase_progress` | `{ "workflow": "spec", "currentPhase": 2 }` |
 | Handoff | `ouroboros_agent_handoff` | `{ "from": "god", "to": "coder" }` |
 
 ### TUI Mode (Terminal)

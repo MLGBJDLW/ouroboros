@@ -1405,9 +1405,19 @@ export async function fetchAndTransformPrompts(
         const content = await fetchFromGitHub(file);
         if (content) {
             const destUri = vscode.Uri.joinPath(workspaceRoot, file);
-            // Create parent directories
-            const parentDir = vscode.Uri.joinPath(destUri, '..');
-            await vscode.workspace.fs.createDirectory(parentDir);
+            
+            // Create all parent directories recursively
+            const pathParts = file.split('/');
+            let currentPath = workspaceRoot;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+                currentPath = vscode.Uri.joinPath(currentPath, pathParts[i]);
+                try {
+                    await vscode.workspace.fs.createDirectory(currentPath);
+                } catch {
+                    // Directory may already exist, ignore error
+                }
+            }
+            
             await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
             success++;
             logger.info(`Copied template: ${file}`);
@@ -1457,7 +1467,6 @@ Use the Ouroboros extension sidebar or type \`/ouroboros\` in Copilot Chat.
 | \`ouroborosai_menu\` | Show multiple choice menu |
 | \`ouroborosai_confirm\` | Request yes/no confirmation |
 | \`ouroborosai_plan_review\` | Request plan/spec review |
-| \`ouroborosai_phase_progress\` | Update workflow progress |
 | \`ouroborosai_agent_handoff\` | Track agent handoffs |
 `;
 
@@ -1599,6 +1608,7 @@ function mergeYamlContent(existingYaml: string, newYaml: string): string {
  * 3. Merge YAML: use new YAML as base, preserve user-customized fields (tools, description)
  * 4. Combine merged YAML with new body
  * 5. Re-inject Ouroboros tools if needed (for orchestrator files)
+ * 6. Re-inject Code Graph tools for worker files
  */
 export function preserveYamlFrontmatter(
     existingContent: string,
@@ -1624,9 +1634,13 @@ export function preserveYamlFrontmatter(
     // Build merged content: merged YAML + new body
     let mergedContent = `---\n${mergedYamlContent}\n---\n${newYaml.body}`;
 
-    // For orchestrators, ensure Ouroboros tools are present in YAML
+    // Re-inject tools after YAML merge (since user's tools field may have been preserved)
     if (isOrchestrator) {
+        // For orchestrators, inject all Ouroboros tools (CCL + Code Graph)
         mergedContent = injectOuroborosTools(mergedContent);
+    } else {
+        // For workers, inject Code Graph tools only
+        mergedContent = injectWorkerGraphTools(mergedContent);
     }
 
     return mergedContent;
@@ -1785,9 +1799,21 @@ export async function smartUpdatePrompts(
         const content = await fetchFromGitHub(file);
         if (content) {
             const destUri = vscode.Uri.joinPath(workspaceRoot, file);
-            // Create parent directories
-            const parentDir = vscode.Uri.joinPath(destUri, '..');
-            await vscode.workspace.fs.createDirectory(parentDir);
+            
+            // Create all parent directories recursively
+            // For path like .ouroboros/specs/templates/design-template.md
+            // We need to create .ouroboros, .ouroboros/specs, .ouroboros/specs/templates
+            const pathParts = file.split('/');
+            let currentPath = workspaceRoot;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+                currentPath = vscode.Uri.joinPath(currentPath, pathParts[i]);
+                try {
+                    await vscode.workspace.fs.createDirectory(currentPath);
+                } catch {
+                    // Directory may already exist, ignore error
+                }
+            }
+            
             // Always overwrite template files during update
             await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
             updated++;
