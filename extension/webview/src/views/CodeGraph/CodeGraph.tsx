@@ -510,14 +510,14 @@ export function CodeGraph() {
                                         onClick={() => setGraphSettings(s => ({ ...s, highlightEntrypoints: !s.highlightEntrypoints }))}
                                         title="Highlight entrypoints"
                                     >
-                                        🚀
+                                        <Icon name="rocket" />
                                     </button>
                                     <button
                                         className={`${styles.settingBtn} ${graphSettings.highlightHotspots ? styles.active : ''}`}
                                         onClick={() => setGraphSettings(s => ({ ...s, highlightHotspots: !s.highlightHotspots }))}
                                         title="Highlight hotspots"
                                     >
-                                        🔥
+                                        <Icon name="flame" />
                                     </button>
                                     <div className={styles.settingDivider} />
                                     <button

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `graph_path`: `includeEdgeDetails`
   - `graph_cycles`: `severityFilter`, `includeBreakPoints`
   - `graph_layers`: `severityFilter`, `limit`, `groupByRule`
+- **UI** — Replaced emoji with codicon icons in Graph settings
 
 ---
 
