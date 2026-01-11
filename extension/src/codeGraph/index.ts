@@ -7,6 +7,8 @@
 export { GraphStore } from './core/GraphStore';
 export { GraphQuery } from './core/GraphQuery';
 export { PathResolver, type TSConfigPaths, type ResolvedPath } from './core/PathResolver';
+export { QueryCache, getQueryCache, resetQueryCache, type QueryCacheOptions } from './core/QueryCache';
+export { ParallelIndexer, createParallelIndexer, type ParallelIndexerOptions, type FileToIndex, type ParallelIndexResult } from './core/ParallelIndexer';
 export type {
     GraphNode,
     GraphEdge,

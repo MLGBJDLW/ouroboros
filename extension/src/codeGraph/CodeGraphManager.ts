@@ -23,6 +23,8 @@ import { getAdapterRegistry, registerBuiltinAdapters } from './adapters';
 import { getTreeSitterManager, type TreeSitterManager } from './parsers/TreeSitterManager';
 import { CycleDetector } from './analyzers/CycleDetector';
 import { LayerAnalyzer } from './analyzers/LayerAnalyzer';
+import { QueryCache, getQueryCache } from './core/QueryCache';
+import { ParallelIndexer } from './core/ParallelIndexer';
 import type { AdapterRegistry } from './adapters';
 import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig, FrameworkDetection } from './core/types';
 import { createLogger } from '../utils/logger';
@@ -65,6 +67,8 @@ export class CodeGraphManager implements vscode.Disposable {
     private treeSitterManager: TreeSitterManager;
     private cycleDetector: CycleDetector;
     private layerAnalyzer: LayerAnalyzer;
+    private queryCache: QueryCache;
+    private parallelIndexer: ParallelIndexer;
     private watcher: IncrementalWatcher | null = null;
     private config: GraphConfig;
     private workspaceRoot: string;
@@ -89,6 +93,10 @@ export class CodeGraphManager implements vscode.Disposable {
         // v0.5: Initialize architecture analyzers
         this.cycleDetector = new CycleDetector(this.store);
         this.layerAnalyzer = new LayerAnalyzer(this.store);
+        
+        // v1.0: Initialize performance optimizations
+        this.queryCache = getQueryCache({ maxSize: 100, ttl: 5 * 60 * 1000 });
+        this.parallelIndexer = new ParallelIndexer({ batchSize: 50, maxConcurrency: 4 });
         
         // v0.3: Initialize adapter registry
         registerBuiltinAdapters();
@@ -163,40 +171,43 @@ export class CodeGraphManager implements vscode.Disposable {
 
         try {
             this.store.clear();
+            this.queryCache.invalidate(); // v1.0: Invalidate cache on reindex
 
             // Find all files
-            const files = await this.findFiles();
-            logger.info(`Found ${files.length} files to index`);
+            const uris = await this.findFiles();
+            logger.info(`Found ${uris.length} files to index`);
 
-            let fileCount = 0;
-            for (const file of files) {
-                const filePath = this.getRelativePath(file);
+            // v1.0: Prepare files for parallel indexing
+            const filesToIndex: Array<{ path: string; content: string }> = [];
+            for (const uri of uris) {
+                const filePath = this.getRelativePath(uri);
                 const indexer = this.indexers.find((i) => i.supports(filePath));
-                
                 if (!indexer) continue;
 
                 try {
-                    const content = await this.readFile(file);
+                    const content = await this.readFile(uri);
                     if (content.length > this.config.indexing.maxFileSize) {
                         logger.debug(`Skipping large file: ${filePath}`);
                         continue;
                     }
-
-                    const result = await indexer.indexFile(filePath, content);
-                    
-                    for (const node of result.nodes) {
-                        this.store.addNode(node);
-                    }
-                    
-                    for (const edge of result.edges) {
-                        this.store.addEdge(edge);
-                    }
-
-                    fileCount++;
-                } catch (error) {
-                    logger.error(`Error indexing ${filePath}:`, error);
+                    filesToIndex.push({ path: filePath, content });
+                } catch {
+                    logger.debug(`Could not read file: ${filePath}`);
                 }
             }
+
+            // v1.0: Use parallel indexer for better performance
+            const indexResult = await this.parallelIndexer.indexAll(filesToIndex, this.indexers);
+            
+            for (const node of indexResult.nodes) {
+                this.store.addNode(node);
+            }
+            
+            for (const edge of indexResult.edges) {
+                this.store.addEdge(edge);
+            }
+
+            const fileCount = indexResult.stats.successCount;
 
             // Detect issues
             const issues = this.issueDetector.detectAll();
@@ -287,14 +298,15 @@ export class CodeGraphManager implements vscode.Disposable {
     }
 
     // ============================================
-    // Query Methods (for LM Tools)
+    // Query Methods (for LM Tools) - v1.0: with caching
     // ============================================
 
     /**
      * Get graph digest
      */
     getDigest(scope?: string): DigestResult {
-        return this.query.digest({ scope });
+        const cacheKey = `digest:${scope ?? 'all'}`;
+        return this.queryCache.getOrCompute(cacheKey, () => this.query.digest({ scope }));
     }
 
     /**
@@ -306,33 +318,37 @@ export class CodeGraphManager implements vscode.Disposable {
         scope?: string;
         limit?: number;
     }): IssueListResult {
-        return this.query.issues({
+        const cacheKey = `issues:${JSON.stringify(options ?? {})}`;
+        return this.queryCache.getOrCompute(cacheKey, () => this.query.issues({
             kind: options?.kind as import('./core/types').IssueKind,
             severity: options?.severity as import('./core/types').IssueSeverity,
             scope: options?.scope,
             limit: options?.limit,
-        });
+        }));
     }
 
     /**
      * Get impact analysis
      */
     getImpact(target: string, depth?: number): ImpactResult {
-        return this.query.impact(target, { depth });
+        const cacheKey = `impact:${target}:${depth ?? 2}`;
+        return this.queryCache.getOrCompute(cacheKey, () => this.query.impact(target, { depth }));
     }
 
     /**
      * Get path between modules (v0.2)
      */
     getPath(from: string, to: string, maxDepth?: number): PathResult {
-        return this.query.path(from, to, { maxDepth });
+        const cacheKey = `path:${from}:${to}:${maxDepth ?? 5}`;
+        return this.queryCache.getOrCompute(cacheKey, () => this.query.path(from, to, { maxDepth }));
     }
 
     /**
      * Get module details (v0.2)
      */
     getModule(target: string): ModuleResult {
-        return this.query.module(target);
+        const cacheKey = `module:${target}`;
+        return this.queryCache.getOrCompute(cacheKey, () => this.query.module(target));
     }
 
     /**
@@ -389,6 +405,27 @@ export class CodeGraphManager implements vscode.Disposable {
      */
     getQuery(): GraphQuery {
         return this.query;
+    }
+
+    /**
+     * Get query cache (v1.0)
+     */
+    getQueryCache(): QueryCache {
+        return this.queryCache;
+    }
+
+    /**
+     * Get cache statistics (v1.0)
+     */
+    getCacheStats(): ReturnType<QueryCache['getStats']> {
+        return this.queryCache.getStats();
+    }
+
+    /**
+     * Invalidate query cache (v1.0)
+     */
+    invalidateCache(): void {
+        this.queryCache.invalidate();
     }
 
     // ============================================

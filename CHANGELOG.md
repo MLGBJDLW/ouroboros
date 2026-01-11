@@ -194,6 +194,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - graphCycles tool: 10 tests
 - graphLayers tool: 16 tests
 
+#### Added (v1.0 - Production Ready)
+- **QueryCache** — LRU cache for query results:
+  - Automatic invalidation on graph changes
+  - Configurable TTL (default: 5 minutes)
+  - Hit/miss statistics tracking
+  - Pattern-based invalidation
+
+- **ParallelIndexer** — Batch processing for faster indexing:
+  - Configurable batch size (default: 50 files)
+  - Configurable concurrency (default: 4 parallel batches)
+  - Progress callback support
+  - Error collection without stopping
+
+- **Performance Improvements**:
+  - All query methods now use caching (digest, issues, impact, path, module)
+  - Full index uses parallel processing
+  - Cache invalidation on reindex
+
+- **New Manager Methods** (v1.0):
+  - `getQueryCache()` — Access cache instance
+  - `getCacheStats()` — Get hit/miss statistics
+  - `invalidateCache()` — Manual cache invalidation
+
+#### Tests (v1.0)
+- 677 tests passing (+24 new for v1.0)
+- QueryCache: 12 tests
+- ParallelIndexer: 10 tests
+
 ---
 
 ## [3.2.20] - 2026-01-10
