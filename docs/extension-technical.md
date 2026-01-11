@@ -14,7 +14,6 @@ extension/
 │   │   ├── menu.ts         # ouroboros_menu tool
 │   │   ├── confirm.ts      # ouroboros_confirm tool
 │   │   ├── planReview.ts   # ouroboros_plan_review tool
-│   │   ├── phaseProgress.ts# ouroboros_phase_progress tool
 │   │   ├── handoff.ts      # ouroboros_agent_handoff tool
 │   │   ├── schemas.ts      # Zod validation schemas
 │   │   └── types.ts        # TypeScript interfaces
@@ -46,7 +45,6 @@ extension/
 | `ouroboros_menu` | Multiple choice | `question`, `options`, `allowCustom` |
 | `ouroboros_confirm` | Yes/No dialog | `question`, `yesLabel`, `noLabel` |
 | `ouroboros_plan_review` | Document review | `plan`, `title`, `mode` |
-| `ouroboros_phase_progress` | Progress update | `workflow`, `currentPhase`, `totalPhases` |
 | `ouroboros_agent_handoff` | Agent switch | `from`, `to`, `fromLevel`, `toLevel` |
 
 ## Build Commands
