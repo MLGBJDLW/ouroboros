@@ -12,3 +12,7 @@ export { createGraphImpactTool, GraphImpactInputSchema, type GraphImpactInput } 
 export { createGraphPathTool, registerGraphPathTool, type GraphPathInput } from './graphPath';
 export { createGraphModuleTool, registerGraphModuleTool, type GraphModuleInput } from './graphModule';
 export { createGraphAnnotationsTool, registerGraphAnnotationsTool, type GraphAnnotationsInput } from './graphAnnotations';
+
+// v0.5 Tools
+export { createGraphCyclesTool, registerGraphCyclesTool, type GraphCyclesInput, type GraphCyclesResult } from './graphCycles';
+export { createGraphLayersTool, registerGraphLayersTool, type GraphLayersInput, type GraphLayersResult } from './graphLayers';

@@ -161,6 +161,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JavaIndexer: 7 tests
 - GenericIndexer: 12 tests
 
+#### Added (v0.5 - Architecture Analysis)
+- **CycleDetector** — Circular dependency detection using Tarjan's algorithm:
+  - Finds strongly connected components (SCCs) in import graph
+  - Reports cycle severity (warning for 2-3 nodes, error for 4+)
+  - Suggests optimal break points based on external dependencies
+  - Scope filtering for targeted analysis
+
+- **LayerAnalyzer** — Architectural layer rule enforcement:
+  - Define rules like "UI cannot import DB"
+  - Glob pattern matching for layer boundaries
+  - Suggests rules based on project directory structure
+  - Common rules preset (UI/DB/API/Utils separation)
+
+- **2 New LM Tools** (v0.5):
+  - `ouroborosai_graph_cycles` — Detect circular dependencies with break point suggestions
+  - `ouroborosai_graph_layers` — Check/list/suggest architectural layer rules
+
+- **2 New Issue Types**:
+  - `CYCLE_RISK` — Circular dependency detected in import graph
+  - `LAYER_VIOLATION` — Import violates architectural layer rules
+
+- **CodeGraphManager Integration**:
+  - `getCycleDetector()` — Access cycle detector instance
+  - `getLayerAnalyzer()` — Access layer analyzer instance
+  - Cycle and layer issues included in `fullIndex()` results
+
+#### Tests (v0.5)
+- 653 tests passing (+51 new for v0.5)
+- CycleDetector: 11 tests
+- LayerAnalyzer: 15 tests
+- graphCycles tool: 10 tests
+- graphLayers tool: 16 tests
+
 ---
 
 ## [3.2.20] - 2026-01-10

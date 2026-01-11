@@ -486,6 +486,85 @@
                         }
                     }
                 }
+            },
+            {
+                "name": "ouroborosai_graph_cycles",
+                "displayName": "Code Graph Cycles",
+                "toolReferenceName": "ouroborosai_graph_cycles",
+                "description": "Detect circular dependencies in the codebase",
+                "modelDescription": "Use this tool to find circular dependencies using Tarjan's algorithm. Returns cycles with severity levels and suggested break points. Helps identify and fix circular imports that can cause runtime issues or make code harder to maintain.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope to limit detection (e.g., 'src/features')"
+                        },
+                        "minLength": {
+                            "type": "number",
+                            "description": "Minimum cycle length to report (default: 2)"
+                        },
+                        "maxCycles": {
+                            "type": "number",
+                            "description": "Maximum cycles to return (default: 20)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_layers",
+                "displayName": "Code Graph Layers",
+                "toolReferenceName": "ouroborosai_graph_layers",
+                "description": "Check architectural layer rules and detect violations",
+                "modelDescription": "Use this tool to enforce clean architecture boundaries. Actions: check (find violations), list (show rules), suggest (get rule suggestions). Helps maintain separation of concerns (e.g., UI cannot import DB directly).",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "action"
+                    ],
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": [
+                                "check",
+                                "list",
+                                "suggest"
+                            ],
+                            "description": "Action to perform"
+                        },
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope for checking"
+                        },
+                        "rules": {
+                            "type": "array",
+                            "description": "Custom rules to check",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "from": {
+                                        "type": "string"
+                                    },
+                                    "cannotImport": {
+                                        "type": "string"
+                                    },
+                                    "severity": {
+                                        "type": "string",
+                                        "enum": [
+                                            "warning",
+                                            "error"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         ]
     },

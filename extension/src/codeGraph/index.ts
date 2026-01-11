@@ -56,6 +56,8 @@ export {
 // Analyzers
 export { ReachabilityAnalyzer, type ReachabilityResult } from './analyzers/ReachabilityAnalyzer';
 export { IssueDetector } from './analyzers/IssueDetector';
+export { CycleDetector, type Cycle, type CycleDetectorOptions } from './analyzers/CycleDetector';
+export { LayerAnalyzer, type LayerRule, type LayerViolation, type LayerAnalyzerOptions, COMMON_LAYER_RULES } from './analyzers/LayerAnalyzer';
 
 // Annotations
 export { AnnotationManager, type ManualEdge, type ManualEntrypoint, type IgnoreRule, type AnnotationFile } from './annotations/AnnotationManager';

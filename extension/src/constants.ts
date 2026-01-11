@@ -34,6 +34,9 @@ export const TOOLS = {
     GRAPH_PATH: 'ouroborosai_graph_path',
     GRAPH_MODULE: 'ouroborosai_graph_module',
     GRAPH_ANNOTATIONS: 'ouroborosai_graph_annotations',
+    // Code Graph Tools (v0.5)
+    GRAPH_CYCLES: 'ouroborosai_graph_cycles',
+    GRAPH_LAYERS: 'ouroborosai_graph_layers',
 } as const;
 
 // Configuration Keys

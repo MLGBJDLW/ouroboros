@@ -27,7 +27,10 @@ export type IssueKind =
     | 'ORPHAN_EXPORT'
     // v0.3 - Framework-specific issues
     | 'ENTRY_MISSING_HANDLER'
-    | 'NOT_REGISTERED';
+    | 'NOT_REGISTERED'
+    // v0.5 - Architecture issues
+    | 'CYCLE_RISK'
+    | 'LAYER_VIOLATION';
 
 export type IssueSeverity = 'info' | 'warning' | 'error';
 

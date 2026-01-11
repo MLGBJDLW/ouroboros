@@ -21,6 +21,8 @@ import { IncrementalWatcher } from './watcher/IncrementalWatcher';
 import { AnnotationManager } from './annotations/AnnotationManager';
 import { getAdapterRegistry, registerBuiltinAdapters } from './adapters';
 import { getTreeSitterManager, type TreeSitterManager } from './parsers/TreeSitterManager';
+import { CycleDetector } from './analyzers/CycleDetector';
+import { LayerAnalyzer } from './analyzers/LayerAnalyzer';
 import type { AdapterRegistry } from './adapters';
 import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig, FrameworkDetection } from './core/types';
 import { createLogger } from '../utils/logger';
@@ -61,6 +63,8 @@ export class CodeGraphManager implements vscode.Disposable {
     private annotationManager: AnnotationManager;
     private adapterRegistry: AdapterRegistry;
     private treeSitterManager: TreeSitterManager;
+    private cycleDetector: CycleDetector;
+    private layerAnalyzer: LayerAnalyzer;
     private watcher: IncrementalWatcher | null = null;
     private config: GraphConfig;
     private workspaceRoot: string;
@@ -81,6 +85,10 @@ export class CodeGraphManager implements vscode.Disposable {
         this.entrypointDetector = new EntrypointDetector();
         this.issueDetector = new IssueDetector(this.store);
         this.annotationManager = new AnnotationManager(workspaceRoot);
+        
+        // v0.5: Initialize architecture analyzers
+        this.cycleDetector = new CycleDetector(this.store);
+        this.layerAnalyzer = new LayerAnalyzer(this.store);
         
         // v0.3: Initialize adapter registry
         registerBuiltinAdapters();
@@ -209,8 +217,12 @@ export class CodeGraphManager implements vscode.Disposable {
             
             const frameworkIssues = await this.adapterRegistry.detectAllIssues(this.store);
             
+            // v0.5: Detect cycle and layer issues
+            const cycleIssues = this.cycleDetector.detectCycleIssues();
+            const layerIssues = this.layerAnalyzer.detectLayerIssues();
+            
             // Filter out ignored issues
-            const allIssues = [...issues, ...barrelIssues, ...frameworkIssues];
+            const allIssues = [...issues, ...barrelIssues, ...frameworkIssues, ...cycleIssues, ...layerIssues];
             const filteredIssues = [];
             for (const issue of allIssues) {
                 const shouldIgnore = await this.annotationManager.shouldIgnore(
@@ -356,6 +368,20 @@ export class CodeGraphManager implements vscode.Disposable {
      */
     getDetectedFrameworks(): FrameworkDetection[] {
         return [...this.detectedFrameworks];
+    }
+
+    /**
+     * Get cycle detector (v0.5)
+     */
+    getCycleDetector(): CycleDetector {
+        return this.cycleDetector;
+    }
+
+    /**
+     * Get layer analyzer (v0.5)
+     */
+    getLayerAnalyzer(): LayerAnalyzer {
+        return this.layerAnalyzer;
     }
 
     /**
