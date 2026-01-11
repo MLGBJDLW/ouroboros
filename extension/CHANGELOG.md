@@ -2,6 +2,13 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.2] - 2026-01-11
+
+### Fixed
+- **L2 Worker Tool Injection** — Fixed YAML line number calculation in `parseToolsFromYaml`, Code Graph tools now correctly injected for all L2 worker agents
+
+---
+
 ## [3.3.1] - 2026-01-11
 
 ### Fixed

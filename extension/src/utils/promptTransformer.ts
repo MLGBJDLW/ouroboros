@@ -956,8 +956,10 @@ const WORKER_GRAPH_TOOLS = [
  *   tools:
  *     - 'tool1'
  *     - 'tool2'
+ * 
+ * Returns line numbers (0-indexed) for easier replacement
  */
-function parseToolsFromYaml(yamlContent: string): { tools: string[]; startPos: number; endPos: number; isMultiLine: boolean } | null {
+function parseToolsFromYaml(yamlContent: string): { tools: string[]; startLine: number; endLine: number; isMultiLine: boolean } | null {
     const lines = yamlContent.split('\n');
     let toolsStartLine = -1;
     let toolsEndLine = -1;
@@ -1033,18 +1035,8 @@ function parseToolsFromYaml(yamlContent: string): { tools: string[]; startPos: n
         return null;
     }
 
-    // Calculate character positions
-    let startPos = 0;
-    for (let i = 0; i < toolsStartLine; i++) {
-        startPos += lines[i].length + 1; // +1 for newline
-    }
-    let endPos = startPos;
-    for (let i = toolsStartLine; i <= toolsEndLine; i++) {
-        endPos += lines[i].length + 1;
-    }
-    endPos--; // Remove last newline
-
-    return { tools, startPos, endPos, isMultiLine };
+    // Return line numbers directly (0-indexed)
+    return { tools, startLine: toolsStartLine, endLine: toolsEndLine, isMultiLine };
 }
 
 /**
@@ -1077,15 +1069,12 @@ function injectOuroborosTools(content: string): string {
         // Rebuild tools line (always single-line for consistency)
         const newToolsLine = `tools: [${allTools.map((t) => `'${t}'`).join(', ')}]`;
 
-        // Replace the tools section in YAML content
+        // Replace the tools section in YAML content using line numbers directly
         const lines = yamlContent.split('\n');
-        const toolsStartLine = yamlContent.substring(0, parsed.startPos).split('\n').length - 1;
-        const toolsEndLine = yamlContent.substring(0, parsed.endPos).split('\n').length - 1;
-
         const newLines = [
-            ...lines.slice(0, toolsStartLine),
+            ...lines.slice(0, parsed.startLine),
             newToolsLine,
-            ...lines.slice(toolsEndLine + 1)
+            ...lines.slice(parsed.endLine + 1)
         ];
         const newYamlContent = newLines.join('\n');
 
@@ -1169,15 +1158,12 @@ function injectWorkerGraphTools(content: string): string {
         // Rebuild tools line (always single-line for consistency)
         const newToolsLine = `tools: [${allTools.map((t) => `'${t}'`).join(', ')}]`;
 
-        // Replace the tools section in YAML content
+        // Replace the tools section in YAML content using line numbers directly
         const lines = yamlContent.split('\n');
-        const toolsStartLine = yamlContent.substring(0, parsed.startPos).split('\n').length - 1;
-        const toolsEndLine = yamlContent.substring(0, parsed.endPos).split('\n').length - 1;
-
         const newLines = [
-            ...lines.slice(0, toolsStartLine),
+            ...lines.slice(0, parsed.startLine),
             newToolsLine,
-            ...lines.slice(toolsEndLine + 1)
+            ...lines.slice(parsed.endLine + 1)
         ];
         const newYamlContent = newLines.join('\n');
 

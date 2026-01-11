@@ -341,6 +341,27 @@ description: Worker
         expect(result).toMatch(/^---/);
     });
 
+    it('should inject Code Graph tools into YAML frontmatter', () => {
+        const input = `---
+description: Worker agent
+tools: ['read', 'search', 'web', 'vscode']
+---
+# Worker Content`;
+        const result = transformWorkerForExtensionMode(input);
+        // Should contain original tools
+        expect(result).toContain("'read'");
+        expect(result).toContain("'search'");
+        // Should contain injected Code Graph tools
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_digest');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_issues');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_impact');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_path');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_module');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_annotations');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_cycles');
+        expect(result).toContain('mlgbjdlw.ouroboros-ai/ouroborosai_graph_layers');
+    });
+
     it('should handle empty input', () => {
         const result = transformWorkerForExtensionMode('');
         expect(result).toContain('WORKER AGENT');
