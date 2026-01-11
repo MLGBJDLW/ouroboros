@@ -275,10 +275,48 @@ export class GraphQuery {
     ): DigestResult['hotspots'] {
         const hotspots: Array<{ path: string; importers: number; exports: number }> = [];
 
+        // Build a map of file paths to their importer counts
+        // We need to count edges where the 'to' field references this file
+        const allEdges = this.store.getAllEdges();
+        const importerCounts = new Map<string, number>();
+
+        for (const edge of allEdges) {
+            // edge.to could be:
+            // - "file:path/to/file.ts" (TypeScript resolved)
+            // - "module:./relative/path" (unresolved relative)
+            // - "module:package-name" (external package)
+            
+            const toValue = edge.to;
+            
+            // If it's a file reference, extract the path
+            if (toValue.startsWith('file:')) {
+                const targetPath = toValue.slice(5); // Remove "file:" prefix
+                importerCounts.set(targetPath, (importerCounts.get(targetPath) || 0) + 1);
+            }
+            // For module references, try to match against file paths
+            else if (toValue.startsWith('module:')) {
+                const modulePath = toValue.slice(7); // Remove "module:" prefix
+                // Try to find a matching file
+                for (const file of files) {
+                    if (file.path && (
+                        file.path.endsWith(modulePath) ||
+                        file.path.endsWith(modulePath + '.ts') ||
+                        file.path.endsWith(modulePath + '.js') ||
+                        file.path.endsWith(modulePath + '.py') ||
+                        file.path.includes('/' + modulePath + '/') ||
+                        file.path.includes('/' + modulePath.replace(/\./g, '/'))
+                    )) {
+                        importerCounts.set(file.path, (importerCounts.get(file.path) || 0) + 1);
+                        break;
+                    }
+                }
+            }
+        }
+
         for (const file of files) {
             if (!file.path) continue;
 
-            const importers = this.store.getEdgesTo(file.id).length;
+            const importers = importerCounts.get(file.path) || 0;
             const exports = file.meta?.exports?.length ?? 0;
 
             if (importers > 0) {

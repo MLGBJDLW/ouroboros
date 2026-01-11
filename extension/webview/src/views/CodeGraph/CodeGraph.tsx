@@ -3,12 +3,15 @@
  * Displays codebase structure, issues, and impact analysis
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useVSCode } from '../../context/VSCodeContext';
 import { Card, CardHeader, CardBody } from '../../components/Card';
 import { Icon } from '../../components/Icon';
 import { EmptyState } from '../../components/EmptyState';
 import { Spinner } from '../../components/Spinner';
+import { ForceGraph } from './components/ForceGraph';
+import { NodeDetail } from './components/NodeDetail';
+import type { GraphNode, GraphEdge, GraphData, ImpactResult, ModuleInfo } from './types';
 import styles from './CodeGraph.module.css';
 
 interface GraphDigest {
@@ -46,7 +49,7 @@ interface GraphIssue {
     suggestedFix: string[];
 }
 
-type TabType = 'overview' | 'issues' | 'hotspots';
+type TabType = 'overview' | 'graph' | 'issues' | 'hotspots';
 
 export function CodeGraph() {
     const vscode = useVSCode();
@@ -56,6 +59,99 @@ export function CodeGraph() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [addedToContext, setAddedToContext] = useState<Set<string>>(new Set());
+    
+    // Graph view state
+    const [graphData, setGraphData] = useState<GraphData | null>(null);
+    const [selectedNode, setSelectedNode] = useState<string | null>(null);
+    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+    const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
+    const [showDetail, setShowDetail] = useState(false);
+    const [graphSize, setGraphSize] = useState({ width: 600, height: 400 });
+    const [graphSettings, setGraphSettings] = useState({
+        showLabels: true,
+        highlightEntrypoints: true,
+        highlightHotspots: true,
+    });
+    const graphContainerRef = useRef<HTMLDivElement>(null);
+
+    // Build graph data from digest
+    const buildGraphData = useCallback((digest: GraphDigest, issues: GraphIssue[]): GraphData => {
+        const nodes: GraphNode[] = [];
+        const links: GraphEdge[] = [];
+        const nodeMap = new Map<string, GraphNode>();
+
+        const entrypointPaths = new Set([
+            ...digest.entrypoints.routes,
+            ...digest.entrypoints.commands,
+            ...digest.entrypoints.pages,
+            ...digest.entrypoints.jobs,
+        ]);
+
+        const issueCountMap = new Map<string, number>();
+        issues.forEach(issue => {
+            const count = issueCountMap.get(issue.file) || 0;
+            issueCountMap.set(issue.file, count + 1);
+        });
+
+        // Add hotspot nodes
+        digest.hotspots.forEach((hotspot, index) => {
+            const node: GraphNode = {
+                id: hotspot.path,
+                path: hotspot.path,
+                name: hotspot.path.split('/').pop() || hotspot.path,
+                type: entrypointPaths.has(hotspot.path) ? 'entrypoint' : 'hotspot',
+                issueCount: issueCountMap.get(hotspot.path) || 0,
+                importers: hotspot.importers,
+                exports: hotspot.exports,
+                isEntrypoint: entrypointPaths.has(hotspot.path),
+                isHotspot: true,
+                depth: index,
+                val: Math.max(5, Math.min(20, hotspot.importers)),
+            };
+            nodes.push(node);
+            nodeMap.set(hotspot.path, node);
+        });
+
+        // Add entrypoint nodes not in hotspots
+        [...entrypointPaths].forEach(path => {
+            if (!nodeMap.has(path)) {
+                const node: GraphNode = {
+                    id: path,
+                    path: path,
+                    name: path.split('/').pop() || path,
+                    type: 'entrypoint',
+                    issueCount: issueCountMap.get(path) || 0,
+                    importers: 0,
+                    exports: 0,
+                    isEntrypoint: true,
+                    isHotspot: false,
+                    depth: 0,
+                    val: 8,
+                };
+                nodes.push(node);
+                nodeMap.set(path, node);
+            }
+        });
+
+        // If no nodes yet (no hotspots/entrypoints), show a placeholder message
+        // The graph will be empty but that's expected for projects without clear structure
+        
+        // Create links based on directory proximity
+        const sortedHotspots = [...digest.hotspots].sort((a, b) => b.importers - a.importers);
+        for (let i = 0; i < Math.min(sortedHotspots.length, 10); i++) {
+            for (let j = i + 1; j < Math.min(sortedHotspots.length, 10); j++) {
+                const source = sortedHotspots[i].path;
+                const target = sortedHotspots[j].path;
+                const sourceDir = source.split('/').slice(0, -1).join('/');
+                const targetDir = target.split('/').slice(0, -1).join('/');
+                if (sourceDir === targetDir || sourceDir.startsWith(targetDir) || targetDir.startsWith(sourceDir)) {
+                    links.push({ source, target, type: 'import', weight: 1 });
+                }
+            }
+        }
+
+        return { nodes, links };
+    }, []);
 
     // Request graph data from extension
     const refreshData = useCallback(() => {
@@ -66,7 +162,7 @@ export function CodeGraph() {
     }, [vscode]);
 
     // Add item to pending request context
-    const addToContext = useCallback((type: 'issue' | 'hotspot' | 'digest', data: unknown) => {
+    const addToContext = useCallback((type: string, data: unknown) => {
         const contextItem = {
             type: `graph_${type}`,
             data,
@@ -103,6 +199,80 @@ export function CodeGraph() {
         });
     }, [vscode]);
 
+    // Graph node selection
+    const handleNodeClick = useCallback((node: GraphNode) => {
+        setSelectedNode(node.id);
+        setShowDetail(true);
+        // Highlight connected nodes
+        const connected = new Set<string>([node.id]);
+        graphData?.links.forEach(link => {
+            const sourceId = typeof link.source === 'string' ? link.source : (link.source as GraphNode).id;
+            const targetId = typeof link.target === 'string' ? link.target : (link.target as GraphNode).id;
+            if (sourceId === node.id) connected.add(targetId);
+            if (targetId === node.id) connected.add(sourceId);
+        });
+        setHighlightedNodes(connected);
+    }, [graphData]);
+
+    const handleNodeHover = useCallback((node: GraphNode | null) => {
+        setHoveredNode(node?.id || null);
+    }, []);
+
+    const clearSelection = useCallback(() => {
+        setSelectedNode(null);
+        setShowDetail(false);
+        setHighlightedNodes(new Set());
+    }, []);
+
+    // Get impact analysis
+    const getImpact = useCallback(async (target: string): Promise<ImpactResult | null> => {
+        return new Promise((resolve) => {
+            const handler = (event: MessageEvent) => {
+                if (event.data.type === 'graphImpact' && event.data.payload?.target === target) {
+                    window.removeEventListener('message', handler);
+                    resolve(event.data.payload);
+                }
+            };
+            window.addEventListener('message', handler);
+            vscode.postMessage({ type: 'getGraphImpact', payload: { target } });
+            setTimeout(() => { window.removeEventListener('message', handler); resolve(null); }, 5000);
+        });
+    }, [vscode]);
+
+    // Get module info
+    const getModule = useCallback(async (target: string): Promise<ModuleInfo | null> => {
+        return new Promise((resolve) => {
+            const handler = (event: MessageEvent) => {
+                if (event.data.type === 'graphModule' && event.data.payload?.path === target) {
+                    window.removeEventListener('message', handler);
+                    resolve(event.data.payload);
+                }
+            };
+            window.addEventListener('message', handler);
+            vscode.postMessage({ type: 'getGraphModule', payload: { target } });
+            setTimeout(() => { window.removeEventListener('message', handler); resolve(null); }, 5000);
+        });
+    }, [vscode]);
+
+    // Fix with Copilot
+    const handleFixWithCopilot = useCallback((issue: GraphIssue) => {
+        const prompt = `Fix this code issue:\n\nFile: ${issue.file}\nIssue: ${issue.kind}\nSummary: ${issue.summary}\n\nEvidence:\n${issue.evidence.join('\n')}\n\nSuggested fix:\n${issue.suggestedFix.join('\n')}`;
+        vscode.postMessage({ type: 'sendToCopilot', payload: { prompt } });
+    }, [vscode]);
+
+    // Resize observer for graph container
+    useEffect(() => {
+        if (!graphContainerRef.current) return;
+        const resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect;
+                setGraphSize({ width: Math.max(300, width), height: Math.max(200, height) });
+            }
+        });
+        resizeObserver.observe(graphContainerRef.current);
+        return () => resizeObserver.disconnect();
+    }, [activeTab]);
+
     useEffect(() => {
         refreshData();
 
@@ -122,6 +292,17 @@ export function CodeGraph() {
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
     }, [refreshData]);
+
+    // Build graph data when digest/issues change
+    useEffect(() => {
+        if (digest) {
+            const data = buildGraphData(digest, issues);
+            setGraphData(data);
+        }
+    }, [digest, issues, buildGraphData]);
+
+    // Get selected node object
+    const selectedNodeObj = graphData?.nodes.find(n => n.id === selectedNode) || null;
 
     if (isLoading) {
         return (
@@ -184,6 +365,14 @@ export function CodeGraph() {
                     <span>Overview</span>
                 </button>
                 <button
+                    className={`${styles.tab} ${activeTab === 'graph' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('graph')}
+                    title="Interactive dependency graph"
+                >
+                    <Icon name="type-hierarchy" />
+                    <span>Graph</span>
+                </button>
+                <button
                     className={`${styles.tab} ${activeTab === 'issues' ? styles.active : ''}`}
                     onClick={() => setActiveTab('issues')}
                     title="Code quality issues detected"
@@ -207,6 +396,87 @@ export function CodeGraph() {
             {/* Content */}
             <div className={styles.content}>
                 {activeTab === 'overview' && <OverviewTab digest={digest} />}
+                {activeTab === 'graph' && graphData && (
+                    <div className={styles.graphTab}>
+                        {graphData.nodes.length === 0 ? (
+                            <div className={styles.graphEmpty}>
+                                <Icon name="info" />
+                                <span>No hotspots or entrypoints detected</span>
+                                <p>The graph shows files with high import counts. This project may not have clear dependency hotspots yet, or the language parser needs improvement.</p>
+                                <p>Try the <strong>Hotspots</strong> tab to see if any files are detected.</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Graph Settings */}
+                                <div className={styles.graphSettings}>
+                                    <button
+                                        className={`${styles.settingBtn} ${graphSettings.showLabels ? styles.active : ''}`}
+                                        onClick={() => setGraphSettings(s => ({ ...s, showLabels: !s.showLabels }))}
+                                        title="Show labels"
+                                    >
+                                        <Icon name="symbol-text" />
+                                    </button>
+                                    <button
+                                        className={`${styles.settingBtn} ${graphSettings.highlightEntrypoints ? styles.active : ''}`}
+                                        onClick={() => setGraphSettings(s => ({ ...s, highlightEntrypoints: !s.highlightEntrypoints }))}
+                                        title="Highlight entrypoints"
+                                    >
+                                        🚀
+                                    </button>
+                                    <button
+                                        className={`${styles.settingBtn} ${graphSettings.highlightHotspots ? styles.active : ''}`}
+                                        onClick={() => setGraphSettings(s => ({ ...s, highlightHotspots: !s.highlightHotspots }))}
+                                        title="Highlight hotspots"
+                                    >
+                                        🔥
+                                    </button>
+                                    <div className={styles.settingDivider} />
+                                    <button
+                                        className={styles.settingBtn}
+                                        onClick={clearSelection}
+                                        title="Clear selection"
+                                    >
+                                        <Icon name="clear-all" />
+                                    </button>
+                                </div>
+
+                                {/* Graph + Detail Layout */}
+                                <div className={styles.graphLayout}>
+                                    <div className={styles.graphContainer} ref={graphContainerRef}>
+                                        <ForceGraph
+                                            data={graphData}
+                                            width={graphSize.width}
+                                            height={graphSize.height}
+                                            selectedNode={selectedNode}
+                                            hoveredNode={hoveredNode}
+                                            highlightedNodes={highlightedNodes}
+                                            onNodeClick={handleNodeClick}
+                                            onNodeHover={handleNodeHover}
+                                            onNodeRightClick={handleNodeClick}
+                                            showLabels={graphSettings.showLabels}
+                                            highlightEntrypoints={graphSettings.highlightEntrypoints}
+                                            highlightHotspots={graphSettings.highlightHotspots}
+                                        />
+                                    </div>
+                                    {showDetail && (
+                                        <div className={styles.detailPanel}>
+                                            <NodeDetail
+                                                node={selectedNodeObj}
+                                                issues={issues}
+                                                onClose={clearSelection}
+                                                onOpenFile={openFile}
+                                                onAnalyzeImpact={getImpact}
+                                                onGetModule={getModule}
+                                                onFixWithCopilot={handleFixWithCopilot}
+                                                onAddToContext={addToContext}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
                 {activeTab === 'issues' && (
                     <IssuesTab 
                         issues={issues} 
@@ -366,7 +636,7 @@ function OverviewTab({ digest }: { digest: GraphDigest }) {
 function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: { 
     issues: GraphIssue[]; 
     digest: GraphDigest;
-    addToContext: (type: 'issue' | 'hotspot' | 'digest', data: unknown) => void;
+    addToContext: (type: string, data: unknown) => void;
     addedToContext: Set<string>;
     openFile: (path: string) => void;
 }) {
@@ -444,7 +714,7 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
 // Hotspots Tab Component
 function HotspotsTab({ hotspots, addToContext, addedToContext, openFile }: { 
     hotspots: GraphDigest['hotspots'];
-    addToContext: (type: 'issue' | 'hotspot' | 'digest', data: unknown) => void;
+    addToContext: (type: string, data: unknown) => void;
     addedToContext: Set<string>;
     openFile: (path: string) => void;
 }) {
@@ -593,7 +863,7 @@ function IssueStat({ count, label, severity, tooltip }: {
 
 function IssueCard({ issue, addToContext, isAdded, openFile }: { 
     issue: GraphIssue;
-    addToContext: (type: 'issue' | 'hotspot' | 'digest', data: unknown) => void;
+    addToContext: (type: string, data: unknown) => void;
     isAdded: boolean;
     openFile: (path: string) => void;
 }) {

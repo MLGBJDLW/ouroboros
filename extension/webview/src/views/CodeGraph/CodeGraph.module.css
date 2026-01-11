@@ -737,3 +737,106 @@
 .hotspotAction:disabled {
     cursor: default;
 }
+
+
+/* Graph Tab */
+.graphTab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: var(--spacing-sm);
+}
+
+.graphSettings {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--spacing-xs);
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.settingBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.settingBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.settingBtn.active {
+    background: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.settingDivider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 var(--spacing-xs);
+}
+
+.graphLayout {
+    flex: 1;
+    display: flex;
+    gap: var(--spacing-sm);
+    min-height: 0;
+}
+
+.graphContainer {
+    flex: 1;
+    min-width: 0;
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+}
+
+.detailPanel {
+    width: 280px;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+
+/* Graph Empty State */
+.graphEmpty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--foreground-secondary);
+}
+
+.graphEmpty span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-top: var(--spacing-md);
+}
+
+.graphEmpty p {
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 300px;
+    margin: var(--spacing-sm) 0;
+}
+
+.graphEmpty strong {
+    color: var(--foreground);
+}

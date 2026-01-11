@@ -2,7 +2,7 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
-## [3.3.0] - 2026-01-10
+## [3.3.0] - 2026-01-11
 
 ### 🚀 Code Graph v1.0 - Production Ready
 
@@ -22,11 +22,21 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
   - `nextQuerySuggestion` guides optimal query flow
   - See `docs/code-graph/ENVELOPE.md` for full specification
 
+- **Interactive Graph UI** — New "Graph" tab with force-directed visualization
+  - Drag, zoom, pan support via `react-force-graph-2d`
+  - Click nodes to view details (imports, exports, issues)
+  - Visual indicators for entrypoints (🚀) and hotspots (🔥)
+  - "Fix with Copilot" one-click button
+
 - **Performance** — QueryCache with LRU eviction, ParallelIndexer for batch processing
 
 - **Multi-Language** — TypeScript, Python, Rust, Go, Java via tree-sitter
 
 - **Framework Detection** — Express, Next.js, NestJS, FastAPI, Spring Boot, etc.
+
+#### Fixes
+- **Hotspot Detection** — Fixed module path matching for all languages
+- **Bundle Splitting** — Webview split into 4 chunks (react, markdown, graph, app)
 
 #### Tests
 - 677 tests passing (+317 from v3.2.20)
