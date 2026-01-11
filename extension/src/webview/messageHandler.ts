@@ -8,6 +8,7 @@ import { fetchCopilotInsights } from '../services/copilotInsights';
 import type { SidebarProvider } from './SidebarProvider';
 import type { StateManager } from '../storage/stateManager';
 import type { SpecWatcher } from '../services/specWatcher';
+import type { CodeGraphManager } from '../codeGraph/CodeGraphManager';
 
 const logger = createLogger('MessageHandler');
 
@@ -97,7 +98,8 @@ export async function handleMessage(
     message: WebviewMessage,
     sidebarProvider: SidebarProvider,
     stateManager: StateManager,
-    specWatcher?: SpecWatcher
+    specWatcher?: SpecWatcher,
+    codeGraphManager?: CodeGraphManager
 ): Promise<void> {
     logger.debug('Received message from webview:', message.type);
 
@@ -266,6 +268,58 @@ export async function handleMessage(
                 type: 'copilotInsightsResult',
                 payload: result,
             });
+            break;
+        }
+
+        case 'getGraphDigest': {
+            logger.info('Getting graph digest');
+            if (codeGraphManager) {
+                try {
+                    const digest = codeGraphManager.getDigest();
+                    sidebarProvider.postMessage({
+                        type: 'graphDigest',
+                        payload: digest,
+                    });
+                } catch (error) {
+                    logger.error('Failed to get graph digest:', error);
+                    sidebarProvider.postMessage({
+                        type: 'graphError',
+                        payload: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                }
+            } else {
+                sidebarProvider.postMessage({
+                    type: 'graphError',
+                    payload: 'Code Graph not initialized',
+                });
+            }
+            break;
+        }
+
+        case 'getGraphIssues': {
+            logger.info('Getting graph issues');
+            if (codeGraphManager) {
+                try {
+                    const issues = codeGraphManager.getIssues();
+                    sidebarProvider.postMessage({
+                        type: 'graphIssues',
+                        payload: issues,
+                    });
+                } catch (error) {
+                    logger.error('Failed to get graph issues:', error);
+                }
+            }
+            break;
+        }
+
+        case 'addGraphContext': {
+            const payload = message.payload as {
+                type: string;
+                data: unknown;
+                timestamp: number;
+            };
+            logger.info('Adding graph context:', payload.type);
+            sidebarProvider.addGraphContext(payload);
             break;
         }
 

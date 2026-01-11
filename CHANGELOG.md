@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-01-10
+
+### 🚀 New Feature: Code Graph
+
+#### Added
+- **Code Graph System** — Token-efficient codebase structure analysis for Copilot:
+  - Static import/export analysis for TypeScript/JavaScript
+  - Entrypoint detection (routes, pages, commands, jobs)
+  - Reachability analysis from entrypoints
+  - Hotspot detection (high-impact files)
+
+- **3 New LM Tools** for Copilot integration:
+  - `ouroborosai_graph_digest` — Compact codebase overview (~500 tokens)
+  - `ouroborosai_graph_issues` — Code quality issues with evidence and fixes
+  - `ouroborosai_graph_impact` — Change impact analysis with risk assessment
+
+- **Issue Detection** — 3 issue types:
+  - `HANDLER_UNREACHABLE` — Dead code not reachable from entrypoints
+  - `DYNAMIC_EDGE_UNKNOWN` — Unresolvable dynamic imports
+  - `BROKEN_EXPORT_CHAIN` — Exports pointing to non-existent targets
+
+- **Code Graph UI** — New sidebar tab with:
+  - Overview: Stats, entrypoints, issue summary
+  - Issues: Filterable list with evidence and suggested fixes
+  - Hotspots: High-impact files with dependency visualization
+  - "Add to Context" buttons for CCL integration
+
+- **Graph Context Integration** — Users can add graph data to pending requests:
+  - Issues, hotspots, or full digest can be attached
+  - Context is consumed and sent with CCL responses to Copilot
+
+#### Technical
+- `CodeGraphManager` — Main entry point with incremental file watching
+- `GraphStore` — In-memory graph with node/edge indexing
+- `GraphQuery` — Query interface for digest, issues, impact
+- `TypeScriptIndexer` — AST-based import/export parsing
+- `ReachabilityAnalyzer` — BFS from entrypoints
+- `IssueDetector` — Pattern-based issue detection
+
+#### Documentation
+- `docs/code-graph/README.md` — Feature overview
+- `docs/code-graph/MVP.md` — MVP specification
+- `docs/code-graph/ARCHITECTURE.md` — System design
+- `docs/code-graph/TOOLS.md` — LM Tools reference
+- `docs/code-graph/ISSUES.md` — Issue taxonomy
+- `docs/code-graph/UPGRADE_PATH.md` — Future roadmap
+
+#### Tests
+- 432 tests passing (10 new for Code Graph)
+- CodeGraphManager, GraphStore, GraphQuery, TypeScriptIndexer, IssueDetector, ReachabilityAnalyzer covered
+
+---
+
 ## [3.2.20] - 2026-01-10
 
 ### 🐛 Bug Fixes

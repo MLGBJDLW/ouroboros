@@ -1,0 +1,739 @@
+/* Code Graph Styles - Modern Tech Aesthetic */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: var(--spacing-sm);
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: var(--spacing-md);
+    color: var(--foreground-secondary);
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border);
+}
+
+.headerTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.copilotBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--button-background);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--button-foreground);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.copilotBtn:hover {
+    background: var(--button-hover-background);
+}
+
+.contextBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.contextBtn:hover:not(:disabled) {
+    background: var(--button-background);
+    border-color: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.contextBtn.added {
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.contextBtn:disabled {
+    cursor: default;
+}
+
+/* Tab Navigation */
+.tabs {
+    display: flex;
+    gap: 2px;
+    padding: var(--spacing-xs);
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    margin: 0 var(--spacing-sm);
+}
+
+.tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.tab:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.tab.active {
+    background: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.badge {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    background: var(--error);
+    color: #fff;
+    border-radius: 8px;
+}
+
+/* Content Area */
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 var(--spacing-sm);
+}
+
+/* Footer */
+.footer {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--foreground-secondary);
+}
+
+.meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.refreshBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.refreshBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+    border-color: var(--foreground-secondary);
+}
+
+/* Info Banner */
+.infoBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: color-mix(in srgb, var(--info) 10%, var(--background-secondary));
+    border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    color: var(--foreground-secondary);
+    line-height: 1.4;
+}
+
+.infoBanner strong {
+    color: var(--foreground);
+}
+
+/* Overview Tab */
+.overview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Stats Grid */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.statCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    transition: all var(--transition-fast);
+    cursor: default;
+}
+
+.statCard:hover {
+    border-color: var(--foreground-secondary);
+    transform: translateY(-1px);
+}
+
+.statCard.info { border-left: 3px solid var(--info); }
+.statCard.success { border-left: 3px solid var(--success); }
+.statCard.warning { border-left: 3px solid var(--warning); }
+.statCard.secondary { border-left: 3px solid var(--foreground-secondary); }
+
+.statIcon {
+    font-size: 20px;
+    margin-bottom: var(--spacing-xs);
+    opacity: 0.7;
+}
+
+.statValue {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--foreground-secondary);
+}
+
+/* Card Styles */
+.card {
+    margin-bottom: var(--spacing-sm);
+}
+
+.cardTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.cardHint {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--foreground-secondary);
+}
+
+.cardAction {
+    margin-left: auto;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.cardAction:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+/* Entrypoint Grid */
+.entrypointGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+}
+
+.entrypointGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.entrypointHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--foreground-secondary);
+}
+
+.entrypointCount {
+    margin-left: auto;
+    background: var(--badge-background);
+    color: var(--badge-foreground);
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-size: 9px;
+}
+
+.entrypointList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 11px;
+}
+
+.entrypointList li {
+    padding: 2px 0;
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.moreItems {
+    color: var(--foreground-secondary);
+    font-style: italic;
+}
+
+.noItems {
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    font-style: italic;
+}
+
+/* Issue Summary */
+.issueSummary {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.issueStat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+    cursor: default;
+}
+
+.issueStat.info { background: color-mix(in srgb, var(--info) 10%, var(--background-secondary)); }
+.issueStat.warning { background: color-mix(in srgb, var(--warning) 10%, var(--background-secondary)); }
+.issueStat.error { background: color-mix(in srgb, var(--error) 10%, var(--background-secondary)); }
+
+.issueStatCount {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.issueStat.info .issueStatCount { color: var(--info); }
+.issueStat.warning .issueStatCount { color: var(--warning); }
+.issueStat.error .issueStatCount { color: var(--error); }
+
+.issueStatLabel {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--foreground-secondary);
+}
+
+
+/* Issues Tab */
+.issuesTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.filterBar {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.filterSelect {
+    flex: 1;
+    padding: var(--spacing-sm);
+    background: var(--dropdown-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.filterSelect:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}
+
+.askBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--button-background);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--button-foreground);
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.askBtn:hover {
+    background: var(--button-hover-background);
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xs) 0;
+    font-size: 10px;
+    color: var(--foreground-secondary);
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legendDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legendDot.info { background: var(--info); }
+.legendDot.warning { background: var(--warning); }
+.legendDot.error { background: var(--error); }
+
+.legendIconWarning { color: var(--warning); }
+.legendIconInfo { color: var(--info); }
+
+/* Issue List */
+.issueList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.issueCard {
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--border);
+    overflow: hidden;
+}
+
+.issueCard.info { border-left-color: var(--info); }
+.issueCard.warning { border-left-color: var(--warning); }
+.issueCard.error { border-left-color: var(--error); }
+
+.issueHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.issueHeader:hover {
+    background: var(--list-hover);
+}
+
+.issueHeaderContent {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.issueKind {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--foreground-secondary);
+}
+
+.issueFile {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--foreground);
+}
+
+.expandIcon {
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.issueBody {
+    padding: var(--spacing-md);
+    padding-top: 0;
+    font-size: 11px;
+    border-top: 1px solid var(--border);
+}
+
+.issueSummaryText {
+    margin: var(--spacing-sm) 0;
+    color: var(--foreground);
+    line-height: 1.4;
+}
+
+.issueSection {
+    margin-top: var(--spacing-md);
+}
+
+.issueSectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--foreground-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.issueSection .issueList {
+    margin: 0;
+    padding-left: var(--spacing-md);
+    list-style: disc;
+}
+
+.issueSection .issueList li {
+    padding: 2px 0;
+    color: var(--foreground-secondary);
+}
+
+.fixList li {
+    color: var(--success) !important;
+}
+
+.issueActions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border);
+}
+
+.issueActionBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.issueActionBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+    border-color: var(--foreground-secondary);
+}
+
+.issueActionBtn.primary {
+    background: var(--button-background);
+    border-color: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.issueActionBtn.primary:hover:not(:disabled) {
+    background: var(--button-hover-background);
+    border-color: var(--button-hover-background);
+}
+
+.issueActionBtn.added,
+.issueActionBtn.primary.added {
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.issueActionBtn:disabled {
+    cursor: default;
+}
+
+/* Hotspots Tab */
+.hotspotsTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.hotspotList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.hotspotItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.hotspotRank {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--badge-background);
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--badge-foreground);
+    flex-shrink: 0;
+}
+
+.hotspotInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.hotspotPath {
+    display: block;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+    color: var(--link-foreground);
+    cursor: pointer;
+}
+
+.hotspotPath:hover {
+    text-decoration: underline;
+}
+
+.hotspotBar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.hotspotFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--warning), var(--error));
+    border-radius: 2px;
+    transition: width var(--transition-normal);
+}
+
+.hotspotStats {
+    display: flex;
+    gap: var(--spacing-sm);
+    font-size: 10px;
+    color: var(--foreground-secondary);
+    flex-shrink: 0;
+}
+
+.hotspotImporters,
+.hotspotExports {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 32px;
+}
+
+.hotspotImporters {
+    color: var(--warning);
+}
+
+.hotspotExports {
+    color: var(--info);
+}
+
+.hotspotAction {
+    padding: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.hotspotAction:hover:not(:disabled) {
+    background: var(--button-background);
+    border-color: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.hotspotAction.added {
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.hotspotAction:disabled {
+    cursor: default;
+}

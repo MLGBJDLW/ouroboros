@@ -26,6 +26,10 @@ export const TOOLS = {
     CONFIRM: 'ouroborosai_confirm',
     PLAN_REVIEW: 'ouroborosai_plan_review',
     AGENT_HANDOFF: 'ouroborosai_agent_handoff',
+    // Code Graph Tools
+    GRAPH_DIGEST: 'ouroborosai_graph_digest',
+    GRAPH_ISSUES: 'ouroborosai_graph_issues',
+    GRAPH_IMPACT: 'ouroborosai_graph_impact',
 } as const;
 
 // Configuration Keys

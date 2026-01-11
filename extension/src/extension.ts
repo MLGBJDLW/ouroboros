@@ -6,6 +6,7 @@ import { registerCommands } from './commands';
 import { StateManager } from './storage/stateManager';
 import { StatusBarManager } from './statusBar/StatusBarManager';
 import { SpecWatcher } from './services/specWatcher';
+import { CodeGraphManager } from './codeGraph/CodeGraphManager';
 import { createLogger } from './utils/logger';
 
 const logger = createLogger('Extension');
@@ -14,6 +15,7 @@ let stateManager: StateManager | undefined;
 let statusBarManager: StatusBarManager | undefined;
 let sidebarProvider: SidebarProvider | undefined;
 let specWatcher: SpecWatcher | undefined;
+let codeGraphManager: CodeGraphManager | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     logger.info(`Activating ${EXTENSION_ID} extension...`);
@@ -74,10 +76,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 activeCount: initialSpecs.active.length,
                 archivedCount: initialSpecs.archived.length,
             });
+
+            // Initialize Code Graph Manager
+            codeGraphManager = new CodeGraphManager(workspacePath);
+            context.subscriptions.push(codeGraphManager);
+            // Set reference in sidebar provider
+            sidebarProvider.setCodeGraphManager(codeGraphManager);
+            // Initialize asynchronously (don't block activation)
+            codeGraphManager.initialize().catch((error) => {
+                logger.error('Failed to initialize Code Graph:', error);
+            });
         }
 
-        // Register LM Tools
-        const toolDisposables = registerTools(stateManager, sidebarProvider);
+        // Register LM Tools (including Code Graph tools)
+        const toolDisposables = registerTools(stateManager, sidebarProvider, codeGraphManager);
         context.subscriptions.push(...toolDisposables);
 
         // Register commands
@@ -100,6 +112,7 @@ export function deactivate(): void {
 
     statusBarManager?.dispose();
     specWatcher?.dispose();
+    codeGraphManager?.dispose();
     sidebarProvider?.dispose();
     stateManager?.dispose();
 

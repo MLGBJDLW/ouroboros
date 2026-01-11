@@ -1,0 +1,456 @@
+/**
+ * Graph Query
+ * High-level query interface with token-aware output
+ */
+
+import type { GraphStore } from './GraphStore';
+import type {
+    DigestResult,
+    IssueListResult,
+    ImpactResult,
+    IssueKind,
+    IssueSeverity,
+    GraphNode,
+} from './types';
+
+const CHARS_PER_TOKEN = 4;
+
+export interface DigestOptions {
+    scope?: string;
+    limit?: number;
+}
+
+export interface IssueQueryOptions {
+    kind?: IssueKind;
+    severity?: IssueSeverity;
+    scope?: string;
+    limit?: number;
+}
+
+export interface ImpactOptions {
+    depth?: number;
+    limit?: number;
+}
+
+export class GraphQuery {
+    constructor(private store: GraphStore) {}
+
+    // ============================================
+    // Digest Query
+    // ============================================
+
+    digest(options?: DigestOptions): DigestResult {
+        const scope = options?.scope ?? null;
+        const limit = options?.limit ?? 10;
+
+        const allNodes = this.store.getAllNodes();
+        const filteredNodes = scope
+            ? allNodes.filter((n) => n.path?.startsWith(scope))
+            : allNodes;
+
+        const files = filteredNodes.filter((n) => n.kind === 'file');
+        const entrypoints = filteredNodes.filter((n) => n.kind === 'entrypoint');
+        const modules = filteredNodes.filter((n) => n.kind === 'module');
+
+        // Group entrypoints by type
+        const entrypointsByType = this.groupEntrypointsByType(entrypoints);
+
+        // Find hotspots (most imported files)
+        const hotspots = this.findHotspots(files, limit);
+
+        // Count issues by kind
+        const issues = this.store.getIssues();
+        const filteredIssues = scope
+            ? issues.filter((i) => i.meta?.filePath?.startsWith(scope))
+            : issues;
+
+        const issuesByKind: Record<IssueKind, number> = {
+            HANDLER_UNREACHABLE: 0,
+            DYNAMIC_EDGE_UNKNOWN: 0,
+            BROKEN_EXPORT_CHAIN: 0,
+        };
+
+        for (const issue of filteredIssues) {
+            issuesByKind[issue.kind]++;
+        }
+
+        const result: DigestResult = {
+            summary: {
+                files: files.length,
+                modules: modules.length,
+                entrypoints: entrypoints.length,
+                edges: this.store.edgeCount,
+            },
+            entrypoints: entrypointsByType,
+            hotspots,
+            issues: issuesByKind,
+            meta: {
+                lastIndexed: new Date(this.store.getMeta().lastIndexed).toISOString(),
+                tokensEstimate: 0,
+                truncated: false,
+                scopeApplied: scope,
+            },
+        };
+
+        result.meta.tokensEstimate = this.estimateTokens(result);
+        return result;
+    }
+
+
+    // ============================================
+    // Issues Query
+    // ============================================
+
+    issues(options?: IssueQueryOptions): IssueListResult {
+        const limit = Math.min(options?.limit ?? 20, 50);
+        let filtered = this.store.getIssues();
+
+        if (options?.kind) {
+            filtered = filtered.filter((i) => i.kind === options.kind);
+        }
+
+        if (options?.severity) {
+            const minRank = this.severityRank(options.severity);
+            filtered = filtered.filter((i) => this.severityRank(i.severity) >= minRank);
+        }
+
+        if (options?.scope) {
+            const scope = options.scope;
+            filtered = filtered.filter((i) => i.meta?.filePath?.startsWith(scope));
+        }
+
+        const total = filtered.length;
+        const truncated = total > limit;
+        const returned = filtered.slice(0, limit);
+
+        // Count by kind and severity
+        const byKind: Record<string, number> = {};
+        const bySeverity: Record<string, number> = {};
+
+        for (const issue of filtered) {
+            byKind[issue.kind] = (byKind[issue.kind] ?? 0) + 1;
+            bySeverity[issue.severity] = (bySeverity[issue.severity] ?? 0) + 1;
+        }
+
+        const result: IssueListResult = {
+            issues: returned.map((i) => ({
+                id: i.id,
+                kind: i.kind,
+                severity: i.severity,
+                file: i.meta?.filePath ?? 'unknown',
+                summary: i.title,
+                evidence: i.evidence,
+                suggestedFix: i.suggestedFix ?? [],
+            })),
+            stats: {
+                total,
+                returned: returned.length,
+                byKind,
+                bySeverity,
+            },
+            meta: {
+                tokensEstimate: 0,
+                truncated,
+                nextQuerySuggestion: truncated
+                    ? `Use scope or kind filter to narrow results`
+                    : null,
+            },
+        };
+
+        result.meta.tokensEstimate = this.estimateTokens(result);
+        return result;
+    }
+
+    // ============================================
+    // Impact Query
+    // ============================================
+
+    impact(target: string, options?: ImpactOptions): ImpactResult {
+        const depth = Math.min(options?.depth ?? 2, 4);
+        const limit = Math.min(options?.limit ?? 30, 100);
+
+        // Resolve target to node ID
+        const nodeId = this.resolveTarget(target);
+        const node = nodeId ? this.store.getNode(nodeId) : undefined;
+
+        if (!nodeId || !node) {
+            return this.emptyImpactResult(target);
+        }
+
+        // Find dependents at each depth level
+        const dependentsByDepth = this.findDependentsByDepth(nodeId, depth);
+
+        // Find affected entrypoints
+        const allDependents = new Set<string>();
+        for (const deps of Object.values(dependentsByDepth)) {
+            for (const dep of deps) {
+                allDependents.add(dep);
+            }
+        }
+
+        const affectedEntrypoints = this.findAffectedEntrypoints(allDependents);
+
+        // Assess risk
+        const riskAssessment = this.assessRisk(
+            dependentsByDepth,
+            affectedEntrypoints.length
+        );
+
+        const result: ImpactResult = {
+            target,
+            targetType: node.kind === 'symbol' ? 'symbol' : 'file',
+            directDependents: dependentsByDepth[1]?.slice(0, limit) ?? [],
+            transitiveImpact: {
+                depth1: dependentsByDepth[1]?.length ?? 0,
+                depth2: dependentsByDepth[2]?.length ?? 0,
+                depth3: dependentsByDepth[3]?.length ?? 0,
+            },
+            affectedEntrypoints: affectedEntrypoints.slice(0, 10),
+            riskAssessment,
+            meta: {
+                tokensEstimate: 0,
+                truncated: allDependents.size > limit,
+                depthReached: depth,
+            },
+        };
+
+        result.meta.tokensEstimate = this.estimateTokens(result);
+        return result;
+    }
+
+    // ============================================
+    // Helper Methods
+    // ============================================
+
+    private groupEntrypointsByType(entrypoints: GraphNode[]): DigestResult['entrypoints'] {
+        const result: DigestResult['entrypoints'] = {
+            routes: [],
+            commands: [],
+            pages: [],
+            jobs: [],
+        };
+
+        for (const ep of entrypoints) {
+            const type = ep.meta?.entrypointType;
+            const name = ep.name;
+
+            switch (type) {
+                case 'route':
+                case 'api':
+                    if (result.routes.length < 5) result.routes.push(name);
+                    break;
+                case 'command':
+                    if (result.commands.length < 5) result.commands.push(name);
+                    break;
+                case 'page':
+                    if (result.pages.length < 5) result.pages.push(name);
+                    break;
+                case 'job':
+                    if (result.jobs.length < 5) result.jobs.push(name);
+                    break;
+            }
+        }
+
+        return result;
+    }
+
+    private findHotspots(
+        files: GraphNode[],
+        limit: number
+    ): DigestResult['hotspots'] {
+        const hotspots: Array<{ path: string; importers: number; exports: number }> = [];
+
+        for (const file of files) {
+            if (!file.path) continue;
+
+            const importers = this.store.getEdgesTo(file.id).length;
+            const exports = file.meta?.exports?.length ?? 0;
+
+            if (importers > 0) {
+                hotspots.push({
+                    path: file.path,
+                    importers,
+                    exports,
+                });
+            }
+        }
+
+        // Sort by importers descending
+        hotspots.sort((a, b) => b.importers - a.importers);
+
+        return hotspots.slice(0, limit);
+    }
+
+    private resolveTarget(target: string): string | null {
+        // Try as node ID first
+        if (this.store.getNode(target)) {
+            return target;
+        }
+
+        // Try as file path
+        const byPath = this.store.getNodeByPath(target);
+        if (byPath) {
+            return byPath.id;
+        }
+
+        // Try as file:path format
+        const fileId = `file:${target}`;
+        if (this.store.getNode(fileId)) {
+            return fileId;
+        }
+
+        return null;
+    }
+
+    private findDependentsByDepth(
+        nodeId: string,
+        maxDepth: number
+    ): Record<number, string[]> {
+        const result: Record<number, string[]> = {};
+        const visited = new Set<string>([nodeId]);
+        let currentLevel = new Set<string>([nodeId]);
+
+        for (let depth = 1; depth <= maxDepth; depth++) {
+            const nextLevel = new Set<string>();
+
+            for (const id of currentLevel) {
+                const edges = this.store.getEdgesTo(id);
+                for (const edge of edges) {
+                    if (!visited.has(edge.from)) {
+                        visited.add(edge.from);
+                        nextLevel.add(edge.from);
+                    }
+                }
+            }
+
+            result[depth] = Array.from(nextLevel).map((id) => {
+                const node = this.store.getNode(id);
+                return node?.path ?? id;
+            });
+
+            currentLevel = nextLevel;
+        }
+
+        return result;
+    }
+
+    private findAffectedEntrypoints(
+        dependents: Set<string>
+    ): ImpactResult['affectedEntrypoints'] {
+        const entrypoints = this.store.getNodesByKind('entrypoint');
+        const affected: ImpactResult['affectedEntrypoints'] = [];
+
+        for (const ep of entrypoints) {
+            if (dependents.has(ep.id) || this.isReachableFrom(ep.id, dependents)) {
+                affected.push({
+                    type: ep.meta?.entrypointType ?? 'unknown',
+                    name: ep.name,
+                    path: ep.path ?? '',
+                });
+            }
+        }
+
+        return affected;
+    }
+
+    private isReachableFrom(startId: string, targets: Set<string>): boolean {
+        const visited = new Set<string>();
+        const queue = [startId];
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            if (!current || visited.has(current)) continue;
+            visited.add(current);
+
+            if (targets.has(current)) return true;
+
+            const edges = this.store.getEdgesFrom(current);
+            for (const edge of edges) {
+                if (edge.kind === 'imports' && edge.to !== 'unknown') {
+                    queue.push(edge.to);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private assessRisk(
+        dependentsByDepth: Record<number, string[]>,
+        entrypointCount: number
+    ): ImpactResult['riskAssessment'] {
+        const totalDependents =
+            (dependentsByDepth[1]?.length ?? 0) +
+            (dependentsByDepth[2]?.length ?? 0) +
+            (dependentsByDepth[3]?.length ?? 0);
+
+        const factors: string[] = [];
+        let level: 'low' | 'medium' | 'high' | 'critical' = 'low';
+
+        if (totalDependents > 20) {
+            factors.push(`${totalDependents} files affected transitively`);
+            level = 'high';
+        } else if (totalDependents > 10) {
+            factors.push(`${totalDependents} files affected`);
+            level = 'medium';
+        }
+
+        if (entrypointCount > 3) {
+            factors.push(`${entrypointCount} entrypoints depend on this`);
+            level = 'high';
+        } else if (entrypointCount > 0) {
+            factors.push(`${entrypointCount} entrypoint(s) affected`);
+        }
+
+        if (totalDependents > 30 && entrypointCount > 5) {
+            level = 'critical';
+        }
+
+        const reasons: Record<typeof level, string> = {
+            low: 'Limited impact, safe to modify',
+            medium: 'Moderate impact, review dependents',
+            high: 'Wide impact, careful review needed',
+            critical: 'Critical module, extensive testing required',
+        };
+
+        return {
+            level,
+            reason: reasons[level],
+            factors,
+        };
+    }
+
+    private emptyImpactResult(target: string): ImpactResult {
+        return {
+            target,
+            targetType: 'file',
+            directDependents: [],
+            transitiveImpact: { depth1: 0, depth2: 0, depth3: 0 },
+            affectedEntrypoints: [],
+            riskAssessment: {
+                level: 'low',
+                reason: 'Target not found in graph',
+                factors: ['File may not be indexed'],
+            },
+            meta: {
+                tokensEstimate: 100,
+                truncated: false,
+                depthReached: 0,
+            },
+        };
+    }
+
+    private severityRank(severity: IssueSeverity): number {
+        const ranks: Record<IssueSeverity, number> = {
+            info: 1,
+            warning: 2,
+            error: 3,
+        };
+        return ranks[severity];
+    }
+
+    private estimateTokens(data: unknown): number {
+        const json = JSON.stringify(data);
+        return Math.ceil(json.length / CHARS_PER_TOKEN);
+    }
+}

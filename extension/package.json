@@ -2,7 +2,7 @@
     "name": "ouroboros-ai",
     "displayName": "Ouroboros AI",
     "description": "Structured AI agent workflow with spec-driven development",
-    "version": "3.2.20",
+    "version": "3.3.0",
     "publisher": "MLGBJDLW",
     "license": "MIT",
     "icon": "resources/icon.png",
@@ -243,50 +243,6 @@
                 }
             },
             {
-                "name": "ouroborosai_phase_progress",
-                "displayName": "Update Phase Progress",
-                "toolReferenceName": "ouroborosai_phase_progress",
-                "description": "Update and display workflow phase progress",
-                "modelDescription": "Use this tool to update the UI with current workflow progress. USAGE: 1) Call when entering a new phase of the spec or implement workflow. 2) Set workflow='spec' for specification phases, workflow='implement' for implementation phases. 3) currentPhase is 1-indexed. 4) Provide a descriptive status message explaining current work.",
-                "canBeReferencedInPrompt": true,
-                "inputSchema": {
-                    "type": "object",
-                    "required": [
-                        "workflow",
-                        "specName",
-                        "currentPhase",
-                        "totalPhases",
-                        "status"
-                    ],
-                    "properties": {
-                        "workflow": {
-                            "type": "string",
-                            "enum": [
-                                "spec",
-                                "implement"
-                            ],
-                            "description": "Workflow type"
-                        },
-                        "specName": {
-                            "type": "string",
-                            "description": "Name of the spec being processed"
-                        },
-                        "currentPhase": {
-                            "type": "number",
-                            "description": "Current phase number (1-indexed)"
-                        },
-                        "totalPhases": {
-                            "type": "number",
-                            "description": "Total number of phases"
-                        },
-                        "status": {
-                            "type": "string",
-                            "description": "Current status message"
-                        }
-                    }
-                }
-            },
-            {
                 "name": "ouroborosai_agent_handoff",
                 "displayName": "Agent Handoff",
                 "toolReferenceName": "ouroborosai_agent_handoff",
@@ -331,6 +287,86 @@
                         "reason": {
                             "type": "string",
                             "description": "Reason for handoff"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_digest",
+                "displayName": "Code Graph Digest",
+                "toolReferenceName": "ouroborosai_graph_digest",
+                "description": "Get a token-efficient overview of the codebase structure",
+                "modelDescription": "RECOMMENDED FIRST CALL: Use this tool to get a compact overview of the codebase before diving into details. Returns: file/module counts, entrypoints (routes, pages, commands, jobs), hotspots (most imported files), and issue summary. Use 'scope' parameter to limit to a specific directory. Output is optimized for minimal token usage (~500 tokens).",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Optional directory path to limit the digest scope (e.g., 'src/components')"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_issues",
+                "displayName": "Code Graph Issues",
+                "toolReferenceName": "ouroborosai_graph_issues",
+                "description": "Get code issues like unreachable handlers and broken exports",
+                "modelDescription": "Use this tool to find code quality issues: HANDLER_UNREACHABLE (dead code not reachable from entrypoints), DYNAMIC_EDGE_UNKNOWN (unresolvable dynamic imports), BROKEN_EXPORT_CHAIN (exports pointing to non-existent files). Each issue includes evidence and suggested fixes. Filter by kind, severity, or scope.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "kind": {
+                            "type": "string",
+                            "enum": [
+                                "HANDLER_UNREACHABLE",
+                                "DYNAMIC_EDGE_UNKNOWN",
+                                "BROKEN_EXPORT_CHAIN"
+                            ],
+                            "description": "Filter by issue type"
+                        },
+                        "severity": {
+                            "type": "string",
+                            "enum": [
+                                "info",
+                                "warning",
+                                "error"
+                            ],
+                            "description": "Minimum severity level"
+                        },
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope to filter issues"
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Maximum issues to return (default: 20, max: 50)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_impact",
+                "displayName": "Code Graph Impact",
+                "toolReferenceName": "ouroborosai_graph_impact",
+                "description": "Analyze the impact of changes to a file or symbol",
+                "modelDescription": "Use this tool BEFORE making changes to understand impact. Returns: direct dependents, transitive impact at depths 1-3, affected entrypoints, and risk assessment (low/medium/high/critical). Helps prevent breaking changes by showing what depends on the target file.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "target"
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "File path or symbol to analyze (e.g., 'src/utils/helpers.ts')"
+                        },
+                        "depth": {
+                            "type": "number",
+                            "description": "Depth of transitive analysis (1-4, default: 2)"
                         }
                     }
                 }

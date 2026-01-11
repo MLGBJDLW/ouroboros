@@ -1,4 +1,4 @@
-# ♾️ Project Ouroboros v3.2.0
+# ♾️ Project Ouroboros v3.3.0
 
 > **Save Money on GitHub Copilot** — A persistent context system that reduces redundant conversations and maximizes your Copilot subscription value.
 

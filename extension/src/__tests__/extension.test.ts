@@ -54,6 +54,15 @@ vi.mock('../webview/SidebarProvider', () => ({
     SidebarProvider: vi.fn().mockImplementation(() => ({
         dispose: vi.fn(),
         setSpecWatcher: vi.fn(),
+        setCodeGraphManager: vi.fn(),
+    })),
+}));
+
+// Mock CodeGraphManager
+vi.mock('../codeGraph/CodeGraphManager', () => ({
+    CodeGraphManager: vi.fn().mockImplementation(() => ({
+        initialize: vi.fn().mockResolvedValue(undefined),
+        dispose: vi.fn(),
     })),
 }));
 

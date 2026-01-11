@@ -921,6 +921,9 @@ const OUROBOROS_TOOLS = [
     'mlgbjdlw.ouroboros-ai/ouroborosai_confirm',
     'mlgbjdlw.ouroboros-ai/ouroborosai_plan_review',
     'mlgbjdlw.ouroboros-ai/ouroborosai_agent_handoff',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_digest',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_issues',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_impact',
 ];
 
 /**

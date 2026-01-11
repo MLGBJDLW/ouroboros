@@ -50,6 +50,9 @@ export function createAskTool(
                     attachments: result.attachments?.map(a => ({ name: a.name, type: a.type, size: a.size })),
                 }));
 
+                // Consume graph context and include in response
+                const graphContext = sidebarProvider.consumeGraphContext();
+                
                 // Store interaction
                 await stateManager.addInteraction({
                     type: 'ask',
@@ -64,11 +67,30 @@ export function createAskTool(
                           : 'responded',
                 });
 
+                // Build response with graph context if present
+                let responseText = result.response || '';
+                if (graphContext.length > 0) {
+                    const contextSummary = graphContext.map(ctx => {
+                        if (ctx.type === 'graph_digest') {
+                            return '[Code Graph Digest attached]';
+                        } else if (ctx.type === 'graph_issue') {
+                            const issue = ctx.data as { file: string; kind: string };
+                            return `[Issue: ${issue.kind} in ${issue.file}]`;
+                        } else if (ctx.type === 'graph_hotspot') {
+                            const hotspot = ctx.data as { path: string };
+                            return `[Hotspot: ${hotspot.path}]`;
+                        }
+                        return `[${ctx.type}]`;
+                    }).join(' ');
+                    responseText = responseText ? `${responseText}\n\n${contextSummary}` : contextSummary;
+                }
+
                 const output: AskOutput = {
-                    response: result.response || (result.attachments?.length ? '[See attached image(s)]' : ''),
+                    response: responseText || (result.attachments?.length ? '[See attached image(s)]' : ''),
                     cancelled: result.cancelled ?? false,
                     timeout: result.timeout,
                     attachments: result.attachments,
+                    graphContext: graphContext.length > 0 ? graphContext : undefined,
                 };
 
                 return buildToolResult(output, result.attachments);

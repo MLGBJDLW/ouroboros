@@ -50,6 +50,7 @@ describe('createAskTool', () => {
 
         mockSidebarProvider = {
             createAskRequest: vi.fn(),
+            consumeGraphContext: vi.fn().mockReturnValue([]),
         };
     });
 
