@@ -27,7 +27,7 @@ interface ForceGraphProps {
     highlightHotspots: boolean;
 }
 
-// Color palette
+// Color palette - using CSS custom properties where possible
 const COLORS = {
     entrypoint: '#4CAF50',      // Green
     hotspot: '#FF5722',         // Orange-red
@@ -35,10 +35,42 @@ const COLORS = {
     fileWithIssue: '#FFC107',   // Amber
     selected: '#E91E63',        // Pink
     hovered: '#9C27B0',         // Purple
-    edge: 'rgba(255, 255, 255, 0.15)',
-    edgeHighlight: 'rgba(255, 255, 255, 0.5)',
-    label: 'rgba(255, 255, 255, 0.9)',
+    // These will be computed from CSS variables
+    edge: '',
+    edgeHighlight: '',
+    label: '',
+    border: '',
 };
+
+// Get computed CSS variable value
+function getCSSVar(name: string): string {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// Check if dark theme
+function isDarkTheme(): boolean {
+    const bg = getCSSVar('--background');
+    if (!bg) return true;
+    // Simple heuristic: check if background is dark
+    const rgb = bg.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+        const brightness = (parseInt(rgb[0]) + parseInt(rgb[1]) + parseInt(rgb[2])) / 3;
+        return brightness < 128;
+    }
+    return true;
+}
+
+// Update colors based on theme
+function getThemeColors() {
+    const dark = isDarkTheme();
+    return {
+        ...COLORS,
+        edge: dark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+        edgeHighlight: dark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+        label: dark ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+        border: dark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+    };
+}
 
 export function ForceGraph({
     data,
@@ -56,6 +88,17 @@ export function ForceGraph({
 }: ForceGraphProps) {
     const graphRef = useRef<ForceGraphMethods | null>(null);
     const [isStabilized, setIsStabilized] = useState(false);
+    const [themeColors, setThemeColors] = useState(getThemeColors());
+
+    // Update colors when theme changes
+    useEffect(() => {
+        const updateColors = () => setThemeColors(getThemeColors());
+        updateColors();
+        // Listen for theme changes via MutationObserver on body class
+        const observer = new MutationObserver(updateColors);
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
 
     // Convert data to force graph format
     const forceData = {
@@ -112,7 +155,7 @@ export function ForceGraph({
         ctx.fill();
 
         // Draw border
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.strokeStyle = themeColors.border;
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -151,12 +194,12 @@ export function ForceGraph({
             ctx.font = `${fontSize}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillStyle = COLORS.label;
+            ctx.fillStyle = themeColors.label;
             ctx.fillText(label, x, y + size + 4);
         }
 
         ctx.globalAlpha = 1;
-    }, [getNodeSize, getNodeColor, getNodeOpacity, selectedNode, hoveredNode, showLabels]);
+    }, [getNodeSize, getNodeColor, getNodeOpacity, selectedNode, hoveredNode, showLabels, themeColors]);
 
     // Draw link
     const drawLink = useCallback((link: ForceLink, ctx: CanvasRenderingContext2D) => {
@@ -171,7 +214,7 @@ export function ForceGraph({
         ctx.beginPath();
         ctx.moveTo(source.x, source.y);
         ctx.lineTo(target.x, target.y);
-        ctx.strokeStyle = isHighlighted ? COLORS.edgeHighlight : COLORS.edge;
+        ctx.strokeStyle = isHighlighted ? themeColors.edgeHighlight : themeColors.edge;
         ctx.lineWidth = isHighlighted ? 1.5 : 0.5;
         ctx.stroke();
 
@@ -193,10 +236,10 @@ export function ForceGraph({
                 midY - arrowLen * Math.sin(angle + Math.PI / 6)
             );
             ctx.closePath();
-            ctx.fillStyle = COLORS.edgeHighlight;
+            ctx.fillStyle = themeColors.edgeHighlight;
             ctx.fill();
         }
-    }, [highlightedNodes]);
+    }, [highlightedNodes, themeColors]);
 
     // Handle node click
     const handleNodeClick = useCallback((node: ForceNode) => {
