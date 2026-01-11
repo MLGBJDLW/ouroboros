@@ -10,6 +10,7 @@ import { generateHtml } from './htmlGenerator';
 import { TIMEOUTS } from '../constants';
 import type { StateManager } from '../storage/stateManager';
 import type { SpecWatcher } from '../services/specWatcher';
+import type { CodeGraphManager } from '../codeGraph/CodeGraphManager';
 import type {
     AskInput,
     AskOutput,
@@ -30,12 +31,23 @@ type PendingRequestWithTimeout = PendingRequest & {
 };
 
 /**
+ * Graph context item for attaching to requests
+ */
+export interface GraphContextItem {
+    type: string;
+    data: unknown;
+    timestamp: number;
+}
+
+/**
  * Sidebar Webview Provider for Ouroboros
  */
 export class SidebarProvider extends DisposableBase implements vscode.WebviewViewProvider {
     private webviewView: vscode.WebviewView | undefined;
     private pendingRequests: Map<string, PendingRequestWithTimeout> = new Map();
     private specWatcher: SpecWatcher | undefined;
+    private codeGraphManager: CodeGraphManager | undefined;
+    private graphContext: GraphContextItem[] = [];
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -66,6 +78,54 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
     }
 
     /**
+     * Set the code graph manager reference
+     */
+    setCodeGraphManager(manager: CodeGraphManager): void {
+        this.codeGraphManager = manager;
+    }
+
+    /**
+     * Add graph context item (for attaching to next request)
+     */
+    addGraphContext(item: GraphContextItem): void {
+        // Limit to 10 items to prevent memory bloat
+        if (this.graphContext.length >= 10) {
+            this.graphContext.shift();
+        }
+        this.graphContext.push(item);
+        logger.info(`Graph context added: ${item.type}, total: ${this.graphContext.length}`);
+        
+        // Notify webview of context update
+        this.postMessage({
+            type: 'graphContextUpdate',
+            payload: this.graphContext,
+        });
+    }
+
+    /**
+     * Get and clear graph context (called when request is sent)
+     */
+    consumeGraphContext(): GraphContextItem[] {
+        const context = [...this.graphContext];
+        this.graphContext = [];
+        
+        // Notify webview that context was consumed
+        this.postMessage({
+            type: 'graphContextUpdate',
+            payload: [],
+        });
+        
+        return context;
+    }
+
+    /**
+     * Get current graph context without clearing
+     */
+    getGraphContext(): GraphContextItem[] {
+        return [...this.graphContext];
+    }
+
+    /**
      * Resolve the webview view
      */
     resolveWebviewView(
@@ -91,7 +151,7 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
         // Handle messages from webview
         this.register(
             webviewView.webview.onDidReceiveMessage(async (message) => {
-                await handleMessage(message, this, this.stateManager, this.specWatcher);
+                await handleMessage(message, this, this.stateManager, this.specWatcher, this.codeGraphManager);
             })
         );
 

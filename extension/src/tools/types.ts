@@ -22,6 +22,16 @@ export interface SerializedAttachment {
 }
 
 // ============================================================================
+// Graph Context Types
+// ============================================================================
+
+export interface GraphContextItem {
+    type: string;
+    data: unknown;
+    timestamp: number;
+}
+
+// ============================================================================
 // Ask Tool Types
 // ============================================================================
 
@@ -41,6 +51,8 @@ export interface AskOutput {
     timeout?: boolean;
     /** Attached files/images */
     attachments?: SerializedAttachment[];
+    /** Graph context items added by user */
+    graphContext?: GraphContextItem[];
 }
 
 // ============================================================================

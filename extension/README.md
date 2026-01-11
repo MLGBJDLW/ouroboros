@@ -36,7 +36,9 @@ code --install-extension ouroboros-ai-x.x.x.vsix
 
 ## LM Tools
 
-The extension provides 6 tools that AI agents can use:
+The extension provides 13 tools that AI agents can use:
+
+### Core Tools
 
 | Tool | Purpose |
 |:---|:---|
@@ -44,8 +46,26 @@ The extension provides 6 tools that AI agents can use:
 | `ouroborosai_menu` | Present multiple choice options |
 | `ouroborosai_confirm` | Get yes/no confirmation |
 | `ouroborosai_plan_review` | Present plan/document for approval |
-| `ouroborosai_phase_progress` | Report workflow phase progress |
 | `ouroborosai_agent_handoff` | Notify agent level transitions |
+
+### Code Graph Tools (v1.0)
+
+| Tool | Purpose |
+|:---|:---|
+| `ouroborosai_graph_digest` | Compact codebase overview (~500 tokens) |
+| `ouroborosai_graph_issues` | Code quality issues with evidence and fixes |
+| `ouroborosai_graph_impact` | Change impact analysis with risk assessment |
+| `ouroborosai_graph_path` | Find dependency paths between modules |
+| `ouroborosai_graph_module` | Get detailed module information |
+| `ouroborosai_graph_annotations` | Manage manual graph annotations |
+| `ouroborosai_graph_cycles` | Detect circular dependencies |
+| `ouroborosai_graph_layers` | Check architectural layer violations |
+
+All Code Graph tools return responses in a [unified envelope format](../docs/code-graph/ENVELOPE.md) with:
+- `success` flag, `tool` name, `version`, `requestId`, `generatedAt`
+- `workspace` context (root, repoName)
+- `result` (business output)
+- `meta` (approxTokens, truncated, limits, nextQuerySuggestion)
 
 ## Commands
 

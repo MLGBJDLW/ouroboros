@@ -12,14 +12,26 @@ import type {
     ConfirmOutput,
     PlanReviewInput,
     PlanReviewOutput,
-    PhaseProgressInput,
-    PhaseProgressOutput,
     HandoffInput,
     HandoffOutput,
     StoredInteraction,
     PendingRequest,
     ToolResult,
 } from '../../tools/types';
+
+// PhaseProgressInput and PhaseProgressOutput are not exported from types.ts
+// Define them locally for testing purposes
+interface PhaseProgressInput {
+    workflow: string;
+    specName: string;
+    currentPhase: number;
+    totalPhases: number;
+    status: string;
+}
+
+interface PhaseProgressOutput {
+    acknowledged: boolean;
+}
 
 describe('tool types', () => {
     describe('AskInput', () => {

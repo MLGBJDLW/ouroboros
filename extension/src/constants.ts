@@ -26,6 +26,17 @@ export const TOOLS = {
     CONFIRM: 'ouroborosai_confirm',
     PLAN_REVIEW: 'ouroborosai_plan_review',
     AGENT_HANDOFF: 'ouroborosai_agent_handoff',
+    // Code Graph Tools (MVP)
+    GRAPH_DIGEST: 'ouroborosai_graph_digest',
+    GRAPH_ISSUES: 'ouroborosai_graph_issues',
+    GRAPH_IMPACT: 'ouroborosai_graph_impact',
+    // Code Graph Tools (v0.2)
+    GRAPH_PATH: 'ouroborosai_graph_path',
+    GRAPH_MODULE: 'ouroborosai_graph_module',
+    GRAPH_ANNOTATIONS: 'ouroborosai_graph_annotations',
+    // Code Graph Tools (v0.5)
+    GRAPH_CYCLES: 'ouroborosai_graph_cycles',
+    GRAPH_LAYERS: 'ouroborosai_graph_layers',
 } as const;
 
 // Configuration Keys

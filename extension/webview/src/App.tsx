@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { PendingRequests } from './views/PendingRequests';
 import { WorkflowProgress } from './views/WorkflowProgress';
 import { History } from './views/History';
+import { CodeGraph } from './views/CodeGraph';
 import { Icon } from './components/Icon';
 import { Tooltip } from './components/Tooltip';
 import { Welcome } from './components/Welcome';
@@ -10,7 +11,7 @@ import { useAppContext } from './context/AppContext';
 import { useVSCode } from './context/VSCodeContext';
 import styles from './App.module.css';
 
-type ViewType = 'home' | 'pending' | 'workflow' | 'history';
+type ViewType = 'home' | 'pending' | 'workflow' | 'graph' | 'history';
 
 interface TabConfig {
     id: ViewType;
@@ -21,9 +22,10 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
     { id: 'home', icon: 'home', label: 'Home', shortcut: '0' },
-    { id: 'pending', icon: 'bell', label: 'Pending Requests', shortcut: '1' },
-    { id: 'workflow', icon: 'pulse', label: 'Workflow Progress', shortcut: '2' },
-    { id: 'history', icon: 'history', label: 'History', shortcut: '3' },
+    { id: 'pending', icon: 'bell', label: 'Pending', shortcut: '1' },
+    { id: 'workflow', icon: 'pulse', label: 'Workflow', shortcut: '2' },
+    { id: 'graph', icon: 'type-hierarchy', label: 'Graph', shortcut: '3' },
+    { id: 'history', icon: 'history', label: 'History', shortcut: '4' },
 ];
 
 function App() {
@@ -39,7 +41,7 @@ function App() {
         }
 
         // Number keys for tab switching (only with Alt modifier to avoid conflicts)
-        if (e.key >= '0' && e.key <= '3' && e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key >= '0' && e.key <= '4' && e.altKey && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             const index = parseInt(e.key);
             if (TABS[index]) {
@@ -121,6 +123,8 @@ function App() {
                 return <PendingRequests />;
             case 'workflow':
                 return <WorkflowProgress />;
+            case 'graph':
+                return <CodeGraph />;
             case 'history':
                 return <History />;
             default:

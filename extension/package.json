@@ -2,7 +2,7 @@
     "name": "ouroboros-ai",
     "displayName": "Ouroboros AI",
     "description": "Structured AI agent workflow with spec-driven development",
-    "version": "3.2.20",
+    "version": "3.3.0",
     "publisher": "MLGBJDLW",
     "license": "MIT",
     "icon": "resources/icon.png",
@@ -243,50 +243,6 @@
                 }
             },
             {
-                "name": "ouroborosai_phase_progress",
-                "displayName": "Update Phase Progress",
-                "toolReferenceName": "ouroborosai_phase_progress",
-                "description": "Update and display workflow phase progress",
-                "modelDescription": "Use this tool to update the UI with current workflow progress. USAGE: 1) Call when entering a new phase of the spec or implement workflow. 2) Set workflow='spec' for specification phases, workflow='implement' for implementation phases. 3) currentPhase is 1-indexed. 4) Provide a descriptive status message explaining current work.",
-                "canBeReferencedInPrompt": true,
-                "inputSchema": {
-                    "type": "object",
-                    "required": [
-                        "workflow",
-                        "specName",
-                        "currentPhase",
-                        "totalPhases",
-                        "status"
-                    ],
-                    "properties": {
-                        "workflow": {
-                            "type": "string",
-                            "enum": [
-                                "spec",
-                                "implement"
-                            ],
-                            "description": "Workflow type"
-                        },
-                        "specName": {
-                            "type": "string",
-                            "description": "Name of the spec being processed"
-                        },
-                        "currentPhase": {
-                            "type": "number",
-                            "description": "Current phase number (1-indexed)"
-                        },
-                        "totalPhases": {
-                            "type": "number",
-                            "description": "Total number of phases"
-                        },
-                        "status": {
-                            "type": "string",
-                            "description": "Current status message"
-                        }
-                    }
-                }
-            },
-            {
                 "name": "ouroborosai_agent_handoff",
                 "displayName": "Agent Handoff",
                 "toolReferenceName": "ouroborosai_agent_handoff",
@@ -334,12 +290,287 @@
                         }
                     }
                 }
+            },
+            {
+                "name": "ouroborosai_graph_digest",
+                "displayName": "Code Graph Digest",
+                "toolReferenceName": "ouroborosai_graph_digest",
+                "description": "Get a token-efficient overview of the codebase structure",
+                "modelDescription": "RECOMMENDED FIRST CALL: Use this tool to get a compact overview of the codebase before diving into details. Returns: file/module counts, entrypoints (routes, pages, commands, jobs), hotspots (most imported files), and issue summary. Use 'scope' parameter to limit to a specific directory. Output is optimized for minimal token usage (~500 tokens).",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Optional directory path to limit the digest scope (e.g., 'src/components')"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_issues",
+                "displayName": "Code Graph Issues",
+                "toolReferenceName": "ouroborosai_graph_issues",
+                "description": "Get code issues like unreachable handlers and broken exports",
+                "modelDescription": "Use this tool to find code quality issues: HANDLER_UNREACHABLE (dead code not reachable from entrypoints), DYNAMIC_EDGE_UNKNOWN (unresolvable dynamic imports), BROKEN_EXPORT_CHAIN (exports pointing to non-existent files). Each issue includes evidence and suggested fixes. Filter by kind, severity, or scope.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "kind": {
+                            "type": "string",
+                            "enum": [
+                                "HANDLER_UNREACHABLE",
+                                "DYNAMIC_EDGE_UNKNOWN",
+                                "BROKEN_EXPORT_CHAIN"
+                            ],
+                            "description": "Filter by issue type"
+                        },
+                        "severity": {
+                            "type": "string",
+                            "enum": [
+                                "info",
+                                "warning",
+                                "error"
+                            ],
+                            "description": "Minimum severity level"
+                        },
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope to filter issues"
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Maximum issues to return (default: 20, max: 50)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_impact",
+                "displayName": "Code Graph Impact",
+                "toolReferenceName": "ouroborosai_graph_impact",
+                "description": "Analyze the impact of changes to a file or symbol",
+                "modelDescription": "Use this tool BEFORE making changes to understand impact. Returns: direct dependents, transitive impact at depths 1-3, affected entrypoints, and risk assessment (low/medium/high/critical). Helps prevent breaking changes by showing what depends on the target file.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "target"
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "File path or symbol to analyze (e.g., 'src/utils/helpers.ts')"
+                        },
+                        "depth": {
+                            "type": "number",
+                            "description": "Depth of transitive analysis (1-4, default: 2)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_path",
+                "displayName": "Code Graph Path",
+                "toolReferenceName": "ouroborosai_graph_path",
+                "description": "Find dependency paths between two modules",
+                "modelDescription": "Use this tool to trace import chains between modules. Returns shortest paths showing how modules are connected. Useful for understanding dependencies and finding unexpected connections. Returns up to 3 paths by default.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "from",
+                        "to"
+                    ],
+                    "properties": {
+                        "from": {
+                            "type": "string",
+                            "description": "Source file path"
+                        },
+                        "to": {
+                            "type": "string",
+                            "description": "Target file path"
+                        },
+                        "maxDepth": {
+                            "type": "number",
+                            "description": "Maximum path depth (1-10, default: 5)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_module",
+                "displayName": "Code Graph Module",
+                "toolReferenceName": "ouroborosai_graph_module",
+                "description": "Get detailed information about a specific module",
+                "modelDescription": "Use this tool to understand a module's role in the codebase. Returns: imports, importedBy (dependents), exports, re-exports, related entrypoints, and whether it's a barrel file. Helps understand module structure and dependencies.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "target"
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "File path to analyze"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_annotations",
+                "displayName": "Code Graph Annotations",
+                "toolReferenceName": "ouroborosai_graph_annotations",
+                "description": "Manage manual annotations for the code graph",
+                "modelDescription": "Use this tool to add hints for dynamic imports, mark custom entrypoints, or ignore false positive issues. Actions: list (show all), addEdge (manual import hint), addEntrypoint (mark as entry), addIgnore (suppress issue). Annotations persist in .ouroboros/graph/annotations.json.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "action"
+                    ],
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": [
+                                "list",
+                                "addEdge",
+                                "addEntrypoint",
+                                "addIgnore",
+                                "remove"
+                            ],
+                            "description": "Action to perform"
+                        },
+                        "from": {
+                            "type": "string",
+                            "description": "Source file (for addEdge)"
+                        },
+                        "to": {
+                            "type": "string",
+                            "description": "Target file (for addEdge)"
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "File path (for addEntrypoint)"
+                        },
+                        "entrypointType": {
+                            "type": "string",
+                            "enum": [
+                                "route",
+                                "page",
+                                "command",
+                                "job",
+                                "api",
+                                "main"
+                            ],
+                            "description": "Entrypoint type"
+                        },
+                        "name": {
+                            "type": "string",
+                            "description": "Display name"
+                        },
+                        "issueKind": {
+                            "type": "string",
+                            "description": "Issue type to ignore"
+                        },
+                        "ignorePath": {
+                            "type": "string",
+                            "description": "Path pattern to ignore"
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Reason for annotation"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_cycles",
+                "displayName": "Code Graph Cycles",
+                "toolReferenceName": "ouroborosai_graph_cycles",
+                "description": "Detect circular dependencies in the codebase",
+                "modelDescription": "Use this tool to find circular dependencies using Tarjan's algorithm. Returns cycles with severity levels and suggested break points. Helps identify and fix circular imports that can cause runtime issues or make code harder to maintain.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope to limit detection (e.g., 'src/features')"
+                        },
+                        "minLength": {
+                            "type": "number",
+                            "description": "Minimum cycle length to report (default: 2)"
+                        },
+                        "maxCycles": {
+                            "type": "number",
+                            "description": "Maximum cycles to return (default: 20)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_layers",
+                "displayName": "Code Graph Layers",
+                "toolReferenceName": "ouroborosai_graph_layers",
+                "description": "Check architectural layer rules and detect violations",
+                "modelDescription": "Use this tool to enforce clean architecture boundaries. Actions: check (find violations), list (show rules), suggest (get rule suggestions). Helps maintain separation of concerns (e.g., UI cannot import DB directly).",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "action"
+                    ],
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": [
+                                "check",
+                                "list",
+                                "suggest"
+                            ],
+                            "description": "Action to perform"
+                        },
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope for checking"
+                        },
+                        "rules": {
+                            "type": "array",
+                            "description": "Custom rules to check",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "from": {
+                                        "type": "string"
+                                    },
+                                    "cannotImport": {
+                                        "type": "string"
+                                    },
+                                    "severity": {
+                                        "type": "string",
+                                        "enum": [
+                                            "warning",
+                                            "error"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         ]
     },
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "compile": "npm run build-webview && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+        "compile": "npm run build-webview && node scripts/copy-tree-sitter-wasm.js && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
         "watch": "npm run compile -- --watch",
         "build-webview": "cd webview && npm run build",
         "package": "npm run compile -- --minify",
@@ -363,6 +594,7 @@
     },
     "dependencies": {
         "@vscode/codicons": "^0.0.36",
+        "web-tree-sitter": "^0.26.3",
         "zod": "^3.0.0"
     }
 }

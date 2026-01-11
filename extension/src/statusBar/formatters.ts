@@ -17,7 +17,7 @@ export function formatStatusBarText(state: WorkspaceState): string {
 
     const specName = truncate(state.currentSpec, 20);
     const phase = state.currentPhase > 0 ? ` (${state.currentPhase})` : '';
-    const workflowLabel = state.workflowType ? `${formatWorkflowType(state.workflowType)} ` : '';
+    const workflowLabel = state.workflowType ? `${formatWorkflowType(state.workflowType as 'spec' | 'implement')} ` : '';
     const modeLabel = state.executionMode ? ` | ${formatExecutionMode(state.executionMode)}` : '';
 
     return `${icon} ${label} | ${workflowLabel}${specName}${phase}${modeLabel}`;

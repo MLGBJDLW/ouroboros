@@ -68,14 +68,14 @@ jobs:
             IS_DRAFT=false
             RELEASE_NAME="♾️ Ouroboros v${VERSION}"
           else
-            # Push to main - auto-increment patch releases on the v3.1.x line.
-            # The first auto-release after this change starts at v3.1.0.
+            # Push to main - auto-increment patch releases on the v3.3.x line.
+            # The first auto-release after this change starts at v3.3.0.
             # Get the latest version tag
             LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
             
             if [ -z "$LATEST_TAG" ]; then
-              # No tags exist, start from v3.2.0
-              VERSION="3.2.0"
+              # No tags exist, start from v3.3.0
+              VERSION="3.3.0"
             else
               # Parse current version and increment patch
               CURRENT=${LATEST_TAG#v}
@@ -83,15 +83,15 @@ jobs:
               MINOR=$(echo $CURRENT | cut -d. -f2)
               PATCH=$(echo $CURRENT | cut -d. -f3)
               
-              # Ensure we're on v3.2.x for auto releases.
-              # If the latest tag is below v3.2.0, jump to v3.2.0.
+              # Ensure we're on v3.3.x for auto releases.
+              # If the latest tag is below v3.3.0, jump to v3.3.0.
               if [ "$MAJOR" -lt 3 ]; then
-                VERSION="3.2.0"
-              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 2 ]; then
-                VERSION="3.2.0"
-              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -eq 2 ]; then
+                VERSION="3.3.0"
+              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 3 ]; then
+                VERSION="3.3.0"
+              elif [ "$MAJOR" -eq 3 ] && [ "$MINOR" -eq 3 ]; then
                 PATCH=$((PATCH + 1))
-                VERSION="3.2.${PATCH}"
+                VERSION="3.3.${PATCH}"
               else
                 # Default behavior for other branches: increment patch version.
                 PATCH=$((PATCH + 1))

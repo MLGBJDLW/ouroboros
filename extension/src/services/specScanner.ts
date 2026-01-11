@@ -138,7 +138,7 @@ function isValidSpecFolder(spec: SpecInfo): boolean {
     // A valid spec should have at least one completed phase or have tasks
     const hasCompletedPhase = spec.phases.some(p => p.status === 'completed');
     const hasTasks = spec.taskSummary && spec.taskSummary.total > 0;
-    return hasCompletedPhase || hasTasks;
+    return hasCompletedPhase || hasTasks || false;
 }
 
 /**

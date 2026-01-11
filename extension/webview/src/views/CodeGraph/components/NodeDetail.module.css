@@ -1,0 +1,544 @@
+/* NodeDetail Styles */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: var(--spacing-sm);
+    color: var(--foreground-secondary);
+    font-size: 12px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+}
+
+.headerInfo {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    min-width: 0;
+}
+
+.headerIcon {
+    font-size: 20px;
+    color: var(--foreground-secondary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.headerIcon.entrypoint {
+    color: var(--success);
+}
+
+.headerIcon.hotspot {
+    color: var(--warning);
+}
+
+.headerText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.fileName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.filePath {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--foreground-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.closeBtn {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.closeBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+/* Quick Stats */
+.quickStats {
+    display: flex;
+    padding: var(--spacing-sm) var(--spacing-md);
+    gap: var(--spacing-md);
+    border-bottom: 1px solid var(--border);
+}
+
+.stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.stat.hasIssues .statValue {
+    color: var(--warning);
+}
+
+.statValue {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--foreground-secondary);
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    padding: var(--spacing-xs);
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.tab:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.tab.active {
+    background: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.tabBadge {
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 14px;
+    text-align: center;
+    background: var(--warning);
+    color: #000;
+    border-radius: 7px;
+}
+
+/* Content */
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: var(--spacing-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+}
+
+.emptyTab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: var(--spacing-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+}
+
+/* Info Tab */
+.infoTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.typeBadges {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.typeBadge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.typeBadge.entrypoint {
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    color: var(--success);
+}
+
+.typeBadge.hotspot {
+    background: color-mix(in srgb, var(--warning) 20%, transparent);
+    color: var(--warning);
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--foreground-secondary);
+}
+
+.fileList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fileList li {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--link-foreground);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.fileList li:hover {
+    background: var(--list-hover);
+}
+
+.fileList li.more {
+    color: var(--foreground-secondary);
+    font-style: italic;
+    cursor: default;
+}
+
+.fileList li.more:hover {
+    background: transparent;
+}
+
+.exportList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.exportList li {
+    padding: 2px 6px;
+    background: var(--badge-background);
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+}
+
+.exportList li code {
+    font-family: var(--font-mono);
+    color: var(--foreground);
+}
+
+.exportList li.more {
+    background: transparent;
+    color: var(--foreground-secondary);
+    font-style: italic;
+}
+
+/* Issues Tab */
+.issuesTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.issueCard {
+    padding: var(--spacing-sm);
+    background: var(--background);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--border);
+}
+
+.issueCard.info { border-left-color: var(--info); }
+.issueCard.warning { border-left-color: var(--warning); }
+.issueCard.error { border-left-color: var(--error); }
+
+.issueHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.issueKind {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--foreground-secondary);
+}
+
+.issueSummary {
+    margin: 0 0 var(--spacing-xs);
+    font-size: 11px;
+    color: var(--foreground);
+    line-height: 1.4;
+}
+
+.issueFix {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    padding: var(--spacing-xs);
+    background: color-mix(in srgb, var(--success) 10%, transparent);
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    color: var(--success);
+    margin-bottom: var(--spacing-xs);
+}
+
+.issueActions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.issueBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.issueBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.issueBtn.fixBtn {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+}
+
+.issueBtn.fixBtn:hover {
+    filter: brightness(1.1);
+}
+
+/* Impact Tab */
+.impactTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.riskLevel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid;
+}
+
+.riskLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--foreground-secondary);
+}
+
+.riskValue {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.impactSummary {
+    margin: 0;
+    font-size: 11px;
+    color: var(--foreground);
+    line-height: 1.4;
+}
+
+.affectedList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.affectedList li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.affectedList li:hover {
+    background: var(--list-hover);
+}
+
+.affectedList li.more {
+    justify-content: center;
+    color: var(--foreground-secondary);
+    font-size: 10px;
+    font-style: italic;
+    cursor: default;
+}
+
+.affectedInfo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.affectedPath {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--link-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.affectedDistance {
+    font-size: 9px;
+    padding: 2px 6px;
+    background: var(--badge-background);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    flex-shrink: 0;
+}
+
+.addContextBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: var(--spacing-sm);
+    background: var(--button-background);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--button-foreground);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.addContextBtn:hover {
+    background: var(--button-hover-background);
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--border);
+    background: var(--background);
+}
+
+.actionBtn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.actionBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.actionBtn.primary {
+    background: var(--button-background);
+    border-color: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.actionBtn.primary:hover {
+    background: var(--button-hover-background);
+}

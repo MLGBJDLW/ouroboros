@@ -39,6 +39,7 @@ describe('createAskTool', () => {
 
     let mockSidebarProvider: {
         createAskRequest: ReturnType<typeof vi.fn>;
+        consumeGraphContext: ReturnType<typeof vi.fn>;
     };
 
     beforeEach(() => {
@@ -50,6 +51,7 @@ describe('createAskTool', () => {
 
         mockSidebarProvider = {
             createAskRequest: vi.fn(),
+            consumeGraphContext: vi.fn().mockReturnValue([]),
         };
     });
 
