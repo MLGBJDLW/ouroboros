@@ -2,6 +2,22 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.1] - 2026-01-11
+
+### Fixed
+- **Tree-sitter WASM** — Windows `file://` URL conversion
+- **Workspace Selection** — Tools register correctly after Marketplace install
+- **vscode.open** — Webview path-to-Uri conversion
+- **Hotspot Consistency** — Tree view now uses same logic as Overview
+
+### Improved
+- **Language Indexers** — Comprehensive framework detection for Go, Java, Python, Rust, TypeScript
+- **Code Graph Tools** — All 8 tools injected for L0/L1/L2 agents via promptTransformer
+- **Tool Parameters** — Fine-grained filtering (`include`, `limit`, `groupBy`, etc.)
+- **UI** — Replaced emoji with codicon icons in Graph settings
+
+---
+
 ## [3.3.0] - 2026-01-11
 
 ### 🚀 Code Graph v1.0 - Production Ready

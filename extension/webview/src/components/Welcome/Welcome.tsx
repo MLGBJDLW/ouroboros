@@ -250,7 +250,7 @@ export function Welcome({
 
             {/* Footer */}
             <div className={styles.footer}>
-                <span>♾️ The Loop Never Ends</span>
+                <span>The Loop Never Ends</span>
             </div>
         </div>
     );

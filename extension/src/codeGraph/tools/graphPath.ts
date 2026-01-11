@@ -18,13 +18,14 @@ export interface GraphPathInput {
     to: string;
     maxDepth?: number;
     maxPaths?: number;
+    includeEdgeDetails?: boolean;
 }
 
 export interface GraphPathTool {
     name: string;
     description: string;
     inputSchema: object;
-    execute: (input: GraphPathInput) => Promise<ToolEnvelope<PathResult>>;
+    execute: (input: GraphPathInput) => Promise<ToolEnvelope<PathResult | Record<string, unknown>>>;
 }
 
 export function createGraphPathTool(
@@ -34,11 +35,17 @@ export function createGraphPathTool(
         name: 'ouroborosai_graph_path',
         description: `Find dependency paths between two modules in the codebase.
 Use this to understand how modules are connected and trace import chains.
-Returns up to 3 shortest paths by default.
+Returns shortest paths by default.
+
+Parameters:
+- from/to: File paths to trace between
+- maxDepth: How deep to search (1-10, default: 5)
+- maxPaths: How many paths to return (1-10, default: 3)
+- includeEdgeDetails: Include edge IDs in response (default: false)
 
 Examples:
-- Find path from entry to utility: from="src/index.ts", to="src/utils/helpers.ts"
-- Check if modules are connected: from="src/api/users.ts", to="src/db/models.ts"`,
+- Quick check: from="src/index.ts", to="src/utils/helpers.ts", maxPaths=1
+- Full trace: from="src/api/users.ts", to="src/db/models.ts", maxDepth=8`,
 
         inputSchema: {
             type: 'object',
@@ -46,24 +53,28 @@ Examples:
             properties: {
                 from: {
                     type: 'string',
-                    description: 'Source file path or module name',
+                    description: 'Source file path (e.g., "src/index.ts")',
                 },
                 to: {
                     type: 'string',
-                    description: 'Target file path or module name',
+                    description: 'Target file path (e.g., "src/utils/helpers.ts")',
                 },
                 maxDepth: {
                     type: 'number',
-                    description: 'Maximum path depth to search (default: 5, max: 10)',
+                    description: 'Maximum path depth to search (1-10, default: 5)',
                 },
                 maxPaths: {
                     type: 'number',
-                    description: 'Maximum number of paths to return (default: 3, max: 10)',
+                    description: 'Maximum number of paths to return (1-10, default: 3)',
+                },
+                includeEdgeDetails: {
+                    type: 'boolean',
+                    description: 'Include edge IDs in response (default: false, saves tokens)',
                 },
             },
         },
 
-        async execute(input: GraphPathInput): Promise<ToolEnvelope<PathResult>> {
+        async execute(input: GraphPathInput): Promise<ToolEnvelope<PathResult | Record<string, unknown>>> {
             const workspace = getWorkspaceContext();
             const query = manager.getQuery();
             
@@ -88,32 +99,57 @@ Examples:
                 );
             }
 
-            const result = query.path(input.from, input.to, {
+            const fullResult = query.path(input.from, input.to, {
                 maxDepth: input.maxDepth,
                 maxPaths: input.maxPaths,
             });
 
+            // Build filtered result
+            const filteredResult: Record<string, unknown> = {
+                from: fullResult.from,
+                to: fullResult.to,
+                connected: fullResult.connected,
+                shortestPath: fullResult.shortestPath,
+                pathCount: fullResult.paths.length,
+                meta: fullResult.meta,
+            };
+
+            // Include paths with or without edge details
+            if (input.includeEdgeDetails) {
+                filteredResult.paths = fullResult.paths;
+            } else {
+                // Omit edge IDs to save tokens
+                filteredResult.paths = fullResult.paths.map(p => ({
+                    nodes: p.nodes,
+                    length: p.length,
+                }));
+            }
+
+            // Recalculate token estimate
+            const tokensEstimate = Math.ceil(JSON.stringify(filteredResult).length / 4);
+            (filteredResult.meta as Record<string, unknown>).tokensEstimate = tokensEstimate;
+
             return createSuccessEnvelope(
                 TOOLS.GRAPH_PATH,
-                result,
+                filteredResult,
                 workspace,
                 {
-                    truncated: result.meta.truncated ?? false,
+                    truncated: fullResult.meta.truncated ?? false,
                     limits: {
                         maxDepth: input.maxDepth ?? 5,
-                        maxItems: input.maxPaths ?? 3,
+                        maxPaths: input.maxPaths ?? 3,
                     },
-                    nextQuerySuggestion: result.connected && result.paths.length > 0
+                    nextQuerySuggestion: fullResult.connected && fullResult.paths.length > 0
                         ? [{
                             tool: TOOLS.GRAPH_IMPACT,
                             args: { target: input.from, depth: 2 },
                             reason: 'Analyze full impact of changes to source',
                         }]
-                        : !result.connected
+                        : !fullResult.connected
                             ? [{
                                 tool: TOOLS.GRAPH_MODULE,
-                                args: { target: input.from },
-                                reason: 'Modules not connected - inspect source module',
+                                args: { target: input.from, include: ['imports'] },
+                                reason: 'Modules not connected - inspect source imports',
                             }]
                             : undefined,
                 }

@@ -44,7 +44,16 @@ describe('createGraphPathTool', () => {
         const result = await tool.execute({ from: 'src/a.ts', to: 'src/b.ts' });
 
         expect(result.success).toBe(true);
-        expect(result.data.result).toEqual(mockResult);
+        // New format: pathCount added, edges omitted by default
+        const pathResult = result.data.result as Record<string, unknown>;
+        expect(pathResult.from).toBe('src/a.ts');
+        expect(pathResult.to).toBe('src/b.ts');
+        expect(pathResult.connected).toBe(true);
+        expect(pathResult.shortestPath).toBe(1);
+        expect(pathResult.pathCount).toBe(1);
+        // Edges are omitted by default to save tokens
+        expect((pathResult.paths as Array<{ nodes: string[]; length: number }>)[0].nodes).toEqual(['file:src/a.ts', 'file:src/b.ts']);
+        expect((pathResult.paths as Array<{ nodes: string[]; length: number }>)[0].length).toBe(1);
         expect(result.data.tool).toBe('ouroborosai_graph_path');
         expect(mockQuery.path).toHaveBeenCalledWith('src/a.ts', 'src/b.ts', {
             maxDepth: undefined,

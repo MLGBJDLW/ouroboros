@@ -911,19 +911,42 @@ function escapeQuotes(str: string): string {
 }
 
 /**
- * Ouroboros LM Tools to inject into agent files
+ * Ouroboros LM Tools to inject into orchestrator agent files (L0/L1)
  * Format: {publisher}.{extensionName}/{toolName}
  * Note: VS Code normalizes publisher to lowercase at runtime
  */
 const OUROBOROS_TOOLS = [
+    // CCL Tools (user interaction)
     'mlgbjdlw.ouroboros-ai/ouroborosai_ask',
     'mlgbjdlw.ouroboros-ai/ouroborosai_menu',
     'mlgbjdlw.ouroboros-ai/ouroborosai_confirm',
     'mlgbjdlw.ouroboros-ai/ouroborosai_plan_review',
     'mlgbjdlw.ouroboros-ai/ouroborosai_agent_handoff',
+    // Code Graph Tools (codebase understanding)
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_digest',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_issues',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_impact',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_path',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_module',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_annotations',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_cycles',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_layers',
+];
+
+/**
+ * Code Graph tools to inject into L2 worker agents
+ * Workers don't need CCL tools (ask/menu/confirm) but benefit from Code Graph tools
+ * for understanding codebase structure during their tasks
+ */
+const WORKER_GRAPH_TOOLS = [
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_digest',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_issues',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_impact',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_path',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_module',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_annotations',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_cycles',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_layers',
 ];
 
 /**
@@ -1117,10 +1140,65 @@ function addExtensionModeHeader(content: string): string {
 }
 
 /**
+ * Inject Code Graph tools into L2 worker agent YAML frontmatter
+ * Workers get graph tools for codebase understanding, but not CCL tools
+ */
+function injectWorkerGraphTools(content: string): string {
+    const yamlFrontmatterRegex = /^(---\r?\n)([\s\S]*?)(\r?\n---\r?\n)/;
+    const match = content.match(yamlFrontmatterRegex);
+
+    if (!match) {
+        return content;
+    }
+
+    const [fullMatch, startDelim, yamlContent, endDelim] = match;
+    const restOfContent = content.slice(fullMatch.length);
+
+    // Parse existing tools
+    const parsed = parseToolsFromYaml(yamlContent);
+
+    if (parsed) {
+        // Merge tools - preserve existing, add Code Graph tools
+        const allTools = [...parsed.tools];
+        for (const tool of WORKER_GRAPH_TOOLS) {
+            if (!allTools.includes(tool)) {
+                allTools.push(tool);
+            }
+        }
+
+        // Rebuild tools line (always single-line for consistency)
+        const newToolsLine = `tools: [${allTools.map((t) => `'${t}'`).join(', ')}]`;
+
+        // Replace the tools section in YAML content
+        const lines = yamlContent.split('\n');
+        const toolsStartLine = yamlContent.substring(0, parsed.startPos).split('\n').length - 1;
+        const toolsEndLine = yamlContent.substring(0, parsed.endPos).split('\n').length - 1;
+
+        const newLines = [
+            ...lines.slice(0, toolsStartLine),
+            newToolsLine,
+            ...lines.slice(toolsEndLine + 1)
+        ];
+        const newYamlContent = newLines.join('\n');
+
+        return startDelim + newYamlContent + endDelim + restOfContent;
+    }
+
+    // No tools: line found, add one before the closing ---
+    const toolsLine = `tools: [${WORKER_GRAPH_TOOLS.map((t) => `'${t}'`).join(', ')}]`;
+    const newYamlContent = yamlContent.trimEnd() + '\n' + toolsLine;
+
+    return startDelim + newYamlContent + endDelim + restOfContent;
+}
+
+/**
  * Add Extension mode header for WORKER agents (Level 2)
- * Simplified header - no tools list since workers don't use CCL
+ * Also injects Code Graph tools for codebase understanding
  */
 function addWorkerExtensionModeHeader(content: string): string {
+    // First, inject Code Graph tools into YAML frontmatter
+    const processedContent = injectWorkerGraphTools(content);
+
     const header = `<!-- 
   OUROBOROS EXTENSION MODE (WORKER AGENT)
   Auto-transformed for VS Code
@@ -1129,24 +1207,32 @@ function addWorkerExtensionModeHeader(content: string): string {
   This is a Level 2 worker agent. Workers:
   - Do NOT execute CCL (heartbeat loop)
   - Return to orchestrator via handoff
-  - Do NOT need LM Tools for user interaction
+  - Have access to Code Graph tools for codebase understanding:
+    - ouroborosai_graph_digest: Get codebase overview
+    - ouroborosai_graph_issues: Find code issues
+    - ouroborosai_graph_impact: Analyze change impact
+    - ouroborosai_graph_path: Trace dependency paths
+    - ouroborosai_graph_module: Inspect module details
+    - ouroborosai_graph_annotations: Manage manual annotations
+    - ouroborosai_graph_cycles: Detect circular dependencies
+    - ouroborosai_graph_layers: Check architecture rules
 -->
 
 `;
 
-    // Check if content starts with YAML frontmatter (---)
+    // Check if processedContent starts with YAML frontmatter (---)
     const yamlFrontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
-    const match = content.match(yamlFrontmatterRegex);
+    const match = processedContent.match(yamlFrontmatterRegex);
 
     if (match) {
         // Insert header AFTER the YAML frontmatter
         const frontmatter = match[0];
-        const restOfContent = content.slice(frontmatter.length);
+        const restOfContent = processedContent.slice(frontmatter.length);
         return frontmatter + header + restOfContent;
     }
 
     // No YAML frontmatter, prepend header as before
-    return header + content;
+    return header + processedContent;
 }
 /**
  * Merge new content with existing file content

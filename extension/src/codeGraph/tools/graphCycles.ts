@@ -16,6 +16,8 @@ export interface GraphCyclesInput {
     scope?: string;
     minLength?: number;
     maxCycles?: number;
+    severityFilter?: 'all' | 'warning' | 'error';
+    includeBreakPoints?: boolean;
 }
 
 export interface GraphCyclesResult {
@@ -23,7 +25,7 @@ export interface GraphCyclesResult {
         nodes: string[];
         length: number;
         severity: 'warning' | 'error';
-        breakPoints: string[];
+        breakPoints?: string[];
         description: string;
     }>;
     stats: {
@@ -50,14 +52,20 @@ export function createGraphCyclesTool(
 ): GraphCyclesTool {
     return {
         name: 'ouroborosai_graph_cycles',
-        description: `Detect circular dependencies in the codebase.
-Returns cycles found using Tarjan's algorithm, with severity and suggested break points.
-Use this to identify and fix circular imports that can cause issues.
+        description: `Detect circular dependencies in the codebase using Tarjan's algorithm.
+Returns cycles with severity and suggested break points.
+
+Parameters:
+- scope: Limit to directory (e.g., "src/features")
+- minLength: Minimum cycle length (default: 2)
+- maxCycles: Max cycles to return (default: 20)
+- severityFilter: Filter by severity: all, warning, error (default: all)
+- includeBreakPoints: Include suggested break points (default: true)
 
 Examples:
-- Find all cycles: (no parameters)
-- Find cycles in specific directory: scope="src/features"
-- Find only large cycles: minLength=3`,
+- Quick check: maxCycles=5, includeBreakPoints=false
+- Errors only: severityFilter="error"
+- Specific scope: scope="src/services", maxCycles=10`,
 
         inputSchema: {
             type: 'object',
@@ -72,7 +80,16 @@ Examples:
                 },
                 maxCycles: {
                     type: 'number',
-                    description: 'Maximum cycles to return (default: 20)',
+                    description: 'Maximum cycles to return (1-50, default: 20)',
+                },
+                severityFilter: {
+                    type: 'string',
+                    enum: ['all', 'warning', 'error'],
+                    description: 'Filter by severity level (default: all)',
+                },
+                includeBreakPoints: {
+                    type: 'boolean',
+                    description: 'Include suggested break points (default: true)',
                 },
             },
         },
@@ -95,35 +112,44 @@ Examples:
                 );
             }
 
-            const cycles = detector.findCycles({
+            let cycles = detector.findCycles({
                 scope: input.scope,
                 minLength: input.minLength,
                 maxCycles: input.maxCycles,
             });
 
+            // Apply severity filter
+            if (input.severityFilter && input.severityFilter !== 'all') {
+                cycles = cycles.filter(c => c.severity === input.severityFilter);
+            }
+
             const errorCount = cycles.filter(c => c.severity === 'error').length;
             const warningCount = cycles.filter(c => c.severity === 'warning').length;
 
-            // Estimate tokens
-            const tokensEstimate = Math.ceil(JSON.stringify(cycles).length / 4);
-            const truncated = cycles.length >= (input.maxCycles ?? 20);
-
+            // Build result with optional break points
+            const includeBreakPoints = input.includeBreakPoints !== false;
+            
             const result: GraphCyclesResult = {
-                cycles: cycles.map(c => ({
-                    nodes: c.nodes.map(n => n.replace(/^(file|module):/, '')),
-                    length: c.length,
-                    severity: c.severity,
-                    breakPoints: c.breakPoints.map(n => n.replace(/^(file|module):/, '')),
-                    description: c.description,
-                })),
+                cycles: cycles.map(c => {
+                    const cycle: GraphCyclesResult['cycles'][0] = {
+                        nodes: c.nodes.map(n => n.replace(/^(file|module):/, '')),
+                        length: c.length,
+                        severity: c.severity,
+                        description: c.description,
+                    };
+                    if (includeBreakPoints) {
+                        cycle.breakPoints = c.breakPoints.map(n => n.replace(/^(file|module):/, ''));
+                    }
+                    return cycle;
+                }),
                 stats: {
                     totalCycles: cycles.length,
                     errorCount,
                     warningCount,
                 },
                 meta: {
-                    tokensEstimate,
-                    truncated,
+                    tokensEstimate: Math.ceil(JSON.stringify(cycles).length / 4),
+                    truncated: cycles.length >= (input.maxCycles ?? 20),
                     scope: input.scope ?? null,
                 },
             };
@@ -133,18 +159,18 @@ Examples:
                 result,
                 workspace,
                 {
-                    truncated,
-                    limits: { maxItems: input.maxCycles ?? 20 },
+                    truncated: result.meta.truncated,
+                    limits: { maxCycles: input.maxCycles ?? 20 },
                     nextQuerySuggestion: errorCount > 0
                         ? [{
                             tool: TOOLS.GRAPH_PATH,
                             args: { from: result.cycles[0]?.nodes[0], to: result.cycles[0]?.nodes[1] },
                             reason: 'Trace cycle path for first error-level cycle',
                         }]
-                        : truncated
+                        : result.meta.truncated
                             ? [{
                                 tool: TOOLS.GRAPH_CYCLES,
-                                args: { ...input, scope: input.scope, maxCycles: (input.maxCycles ?? 20) + 10 },
+                                args: { ...input, maxCycles: Math.min((input.maxCycles ?? 20) + 10, 50) },
                                 reason: 'More cycles available',
                             }]
                             : undefined,

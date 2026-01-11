@@ -127,6 +127,7 @@ export abstract class BaseIndexer {
 
     /**
      * Normalize import path to absolute path
+     * Handles relative imports, tsconfig aliases, and filters external packages
      */
     protected normalizeImportPath(
         importPath: string,
@@ -135,16 +136,115 @@ export abstract class BaseIndexer {
         // Handle relative imports
         if (importPath.startsWith('.')) {
             const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
-            return this.resolvePath(fromDir, importPath);
+            const resolved = this.resolvePath(fromDir, importPath);
+            // Add extension if missing (common in TS/JS imports)
+            return this.addExtensionIfNeeded(resolved);
         }
 
-        // Handle absolute imports (node_modules or aliases)
-        // Return null for external packages
-        if (!importPath.startsWith('/') && !importPath.startsWith('@/')) {
-            return null; // External package
+        // Handle common path aliases that should be treated as internal
+        // These are typically configured in tsconfig.json paths
+        const aliasPatterns = [
+            /^@\//, // @/components -> src/components
+            /^@[a-z]/i, // @components, @utils (but not @org/package)
+            /^~\//, // ~/utils
+            /^src\//, // src/utils
+            /^lib\//, // lib/utils
+            /^app\//, // app/utils (Next.js app router)
+            /^components\//, // components/Button
+            /^utils\//, // utils/helpers
+            /^hooks\//, // hooks/useAuth
+            /^services\//, // services/api
+            /^types\//, // types/index
+            /^constants\//, // constants/config
+            /^config\//, // config/settings
+            /^styles\//, // styles/global
+            /^assets\//, // assets/images
+            /^pages\//, // pages/index (Next.js)
+            /^api\//, // api/routes
+        ];
+
+        // Check if it matches any alias pattern
+        for (const pattern of aliasPatterns) {
+            if (pattern.test(importPath)) {
+                // This looks like an internal alias, but we can't resolve it without tsconfig
+                // Return the path as-is and let the graph handle it
+                // The PathResolver in CodeGraphManager will handle proper resolution
+                return this.addExtensionIfNeeded(importPath);
+            }
         }
 
-        return importPath;
+        // Check if it's clearly an external package
+        // External packages: lodash, react, @org/package, node:fs
+        if (this.isExternalPackage(importPath)) {
+            return null;
+        }
+
+        // For anything else, assume it might be an internal path
+        // This is a conservative approach - better to include than exclude
+        return this.addExtensionIfNeeded(importPath);
+    }
+
+    /**
+     * Check if import path is an external package
+     */
+    private isExternalPackage(importPath: string): boolean {
+        // Node built-in modules
+        if (importPath.startsWith('node:')) {
+            return true;
+        }
+
+        // Common Node.js built-ins
+        const builtins = new Set([
+            'fs', 'path', 'os', 'util', 'events', 'stream', 'http', 'https',
+            'crypto', 'buffer', 'url', 'querystring', 'child_process', 'cluster',
+            'dgram', 'dns', 'net', 'readline', 'repl', 'tls', 'tty', 'v8', 'vm',
+            'zlib', 'assert', 'async_hooks', 'console', 'constants', 'domain',
+            'inspector', 'module', 'perf_hooks', 'process', 'punycode',
+            'string_decoder', 'timers', 'trace_events', 'worker_threads',
+        ]);
+        
+        const firstPart = importPath.split('/')[0];
+        if (builtins.has(firstPart)) {
+            return true;
+        }
+
+        // Scoped packages like @org/package (but not @/alias or @alias)
+        if (importPath.startsWith('@') && importPath.includes('/')) {
+            const scopePart = importPath.split('/')[0];
+            // @org/package pattern (org is lowercase, typically npm scope)
+            if (/^@[a-z0-9][\w.-]*$/i.test(scopePart) && scopePart !== '@') {
+                // Check if it looks like a real npm scope vs an alias
+                // Real scopes: @types, @babel, @testing-library
+                // Aliases: @components, @utils (single word after @)
+                const afterScope = importPath.split('/')[1];
+                if (afterScope && !afterScope.includes('.')) {
+                    // Likely a real scoped package
+                    return true;
+                }
+            }
+        }
+
+        // Bare specifiers without path separators are likely external
+        // e.g., 'lodash', 'react', 'express'
+        if (!importPath.includes('/') && !importPath.startsWith('.') && !importPath.startsWith('@')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Add file extension if the path doesn't have one
+     * This helps match imports like './utils' to 'utils.ts'
+     */
+    private addExtensionIfNeeded(filePath: string): string {
+        // If already has an extension, return as-is
+        const lastPart = filePath.split('/').pop() || '';
+        if (lastPart.includes('.') && !lastPart.startsWith('.')) {
+            return filePath;
+        }
+        // Return without extension - the graph will try to match with various extensions
+        return filePath;
     }
 
     /**

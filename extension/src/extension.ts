@@ -63,9 +63,30 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // specs are available before webview sends 'ready' message
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders && workspaceFolders.length > 0) {
+            // Determine the workspace path to use:
+            // 1. Use saved path if available
+            // 2. Otherwise, try to use the workspace of the currently active editor
+            // 3. Fall back to the first workspace folder
             const savedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
-            const workspacePath = savedPath ?? workspaceFolders[0].uri.fsPath;
-            logger.debug('Starting spec watcher', { savedPath, workspacePath });
+            let workspacePath: string;
+            
+            if (savedPath && workspaceFolders.some(f => f.uri.fsPath === savedPath)) {
+                // Use saved path if it's still valid
+                workspacePath = savedPath;
+            } else {
+                // Try to get workspace from active editor
+                const activeEditor = vscode.window.activeTextEditor;
+                const activeWorkspace = activeEditor 
+                    ? vscode.workspace.getWorkspaceFolder(activeEditor.document.uri)
+                    : undefined;
+                
+                workspacePath = activeWorkspace?.uri.fsPath ?? workspaceFolders[0].uri.fsPath;
+                
+                // Save the selected workspace path for future sessions
+                await stateManager.updateWorkspaceState({ selectedWorkspacePath: workspacePath });
+            }
+            
+            logger.debug('Starting spec watcher', { savedPath, workspacePath, folderCount: workspaceFolders.length });
             const initialSpecs = await specWatcher.start(workspacePath);
             // Ensure state is updated synchronously with initial scan results
             await stateManager.updateWorkspaceState({
@@ -82,13 +103,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             context.subscriptions.push(codeGraphManager);
             // Set reference in sidebar provider
             sidebarProvider.setCodeGraphManager(codeGraphManager);
-            // Initialize asynchronously (don't block activation)
-            codeGraphManager.initialize().catch((error) => {
+            
+            // Initialize Code Graph synchronously to ensure tools work correctly
+            // This is important because Code Graph tools need the manager to be initialized
+            try {
+                await codeGraphManager.initialize();
+                logger.info('Code Graph initialized successfully', { 
+                    workspacePath,
+                    fileCount: codeGraphManager.getMeta().fileCount 
+                });
+            } catch (error) {
+                // Log error but don't fail activation - Code Graph is optional
                 logger.error('Failed to initialize Code Graph:', error);
-            });
+                // Code Graph tools will still be registered but may return empty results
+            }
+        } else {
+            logger.warn('No workspace folders found, Code Graph will not be initialized');
         }
 
         // Register LM Tools (including Code Graph tools)
+        // Note: Tools are registered even if Code Graph init failed - they'll handle errors gracefully
         const toolDisposables = registerTools(stateManager, sidebarProvider, codeGraphManager);
         context.subscriptions.push(...toolDisposables);
 

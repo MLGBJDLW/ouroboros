@@ -16,6 +16,9 @@ export interface GraphLayersInput {
     action: 'check' | 'list' | 'suggest';
     scope?: string;
     rules?: LayerRule[];
+    severityFilter?: 'all' | 'warning' | 'error';
+    limit?: number;
+    groupByRule?: boolean;
 }
 
 export interface GraphLayersResult {
@@ -27,6 +30,14 @@ export interface GraphLayersResult {
         description: string;
         line?: number;
     }>;
+    groupedViolations?: Record<string, Array<{
+        rule: string;
+        sourceFile: string;
+        targetFile: string;
+        severity: 'warning' | 'error';
+        description: string;
+        line?: number;
+    }>>;
     rules?: Array<{
         name: string;
         from: string;
@@ -43,6 +54,7 @@ export interface GraphLayersResult {
     }>;
     stats: {
         totalViolations?: number;
+        returnedViolations?: number;
         errorCount?: number;
         warningCount?: number;
         rulesCount?: number;
@@ -74,11 +86,16 @@ Actions:
 - list: Show current layer rules
 - suggest: Get suggested rules based on project structure
 
+Parameters:
+- scope: Limit check to directory (e.g., "src/features")
+- severityFilter: Filter violations by severity (all/warning/error)
+- limit: Max violations to return (default: 50)
+- groupByRule: Group violations by rule name (default: false)
+
 Examples:
-- Check violations: action="check"
-- Check specific scope: action="check", scope="src/features"
-- List rules: action="list"
-- Get suggestions: action="suggest"`,
+- Quick check: action="check", limit=10
+- Errors only: action="check", severityFilter="error"
+- Grouped: action="check", groupByRule=true`,
 
         inputSchema: {
             type: 'object',
@@ -106,6 +123,19 @@ Examples:
                         },
                     },
                 },
+                severityFilter: {
+                    type: 'string',
+                    enum: ['all', 'warning', 'error'],
+                    description: 'Filter violations by severity (default: all)',
+                },
+                limit: {
+                    type: 'number',
+                    description: 'Max violations to return (1-100, default: 50)',
+                },
+                groupByRule: {
+                    type: 'boolean',
+                    description: 'Group violations by rule name (default: false)',
+                },
             },
         },
 
@@ -129,43 +159,85 @@ Examples:
             switch (input.action) {
                 case 'check': {
                     const rules = input.rules ?? analyzer.getRules();
-                    const violations = analyzer.checkViolations({ rules, scope: input.scope });
+                    let violations = analyzer.checkViolations({ rules, scope: input.scope });
                     
-                    const errorCount = violations.filter(v => v.rule.severity === 'error').length;
-                    const warningCount = violations.filter(v => v.rule.severity === 'warning').length;
+                    // Apply severity filter
+                    if (input.severityFilter && input.severityFilter !== 'all') {
+                        violations = violations.filter(v => v.rule.severity === input.severityFilter);
+                    }
 
-                    const result: GraphLayersResult = {
-                        violations: violations.map(v => ({
+                    // Apply limit
+                    const limit = Math.min(input.limit ?? 50, 100);
+                    const truncated = violations.length > limit;
+                    const limitedViolations = violations.slice(0, limit);
+                    
+                    const errorCount = limitedViolations.filter(v => v.rule.severity === 'error').length;
+                    const warningCount = limitedViolations.filter(v => v.rule.severity === 'warning').length;
+
+                    // Build result with optional grouping
+                    let violationsData: GraphLayersResult['violations'] | Record<string, GraphLayersResult['violations']>;
+                    
+                    if (input.groupByRule) {
+                        const grouped: Record<string, GraphLayersResult['violations']> = {};
+                        for (const v of limitedViolations) {
+                            const ruleName = v.rule.name;
+                            if (!grouped[ruleName]) {
+                                grouped[ruleName] = [];
+                            }
+                            const group = grouped[ruleName];
+                            if (group) {
+                                group.push({
+                                    rule: v.rule.name,
+                                    sourceFile: v.sourceFile,
+                                    targetFile: v.targetFile,
+                                    severity: v.rule.severity,
+                                    description: v.rule.description ?? `${v.sourceFile} should not import ${v.targetFile}`,
+                                    line: v.line,
+                                });
+                            }
+                        }
+                        violationsData = grouped;
+                    } else {
+                        violationsData = limitedViolations.map(v => ({
                             rule: v.rule.name,
                             sourceFile: v.sourceFile,
                             targetFile: v.targetFile,
                             severity: v.rule.severity,
                             description: v.rule.description ?? `${v.sourceFile} should not import ${v.targetFile}`,
                             line: v.line,
-                        })),
+                        }));
+                    }
+
+                    const result: GraphLayersResult = {
+                        violations: input.groupByRule ? undefined : violationsData as GraphLayersResult['violations'],
                         stats: {
                             totalViolations: violations.length,
+                            returnedViolations: limitedViolations.length,
                             errorCount,
                             warningCount,
                         },
                         meta: {
-                            tokensEstimate: Math.ceil(JSON.stringify(violations).length / 4),
+                            tokensEstimate: Math.ceil(JSON.stringify(violationsData).length / 4),
                             action: 'check',
                             scope: input.scope ?? null,
                         },
                     };
+
+                    if (input.groupByRule) {
+                        (result as Record<string, unknown>).groupedViolations = violationsData;
+                    }
 
                     return createSuccessEnvelope(
                         TOOLS.GRAPH_LAYERS,
                         result,
                         workspace,
                         {
-                            truncated: false,
-                            limits: {},
+                            truncated,
+                            limits: { maxItems: limit },
                             nextQuerySuggestion: errorCount > 0
                                 ? [{
                                     tool: TOOLS.GRAPH_PATH,
-                                    args: { from: violations[0]?.sourceFile, to: violations[0]?.targetFile },
+                                    args: { from: limitedViolations[0]?.sourceFile, to: limitedViolations[0]?.targetFile },
                                     reason: 'Trace violation path for first error',
                                 }]
                                 : rules.length === 0
@@ -174,7 +246,13 @@ Examples:
                                         args: { action: 'suggest' },
                                         reason: 'No rules configured - get suggestions',
                                     }]
-                                    : undefined,
+                                    : truncated
+                                        ? [{
+                                            tool: TOOLS.GRAPH_LAYERS,
+                                            args: { ...input, limit: Math.min(limit + 20, 100) },
+                                            reason: `${violations.length - limit} more violations available`,
+                                        }]
+                                        : undefined,
                         }
                     );
                 }
