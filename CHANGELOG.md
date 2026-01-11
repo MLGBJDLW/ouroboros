@@ -126,6 +126,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NestjsAdapter: 8 tests
 - CliAdapter: 10 tests
 
+#### Added (v0.4 - Multi-Language Support)
+- **TreeSitterManager** — WASM-based tree-sitter parser management:
+  - Lazy-loads language grammars from CDN
+  - Supports Python, Rust, Go, Java, C#, Ruby, PHP
+  - Graceful fallback to regex parsing when unavailable
+
+- **4 New Language Indexers** (tree-sitter based):
+  - `PythonIndexer` — Python imports, `__all__` exports, `if __name__` entrypoints
+  - `RustIndexer` — `use`/`mod` statements, `pub` exports, `fn main()` entrypoints
+  - `GoIndexer` — `import` statements, capitalized exports, `func main()` entrypoints
+  - `JavaIndexer` — `import` statements, `public` classes, Spring annotations
+
+- **GenericIndexer** — Regex-based fallback for unsupported languages:
+  - Supports Ruby, PHP, C/C++, Swift, Kotlin, Scala, etc.
+  - Common import patterns across 15+ languages
+  - Always returns `confidence: 'low'`
+
+- **Framework Detection** (via indexers):
+  - Python: Click, Typer, FastAPI, Flask
+  - Rust: Actix-web, Rocket
+  - Go: Gin, Echo, Fiber, Cobra
+  - Java: Spring Boot, Spring MVC
+
+- **Extended File Support**:
+  - Default include patterns now cover `.py`, `.rs`, `.go`, `.java`
+  - Exclude patterns include `**/target/**`, `**/vendor/**`
+
+#### Tests (v0.4)
+- 602 tests passing (+38 new for v0.4)
+- PythonIndexer: 7 tests
+- RustIndexer: 6 tests
+- GoIndexer: 6 tests
+- JavaIndexer: 7 tests
+- GenericIndexer: 12 tests
+
 ---
 
 ## [3.2.20] - 2026-01-10

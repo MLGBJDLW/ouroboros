@@ -33,9 +33,25 @@ export type {
 
 // Indexers
 export { BaseIndexer, type IndexerOptions } from './indexers/BaseIndexer';
+export { TreeSitterIndexer, type TreeSitterIndexerOptions } from './indexers/TreeSitterIndexer';
 export { TypeScriptIndexer } from './indexers/TypeScriptIndexer';
+export { PythonIndexer, type PythonIndexerOptions } from './indexers/PythonIndexer';
+export { RustIndexer } from './indexers/RustIndexer';
+export { GoIndexer } from './indexers/GoIndexer';
+export { JavaIndexer } from './indexers/JavaIndexer';
+export { GenericIndexer } from './indexers/GenericIndexer';
 export { EntrypointDetector, type EntrypointPattern } from './indexers/EntrypointDetector';
 export { BarrelAnalyzer, type BarrelInfo, type ReexportInfo, type BarrelChain } from './indexers/BarrelAnalyzer';
+
+// Parsers (v0.4)
+export { 
+    TreeSitterManager, 
+    getTreeSitterManager, 
+    resetTreeSitterManager,
+    type SupportedLanguage,
+    type ParsedNode,
+    type ParseTree,
+} from './parsers/TreeSitterManager';
 
 // Analyzers
 export { ReachabilityAnalyzer, type ReachabilityResult } from './analyzers/ReachabilityAnalyzer';

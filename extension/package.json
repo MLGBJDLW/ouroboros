@@ -515,6 +515,7 @@
     },
     "dependencies": {
         "@vscode/codicons": "^0.0.36",
+        "web-tree-sitter": "^0.26.3",
         "zod": "^3.0.0"
     }
 }

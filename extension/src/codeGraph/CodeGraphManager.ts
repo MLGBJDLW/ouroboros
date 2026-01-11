@@ -8,12 +8,19 @@ import { GraphStore } from './core/GraphStore';
 import { GraphQuery } from './core/GraphQuery';
 import { PathResolver } from './core/PathResolver';
 import { TypeScriptIndexer } from './indexers/TypeScriptIndexer';
+import { PythonIndexer } from './indexers/PythonIndexer';
+import { RustIndexer } from './indexers/RustIndexer';
+import { GoIndexer } from './indexers/GoIndexer';
+import { JavaIndexer } from './indexers/JavaIndexer';
+import { GenericIndexer } from './indexers/GenericIndexer';
 import { EntrypointDetector } from './indexers/EntrypointDetector';
 import { BarrelAnalyzer } from './indexers/BarrelAnalyzer';
+import { BaseIndexer } from './indexers/BaseIndexer';
 import { IssueDetector } from './analyzers/IssueDetector';
 import { IncrementalWatcher } from './watcher/IncrementalWatcher';
 import { AnnotationManager } from './annotations/AnnotationManager';
 import { getAdapterRegistry, registerBuiltinAdapters } from './adapters';
+import { getTreeSitterManager, type TreeSitterManager } from './parsers/TreeSitterManager';
 import type { AdapterRegistry } from './adapters';
 import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig, FrameworkDetection } from './core/types';
 import { createLogger } from '../utils/logger';
@@ -22,8 +29,14 @@ const logger = createLogger('CodeGraphManager');
 
 const DEFAULT_CONFIG: GraphConfig = {
     indexing: {
-        include: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-        exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**'],
+        include: [
+            '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx',  // TypeScript/JavaScript
+            '**/*.py', '**/*.pyi',                          // Python
+            '**/*.rs',                                       // Rust
+            '**/*.go',                                       // Go
+            '**/*.java',                                     // Java
+        ],
+        exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**', '**/target/**', '**/vendor/**'],
         maxFileSize: 1024 * 1024, // 1MB
     },
     entrypoints: {
@@ -41,21 +54,24 @@ export class CodeGraphManager implements vscode.Disposable {
     private store: GraphStore;
     private query: GraphQuery;
     private pathResolver: PathResolver;
-    private indexers: TypeScriptIndexer[];
+    private indexers: BaseIndexer[];
     private entrypointDetector: EntrypointDetector;
     private barrelAnalyzer: BarrelAnalyzer;
     private issueDetector: IssueDetector;
     private annotationManager: AnnotationManager;
     private adapterRegistry: AdapterRegistry;
+    private treeSitterManager: TreeSitterManager;
     private watcher: IncrementalWatcher | null = null;
     private config: GraphConfig;
     private workspaceRoot: string;
+    private extensionPath: string;
     private isIndexing = false;
     private disposables: vscode.Disposable[] = [];
     private detectedFrameworks: FrameworkDetection[] = [];
 
-    constructor(workspaceRoot: string, config?: Partial<GraphConfig>) {
+    constructor(workspaceRoot: string, config?: Partial<GraphConfig>, extensionPath?: string) {
         this.workspaceRoot = workspaceRoot;
+        this.extensionPath = extensionPath ?? workspaceRoot;
         this.config = { ...DEFAULT_CONFIG, ...config };
         
         this.store = new GraphStore();
@@ -70,13 +86,32 @@ export class CodeGraphManager implements vscode.Disposable {
         registerBuiltinAdapters();
         this.adapterRegistry = getAdapterRegistry();
         
+        // v0.4: Initialize tree-sitter manager
+        this.treeSitterManager = getTreeSitterManager(this.extensionPath);
+        
+        // Initialize indexers for all supported languages
+        const indexerOptions = {
+            workspaceRoot,
+            include: this.config.indexing.include,
+            exclude: this.config.indexing.exclude,
+            maxFileSize: this.config.indexing.maxFileSize,
+        };
+        
+        const treeSitterOptions = {
+            ...indexerOptions,
+            treeSitterManager: this.treeSitterManager,
+        };
+        
         this.indexers = [
-            new TypeScriptIndexer({
-                workspaceRoot,
-                include: this.config.indexing.include,
-                exclude: this.config.indexing.exclude,
-                maxFileSize: this.config.indexing.maxFileSize,
-            }),
+            // TypeScript/JavaScript (uses TS Compiler API - highest accuracy)
+            new TypeScriptIndexer(indexerOptions),
+            // v0.4: Tree-sitter based indexers
+            new PythonIndexer(treeSitterOptions),
+            new RustIndexer(treeSitterOptions),
+            new GoIndexer(treeSitterOptions),
+            new JavaIndexer(treeSitterOptions),
+            // Fallback for other languages
+            new GenericIndexer(indexerOptions),
         ];
 
         logger.info('CodeGraphManager initialized');
