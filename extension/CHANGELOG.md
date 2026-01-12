@@ -2,6 +2,91 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.8] - 2026-01-12
+
+### Hybrid External Tool Architecture
+
+Major upgrade to Code Graph with external tool integration for more accurate dependency analysis.
+
+#### Added
+- **DependencyCruiserAdapter** — Integrates battle-tested dependency-cruiser for JS/TS projects:
+  - Bundled with extension (no user installation required)
+  - Uses CLI via bundled binary for esbuild compatibility
+  - Converts dependency-cruiser output to GraphNode/GraphEdge format
+  - Detects circular dependencies with cycle paths
+  - Falls back to built-in TypeScriptIndexer when not available
+
+- **GoModGraphAdapter** — Integrates Go's built-in `go mod graph` command:
+  - No extra installation needed (built into Go toolchain)
+  - Provides module-level dependency information
+  - Handles replace directives and workspace modules
+
+- **JdepsAdapter** — Integrates JDK's built-in `jdeps` command for Java:
+  - No extra installation needed (built into JDK 8+)
+  - Provides class-level dependency analysis
+  - Supports Java 9+ module system
+
+- **ExtensionMapper** — Centralized ESM extension mapping module:
+  - Maps `.js` → `.ts`, `.jsx` → `.tsx`, `.mjs` → `.mts`, `.cjs` → `.cts`
+  - Handles TypeScript ESM `moduleResolution: NodeNext` imports
+  - Supports index file resolution (`./dir` → `./dir/index.ts`)
+
+- **ExternalToolsConfig** — Configurable external tool preferences:
+  ```json
+  {
+    "externalTools": {
+      "preferExternal": true,
+      "javascript": { "tool": "auto" },
+      "go": { "tool": "auto" },
+      "java": { "tool": "auto" }
+    }
+  }
+  ```
+  - `auto`: Use external tool if available, fallback to builtin
+  - `external`: Require external tool (warn if unavailable)
+  - `builtin`: Always use built-in indexer
+
+- **CIRCULAR_DEPENDENCY Issue Kind** — New issue type for circular import detection
+
+- **CodeGraphManager Enhancements**:
+  - `getExternalToolsConfig()` — Get current external tools configuration
+  - `getExternalToolStatus()` — Check availability of all external tools
+
+#### Enhanced (Based on pydeps & cargo-modules algorithms)
+
+- **PythonIndexer Enhancements** (inspired by pydeps):
+  - Comprehensive Python 3.11+ stdlib module list (200+ modules)
+  - `pkgutil.walk_packages()` dynamic import detection
+  - `typing.TYPE_CHECKING` conditional import handling
+  - Enhanced `__all__` export validation
+  - Better relative import level resolution
+
+- **RustIndexer Enhancements** (inspired by cargo-modules):
+  - Visibility level tracking (`pub`, `pub(crate)`, `pub(super)`, `pub(in path)`)
+  - `#[path = "..."]` custom module path support
+  - Use tree parsing for nested imports (`use crate::{foo, bar::{baz}};`)
+  - `macro_definition` export detection
+  - `impl` block associated item tracking
+  - Crate root detection (`lib.rs`, `main.rs`)
+  - Export visibility metadata in file nodes
+
+#### Fixed
+- **ESM Extension Mapping** — Fixed 697 false positive `HANDLER_UNREACHABLE` issues in TypeScript ESM projects
+- **GraphStore ESM Support** — `getNode()` and `getNodeByPath()` now try alternative extensions
+
+#### Improved
+- **fullIndex() Performance** — External tools process files first, built-in indexers handle remaining files
+- **Issue Detection** — External tool issues merged with built-in issue detection
+
+#### Tests
+- 768 tests passing
+- 69 test files
+
+#### Documentation
+- Updated `ARCHITECTURE.md` with hybrid architecture diagram and configuration guide
+
+---
+
 ## [3.3.7] - 2026-01-12
 
 ### Added

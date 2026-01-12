@@ -11,6 +11,25 @@ export { NextjsAdapter } from './js/NextjsAdapter';
 export { NestjsAdapter } from './js/NestjsAdapter';
 export { CliAdapter } from './js/CliAdapter';
 
+// External Tool Adapters
+export { 
+    DependencyCruiserAdapter, 
+    shouldRecommendDependencyCruiser,
+    type DependencyCruiserConfig,
+} from './DependencyCruiserAdapter';
+
+export {
+    GoModGraphAdapter,
+    shouldRecommendGoModGraph,
+    type GoModGraphConfig,
+} from './GoModGraphAdapter';
+
+export {
+    JdepsAdapter,
+    shouldRecommendJdeps,
+    type JdepsConfig,
+} from './JdepsAdapter';
+
 /**
  * Register all built-in adapters
  */

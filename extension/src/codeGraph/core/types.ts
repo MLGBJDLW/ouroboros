@@ -24,6 +24,7 @@ export type IssueKind =
     | 'DYNAMIC_EDGE_UNKNOWN'
     | 'BROKEN_EXPORT_CHAIN'
     | 'CIRCULAR_REEXPORT'
+    | 'CIRCULAR_DEPENDENCY'
     | 'ORPHAN_EXPORT'
     // v0.3 - Framework-specific issues
     | 'ENTRY_MISSING_HANDLER'
@@ -182,6 +183,41 @@ export interface GraphConfig {
         digestTokenLimit: number;
         issuesTokenLimit: number;
         impactTokenLimit: number;
+    };
+    /** External tools configuration (v1.1) */
+    externalTools?: ExternalToolsConfig;
+}
+
+// ============================================
+// External Tools Configuration (v1.1)
+// ============================================
+
+export type ExternalToolChoice = 'auto' | 'external' | 'builtin';
+
+export interface ExternalToolsConfig {
+    /** Whether to prefer external tools when available */
+    preferExternal: boolean;
+    /** JavaScript/TypeScript tool configuration */
+    javascript: {
+        tool: ExternalToolChoice;
+        /** Path to dependency-cruiser config file */
+        configPath?: string;
+    };
+    /** Python tool configuration */
+    python: {
+        tool: ExternalToolChoice;
+    };
+    /** Go tool configuration */
+    go: {
+        tool: ExternalToolChoice;
+    };
+    /** Java tool configuration */
+    java: {
+        tool: ExternalToolChoice;
+    };
+    /** Rust tool configuration */
+    rust: {
+        tool: ExternalToolChoice;
     };
 }
 

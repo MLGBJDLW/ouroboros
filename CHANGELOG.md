@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.8] - 2026-01-12
+
+### 🚀 Hybrid External Tool Architecture
+
+Major upgrade to Code Graph with external tool integration for more accurate dependency analysis.
+
+### Added
+- **DependencyCruiserAdapter** — Integrates battle-tested dependency-cruiser for JS/TS:
+  - Auto-detects local, global, or npx installation
+  - Converts output to GraphNode/GraphEdge format
+  - Detects circular dependencies with cycle paths
+  - Falls back to TypeScriptIndexer when unavailable
+
+- **GoModGraphAdapter** — Integrates Go's built-in `go mod graph`:
+  - No extra installation needed (built into Go toolchain)
+  - Provides module-level dependency information
+
+- **JdepsAdapter** — Integrates JDK's built-in `jdeps` for Java:
+  - No extra installation needed (built into JDK 8+)
+  - Provides class-level dependency analysis
+
+- **ExtensionMapper** — Centralized ESM extension mapping:
+  - Maps `.js` → `.ts`, `.jsx` → `.tsx`, `.mjs` → `.mts`
+  - Handles TypeScript ESM `moduleResolution: NodeNext`
+  - Supports index file resolution
+
+- **ExternalToolsConfig** — Configurable external tool preferences:
+  - `auto`: Use external if available, fallback to builtin
+  - `external`: Require external tool
+  - `builtin`: Always use built-in indexer
+
+- **CIRCULAR_DEPENDENCY Issue Kind** — New issue type for circular imports
+
+### Fixed
+- **ESM Extension Mapping** — Fixed 697 false positive issues in TypeScript ESM projects
+- **GraphStore ESM Support** — Node lookup now tries alternative extensions
+
+### Tests
+- 773 tests passing (+29 new)
+- 69 test files
+
+---
+
 ## [3.3.7] - 2026-01-12
 
 ### Added

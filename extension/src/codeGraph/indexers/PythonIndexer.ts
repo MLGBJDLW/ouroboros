@@ -1,15 +1,25 @@
 /**
- * Python Indexer
+ * Python Indexer (Enhanced)
  * Parses Python files using tree-sitter for imports, exports, and entrypoints
+ * 
+ * Enhanced based on pydeps (https://github.com/thebjorn/pydeps) algorithms:
+ * - ModuleFinder-style import tracking
+ * - Star import global name propagation
+ * - Comprehensive stdlib/third-party filtering
  * 
  * Handles:
  * - import and from...import statements
- * - Relative imports (., .., ...)
- * - __all__ exports
+ * - Relative imports (., .., ...) with proper level resolution
+ * - __all__ exports with validation
  * - importlib.import_module() dynamic imports
- * - Framework detection (FastAPI, Flask, Django, Celery, Click, Typer)
- * - Test detection (pytest, unittest)
- * - Entry point detection (setup.py, pyproject.toml patterns)
+ * - __import__() builtin dynamic imports
+ * - exec()/eval() with import patterns (low confidence)
+ * - Framework detection (FastAPI, Flask, Django, Celery, Click, Typer, etc.)
+ * - Test detection (pytest, unittest, nose)
+ * - Entry point detection (setup.py, pyproject.toml, __main__.py)
+ * - Conditional imports (try/except, if TYPE_CHECKING)
+ * - Lazy imports (function-level imports)
+ * - Circular import detection hints
  */
 
 import { BaseIndexer, type IndexerOptions } from './BaseIndexer';
@@ -24,7 +34,9 @@ export interface PythonIndexerOptions extends IndexerOptions {
 }
 
 // Common Python standard library modules (skip these as external)
+// Based on Python 3.11+ stdlib - comprehensive list from pydeps
 const STDLIB_MODULES = new Set([
+    // Built-in modules
     'abc', 'aifc', 'argparse', 'array', 'ast', 'asynchat', 'asyncio', 'asyncore',
     'atexit', 'audioop', 'base64', 'bdb', 'binascii', 'binhex', 'bisect',
     'builtins', 'bz2', 'calendar', 'cgi', 'cgitb', 'chunk', 'cmath', 'cmd',
@@ -54,6 +66,21 @@ const STDLIB_MODULES = new Set([
     'unittest', 'urllib', 'uu', 'uuid', 'venv', 'warnings', 'wave', 'weakref', 
     'webbrowser', 'winreg', 'winsound', 'wsgiref', 'xdrlib', 'xml', 'xmlrpc', 
     'zipapp', 'zipfile', 'zipimport', 'zlib', '_thread',
+    // Python 3.11+ additions
+    'tomllib', '_typing', 'graphlib', 'zoneinfo',
+    // Internal modules (start with _)
+    '_abc', '_ast', '_bisect', '_blake2', '_bootlocale', '_bz2', '_codecs',
+    '_collections', '_collections_abc', '_compat_pickle', '_compression',
+    '_contextvars', '_crypt', '_csv', '_ctypes', '_curses', '_datetime',
+    '_decimal', '_elementtree', '_functools', '_hashlib', '_heapq', '_imp',
+    '_io', '_json', '_locale', '_lsprof', '_lzma', '_markupbase', '_md5',
+    '_multibytecodec', '_multiprocessing', '_opcode', '_operator', '_osx_support',
+    '_pickle', '_posixshmem', '_posixsubprocess', '_py_abc', '_pydecimal',
+    '_pyio', '_queue', '_random', '_sha1', '_sha256', '_sha3', '_sha512',
+    '_signal', '_sitebuiltins', '_socket', '_sqlite3', '_sre', '_ssl', '_stat',
+    '_statistics', '_string', '_strptime', '_struct', '_symtable', '_sysconfigdata',
+    '_thread', '_threading_local', '_tkinter', '_tracemalloc', '_uuid', '_warnings',
+    '_weakref', '_weakrefset', '_winapi', '_xxsubinterpreters', '_xxtestfuzz',
 ]);
 
 // Common third-party packages (skip these as external)
@@ -378,6 +405,53 @@ export class PythonIndexer extends BaseIndexer {
                                 if (edge) edges.push(edge);
                             }
                         }
+                    }
+                }
+            }
+
+            // pkgutil.walk_packages() - package discovery pattern
+            if (node.type === 'call') {
+                const funcNode = this.findChild(node, 'attribute');
+                if (funcNode?.text === 'pkgutil.walk_packages' || funcNode?.text === 'pkgutil.iter_modules') {
+                    // This indicates dynamic package loading - mark as low confidence
+                    const argsNode = this.findChild(node, 'argument_list');
+                    if (argsNode) {
+                        const stringNode = this.findChild(argsNode, 'string');
+                        if (stringNode) {
+                            const packagePath = stringNode.text.replace(/^['"]|['"]$/g, '');
+                            if (!seen.has(`pkg:${packagePath}`)) {
+                                seen.add(`pkg:${packagePath}`);
+                                const edge = this.createPythonImportEdge(fromFile, packagePath, node.startPosition.row + 1, 'low');
+                                if (edge) {
+                                    edge.meta = { ...edge.meta, isDynamic: true, pattern: 'pkgutil' };
+                                    edges.push(edge);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // typing.TYPE_CHECKING conditional imports (high confidence but type-only)
+            if (node.type === 'if_statement') {
+                const condition = node.namedChildren[0];
+                if (condition?.text === 'TYPE_CHECKING' || condition?.text === 'typing.TYPE_CHECKING') {
+                    // Imports inside TYPE_CHECKING block are type-only
+                    const block = this.findChild(node, 'block');
+                    if (block) {
+                        this.walkTree(block, (innerNode) => {
+                            if (innerNode.type === 'import_statement' || innerNode.type === 'import_from_statement') {
+                                const moduleNode = this.findChild(innerNode, 'dotted_name') || this.findChild(innerNode, 'relative_import');
+                                if (moduleNode && !seen.has(`type:${moduleNode.text}`)) {
+                                    seen.add(`type:${moduleNode.text}`);
+                                    const edge = this.createPythonImportEdge(fromFile, moduleNode.text, innerNode.startPosition.row + 1, 'medium');
+                                    if (edge) {
+                                        edge.meta = { ...edge.meta, isTypeOnly: true };
+                                        edges.push(edge);
+                                    }
+                                }
+                            }
+                        });
                     }
                 }
             }
