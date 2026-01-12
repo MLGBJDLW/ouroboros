@@ -105,6 +105,24 @@ export class GoIndexer extends TreeSitterIndexer {
      */
     private isGoExternalPackage(importPath: string): boolean {
         const firstSegment = importPath.split('/')[0];
+        
+        // Check if it's a workspace module (monorepo internal dependency)
+        if (this.isWorkspacePackage(importPath, 'go')) {
+            return false;
+        }
+        
+        // Also check if any workspace module is a prefix of the import
+        for (const mod of this.workspaceData.goModules) {
+            if (importPath.startsWith(mod)) {
+                return false;
+            }
+        }
+        
+        // Check vendor packages
+        if (this.workspaceData.goVendor.has(importPath)) {
+            return false;
+        }
+        
         return GO_EXTERNAL_PACKAGES.has(firstSegment) || firstSegment.includes('.');
     }
 

@@ -80,6 +80,12 @@ export class RustIndexer extends TreeSitterIndexer {
     private isExternalCrate(crateName: string): boolean {
         // Extract first segment of path (the crate name)
         const firstSegment = crateName.split('::')[0].replace(/_/g, '_');
+        
+        // Check if it's a workspace crate (monorepo internal dependency)
+        if (this.isWorkspacePackage(firstSegment, 'rust')) {
+            return false;
+        }
+        
         return EXTERNAL_CRATES.has(firstSegment) || EXTERNAL_CRATES.has(firstSegment.replace(/_/g, '-'));
     }
 

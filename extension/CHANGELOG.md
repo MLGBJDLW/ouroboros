@@ -2,6 +2,32 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.6] - 2026-01-11
+
+### Fixed
+- **Monorepo Workspace Detection** — All language indexers now detect workspace packages:
+  - **TypeScript/JavaScript**: `package.json` workspaces, `pnpm-workspace.yaml`, `tsconfig.json` path aliases
+  - **TypeScript Project References**: `tsconfig.json` references for multi-project setups
+  - **Package.json Exports**: Node.js conditional exports (`exports` field)
+  - **Subpath Imports**: Private imports (`#internal` via `imports` field)
+  - **Bundler Aliases**: Webpack `resolve.alias`, Vite `resolve.alias`
+  - **Yarn PnP**: `.pnp.cjs` virtual path resolution
+  - **Python**: `pyproject.toml`, `setup.py`, Poetry/PDM workspace packages, `src/` layout
+  - **Go**: `go.work` modules, `go.mod` replace directives, `vendor/` packages
+  - **Rust**: `Cargo.toml` workspace members, path dependencies
+  - **Java**: Maven `pom.xml` modules, Gradle `settings.gradle` includes
+  - **C#/.NET**: `.sln` solution files, `.csproj` project references
+  - **PHP**: `composer.json` PSR-4/PSR-0 autoload, path repositories
+  - **Monorepo Tools**: Nx, Turborepo, Lerna project detection
+
+### Added
+- **Multi-Language Workspace Cache** — `BaseIndexer.WorkspaceCache` structure for efficient cross-language workspace detection
+- **TypeScript Path Alias Resolution** — Reads `tsconfig.json`/`jsconfig.json` paths for accurate import resolution
+- **Subpath Import Resolution** — Resolves `#internal` imports from `package.json` imports field
+- **Bundler Alias Detection** — Parses Webpack/Vite config files for alias mappings
+
+---
+
 ## [3.3.5] - 2026-01-11
 
 ### Fixed
