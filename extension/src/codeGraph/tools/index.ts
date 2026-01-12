@@ -17,6 +17,10 @@ export { createGraphAnnotationsTool, type GraphAnnotationsInput } from './graphA
 export { createGraphCyclesTool, type GraphCyclesInput, type GraphCyclesResult } from './graphCycles';
 export { createGraphLayersTool, type GraphLayersInput, type GraphLayersResult } from './graphLayers';
 
+// v0.6 Tools - Search & Navigation
+export { createGraphSearchTool, type GraphSearchInput } from './graphSearch';
+export { createGraphTreeTool, type GraphTreeInput } from './graphTree';
+
 // v1.0 Envelope
 export {
     createSuccessEnvelope,

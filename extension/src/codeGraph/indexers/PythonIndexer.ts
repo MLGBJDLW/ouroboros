@@ -162,14 +162,160 @@ export class PythonIndexer extends BaseIndexer {
         const imports = this.extractImports(rootNode, filePath);
         edges.push(...imports);
 
+        // Extract re-exports (from x import * and __init__.py patterns)
+        const reexports = this.extractReexports(rootNode, content, filePath);
+        edges.push(...reexports);
+
         const exports = this.extractExports(rootNode, content);
         if (fileNode.meta) fileNode.meta.exports = exports;
+        
+        // Mark as barrel file if it's __init__.py with re-exports
+        const isBarrel = this.isBarrelFile(filePath, content, reexports.length);
+        if (isBarrel && fileNode.meta) {
+            fileNode.meta.isBarrel = true;
+        }
+        
         nodes.push(fileNode);
 
         const entrypoint = this.detectEntrypoint(rootNode, content, filePath);
         if (entrypoint) nodes.push(entrypoint);
 
         return { nodes, edges };
+    }
+
+    /**
+     * Check if file is a Python barrel file (__init__.py with re-exports)
+     */
+    private isBarrelFile(filePath: string, content: string, reexportCount: number): boolean {
+        const fileName = this.getFileName(filePath);
+        if (fileName !== '__init__.py') return false;
+        
+        // Has re-exports
+        if (reexportCount > 0) return true;
+        
+        // Has __all__ definition
+        if (content.includes('__all__')) return true;
+        
+        // Primarily import/export statements
+        const lines = content.split('\n').filter(line => {
+            const trimmed = line.trim();
+            return trimmed.length > 0 && !trimmed.startsWith('#');
+        });
+        
+        const importExportLines = lines.filter(line => 
+            line.includes('import') || line.includes('__all__')
+        );
+        
+        return lines.length > 0 && importExportLines.length / lines.length >= 0.7;
+    }
+
+    /**
+     * Extract re-exports from Python code
+     * Handles: from x import *, from .module import *, __all__ re-exports
+     */
+    private extractReexports(rootNode: ParsedNode, content: string, fromFile: string): GraphEdge[] {
+        const edges: GraphEdge[] = [];
+        const seen = new Set<string>();
+        const fileName = this.getFileName(fromFile);
+        const isInitFile = fileName === '__init__.py';
+
+        this.walkTree(rootNode, (node) => {
+            // from x import * - wildcard re-export
+            if (node.type === 'import_from_statement') {
+                const wildcardNode = this.findChild(node, 'wildcard_import');
+                if (wildcardNode) {
+                    const moduleNode = this.findChild(node, 'dotted_name') || this.findChild(node, 'relative_import');
+                    if (moduleNode && !seen.has(moduleNode.text)) {
+                        seen.add(moduleNode.text);
+                        const edge = this.createPythonReexportEdge(
+                            fromFile, 
+                            moduleNode.text, 
+                            moduleNode.startPosition.row + 1,
+                            'wildcard'
+                        );
+                        if (edge) edges.push(edge);
+                    }
+                }
+            }
+
+            // In __init__.py, regular imports are often re-exports
+            if (isInitFile && node.type === 'import_from_statement') {
+                const moduleNode = this.findChild(node, 'dotted_name') || this.findChild(node, 'relative_import');
+                // Check if it's a relative import (likely re-exporting from same package)
+                if (moduleNode && moduleNode.text.startsWith('.')) {
+                    const importedNames = this.findAllDescendants(node, 'dotted_name');
+                    // If importing specific names from relative module, it's likely a re-export
+                    if (importedNames.length > 1 && !seen.has(moduleNode.text)) {
+                        seen.add(moduleNode.text);
+                        const edge = this.createPythonReexportEdge(
+                            fromFile,
+                            moduleNode.text,
+                            moduleNode.startPosition.row + 1,
+                            'named'
+                        );
+                        if (edge) edges.push(edge);
+                    }
+                }
+            }
+        });
+
+        // Check for __all__ based re-exports
+        // If __all__ references items from other modules, those are re-exports
+        if (content.includes('__all__') && isInitFile) {
+            // Parse __all__ to find re-exported names
+            const allMatch = content.match(/__all__\s*=\s*\[([^\]]+)\]/);
+            if (allMatch) {
+                const names = allMatch[1].match(/['"]([^'"]+)['"]/g);
+                if (names) {
+                    // These names might be re-exported from submodules
+                    // The actual re-export edges are created above from import statements
+                }
+            }
+        }
+
+        return edges;
+    }
+
+    /**
+     * Create a Python re-export edge
+     */
+    private createPythonReexportEdge(
+        fromFile: string, 
+        toModule: string, 
+        line: number,
+        reexportType: 'wildcard' | 'named' | 'all'
+    ): GraphEdge | null {
+        const resolvedPath = this.resolvePythonImport(toModule, fromFile);
+        if (resolvedPath) {
+            return {
+                id: `edge:${fromFile}:reexports:${resolvedPath}`,
+                from: `file:${fromFile}`,
+                to: `file:${resolvedPath}`,
+                kind: 'reexports',
+                confidence: toModule.startsWith('.') ? 'high' : 'medium',
+                reason: `python ${reexportType} re-export`,
+                meta: {
+                    importPath: toModule,
+                    reexportType,
+                    loc: { line, column: 0 },
+                    language: 'python',
+                },
+            };
+        }
+        return null;
+    }
+
+    /**
+     * Find all descendants by type
+     */
+    private findAllDescendants(node: ParsedNode, type: string): ParsedNode[] {
+        const results: ParsedNode[] = [];
+        this.walkTree(node, (n) => {
+            if (n.type === type) {
+                results.push(n);
+            }
+        });
+        return results;
     }
 
     private extractImports(rootNode: ParsedNode, fromFile: string): GraphEdge[] {
@@ -489,6 +635,9 @@ export class PythonIndexer extends BaseIndexer {
         const edges: GraphEdge[] = [];
         const lines = content.split('\n');
         const seen = new Set<string>();
+        const fileName = this.getFileName(filePath);
+        const isInitFile = fileName === '__init__.py';
+        let reexportCount = 0;
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -501,27 +650,80 @@ export class PythonIndexer extends BaseIndexer {
                 if (edge) edges.push(edge);
             }
 
+            // from x import * - wildcard re-export
+            const wildcardMatch = line.match(/^from\s+([a-zA-Z_.][a-zA-Z0-9_.]*)\s+import\s+\*/);
+            if (wildcardMatch && !seen.has(`reexport:${wildcardMatch[1]}`)) {
+                seen.add(`reexport:${wildcardMatch[1]}`);
+                const resolvedPath = this.resolvePythonImport(wildcardMatch[1], filePath);
+                if (resolvedPath) {
+                    edges.push({
+                        id: `edge:${filePath}:reexports:${resolvedPath}`,
+                        from: `file:${filePath}`,
+                        to: `file:${resolvedPath}`,
+                        kind: 'reexports',
+                        confidence: wildcardMatch[1].startsWith('.') ? 'high' : 'medium',
+                        reason: 'python wildcard re-export',
+                        meta: {
+                            importPath: wildcardMatch[1],
+                            reexportType: 'wildcard',
+                            loc: { line: i + 1, column: 0 },
+                            language: 'python',
+                        },
+                    });
+                    reexportCount++;
+                }
+            }
+
             const fromMatch = line.match(/^from\s+([a-zA-Z_.][a-zA-Z0-9_.]*)\s+import/);
             if (fromMatch && !seen.has(fromMatch[1])) {
                 seen.add(fromMatch[1]);
                 const edge = this.createPythonImportEdge(filePath, fromMatch[1], i + 1, 'low');
                 if (edge) edges.push(edge);
+                
+                // In __init__.py, relative imports are likely re-exports
+                if (isInitFile && fromMatch[1].startsWith('.')) {
+                    const resolvedPath = this.resolvePythonImport(fromMatch[1], filePath);
+                    if (resolvedPath) {
+                        edges.push({
+                            id: `edge:${filePath}:reexports:${resolvedPath}`,
+                            from: `file:${filePath}`,
+                            to: `file:${resolvedPath}`,
+                            kind: 'reexports',
+                            confidence: 'medium',
+                            reason: 'python named re-export (init)',
+                            meta: {
+                                importPath: fromMatch[1],
+                                reexportType: 'named',
+                                loc: { line: i + 1, column: 0 },
+                                language: 'python',
+                            },
+                        });
+                        reexportCount++;
+                    }
+                }
             }
         }
+
+        const isBarrel = isInitFile && (reexportCount > 0 || content.includes('__all__'));
 
         nodes.push({
             id: `file:${filePath}`,
             kind: 'file',
-            name: this.getFileName(filePath),
+            name: fileName,
             path: filePath,
-            meta: { language: 'python', exports: [], confidence: 'low' },
+            meta: { 
+                language: 'python', 
+                exports: [], 
+                confidence: 'low',
+                isBarrel,
+            },
         });
 
         if (content.includes('if __name__') && content.includes('__main__')) {
             nodes.push({
                 id: `entrypoint:main:${filePath}`,
                 kind: 'entrypoint',
-                name: `Main: ${this.getFileName(filePath)}`,
+                name: `Main: ${fileName}`,
                 path: filePath,
                 meta: { entrypointType: 'main', language: 'python', confidence: 'low' },
             });

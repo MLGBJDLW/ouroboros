@@ -20,6 +20,8 @@ import { createGraphModuleTool } from '../codeGraph/tools/graphModule';
 import { createGraphAnnotationsTool } from '../codeGraph/tools/graphAnnotations';
 import { createGraphCyclesTool } from '../codeGraph/tools/graphCycles';
 import { createGraphLayersTool } from '../codeGraph/tools/graphLayers';
+import { createGraphSearchTool } from '../codeGraph/tools/graphSearch';
+import { createGraphTreeTool } from '../codeGraph/tools/graphTree';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Tools');
@@ -97,6 +99,15 @@ export function registerTools(
         const layersTool = createGraphLayersTool(codeGraphManager);
         disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_LAYERS, layersTool));
         logger.info(`Registered tool: ${TOOLS.GRAPH_LAYERS}`);
+
+        // v0.6 tools - Search & Navigation
+        const searchTool = createGraphSearchTool(codeGraphManager);
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_SEARCH, searchTool));
+        logger.info(`Registered tool: ${TOOLS.GRAPH_SEARCH}`);
+
+        const treeTool = createGraphTreeTool(codeGraphManager);
+        disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_TREE, treeTool));
+        logger.info(`Registered tool: ${TOOLS.GRAPH_TREE}`);
     }
 
     logger.info('All LM Tools registered successfully');

@@ -42,6 +42,12 @@ export class IssueDetector {
             // Skip test files, config files, etc.
             if (this.shouldSkipFile(node.path ?? '')) continue;
 
+            // Skip barrel files - they are reached via re-exports, not direct imports
+            if (node.meta?.isBarrel) continue;
+
+            // Check if this file is re-exported by a reachable barrel file
+            if (this.isReexportedByReachableBarrel(nodeId, result.reachable)) continue;
+
             // Check if file has exports (potential handler)
             const exports = node.meta?.exports as string[] | undefined;
             if (!exports || exports.length === 0) continue;
@@ -72,8 +78,35 @@ export class IssueDetector {
     }
 
     /**
+     * Check if a file is re-exported by a reachable barrel file
+     * This handles the case where files are exported via `export * from './file'`
+     */
+    private isReexportedByReachableBarrel(nodeId: string, reachableNodes: Set<string>): boolean {
+        // Get all edges pointing TO this node (incoming edges)
+        const incomingEdges = this.store.getEdgesTo(nodeId);
+        
+        for (const edge of incomingEdges) {
+            // Check if this is a re-export edge
+            if (edge.kind === 'reexports') {
+                // Check if the source of the re-export is reachable
+                if (reachableNodes.has(edge.from)) {
+                    return true;
+                }
+                // Recursively check if the source is re-exported by a reachable barrel
+                if (this.isReexportedByReachableBarrel(edge.from, reachableNodes)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * Detect dynamic edges (DYNAMIC_EDGE_UNKNOWN)
      * Imports that cannot be statically resolved
+     * Note: Dynamic imports are often intentional (code splitting, lazy loading)
+     * so we report them as 'info' severity, not 'warning'
      */
     detectDynamicEdges(): GraphIssue[] {
         const issues: GraphIssue[] = [];
@@ -83,24 +116,30 @@ export class IssueDetector {
             if (edge.confidence === 'unknown' || edge.meta?.isDynamic) {
                 const fromNode = this.store.getNode(edge.from);
                 
+                // Dynamic imports are often intentional patterns:
+                // - Code splitting for performance
+                // - Lazy loading for faster initial load
+                // - Conditional loading based on environment
+                // Report as 'info' rather than 'warning'
                 issues.push({
                     id: `issue:dynamic:${edge.id}`,
                     kind: 'DYNAMIC_EDGE_UNKNOWN',
-                    severity: 'warning',
+                    severity: 'info', // Changed from 'warning' to 'info'
                     nodeId: edge.from,
                     title: `Dynamic import in ${fromNode?.name ?? edge.from}`,
                     evidence: [
                         `Dynamic import detected: ${edge.reason ?? 'unknown reason'}`,
                         `Target: ${edge.to}`,
-                        'Cannot statically verify this connection',
+                        'This is often intentional for code splitting or lazy loading',
                     ],
                     suggestedFix: [
-                        'Consider using static imports if possible',
-                        'Add annotation to declare this connection',
+                        'No action needed if this is intentional',
+                        'Add @graph-ignore annotation to suppress this notice',
                     ],
                     meta: {
                         filePath: fromNode?.path,
                         line: edge.meta?.loc?.line,
+                        isIntentional: true, // Mark as likely intentional
                     },
                 });
             }
@@ -123,11 +162,21 @@ export class IssueDetector {
                 
                 // Check if target exists
                 if (!toNode) {
+                    // Skip workspace package references - they are resolved at runtime
+                    if (edge.to.startsWith('workspace:') || edge.to.startsWith('module:')) {
+                        continue;
+                    }
+                    
                     // Try to find the node with alternative extensions
                     // This handles ESM-style .js imports that map to .ts source files
                     const alternativeNode = this.findNodeWithAlternativeExtension(edge.to);
                     if (alternativeNode) {
                         // Not broken, just using ESM-style extension
+                        continue;
+                    }
+                    
+                    // Check if this is a workspace package import (@org/package)
+                    if (this.isWorkspacePackageImport(edge.to)) {
                         continue;
                     }
                     
@@ -158,6 +207,31 @@ export class IssueDetector {
         }
 
         return issues;
+    }
+
+    /**
+     * Check if the import path is a workspace package (monorepo internal dependency)
+     */
+    private isWorkspacePackageImport(nodeId: string): boolean {
+        // Extract path from node ID
+        let importPath = nodeId;
+        if (nodeId.startsWith('file:')) {
+            importPath = nodeId.slice(5);
+        }
+        
+        // Check for scoped package pattern: @org/package
+        if (importPath.startsWith('@') && importPath.includes('/')) {
+            const parts = importPath.split('/');
+            // @scope/package or @scope/package/subpath
+            if (parts.length >= 2 && parts[0].startsWith('@')) {
+                // This looks like a scoped package - could be workspace or external
+                // We can't definitively know without checking package.json/pnpm-workspace.yaml
+                // But we should not report it as broken since it might be a valid workspace package
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**

@@ -37,6 +37,9 @@ export const TOOLS = {
     // Code Graph Tools (v0.5)
     GRAPH_CYCLES: 'ouroborosai_graph_cycles',
     GRAPH_LAYERS: 'ouroborosai_graph_layers',
+    // Code Graph Tools (v0.6) - Search & Navigation
+    GRAPH_SEARCH: 'ouroborosai_graph_search',
+    GRAPH_TREE: 'ouroborosai_graph_tree',
 } as const;
 
 // Configuration Keys

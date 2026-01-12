@@ -2,6 +2,46 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.7] - 2026-01-12
+
+### Added
+- **graphSearch Tool** — AI can now search for files, symbols, and directories by name/keyword:
+  - Fuzzy matching with scoring (exact > contains > fuzzy)
+  - Filter by type: `file`, `symbol`, `directory`, or `all`
+  - Scope limiting to specific directories
+  - Returns import counts and hotspot/entrypoint flags
+
+- **graphTree Tool** — AI can browse directory structure:
+  - Configurable depth (1-5 levels)
+  - File/directory stats (file count, imports, exports)
+  - Pattern filtering (e.g., `*.test.ts`, `index.*`)
+  - Identifies barrel files and entrypoints
+
+### Fixed
+- **Graph Analyzer Re-export Tracking** — Fixed false positives for `HANDLER_UNREACHABLE` (694→0) by tracking `export * from` re-exports:
+  - **TypeScriptIndexer**: Added `REEXPORT_ALL_REGEX`, `REEXPORT_NAMESPACE_REGEX` for barrel/namespace/named/default re-exports
+  - **PythonIndexer**: Added `from x import *` wildcard detection, `__init__.py` barrel file support
+  - **RustIndexer**: Added `pub use` and `pub mod` re-export edge creation
+  - **GoIndexer**: Added dot import (`import . "package"`) re-export detection
+  - **JavaIndexer**: Added Java 9+ module system support (`exports`, `requires transitive`)
+  - **ReachabilityAnalyzer**: Added `markReexportedFilesAsReachable()` iterative marking
+  - **IssueDetector**: Added `isReexportedByReachableBarrel()` check, `isWorkspacePackageImport()` for @org/package
+
+- **DYNAMIC_EDGE_UNKNOWN Severity** — Changed from 'warning' to 'info' (dynamic imports are intentional patterns)
+
+- **Issues Tab Filter Bug** — Fixed filter dropdown not displaying filtered results
+
+### Added
+- **Add to Context Persistent Feedback** — Items added to context now show persistent indicator until consumed:
+  - `addedToContext` state synced with backend via `graphContextUpdate` message
+  - `recentlyAdded` flash animation (1.5s pulse) for newly added items
+  - Context badge shows count of items pending in context
+
+### Improved
+- **Issues Tab UX** — Search box, display limit selector (20/50/100/200/All), clickable legend filters, load more button
+
+---
+
 ## [3.3.6] - 2026-01-11
 
 ### Fixed

@@ -122,31 +122,85 @@ export class BarrelAnalyzer {
         content: string,
         reexports: ReexportInfo[]
     ): boolean {
-        // Must be an index file
-        if (!filePath.endsWith('index.ts') && 
-            !filePath.endsWith('index.tsx') &&
-            !filePath.endsWith('index.js') &&
-            !filePath.endsWith('index.jsx')) {
-            return false;
+        const fileName = filePath.split('/').pop() ?? filePath;
+        
+        // TypeScript/JavaScript barrel files
+        if (fileName.match(/^index\.(tsx?|jsx?|mjs)$/)) {
+            // Must have at least one re-export
+            if (reexports.length === 0) {
+                return false;
+            }
+
+            // Check if file is primarily re-exports
+            const lines = content.split('\n').filter((line) => {
+                const trimmed = line.trim();
+                return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
+            });
+
+            const exportLines = lines.filter(
+                (line) => line.includes('export') || line.includes('import')
+            );
+
+            // If more than 80% of lines are exports/imports, it's a barrel
+            return exportLines.length / lines.length >= 0.8;
+        }
+        
+        // Python barrel files (__init__.py)
+        if (fileName === '__init__.py') {
+            // Has re-exports or __all__
+            if (reexports.length > 0 || content.includes('__all__')) {
+                return true;
+            }
+            
+            // Check if primarily imports
+            const lines = content.split('\n').filter((line) => {
+                const trimmed = line.trim();
+                return trimmed.length > 0 && !trimmed.startsWith('#');
+            });
+            
+            const importLines = lines.filter(
+                (line) => line.includes('import') || line.includes('__all__')
+            );
+            
+            return lines.length > 0 && importLines.length / lines.length >= 0.7;
+        }
+        
+        // Rust barrel files (mod.rs, lib.rs)
+        if (fileName === 'mod.rs' || fileName === 'lib.rs') {
+            // Has pub use or pub mod
+            if (content.includes('pub use') || content.includes('pub mod')) {
+                return true;
+            }
+            
+            // Check if primarily mod/use declarations
+            const lines = content.split('\n').filter((line) => {
+                const trimmed = line.trim();
+                return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
+            });
+            
+            const modUseLines = lines.filter(
+                (line) => line.includes('mod ') || line.includes('use ')
+            );
+            
+            return lines.length > 0 && modUseLines.length / lines.length >= 0.7;
+        }
+        
+        // Go doesn't have traditional barrel files, but doc.go can serve similar purpose
+        if (fileName === 'doc.go') {
+            return content.includes('import .') || content.includes('import .');
+        }
+        
+        // Java package-info.java
+        if (fileName === 'package-info.java') {
+            return true; // Always considered a barrel-like file
+        }
+        
+        // Java module-info.java
+        if (fileName === 'module-info.java') {
+            return content.includes('exports') || content.includes('requires transitive');
         }
 
-        // Must have at least one re-export
-        if (reexports.length === 0) {
-            return false;
-        }
-
-        // Check if file is primarily re-exports
-        const lines = content.split('\n').filter((line) => {
-            const trimmed = line.trim();
-            return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
-        });
-
-        const exportLines = lines.filter(
-            (line) => line.includes('export') || line.includes('import')
-        );
-
-        // If more than 80% of lines are exports/imports, it's a barrel
-        return exportLines.length / lines.length >= 0.8;
+        return false;
     }
 
     /**

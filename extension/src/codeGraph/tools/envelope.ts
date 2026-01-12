@@ -50,6 +50,9 @@ export interface ResponseMeta {
         exportLimit?: number;
         importedByLimit?: number;
         maxPaths?: number;
+        // v0.6 Search & Tree tools
+        limit?: number;
+        depth?: number;
     };
     nextQuerySuggestion?: NextQuerySuggestion[];
     page?: PageInfo;

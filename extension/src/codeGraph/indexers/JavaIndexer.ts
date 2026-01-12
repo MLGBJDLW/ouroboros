@@ -163,6 +163,9 @@ export class JavaIndexer extends TreeSitterIndexer {
         const edges: GraphEdge[] = [];
         const exports: string[] = [];
         const isTestFile = this.isTestFile(filePath);
+        const fileName = this.getFileName(filePath);
+        const isPackageInfo = fileName === 'package-info.java';
+        const isModuleInfo = fileName === 'module-info.java';
 
         this.walkTree(rootNode, (node) => {
             // import statements (including static imports)
@@ -178,6 +181,19 @@ export class JavaIndexer extends TreeSitterIndexer {
                         node.startPosition.row + 1,
                         isExternal ? 'low' : 'high'
                     ));
+                    
+                    // Static wildcard imports can be considered re-exports in some contexts
+                    if (isStatic && pathNode.text.endsWith('.*') && !isExternal) {
+                        const reexportEdge = this.createJavaReexportEdge(
+                            filePath,
+                            pathNode.text,
+                            node.startPosition.row + 1,
+                            'static-wildcard'
+                        );
+                        if (reexportEdge) {
+                            edges.push(reexportEdge);
+                        }
+                    }
                 }
             }
 
@@ -224,10 +240,77 @@ export class JavaIndexer extends TreeSitterIndexer {
                     }
                 }
             }
+
+            // Module declarations (Java 9+) - exports and requires
+            if (node.type === 'module_declaration') {
+                // exports package.name;
+                const exportsDirectives = this.findAllDescendants(node, 'exports_module_directive');
+                for (const directive of exportsDirectives) {
+                    const packageNode = this.findDescendant(directive, 'scoped_identifier');
+                    if (packageNode) {
+                        // This is a module-level export/re-export
+                        edges.push({
+                            id: `edge:${filePath}:reexports:${packageNode.text}`,
+                            from: `file:${filePath}`,
+                            to: `package:${packageNode.text}`,
+                            kind: 'reexports',
+                            confidence: 'high',
+                            reason: 'java module exports',
+                            meta: {
+                                importPath: packageNode.text,
+                                reexportType: 'module-exports',
+                                loc: { line: directive.startPosition.row + 1, column: 0 },
+                                language: 'java',
+                            },
+                        });
+                    }
+                }
+
+                // requires package.name;
+                const requiresDirectives = this.findAllDescendants(node, 'requires_module_directive');
+                for (const directive of requiresDirectives) {
+                    const moduleNode = this.findDescendant(directive, 'scoped_identifier') ||
+                                       this.findDescendant(directive, 'identifier');
+                    if (moduleNode) {
+                        const isTransitive = directive.text.includes('transitive');
+                        edges.push(this.createTsImportEdge(
+                            filePath,
+                            moduleNode.text,
+                            directive.startPosition.row + 1,
+                            'high'
+                        ));
+                        
+                        // transitive requires is a re-export
+                        if (isTransitive) {
+                            edges.push({
+                                id: `edge:${filePath}:reexports:${moduleNode.text}`,
+                                from: `file:${filePath}`,
+                                to: `module:${moduleNode.text}`,
+                                kind: 'reexports',
+                                confidence: 'high',
+                                reason: 'java module requires transitive',
+                                meta: {
+                                    importPath: moduleNode.text,
+                                    reexportType: 'transitive',
+                                    loc: { line: directive.startPosition.row + 1, column: 0 },
+                                    language: 'java',
+                                },
+                            });
+                        }
+                    }
+                }
+            }
         });
 
         // Create file node
-        nodes.push(this.createTsFileNode(filePath, exports));
+        const fileNode = this.createTsFileNode(filePath, exports);
+        if (isPackageInfo) {
+            fileNode.meta = { ...fileNode.meta, isPackageInfo: true };
+        }
+        if (isModuleInfo) {
+            fileNode.meta = { ...fileNode.meta, isModuleInfo: true };
+        }
+        nodes.push(fileNode);
 
         // Detect entrypoints
         const entrypoint = this.detectEntrypoint(rootNode, content, filePath, isTestFile);
@@ -236,6 +319,35 @@ export class JavaIndexer extends TreeSitterIndexer {
         }
 
         return { nodes, edges };
+    }
+
+    /**
+     * Create a Java re-export edge
+     */
+    private createJavaReexportEdge(
+        fromFile: string,
+        toPackage: string,
+        line: number,
+        reexportType: 'static-wildcard' | 'module-exports' | 'transitive'
+    ): GraphEdge | null {
+        const resolvedPath = this.resolveImportPath(toPackage.replace('.*', ''), fromFile);
+        if (resolvedPath) {
+            return {
+                id: `edge:${fromFile}:reexports:${resolvedPath}`,
+                from: `file:${fromFile}`,
+                to: `file:${resolvedPath}`,
+                kind: 'reexports',
+                confidence: 'medium',
+                reason: `java ${reexportType}`,
+                meta: {
+                    importPath: toPackage,
+                    reexportType,
+                    loc: { line, column: 0 },
+                    language: 'java',
+                },
+            };
+        }
+        return null;
     }
 
     /**
