@@ -118,6 +118,11 @@ export class GoIndexer extends TreeSitterIndexer {
             }
         }
         
+        // Check vendor packages
+        if (this.workspaceData.goVendor.has(importPath)) {
+            return false;
+        }
+        
         return GO_EXTERNAL_PACKAGES.has(firstSegment) || firstSegment.includes('.');
     }
 
