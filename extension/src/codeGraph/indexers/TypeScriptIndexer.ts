@@ -50,6 +50,10 @@ const EXPORT_LIST_REGEX = /export\s+\{([^}]+)\}(?!\s+from)/g;
 // Re-export patterns
 const REEXPORT_REGEX = /export\s+(?:\{[\s\S]*?\}|\*(?:\s+as\s+\w+)?)\s+from\s+['"]([^'"]+)['"]/g;
 const REEXPORT_DEFAULT_REGEX = /export\s+\{\s*default(?:\s+as\s+\w+)?\s*\}\s+from\s+['"]([^'"]+)['"]/g;
+// Barrel re-export: export * from './module'
+const REEXPORT_ALL_REGEX = /export\s+\*\s+from\s+['"]([^'"]+)['"]/g;
+// Namespace re-export: export * as ns from './module'
+const REEXPORT_NAMESPACE_REGEX = /export\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g;
 
 // Monorepo workspace patterns
 const WORKSPACE_PATTERNS = [
@@ -186,8 +190,8 @@ export class TypeScriptIndexer extends BaseIndexer {
                 }
             }
 
-            // Extract re-exports
-            const reexports = this.extractReexports(cleanContent);
+            // Extract re-exports with improved handling
+            const reexports = this.extractReexports(content, cleanContent, filePath);
             for (const reexp of reexports) {
                 const resolvedPath = this.normalizeImportPath(reexp.path, filePath);
                 if (resolvedPath) {
@@ -196,8 +200,13 @@ export class TypeScriptIndexer extends BaseIndexer {
                         from: `file:${filePath}`,
                         to: `file:${resolvedPath}`,
                         kind: 'reexports',
-                        confidence: 'high',
-                        reason: 'static re-export',
+                        confidence: reexp.confidence,
+                        reason: reexp.reason,
+                        meta: {
+                            importPath: reexp.path,
+                            reexportType: reexp.type,
+                            loc: reexp.line ? { line: reexp.line, column: 0 } : undefined,
+                        },
                     });
                 }
             }
@@ -453,25 +462,90 @@ export class TypeScriptIndexer extends BaseIndexer {
         return exports;
     }
 
-    private extractReexports(content: string): Array<{ path: string }> {
-        const reexports: Array<{ path: string }> = [];
+    private extractReexports(
+        originalContent: string,
+        cleanContent: string,
+        _filePath: string
+    ): Array<{
+        path: string;
+        confidence: Confidence;
+        reason: string;
+        type: 'all' | 'namespace' | 'named' | 'default';
+        line?: number;
+    }> {
+        const reexports: Array<{
+            path: string;
+            confidence: Confidence;
+            reason: string;
+            type: 'all' | 'namespace' | 'named' | 'default';
+            line?: number;
+        }> = [];
         const seen = new Set<string>();
 
         let match: RegExpExecArray | null;
         
-        REEXPORT_REGEX.lastIndex = 0;
-        while ((match = REEXPORT_REGEX.exec(content)) !== null) {
-            if (!seen.has(match[1])) {
-                seen.add(match[1]);
-                reexports.push({ path: match[1] });
+        // export * from './module' - barrel re-exports (highest priority)
+        REEXPORT_ALL_REGEX.lastIndex = 0;
+        while ((match = REEXPORT_ALL_REGEX.exec(cleanContent)) !== null) {
+            const importPath = match[1];
+            if (!seen.has(importPath)) {
+                seen.add(importPath);
+                reexports.push({
+                    path: importPath,
+                    confidence: 'high',
+                    reason: 'barrel re-export (export *)',
+                    type: 'all',
+                    line: this.getLineNumber(originalContent, match.index),
+                });
             }
         }
 
+        // export * as ns from './module' - namespace re-exports
+        REEXPORT_NAMESPACE_REGEX.lastIndex = 0;
+        while ((match = REEXPORT_NAMESPACE_REGEX.exec(cleanContent)) !== null) {
+            const importPath = match[2];
+            if (!seen.has(importPath)) {
+                seen.add(importPath);
+                reexports.push({
+                    path: importPath,
+                    confidence: 'high',
+                    reason: `namespace re-export (export * as ${match[1]})`,
+                    type: 'namespace',
+                    line: this.getLineNumber(originalContent, match.index),
+                });
+            }
+        }
+
+        // export { a, b } from './module' - named re-exports
+        REEXPORT_REGEX.lastIndex = 0;
+        while ((match = REEXPORT_REGEX.exec(cleanContent)) !== null) {
+            const importPath = match[1];
+            // Skip if already captured by more specific patterns
+            if (!seen.has(importPath)) {
+                seen.add(importPath);
+                reexports.push({
+                    path: importPath,
+                    confidence: 'high',
+                    reason: 'named re-export',
+                    type: 'named',
+                    line: this.getLineNumber(originalContent, match.index),
+                });
+            }
+        }
+
+        // export { default } from './module' or export { default as X } from './module'
         REEXPORT_DEFAULT_REGEX.lastIndex = 0;
-        while ((match = REEXPORT_DEFAULT_REGEX.exec(content)) !== null) {
-            if (!seen.has(match[1])) {
-                seen.add(match[1]);
-                reexports.push({ path: match[1] });
+        while ((match = REEXPORT_DEFAULT_REGEX.exec(cleanContent)) !== null) {
+            const importPath = match[1];
+            if (!seen.has(importPath)) {
+                seen.add(importPath);
+                reexports.push({
+                    path: importPath,
+                    confidence: 'high',
+                    reason: 'default re-export',
+                    type: 'default',
+                    line: this.getLineNumber(originalContent, match.index),
+                });
             }
         }
 

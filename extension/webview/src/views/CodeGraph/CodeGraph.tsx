@@ -65,7 +65,10 @@ export function CodeGraph() {
     const [issues, setIssues] = useState<GraphIssue[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // Persistent tracking of items added to context (synced with backend)
     const [addedToContext, setAddedToContext] = useState<Set<string>>(new Set());
+    // Temporary flash feedback for newly added items
+    const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set());
     
     // Graph view state
     const [graphData, setGraphData] = useState<GraphData | null>(null);
@@ -283,19 +286,20 @@ export function CodeGraph() {
             payload: contextItem 
         });
         
-        // Track what's been added
+        // Track what's been added - persistent until context is consumed
         const id = type === 'issue' ? (data as GraphIssue).id : 
                    type === 'hotspot' ? (data as { path: string }).path : 'digest';
         setAddedToContext(prev => new Set(prev).add(id));
         
-        // Show feedback briefly
+        // Show brief flash feedback for newly added item
+        setRecentlyAdded(prev => new Set(prev).add(id));
         setTimeout(() => {
-            setAddedToContext(prev => {
+            setRecentlyAdded(prev => {
                 const next = new Set(prev);
                 next.delete(id);
                 return next;
             });
-        }, 2000);
+        }, 1500);
     }, [vscode]);
 
     // Open file in editor
@@ -436,6 +440,20 @@ export function CodeGraph() {
                 setTimeout(() => {
                     setFitVersion(v => v + 1);
                 }, 100);
+            } else if (message.type === 'graphContextUpdate') {
+                // Sync addedToContext with backend state
+                const contextItems = message.payload as Array<{ type: string; data: unknown }> || [];
+                const ids = new Set<string>();
+                contextItems.forEach(item => {
+                    if (item.type === 'graph_issue') {
+                        ids.add((item.data as GraphIssue).id);
+                    } else if (item.type === 'graph_hotspot') {
+                        ids.add((item.data as { path: string }).path);
+                    } else if (item.type === 'graph_digest') {
+                        ids.add('digest');
+                    }
+                });
+                setAddedToContext(ids);
             }
         };
 
@@ -776,9 +794,9 @@ export function CodeGraph() {
                 {activeTab === 'issues' && (
                     <IssuesTab 
                         issues={issues} 
-                        digest={digest} 
                         addToContext={addToContext}
                         addedToContext={addedToContext}
+                        recentlyAdded={recentlyAdded}
                         openFile={openFile} 
                     />
                 )}
@@ -787,6 +805,7 @@ export function CodeGraph() {
                         hotspots={digest.hotspots} 
                         addToContext={addToContext}
                         addedToContext={addedToContext}
+                        recentlyAdded={recentlyAdded}
                         openFile={openFile} 
                     />
                 )}
@@ -934,14 +953,17 @@ function OverviewTab({ digest }: { digest: GraphDigest }) {
 }
 
 // Issues Tab Component
-function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: { 
+function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFile }: { 
     issues: GraphIssue[]; 
-    digest: GraphDigest;
     addToContext: (type: string, data: unknown) => void;
     addedToContext: Set<string>;
+    recentlyAdded: Set<string>;
     openFile: (path: string) => void;
 }) {
     const [filter, setFilter] = useState<string>('all');
+    const [searchQuery, setSearchQuery] = useState<string>('');
+    const [displayLimit, setDisplayLimit] = useState<number>(50);
+    const [showLimitSelector, setShowLimitSelector] = useState(false);
 
     // Build dynamic issue categories from actual issues
     const issueCategories = useMemo(() => {
@@ -952,21 +974,6 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
         });
         return categories;
     }, [issues]);
-
-    // Also include categories from digest.issues that might have 0 count in filtered issues
-    const allCategories = useMemo(() => {
-        const merged = new Map(issueCategories);
-        Object.entries(digest.issues).forEach(([kind, count]) => {
-            if (!merged.has(kind) && count > 0) {
-                merged.set(kind, count);
-            }
-        });
-        return merged;
-    }, [issueCategories, digest.issues]);
-
-    const filteredIssues = filter === 'all'
-        ? issues
-        : issues.filter((i) => i.kind === filter);
 
     // Human-readable labels for issue kinds
     const kindLabelMap: Record<string, { label: string; icon: string; severity: 'info' | 'warning' | 'error' }> = {
@@ -980,6 +987,35 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
         CYCLE_RISK: { label: 'Cycle Risk', icon: '🔁', severity: 'warning' },
         LAYER_VIOLATION: { label: 'Layer Violation', icon: '🏗️', severity: 'error' },
     };
+
+    // Filter issues by type and search query
+    const filteredIssues = useMemo(() => {
+        let result = issues;
+        
+        // Apply type filter
+        if (filter !== 'all') {
+            result = result.filter((i) => i.kind === filter);
+        }
+        
+        // Apply search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter((i) => 
+                i.file.toLowerCase().includes(query) ||
+                i.summary.toLowerCase().includes(query) ||
+                i.kind.toLowerCase().includes(query)
+            );
+        }
+        
+        return result;
+    }, [issues, filter, searchQuery]);
+
+    // Paginated issues for display
+    const displayedIssues = useMemo(() => {
+        return displayLimit === -1 ? filteredIssues : filteredIssues.slice(0, displayLimit);
+    }, [filteredIssues, displayLimit]);
+
+    const hasMoreIssues = displayLimit !== -1 && filteredIssues.length > displayLimit;
 
     if (issues.length === 0) {
         return (
@@ -995,6 +1031,25 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
         <div className={styles.issuesTab}>
             {/* Filter Bar */}
             <div className={styles.filterBar}>
+                <div className={styles.searchBox}>
+                    <Icon name="search" />
+                    <input
+                        type="text"
+                        className={styles.searchInput}
+                        placeholder="Search issues..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                        <button 
+                            className={styles.clearSearch}
+                            onClick={() => setSearchQuery('')}
+                            title="Clear search"
+                        >
+                            <Icon name="close" />
+                        </button>
+                    )}
+                </div>
                 <select
                     className={styles.filterSelect}
                     value={filter}
@@ -1002,7 +1057,7 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
                     title="Filter issues by type"
                 >
                     <option value="all">All Issues ({issues.length})</option>
-                    {Array.from(allCategories.entries())
+                    {Array.from(issueCategories.entries())
                         .sort((a, b) => b[1] - a[1]) // Sort by count descending
                         .map(([kind, count]) => {
                             const info = kindLabelMap[kind] || { label: kind, icon: '•', severity: 'info' };
@@ -1013,42 +1068,110 @@ function IssuesTab({ issues, digest, addToContext, addedToContext, openFile }: {
                             );
                         })}
                 </select>
+                <div className={styles.limitSelector}>
+                    <button 
+                        className={styles.limitBtn}
+                        onClick={() => setShowLimitSelector(!showLimitSelector)}
+                        title="Change display limit"
+                    >
+                        <Icon name="list-ordered" />
+                        <span>{displayLimit === -1 ? 'All' : displayLimit}</span>
+                    </button>
+                    {showLimitSelector && (
+                        <div className={styles.limitDropdown}>
+                            {[20, 50, 100, 200, -1].map((limit) => (
+                                <button
+                                    key={limit}
+                                    className={`${styles.limitOption} ${displayLimit === limit ? styles.active : ''}`}
+                                    onClick={() => {
+                                        setDisplayLimit(limit);
+                                        setShowLimitSelector(false);
+                                    }}
+                                >
+                                    {limit === -1 ? 'Show All' : `Show ${limit}`}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Results Summary */}
+            <div className={styles.resultsSummary}>
+                <span>
+                    Showing {displayedIssues.length} of {filteredIssues.length} issues
+                    {filter !== 'all' && ` (filtered from ${issues.length} total)`}
+                </span>
+                {addedToContext.size > 0 && (
+                    <span className={styles.addedCount}>
+                        <Icon name="check" />
+                        {addedToContext.size} added to context
+                    </span>
+                )}
             </div>
 
             {/* Dynamic Legend based on actual issue types */}
             <div className={styles.legend}>
-                {Array.from(allCategories.keys()).slice(0, 4).map(kind => {
+                {Array.from(issueCategories.keys()).slice(0, 4).map(kind => {
                     const info = kindLabelMap[kind] || { label: kind, icon: '•', severity: 'info' };
                     return (
-                        <span key={kind} className={styles.legendItem}>
+                        <button
+                            key={kind}
+                            className={`${styles.legendItem} ${styles.clickable} ${filter === kind ? styles.active : ''}`}
+                            onClick={() => setFilter(filter === kind ? 'all' : kind)}
+                            title={`Filter by ${info.label}`}
+                        >
                             <span className={`${styles.legendDot} ${styles[info.severity]}`} />
                             {info.label}
-                        </span>
+                        </button>
                     );
                 })}
             </div>
 
-            {/* Issue List */}
-            <div className={styles.issueList}>
-                {filteredIssues.map((issue) => (
-                    <IssueCard 
-                        key={issue.id} 
-                        issue={issue} 
-                        addToContext={addToContext}
-                        isAdded={addedToContext.has(issue.id)}
-                        openFile={openFile}
-                    />
-                ))}
+            {/* Issue List with scroll */}
+            <div className={styles.issueListContainer}>
+                {filteredIssues.length === 0 ? (
+                    <div className={styles.noResults}>
+                        <Icon name="search" />
+                        <span>No issues match your search</span>
+                        <button onClick={() => { setSearchQuery(''); setFilter('all'); }}>
+                            Clear filters
+                        </button>
+                    </div>
+                ) : (
+                    <div className={styles.issueList}>
+                        {displayedIssues.map((issue) => (
+                            <IssueCard 
+                                key={issue.id} 
+                                issue={issue} 
+                                addToContext={addToContext}
+                                isAdded={addedToContext.has(issue.id)}
+                                isRecentlyAdded={recentlyAdded.has(issue.id)}
+                                openFile={openFile}
+                            />
+                        ))}
+                        {hasMoreIssues && (
+                            <button 
+                                className={styles.loadMoreBtn}
+                                onClick={() => setDisplayLimit(prev => prev === -1 ? -1 : prev + 50)}
+                            >
+                                <Icon name="more" />
+                                Load more ({filteredIssues.length - displayLimit} remaining)
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
 // Hotspots Tab Component
-function HotspotsTab({ hotspots, addToContext, addedToContext, openFile }: { 
+function HotspotsTab({ hotspots, addToContext, addedToContext, recentlyAdded, openFile }: { 
     hotspots: GraphDigest['hotspots'];
     addToContext: (type: string, data: unknown) => void;
     addedToContext: Set<string>;
+    recentlyAdded: Set<string>;
     openFile: (path: string) => void;
 }) {
     if (hotspots.length === 0) {
@@ -1090,8 +1213,9 @@ function HotspotsTab({ hotspots, addToContext, addedToContext, openFile }: {
             <div className={styles.hotspotList}>
                 {hotspots.map((hotspot, index) => {
                     const isAdded = addedToContext.has(hotspot.path);
+                    const isRecent = recentlyAdded.has(hotspot.path);
                     return (
-                        <div key={hotspot.path} className={styles.hotspotItem}>
+                        <div key={hotspot.path} className={`${styles.hotspotItem} ${isRecent ? styles.recentlyAdded : ''}`}>
                             <div className={styles.hotspotRank}>#{index + 1}</div>
                             <div className={styles.hotspotInfo}>
                                 <span 
@@ -1194,10 +1318,11 @@ function IssueStat({ count, label, severity, tooltip }: {
     );
 }
 
-function IssueCard({ issue, addToContext, isAdded, openFile }: { 
+function IssueCard({ issue, addToContext, isAdded, isRecentlyAdded, openFile }: { 
     issue: GraphIssue;
     addToContext: (type: string, data: unknown) => void;
     isAdded: boolean;
+    isRecentlyAdded: boolean;
     openFile: (path: string) => void;
 }) {
     const [expanded, setExpanded] = useState(false);
@@ -1217,7 +1342,7 @@ function IssueCard({ issue, addToContext, isAdded, openFile }: {
     const kindLabel = kindLabelMap[issue.kind] || issue.kind;
 
     return (
-        <div className={`${styles.issueCard} ${styles[issue.severity]}`}>
+        <div className={`${styles.issueCard} ${styles[issue.severity]} ${isRecentlyAdded ? styles.recentlyAdded : ''}`}>
             <div className={styles.issueHeader} onClick={() => setExpanded(!expanded)}>
                 <Icon name={severityIcon} />
                 <div className={styles.issueHeaderContent}>

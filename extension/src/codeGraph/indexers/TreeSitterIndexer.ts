@@ -284,4 +284,54 @@ export abstract class TreeSitterIndexer extends BaseIndexer {
     protected getFileName(filePath: string): string {
         return filePath.split('/').pop() ?? filePath;
     }
+
+    /**
+     * Create re-export edge with optional path resolution
+     */
+    protected createReexportEdge(
+        fromFile: string,
+        toModule: string,
+        confidence: Confidence,
+        reason: string,
+        reexportType: 'wildcard' | 'named' | 'namespace' | 'default' | 'module' = 'named',
+        line?: number
+    ): GraphEdge {
+        // Try to resolve to a local file path
+        const resolvedPath = this.resolveImportPath(toModule, fromFile);
+        
+        if (resolvedPath) {
+            // Resolved to a local file - use file: prefix
+            return {
+                id: `edge:${fromFile}:reexports:${resolvedPath}`,
+                from: `file:${fromFile}`,
+                to: `file:${resolvedPath}`,
+                kind: 'reexports',
+                confidence,
+                reason: reason || `${this.language} re-export`,
+                meta: {
+                    importPath: toModule,
+                    reexportType,
+                    loc: line ? { line, column: 0 } : undefined,
+                    language: this.language,
+                },
+            };
+        }
+        
+        // External package - use module: prefix
+        return {
+            id: `edge:${fromFile}:reexports:${toModule}:${line || 0}`,
+            from: `file:${fromFile}`,
+            to: `module:${toModule}`,
+            kind: 'reexports',
+            confidence: 'low', // Lower confidence for unresolved
+            reason: 'external re-export',
+            meta: {
+                importPath: toModule,
+                reexportType,
+                loc: line ? { line, column: 0 } : undefined,
+                language: this.language,
+                isExternal: true,
+            },
+        };
+    }
 }

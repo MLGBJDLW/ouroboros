@@ -931,6 +931,9 @@ const OUROBOROS_TOOLS = [
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_annotations',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_cycles',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_layers',
+    // Code Graph Tools v0.6 (search & navigation)
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_search',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_tree',
 ];
 
 /**
@@ -947,6 +950,9 @@ const WORKER_GRAPH_TOOLS = [
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_annotations',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_cycles',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_layers',
+    // Code Graph Tools v0.6 (search & navigation)
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_search',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_tree',
 ];
 
 /**
@@ -1202,6 +1208,8 @@ function addWorkerExtensionModeHeader(content: string): string {
     - ouroborosai_graph_annotations: Manage manual annotations
     - ouroborosai_graph_cycles: Detect circular dependencies
     - ouroborosai_graph_layers: Check architecture rules
+    - ouroborosai_graph_search: Search files/symbols/directories by name
+    - ouroborosai_graph_tree: Browse directory structure
 -->
 
 `;

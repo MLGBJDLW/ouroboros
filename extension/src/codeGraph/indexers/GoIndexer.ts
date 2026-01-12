@@ -189,6 +189,10 @@ export class GoIndexer extends TreeSitterIndexer {
         const edges: GraphEdge[] = [];
         const exports: string[] = [];
         const isTestFile = this.isTestFile(filePath);
+        
+        // Check if this is a doc.go or main package file that might re-export
+        const fileName = filePath.split('/').pop() ?? filePath;
+        const isDocFile = fileName === 'doc.go';
 
         this.walkTree(rootNode, (node) => {
             // import "package"
@@ -206,6 +210,22 @@ export class GoIndexer extends TreeSitterIndexer {
                         } else if (this.isStdlib(importPath) || this.isGoExternalPackage(importPath)) {
                             confidence = 'low';
                         }
+                        
+                        // Check for dot import (import . "package") - this is Go's re-export mechanism
+                        const dotImport = this.findChild(spec, 'dot');
+                        if (dotImport) {
+                            // Dot import - all exported symbols are re-exported
+                            const reexportEdge = this.createGoReexportEdge(
+                                filePath,
+                                importPath,
+                                spec.startPosition.row + 1,
+                                'dot'
+                            );
+                            if (reexportEdge) {
+                                edges.push(reexportEdge);
+                            }
+                        }
+                        
                         edges.push(this.createTsImportEdge(
                             filePath,
                             importPath,
@@ -239,6 +259,17 @@ export class GoIndexer extends TreeSitterIndexer {
                     const nameNode = this.findChild(spec, 'type_identifier');
                     if (nameNode && this.isExportedName(nameNode.text)) {
                         exports.push(nameNode.text);
+                        
+                        // Check for type alias that re-exports from another package
+                        // type MyType = otherpackage.Type
+                        const typeAlias = this.findChild(spec, 'type_alias');
+                        if (typeAlias) {
+                            const qualifiedType = this.findDescendant(typeAlias, 'qualified_type');
+                            if (qualifiedType) {
+                                // This is a type alias re-export
+                                // Note: We can't easily resolve the package here without more context
+                            }
+                        }
                     }
                 }
             }
@@ -257,7 +288,11 @@ export class GoIndexer extends TreeSitterIndexer {
         });
 
         // Create file node
-        nodes.push(this.createTsFileNode(filePath, exports));
+        const fileNode = this.createTsFileNode(filePath, exports);
+        if (isDocFile) {
+            fileNode.meta = { ...fileNode.meta, isDocFile: true };
+        }
+        nodes.push(fileNode);
 
         // Detect entrypoints
         const entrypoint = this.detectEntrypoint(rootNode, content, filePath, isTestFile);
@@ -266,6 +301,35 @@ export class GoIndexer extends TreeSitterIndexer {
         }
 
         return { nodes, edges };
+    }
+
+    /**
+     * Create a Go re-export edge for dot imports
+     */
+    private createGoReexportEdge(
+        fromFile: string,
+        toPackage: string,
+        line: number,
+        reexportType: 'dot' | 'alias'
+    ): GraphEdge | null {
+        const resolvedPath = this.resolveImportPath(toPackage, fromFile);
+        if (resolvedPath) {
+            return {
+                id: `edge:${fromFile}:reexports:${resolvedPath}`,
+                from: `file:${fromFile}`,
+                to: `file:${resolvedPath}`,
+                kind: 'reexports',
+                confidence: 'high',
+                reason: `go ${reexportType} import`,
+                meta: {
+                    importPath: toPackage,
+                    reexportType,
+                    loc: { line, column: 0 },
+                    language: 'go',
+                },
+            };
+        }
+        return null;
     }
 
     /**

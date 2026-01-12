@@ -17,6 +17,7 @@ export class ReachabilityAnalyzer {
 
     /**
      * Analyze reachability from all entrypoints
+     * Follows both imports and reexports edges
      */
     analyze(): ReachabilityResult {
         const entrypoints = this.store.getNodesByKind('entrypoint');
@@ -35,6 +36,10 @@ export class ReachabilityAnalyzer {
             }
         }
 
+        // Also mark files that are re-exported by reachable barrel files as reachable
+        // This handles the case where a file is only accessed via `export * from './file'`
+        this.markReexportedFilesAsReachable(reachable);
+
         // Find unreachable files
         const unreachable = new Set<string>();
         for (const file of allFiles) {
@@ -44,6 +49,36 @@ export class ReachabilityAnalyzer {
         }
 
         return { reachable, unreachable, entrypointCoverage };
+    }
+
+    /**
+     * Mark files that are re-exported by reachable files as also reachable
+     * This handles barrel file patterns like `export * from './module'`
+     */
+    private markReexportedFilesAsReachable(reachable: Set<string>): void {
+        let changed = true;
+        const maxIterations = 100; // Prevent infinite loops
+        let iterations = 0;
+
+        while (changed && iterations < maxIterations) {
+            changed = false;
+            iterations++;
+
+            for (const nodeId of Array.from(reachable)) {
+                // Get all outgoing reexport edges from this reachable node
+                const edges = this.store.getEdgesFrom(nodeId);
+                
+                for (const edge of edges) {
+                    if (edge.kind === 'reexports') {
+                        // The target of a reexport from a reachable node is also reachable
+                        if (!reachable.has(edge.to)) {
+                            reachable.add(edge.to);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**

@@ -389,16 +389,68 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    height: 100%;
 }
 
 .filterBar {
     display: flex;
     gap: var(--spacing-sm);
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.searchBox {
+    flex: 1;
+    min-width: 150px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--input-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition-fast);
+}
+
+.searchBox:focus-within {
+    border-color: var(--border-focus);
+}
+
+.searchInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    font-size: 11px;
+    outline: none;
+}
+
+.searchInput::placeholder {
+    color: var(--foreground-secondary);
+}
+
+.clearSearch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.clearSearch:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
 }
 
 .filterSelect {
-    flex: 1;
+    min-width: 140px;
     padding: var(--spacing-sm);
     background: var(--dropdown-background);
     border: 1px solid var(--border);
@@ -411,6 +463,81 @@
 .filterSelect:focus {
     outline: none;
     border-color: var(--border-focus);
+}
+
+.limitSelector {
+    position: relative;
+}
+
+.limitBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--spacing-sm);
+    background: var(--dropdown-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.limitBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.limitDropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--dropdown-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    z-index: 100;
+    overflow: hidden;
+}
+
+.limitOption {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    font-size: 11px;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.limitOption:hover {
+    background: var(--list-hover);
+}
+
+.limitOption.active {
+    background: var(--button-background);
+    color: var(--button-foreground);
+}
+
+.resultsSummary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-xs) 0;
+    font-size: 10px;
+    color: var(--foreground-secondary);
+}
+
+.addedCount {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--success);
+    font-weight: 500;
 }
 
 .askBtn {
@@ -436,7 +563,7 @@
 .legend {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
     padding: var(--spacing-xs) 0;
     font-size: 10px;
     color: var(--foreground-secondary);
@@ -446,6 +573,27 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    padding: 2px 6px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    color: var(--foreground-secondary);
+}
+
+.legendItem.clickable {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.legendItem.clickable:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+.legendItem.active {
+    background: var(--button-background);
+    color: var(--button-foreground);
 }
 
 .legendDot {
@@ -461,11 +609,71 @@
 .legendIconWarning { color: var(--warning); }
 .legendIconInfo { color: var(--info); }
 
+/* Issue List Container with scroll */
+.issueListContainer {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
 /* Issue List */
 .issueList {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.noResults {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: var(--foreground-secondary);
+    text-align: center;
+    gap: var(--spacing-sm);
+}
+
+.noResults span {
+    font-size: 12px;
+}
+
+.noResults button {
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: var(--button-background);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--button-foreground);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.noResults button:hover {
+    background: var(--button-hover-background);
+}
+
+.loadMoreBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    background: var(--background-secondary);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.loadMoreBtn:hover {
+    background: var(--list-hover);
+    border-color: var(--foreground-secondary);
+    color: var(--foreground);
 }
 
 .issueCard {
@@ -930,4 +1138,42 @@
     gap: 4px;
     color: var(--warning);
     margin-left: auto;
+}
+
+
+/* Recently Added Animation */
+.recentlyAdded {
+    animation: addedPulse 1.5s ease-out;
+}
+
+@keyframes addedPulse {
+    0% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 40%, transparent);
+    }
+    50% {
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 20%, transparent);
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent;
+    }
+}
+
+/* Context Badge - shows count of items in context */
+.contextBadge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+    border: 1px solid var(--success);
+    border-radius: var(--radius-sm);
+    color: var(--success);
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.contextBadge.empty {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--foreground-secondary);
 }

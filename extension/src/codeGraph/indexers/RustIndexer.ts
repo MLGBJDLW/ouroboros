@@ -173,11 +173,17 @@ export class RustIndexer extends TreeSitterIndexer {
         const edges: GraphEdge[] = [];
         const exports: string[] = [];
         const isTestFile = this.isTestFile(filePath);
+        const isModRs = filePath.endsWith('/mod.rs') || filePath.endsWith('\\mod.rs');
+        const isLibRs = filePath.endsWith('/lib.rs') || filePath.endsWith('\\lib.rs');
+        const isBarrelFile = isModRs || isLibRs;
 
         this.walkTree(rootNode, (node) => {
             // use crate::module::item;
             // use std::collections::HashMap;
             if (node.type === 'use_declaration') {
+                const visMarker = this.findChild(node, 'visibility_modifier');
+                const isPubUse = visMarker?.text.includes('pub');
+                
                 const pathNode = this.findDescendant(node, 'scoped_identifier') ||
                                  this.findDescendant(node, 'identifier');
                 if (pathNode) {
@@ -189,12 +195,33 @@ export class RustIndexer extends TreeSitterIndexer {
                     } else if (this.isExternalCrate(modulePath)) {
                         confidence = 'low';
                     }
+                    
+                    // Create import edge
                     edges.push(this.createTsImportEdge(
                         filePath,
                         modulePath,
                         node.startPosition.row + 1,
                         confidence
                     ));
+                    
+                    // If pub use, also create re-export edge
+                    if (isPubUse) {
+                        const reexportEdge = this.createRustReexportEdge(
+                            filePath,
+                            modulePath,
+                            node.startPosition.row + 1,
+                            this.detectReexportType(node)
+                        );
+                        if (reexportEdge) {
+                            edges.push(reexportEdge);
+                        }
+                        
+                        // Add to exports
+                        const exportName = this.extractExportName(pathNode.text);
+                        if (exportName) {
+                            exports.push(exportName);
+                        }
+                    }
                 }
             }
 
@@ -210,6 +237,20 @@ export class RustIndexer extends TreeSitterIndexer {
                         node.startPosition.row + 1,
                         'high'
                     ));
+                    
+                    // Check if pub mod - this is also a re-export
+                    const visMarker = this.findChild(node, 'visibility_modifier');
+                    if (visMarker?.text.includes('pub')) {
+                        const reexportEdge = this.createRustReexportEdge(
+                            filePath,
+                            nameNode.text,
+                            node.startPosition.row + 1,
+                            'module'
+                        );
+                        if (reexportEdge) {
+                            edges.push(reexportEdge);
+                        }
+                    }
                 }
             }
 
@@ -232,22 +273,14 @@ export class RustIndexer extends TreeSitterIndexer {
                     }
                 }
             }
-
-            // pub use re-exports
-            if (node.type === 'use_declaration') {
-                const visMarker = this.findChild(node, 'visibility_modifier');
-                if (visMarker?.text.includes('pub')) {
-                    // This is a re-export
-                    const pathNode = this.findDescendant(node, 'identifier');
-                    if (pathNode) {
-                        exports.push(pathNode.text);
-                    }
-                }
-            }
         });
 
         // Create file node
-        nodes.push(this.createTsFileNode(filePath, exports));
+        const fileNode = this.createTsFileNode(filePath, exports);
+        if (isBarrelFile) {
+            fileNode.meta = { ...fileNode.meta, isBarrel: true };
+        }
+        nodes.push(fileNode);
 
         // Detect entrypoints
         const entrypoint = this.detectEntrypoint(rootNode, filePath, isTestFile);
@@ -256,6 +289,67 @@ export class RustIndexer extends TreeSitterIndexer {
         }
 
         return { nodes, edges };
+    }
+
+    /**
+     * Detect the type of re-export from a use declaration
+     */
+    private detectReexportType(node: ParsedNode): 'wildcard' | 'named' | 'module' {
+        const text = node.text;
+        if (text.includes('::*')) {
+            return 'wildcard';
+        }
+        if (text.includes('{') && text.includes('}')) {
+            return 'named';
+        }
+        return 'named';
+    }
+
+    /**
+     * Extract the export name from a use path
+     */
+    private extractExportName(usePath: string): string | null {
+        // Handle use crate::module::Item -> Item
+        // Handle use crate::module::* -> null (wildcard)
+        if (usePath.endsWith('*')) {
+            return null;
+        }
+        const parts = usePath.split('::');
+        const lastPart = parts[parts.length - 1];
+        // Skip if it's a module path segment (lowercase)
+        if (/^[a-z]/.test(lastPart)) {
+            return null;
+        }
+        return lastPart;
+    }
+
+    /**
+     * Create a Rust re-export edge for pub use statements
+     */
+    private createRustReexportEdge(
+        fromFile: string,
+        toModule: string,
+        line: number,
+        reexportType: 'wildcard' | 'named' | 'module'
+    ): GraphEdge | null {
+        const resolvedPath = this.resolveImportPath(toModule, fromFile);
+        if (resolvedPath) {
+            return {
+                id: `edge:${fromFile}:reexports:${resolvedPath}`,
+                from: `file:${fromFile}`,
+                to: `file:${resolvedPath}`,
+                kind: 'reexports',
+                confidence: toModule.startsWith('crate::') || toModule.startsWith('self::') || toModule.startsWith('super::') ? 'high' : 'medium',
+                reason: `rust pub use (${reexportType})`,
+                meta: {
+                    importPath: toModule,
+                    reexportType,
+                    loc: { line, column: 0 },
+                    language: 'rust',
+                },
+            };
+        }
+        return null;
     }
 
     /**
@@ -414,15 +508,72 @@ export class RustIndexer extends TreeSitterIndexer {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         const lines = content.split('\n');
+        const isModRs = filePath.endsWith('/mod.rs') || filePath.endsWith('\\mod.rs');
+        const isLibRs = filePath.endsWith('/lib.rs') || filePath.endsWith('\\lib.rs');
+        const isBarrelFile = isModRs || isLibRs;
 
         // Simple regex-based parsing
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
 
+            // pub use crate::module; or pub use crate::module::*;
+            const pubUseMatch = line.match(/^pub\s+use\s+([a-zA-Z_][a-zA-Z0-9_:]*)/);
+            if (pubUseMatch) {
+                const modulePath = pubUseMatch[1];
+                edges.push(this.createTsImportEdge(filePath, modulePath, i + 1, 'low'));
+                
+                // Create re-export edge
+                const resolvedPath = this.resolveImportPath(modulePath, filePath);
+                if (resolvedPath) {
+                    const reexportType = modulePath.includes('*') ? 'wildcard' : 'named';
+                    edges.push({
+                        id: `edge:${filePath}:reexports:${resolvedPath}`,
+                        from: `file:${filePath}`,
+                        to: `file:${resolvedPath}`,
+                        kind: 'reexports',
+                        confidence: 'low',
+                        reason: `rust pub use (${reexportType})`,
+                        meta: {
+                            importPath: modulePath,
+                            reexportType,
+                            loc: { line: i + 1, column: 0 },
+                            language: 'rust',
+                        },
+                    });
+                }
+                continue;
+            }
+
             // use crate::module;
             const useMatch = line.match(/^use\s+([a-zA-Z_][a-zA-Z0-9_:]*)/);
             if (useMatch) {
                 edges.push(this.createTsImportEdge(filePath, useMatch[1], i + 1, 'low'));
+            }
+
+            // pub mod module_name;
+            const pubModMatch = line.match(/^pub\s+mod\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;/);
+            if (pubModMatch) {
+                edges.push(this.createTsImportEdge(filePath, pubModMatch[1], i + 1, 'low'));
+                
+                // Create re-export edge for pub mod
+                const resolvedPath = this.resolveImportPath(pubModMatch[1], filePath);
+                if (resolvedPath) {
+                    edges.push({
+                        id: `edge:${filePath}:reexports:${resolvedPath}`,
+                        from: `file:${filePath}`,
+                        to: `file:${resolvedPath}`,
+                        kind: 'reexports',
+                        confidence: 'low',
+                        reason: 'rust pub mod',
+                        meta: {
+                            importPath: pubModMatch[1],
+                            reexportType: 'module',
+                            loc: { line: i + 1, column: 0 },
+                            language: 'rust',
+                        },
+                    });
+                }
+                continue;
             }
 
             // mod module_name;
@@ -432,7 +583,11 @@ export class RustIndexer extends TreeSitterIndexer {
             }
         }
 
-        nodes.push(this.createTsFileNode(filePath));
+        const fileNode = this.createTsFileNode(filePath);
+        if (isBarrelFile) {
+            fileNode.meta = { ...fileNode.meta, isBarrel: true };
+        }
+        nodes.push(fileNode);
 
         // Check for main function
         if (content.includes('fn main(')) {
