@@ -230,16 +230,28 @@ export class DependencyCruiserAdapter {
 
             logger.debug(`Analyzing directories: ${includePaths.join(', ')}`);
 
-            // Build exclude patterns
-            const excludePatterns = (this.config.exclude ?? []).map(p => `node_modules|${p}`).join('|');
+            // Build exclude pattern
+            // Note: dependency-cruiser expects regex patterns
+            const excludePattern = (this.config.exclude ?? []).join('|');
             
+            // Build args - patterns need proper escaping for shell
+            // On Windows with shell:true, we need to be careful with special chars
             const args = [
                 '--output-type', 'json',
                 '--no-config',
-                '--exclude', `(${excludePatterns})`,
-                '--do-not-follow', 'node_modules',
-                ...includePaths,
             ];
+            
+            // Add exclude pattern if we have exclusions
+            if (excludePattern) {
+                // Use simple pattern without parentheses for better cross-platform compatibility
+                args.push('--exclude', excludePattern);
+            }
+            
+            // Add do-not-follow for node_modules
+            args.push('--do-not-follow', 'node_modules');
+            
+            // Add source directories
+            args.push(...includePaths);
 
             logger.debug(`Running: ${this.dcPath} ${args.join(' ')}`);
 
@@ -249,9 +261,14 @@ export class DependencyCruiserAdapter {
                 return;
             }
 
+            // Cross-platform spawn configuration:
+            // - Windows: shell:true needed for .cmd files, but avoid special chars in args
+            // - Unix: shell:false is safer and faster
+            const isWindows = process.platform === 'win32';
+            
             const proc = spawn(dcPath, args, {
                 cwd: this.workspaceRoot,
-                shell: true,
+                shell: isWindows, // Only use shell on Windows for .cmd support
                 timeout: this.config.timeout,
             });
 
