@@ -238,21 +238,29 @@ export class DependencyCruiserAdapter {
 
             logger.debug(`Analyzing directories: ${includePaths.join(', ')}`);
 
-            // Build exclude pattern
-            // Note: dependency-cruiser expects regex patterns
-            const excludePattern = (this.config.exclude ?? []).join('|');
+            // Build exclude pattern for dependency-cruiser
+            // Use simple directory names - dependency-cruiser handles the matching
+            const excludeDirs = this.config.exclude ?? [];
+            // dependency-cruiser expects a regex pattern, not glob
+            // Simple pattern: match paths containing these directory names
+            const excludePattern = excludeDirs.join('|');
             
-            // Build args - patterns need proper escaping for shell
-            // On Windows with shell:true, we need to be careful with special chars
+            const isWindows = process.platform === 'win32';
+            
+            // Build args
             const args = [
                 '--output-type', 'json',
                 '--no-config',
             ];
             
             // Add exclude pattern if we have exclusions
+            // On Windows, wrap pattern in quotes to prevent | being interpreted as pipe
             if (excludePattern) {
-                // Use simple pattern without parentheses for better cross-platform compatibility
-                args.push('--exclude', excludePattern);
+                if (isWindows) {
+                    args.push('--exclude', `"${excludePattern}"`);
+                } else {
+                    args.push('--exclude', excludePattern);
+                }
             }
             
             // Add do-not-follow for node_modules
@@ -269,28 +277,15 @@ export class DependencyCruiserAdapter {
                 return;
             }
 
-            // Cross-platform spawn configuration:
-            // - Windows .cmd files: spawn cmd.exe with /c flag
-            // - Unix: direct spawn without shell
-            const isWindows = process.platform === 'win32';
-            const isCmdFile = dcPath.endsWith('.cmd');
+            // Cross-platform spawn configuration
+            const isWindowsPlatform = process.platform === 'win32';
             
-            let spawnCommand: string;
-            let spawnArgs: string[];
-            
-            if (isWindows && isCmdFile) {
-                // On Windows, .cmd files must be run through cmd.exe
-                // Using /c flag to execute and terminate
-                spawnCommand = 'cmd.exe';
-                spawnArgs = ['/c', dcPath, ...args];
-            } else {
-                spawnCommand = dcPath;
-                spawnArgs = args;
-            }
-            
-            const proc = spawn(spawnCommand, spawnArgs, {
+            const proc = spawn(dcPath, args, {
                 cwd: this.workspaceRoot,
                 timeout: this.config.timeout,
+                // On Windows, use shell to handle .cmd files
+                // The special characters in args are already quoted
+                shell: isWindowsPlatform,
             });
 
             let stdout = '';
