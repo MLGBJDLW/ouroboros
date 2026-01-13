@@ -50,6 +50,7 @@ export class JdepsAdapter {
     private workspaceRoot: string;
     private isAvailable: boolean | null = null;
     private jdkVersion: number = 0;
+    private jdepsPath: string | null = null;
 
     constructor(workspaceRoot: string, config?: Partial<JdepsConfig>) {
         this.workspaceRoot = workspaceRoot;
@@ -130,6 +131,7 @@ export class JdepsAdapter {
     private findClassPaths(): string[] {
         const found: string[] = [];
         
+        // First try configured paths
         for (const classPath of this.config.classPaths ?? []) {
             const fullPath = path.join(this.workspaceRoot, classPath);
             if (fs.existsSync(fullPath)) {
@@ -137,7 +139,72 @@ export class JdepsAdapter {
             }
         }
 
+        // If no configured paths found, try auto-detection
+        if (found.length === 0) {
+            const autoDetected = this.autoDetectClassPaths();
+            found.push(...autoDetected);
+        }
+
         return found;
+    }
+
+    /**
+     * Auto-detect compiled class directories
+     */
+    private autoDetectClassPaths(): string[] {
+        const detected: string[] = [];
+        const commonPaths = [
+            // Maven
+            'target/classes',
+            'target/test-classes',
+            // Gradle
+            'build/classes/java/main',
+            'build/classes/java/test',
+            'build/classes/kotlin/main',
+            // IntelliJ
+            'out/production',
+            'out/test',
+            // Eclipse
+            'bin',
+            // Generic
+            'classes',
+        ];
+
+        for (const classPath of commonPaths) {
+            const fullPath = path.join(this.workspaceRoot, classPath);
+            if (fs.existsSync(fullPath) && this.containsClassFiles(fullPath)) {
+                detected.push(fullPath);
+            }
+        }
+
+        if (detected.length > 0) {
+            logger.debug(`Auto-detected class paths: ${detected.join(', ')}`);
+        }
+
+        return detected;
+    }
+
+    /**
+     * Check if directory contains .class files
+     */
+    private containsClassFiles(dirPath: string): boolean {
+        try {
+            const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isFile() && entry.name.endsWith('.class')) {
+                    return true;
+                }
+                if (entry.isDirectory()) {
+                    const subPath = path.join(dirPath, entry.name);
+                    if (this.containsClassFiles(subPath)) {
+                        return true;
+                    }
+                }
+            }
+        } catch {
+            // Ignore errors
+        }
+        return false;
     }
 
     /**
