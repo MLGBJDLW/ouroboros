@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports, no-undef */
 /**
  * Copy tree-sitter WASM into dist so it ships with the extension bundle.
  */
