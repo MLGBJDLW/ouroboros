@@ -269,11 +269,31 @@ export class DependencyCruiserAdapter {
                     return;
                 }
 
+                // Check for empty output
+                if (!stdout.trim()) {
+                    logger.debug('dependency-cruiser returned empty output');
+                    if (stderr) {
+                        logger.debug(`stderr: ${stderr}`);
+                    }
+                    resolve(null);
+                    return;
+                }
+
                 try {
                     const output = JSON.parse(stdout) as DCOutput;
+                    
+                    // Validate output structure
+                    if (!output.modules || !Array.isArray(output.modules)) {
+                        logger.warn('dependency-cruiser output missing modules array');
+                        logger.debug(`Output keys: ${Object.keys(output).join(', ')}`);
+                        resolve(null);
+                        return;
+                    }
+                    
+                    logger.debug(`dependency-cruiser found ${output.modules.length} modules`);
                     resolve(output);
-                } catch (e) {
-                    logger.error('Failed to parse dependency-cruiser output:', e);
+                } catch {
+                    logger.error('Failed to parse dependency-cruiser output:', stdout.substring(0, 200));
                     resolve(null);
                 }
             });
