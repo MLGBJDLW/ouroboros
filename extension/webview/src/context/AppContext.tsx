@@ -21,6 +21,7 @@ interface AppState {
     currentAgent: { name: string; level: 0 | 1 | 2 } | null;
     handoffHistory: AgentHandoff[];
     isLoading: boolean;
+    graphContextCount: number;
 }
 
 type AppAction =
@@ -32,6 +33,7 @@ type AppAction =
     | { type: 'SET_CURRENT_AGENT'; payload: { name: string; level: 0 | 1 | 2 } }
     | { type: 'ADD_HANDOFF'; payload: AgentHandoff }
     | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_GRAPH_CONTEXT_COUNT'; payload: number }
     | { type: 'INIT'; payload: { workspaceState: WorkspaceStatePayload; history: StoredInteraction[]; pendingRequests?: PendingRequest[]; workspaces?: WorkspaceInfo[] } };
 
 const initialState: AppState = {
@@ -42,6 +44,7 @@ const initialState: AppState = {
     currentAgent: null,
     handoffHistory: [],
     isLoading: true,
+    graphContextCount: 0,
 };
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -83,6 +86,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
             };
         case 'SET_LOADING':
             return { ...state, isLoading: action.payload };
+        case 'SET_GRAPH_CONTEXT_COUNT':
+            return { ...state, graphContextCount: action.payload };
         default:
             return state;
     }
@@ -124,6 +129,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 import('../utils/vscodeApi').then(({ postMessage }) => {
                     postMessage({ type: 'ready' });
                 });
+                break;
+            case 'graphContextUpdate':
+                // Update graph context count when items are added/consumed
+                dispatch({ type: 'SET_GRAPH_CONTEXT_COUNT', payload: (message.payload as unknown[])?.length || 0 });
                 break;
         }
     });

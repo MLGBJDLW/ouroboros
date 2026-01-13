@@ -9,6 +9,12 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 Major upgrade to Code Graph with external tool integration for more accurate dependency analysis.
 
 #### Added
+- **Graph Context Badge** — Visual feedback for items added to context:
+  - Shows badge in empty state: "X item(s) in context"
+  - Floating badge when active request exists
+  - Syncs with backend via `graphContextUpdate` message
+  - Smooth animation on badge appearance
+
 - **DependencyCruiserAdapter** — Integrates battle-tested dependency-cruiser for JS/TS projects:
   - Bundled with extension (no user installation required)
   - Uses CLI via bundled binary for esbuild compatibility
