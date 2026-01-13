@@ -254,7 +254,8 @@ export class CodeGraphManager implements vscode.Disposable {
                         ),
                         ...adapterExcludes,
                     ],
-                }
+                },
+                this.extensionPath  // Pass extension path for bundled dependency-cruiser
             );
             logger.info('DependencyCruiserAdapter initialized');
         }

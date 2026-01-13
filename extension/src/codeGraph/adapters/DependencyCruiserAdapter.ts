@@ -92,11 +92,13 @@ const DEFAULT_CONFIG: DependencyCruiserConfig = {
 export class DependencyCruiserAdapter {
     private config: DependencyCruiserConfig;
     private workspaceRoot: string;
+    private extensionPath: string | null;
     private isAvailable: boolean | null = null;
     private dcPath: string | null = null;
 
-    constructor(workspaceRoot: string, config?: Partial<DependencyCruiserConfig>) {
+    constructor(workspaceRoot: string, config?: Partial<DependencyCruiserConfig>, extensionPath?: string) {
         this.workspaceRoot = workspaceRoot;
+        this.extensionPath = extensionPath ?? null;
         this.config = { ...DEFAULT_CONFIG, ...config };
     }
 
@@ -113,7 +115,8 @@ export class DependencyCruiserAdapter {
 
         // Check for bundled dependency-cruiser (in extension's node_modules)
         // This is the primary path since we bundle it
-        const extensionRoot = this.findExtensionRoot();
+        // Use extensionPath if provided (from VS Code context), otherwise try to find it
+        const extensionRoot = this.extensionPath ?? this.findExtensionRoot();
         if (extensionRoot) {
             const bundledPath = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise');
             const bundledPathWin = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise.cmd');
@@ -123,14 +126,14 @@ export class DependencyCruiserAdapter {
                 if (fs.existsSync(bundledPathWin)) {
                     this.dcPath = bundledPathWin;
                     this.isAvailable = true;
-                    logger.info('Found bundled dependency-cruiser (Windows)');
+                    logger.info('Found bundled dependency-cruiser (Windows)', { path: bundledPathWin });
                     return true;
                 }
             } else {
                 if (fs.existsSync(bundledPath)) {
                     this.dcPath = bundledPath;
                     this.isAvailable = true;
-                    logger.info('Found bundled dependency-cruiser');
+                    logger.info('Found bundled dependency-cruiser', { path: bundledPath });
                     return true;
                 }
             }
