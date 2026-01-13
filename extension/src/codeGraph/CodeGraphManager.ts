@@ -245,17 +245,13 @@ export class CodeGraphManager implements vscode.Disposable {
                 {
                     enabled: true,
                     include: ['src'],
-                    // Convert glob patterns to simple directory names for dependency-cruiser
-                    // e.g., '**/node_modules/**' -> 'node_modules'
-                    // Also include excludes from framework adapters (e.g., .wasp from WaspAdapter)
                     exclude: [
                         ...this.config.indexing.exclude.map(p => 
                             p.replace(/^\*\*\//, '').replace(/\/\*\*$/, '')
                         ),
                         ...adapterExcludes,
                     ],
-                },
-                this.extensionPath  // Pass extension path for bundled dependency-cruiser
+                }
             );
             logger.info('DependencyCruiserAdapter initialized');
         }

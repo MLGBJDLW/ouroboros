@@ -92,19 +92,17 @@ const DEFAULT_CONFIG: DependencyCruiserConfig = {
 export class DependencyCruiserAdapter {
     private config: DependencyCruiserConfig;
     private workspaceRoot: string;
-    private extensionPath: string | null;
     private isAvailable: boolean | null = null;
     private dcPath: string | null = null;
 
-    constructor(workspaceRoot: string, config?: Partial<DependencyCruiserConfig>, extensionPath?: string) {
+    constructor(workspaceRoot: string, config?: Partial<DependencyCruiserConfig>) {
         this.workspaceRoot = workspaceRoot;
-        this.extensionPath = extensionPath ?? null;
         this.config = { ...DEFAULT_CONFIG, ...config };
     }
 
     /**
      * Check if dependency-cruiser is available
-     * Checks multiple locations in order of preference
+     * Only checks workspace local installation (user must have it installed)
      */
     async checkAvailability(): Promise<boolean> {
         if (this.isAvailable !== null) {
@@ -114,42 +112,21 @@ export class DependencyCruiserAdapter {
         const isWindows = process.platform === 'win32';
         const binName = isWindows ? 'depcruise.cmd' : 'depcruise';
         
-        // List of paths to check in order
-        const pathsToCheck: string[] = [];
+        // Only check workspace local installation
+        // User must have dependency-cruiser installed in their project
+        const localPath = path.join(this.workspaceRoot, 'node_modules', '.bin', binName);
         
-        // 1. Extension path (from VS Code context)
-        if (this.extensionPath) {
-            pathsToCheck.push(path.join(this.extensionPath, 'dist', 'node_modules', '.bin', binName));
-            pathsToCheck.push(path.join(this.extensionPath, 'node_modules', '.bin', binName));
-        }
+        logger.debug('Checking dependency-cruiser at:', { localPath });
         
-        // 2. Try to find extension root from __dirname
-        const extensionRoot = this.findExtensionRoot();
-        if (extensionRoot && extensionRoot !== this.extensionPath) {
-            pathsToCheck.push(path.join(extensionRoot, 'dist', 'node_modules', '.bin', binName));
-            pathsToCheck.push(path.join(extensionRoot, 'node_modules', '.bin', binName));
-        }
-        
-        // 3. Workspace local installation
-        pathsToCheck.push(path.join(this.workspaceRoot, 'node_modules', '.bin', binName));
-        
-        logger.debug('Checking dependency-cruiser paths:', { 
-            extensionPath: this.extensionPath,
-            extensionRoot,
-            pathsToCheck 
-        });
-        
-        for (const dcPath of pathsToCheck) {
-            if (fs.existsSync(dcPath)) {
-                this.dcPath = dcPath;
-                this.isAvailable = true;
-                logger.info('Found dependency-cruiser', { path: dcPath });
-                return true;
-            }
+        if (fs.existsSync(localPath)) {
+            this.dcPath = localPath;
+            this.isAvailable = true;
+            logger.info('Found local dependency-cruiser installation', { path: localPath });
+            return true;
         }
 
         this.isAvailable = false;
-        logger.warn('dependency-cruiser not available, checked paths:', pathsToCheck);
+        logger.debug('dependency-cruiser not installed in workspace');
         return false;
     }
 
@@ -504,8 +481,11 @@ export class DependencyCruiserAdapter {
 
     static getInstallInstructions(): string {
         return `
-dependency-cruiser is bundled with the Ouroboros extension.
-No additional installation required!
+To enable enhanced JS/TS dependency analysis, install dependency-cruiser in your project:
+
+  npm install --save-dev dependency-cruiser
+
+Then refresh the Code Graph.
 `.trim();
     }
 }

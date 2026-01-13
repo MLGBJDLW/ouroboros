@@ -2,7 +2,7 @@
     "name": "ouroboros-ai",
     "displayName": "Ouroboros AI",
     "description": "Structured AI agent workflow with spec-driven development",
-    "version": "3.3.10",
+    "version": "3.3.11",
     "publisher": "MLGBJDLW",
     "license": "MIT",
     "icon": "resources/icon.png",
@@ -570,7 +570,7 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "compile": "npm run build-webview && node scripts/copy-tree-sitter-wasm.js && node scripts/copy-dependency-cruiser.js && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+        "compile": "npm run build-webview && node scripts/copy-tree-sitter-wasm.js && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
         "watch": "npm run compile -- --watch",
         "build-webview": "cd webview && npm run build",
         "package": "npm run compile -- --minify",

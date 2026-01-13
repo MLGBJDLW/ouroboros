@@ -30,7 +30,6 @@ esbuild.config.js
 .vscode/**
 scripts/**
 node_modules/**
-!dist/node_modules/**
 
 # Git
 .git/**

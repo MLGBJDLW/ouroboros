@@ -1,8 +1,8 @@
 /**
  * DependencyCruiserAdapter Tests
  * 
- * Tests for the bundled dependency-cruiser adapter.
- * dependency-cruiser is now bundled with the extension, so it's always available.
+ * Tests for the dependency-cruiser adapter.
+ * dependency-cruiser must be installed in the user's project.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -39,11 +39,9 @@ describe('DependencyCruiserAdapter', () => {
     });
 
     describe('checkAvailability', () => {
-        it('should check for bundled and local dependency-cruiser', async () => {
+        it('should check for local dependency-cruiser installation', async () => {
             // In test environment, dependency-cruiser may or may not be available
-            // depending on whether it's installed locally
             const available = await adapter.checkAvailability();
-            // Just verify it returns a boolean without throwing
             expect(typeof available).toBe('boolean');
         });
 
@@ -97,10 +95,10 @@ describe('DependencyCruiserAdapter', () => {
     });
 
     describe('getInstallInstructions', () => {
-        it('should indicate bundled status', () => {
+        it('should provide installation instructions', () => {
             const instructions = DependencyCruiserAdapter.getInstallInstructions();
-            expect(instructions).toContain('bundled');
-            expect(instructions).toContain('No additional installation');
+            expect(instructions).toContain('npm install');
+            expect(instructions).toContain('dependency-cruiser');
         });
     });
 });

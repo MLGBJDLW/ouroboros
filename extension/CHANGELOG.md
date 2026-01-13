@@ -2,6 +2,15 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.11] - 2026-01-13
+
+### Changed
+- **DependencyCruiserAdapter** — Now uses workspace-local installation only (user must install `dependency-cruiser` in their project)
+  - Removed bundled dependency-cruiser (too many transitive dependencies to bundle)
+  - Falls back to built-in TypeScriptIndexer if not installed
+
+---
+
 ## [3.3.10] - 2026-01-13
 
 ### Fixed
