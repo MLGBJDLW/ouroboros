@@ -71,6 +71,15 @@ export class WaspAdapter implements FrameworkAdapter {
         'main.wasp.ts',
         '*.wasp',
     ];
+    
+    /**
+     * Directories that should be excluded from analysis
+     * .wasp/out contains Wasp's compiled output - not user code
+     */
+    excludePatterns = [
+        '.wasp',
+        '.wasp/out',
+    ];
 
     private config: WaspConfig | null = null;
     private projectRoot = '';
@@ -105,6 +114,27 @@ export class WaspAdapter implements FrameworkAdapter {
         if (!this.config) return [];
 
         const entrypoints: GraphNode[] = [];
+
+        // Mark the Wasp config files themselves as entrypoints
+        // These are the root of the Wasp application and should not be reported as unreachable
+        const waspConfigFiles = ['main.wasp', 'main.wasp.ts', 'main.wasp.js'];
+        for (const configFile of waspConfigFiles) {
+            const configPath = path.join(projectRoot, configFile);
+            if (fs.existsSync(configPath)) {
+                const relativePath = configFile;
+                entrypoints.push({
+                    id: `entrypoint:wasp-config:${configFile}`,
+                    kind: 'entrypoint',
+                    name: `Wasp Config: ${configFile}`,
+                    path: relativePath,
+                    meta: {
+                        entrypointType: 'main',
+                        framework: 'wasp',
+                        isWaspConfig: true,
+                    },
+                });
+            }
+        }
 
         // Extract page entrypoints
         for (const page of this.config.pages) {

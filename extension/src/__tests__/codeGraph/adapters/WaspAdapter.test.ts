@@ -13,6 +13,7 @@ vi.mock('fs', () => ({
         readFile: vi.fn(),
     },
     accessSync: vi.fn(),
+    existsSync: vi.fn().mockReturnValue(false),
 }));
 
 describe('WaspAdapter', () => {

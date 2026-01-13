@@ -242,8 +242,10 @@ export class DependencyCruiserAdapter {
             // Use simple directory names - dependency-cruiser handles the matching
             const excludeDirs = this.config.exclude ?? [];
             // dependency-cruiser expects a regex pattern, not glob
-            // Simple pattern: match paths containing these directory names
-            const excludePattern = excludeDirs.join('|');
+            // Escape special regex characters (especially . for directories like .wasp, .git)
+            const excludePattern = excludeDirs
+                .map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                .join('|');
             
             const isWindows = process.platform === 'win32';
             

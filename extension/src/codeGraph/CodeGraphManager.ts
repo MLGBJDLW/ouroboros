@@ -73,7 +73,7 @@ const DEFAULT_CONFIG: GraphConfig = {
             // Frontend single-file components
             '**/*.vue', '**/*.svelte', '**/*.astro',
         ],
-        exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**', '**/target/**', '**/vendor/**'],
+        exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**', '**/target/**', '**/vendor/**', '**/.wasp/**'],
         maxFileSize: 1024 * 1024, // 1MB
     },
     entrypoints: {
@@ -230,6 +230,14 @@ export class CodeGraphManager implements vscode.Disposable {
         const goConfig = this.externalToolsConfig.go;
         const javaConfig = this.externalToolsConfig.java;
         
+        // Collect exclude patterns from all registered adapters
+        const adapterExcludes: string[] = [];
+        for (const adapter of this.adapterRegistry.getAdapters()) {
+            if (adapter.excludePatterns) {
+                adapterExcludes.push(...adapter.excludePatterns);
+            }
+        }
+        
         // Initialize DependencyCruiserAdapter for JS/TS
         if (jsConfig.tool !== 'builtin') {
             this.dependencyCruiserAdapter = new DependencyCruiserAdapter(
@@ -239,12 +247,12 @@ export class CodeGraphManager implements vscode.Disposable {
                     include: ['src'],
                     // Convert glob patterns to simple directory names for dependency-cruiser
                     // e.g., '**/node_modules/**' -> 'node_modules'
-                    // Also add .wasp to exclude Wasp build output
+                    // Also include excludes from framework adapters (e.g., .wasp from WaspAdapter)
                     exclude: [
                         ...this.config.indexing.exclude.map(p => 
                             p.replace(/^\*\*\//, '').replace(/\/\*\*$/, '')
                         ),
-                        '.wasp',
+                        ...adapterExcludes,
                     ],
                 }
             );
