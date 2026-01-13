@@ -92,20 +92,17 @@ const DEFAULT_CONFIG: DependencyCruiserConfig = {
 export class DependencyCruiserAdapter {
     private config: DependencyCruiserConfig;
     private workspaceRoot: string;
-    private extensionPath: string | null;
     private isAvailable: boolean | null = null;
     private dcPath: string | null = null;
 
-    constructor(workspaceRoot: string, config?: Partial<DependencyCruiserConfig>, extensionPath?: string) {
+    constructor(workspaceRoot: string, config?: Partial<DependencyCruiserConfig>) {
         this.workspaceRoot = workspaceRoot;
-        this.extensionPath = extensionPath ?? null;
         this.config = { ...DEFAULT_CONFIG, ...config };
     }
 
     /**
      * Check if dependency-cruiser is available
-     * First checks bundled version (in dist/node_modules for production),
-     * then extension's node_modules (for development), then local/global installations
+     * Checks workspace local installation (supports npm, yarn, pnpm)
      */
     async checkAvailability(): Promise<boolean> {
         if (this.isAvailable !== null) {
@@ -113,85 +110,133 @@ export class DependencyCruiserAdapter {
         }
 
         const isWindows = process.platform === 'win32';
-        const extensionRoot = this.extensionPath ?? this.findExtensionRoot();
-
-        if (extensionRoot) {
-            // Check dist/node_modules first (production - copied by copy-dependency-cruiser.js)
-            const distBundledPath = path.join(extensionRoot, 'dist', 'node_modules', '.bin', 'depcruise');
-            const distBundledPathWin = path.join(extensionRoot, 'dist', 'node_modules', '.bin', 'depcruise.cmd');
-            
-            if (isWindows) {
-                if (fs.existsSync(distBundledPathWin)) {
-                    this.dcPath = distBundledPathWin;
-                    this.isAvailable = true;
-                    logger.info('Found bundled dependency-cruiser in dist (Windows)', { path: distBundledPathWin });
-                    return true;
-                }
-            } else {
-                if (fs.existsSync(distBundledPath)) {
-                    this.dcPath = distBundledPath;
-                    this.isAvailable = true;
-                    logger.info('Found bundled dependency-cruiser in dist', { path: distBundledPath });
-                    return true;
-                }
-            }
-
-            // Check extension's node_modules (development)
-            const bundledPath = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise');
-            const bundledPathWin = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise.cmd');
-            
-            if (isWindows) {
-                if (fs.existsSync(bundledPathWin)) {
-                    this.dcPath = bundledPathWin;
-                    this.isAvailable = true;
-                    logger.info('Found bundled dependency-cruiser (Windows)', { path: bundledPathWin });
-                    return true;
-                }
-            } else {
-                if (fs.existsSync(bundledPath)) {
-                    this.dcPath = bundledPath;
-                    this.isAvailable = true;
-                    logger.info('Found bundled dependency-cruiser', { path: bundledPath });
-                    return true;
-                }
-            }
-        }
-
-        // Fallback: Check for local installation in workspace
-        const localPath = path.join(this.workspaceRoot, 'node_modules', '.bin', 'depcruise');
-        const localPathWin = path.join(this.workspaceRoot, 'node_modules', '.bin', 'depcruise.cmd');
+        const binName = isWindows ? 'depcruise.cmd' : 'depcruise';
         
-        if (isWindows) {
-            if (fs.existsSync(localPathWin)) {
-                this.dcPath = localPathWin;
-                this.isAvailable = true;
-                logger.info('Found local dependency-cruiser installation (Windows)');
-                return true;
-            }
-        } else {
+        // Check multiple possible locations for different package managers
+        const possiblePaths = [
+            // npm/yarn: node_modules/.bin/
+            path.join(this.workspaceRoot, 'node_modules', '.bin', binName),
+            // pnpm: may also be in node_modules/.bin/ as symlink
+            // Check if the binary exists and is executable
+        ];
+        
+        logger.debug('Checking dependency-cruiser at:', { localPath: possiblePaths[0] });
+        
+        for (const localPath of possiblePaths) {
             if (fs.existsSync(localPath)) {
                 this.dcPath = localPath;
                 this.isAvailable = true;
-                logger.info('Found local dependency-cruiser installation');
+                logger.info('Found local dependency-cruiser installation', { path: localPath });
                 return true;
             }
         }
+        
+        // For pnpm workspaces, also check if we can resolve via pnpm
+        // Try to find depcruise by checking if the package is installed
+        const pnpmBinPath = await this.findPnpmBinary(binName);
+        if (pnpmBinPath) {
+            this.dcPath = pnpmBinPath;
+            this.isAvailable = true;
+            logger.info('Found dependency-cruiser via pnpm', { path: pnpmBinPath });
+            return true;
+        }
+        
+        // For yarn berry (v2+) with PnP
+        const yarnBerryPath = await this.findYarnBerryBinary(binName);
+        if (yarnBerryPath) {
+            this.dcPath = yarnBerryPath;
+            this.isAvailable = true;
+            logger.info('Found dependency-cruiser via yarn berry', { path: yarnBerryPath });
+            return true;
+        }
 
         this.isAvailable = false;
-        logger.warn('dependency-cruiser not available');
+        logger.debug('dependency-cruiser not installed in workspace');
         return false;
     }
 
     /**
-     * Find the extension root directory
+     * Find binary in pnpm workspace structure
+     * pnpm may install binaries in workspace root or use different symlink structure
+     */
+    private async findPnpmBinary(binName: string): Promise<string | null> {
+        // Check workspace root's node_modules/.bin (for pnpm -w installs)
+        let currentDir = this.workspaceRoot;
+        
+        // Walk up to find workspace root (look for pnpm-workspace.yaml)
+        for (let i = 0; i < 5; i++) {
+            const workspaceYaml = path.join(currentDir, 'pnpm-workspace.yaml');
+            const binPath = path.join(currentDir, 'node_modules', '.bin', binName);
+            
+            if (fs.existsSync(workspaceYaml) && fs.existsSync(binPath)) {
+                logger.debug('Found pnpm workspace root with binary', { root: currentDir, binPath });
+                return binPath;
+            }
+            
+            const parent = path.dirname(currentDir);
+            if (parent === currentDir) break;
+            currentDir = parent;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Find binary in yarn berry (v2+) PnP structure
+     * Yarn berry uses Plug'n'Play without node_modules
+     */
+    private async findYarnBerryBinary(binName: string): Promise<string | null> {
+        let currentDir = this.workspaceRoot;
+        
+        // Walk up to find yarn berry workspace (look for .yarnrc.yml)
+        for (let i = 0; i < 5; i++) {
+            const yarnrcPath = path.join(currentDir, '.yarnrc.yml');
+            
+            if (fs.existsSync(yarnrcPath)) {
+                // Check .yarn/unplugged for the binary
+                const unpluggedDir = path.join(currentDir, '.yarn', 'unplugged');
+                if (fs.existsSync(unpluggedDir)) {
+                    try {
+                        const entries = fs.readdirSync(unpluggedDir);
+                        for (const entry of entries) {
+                            if (entry.startsWith('dependency-cruiser-')) {
+                                const dcBinPath = path.join(
+                                    unpluggedDir, entry, 'node_modules', 'dependency-cruiser', 'bin', 'dependency-cruise.mjs'
+                                );
+                                if (fs.existsSync(dcBinPath)) {
+                                    logger.debug('Found yarn berry unplugged binary', { path: dcBinPath });
+                                    return dcBinPath;
+                                }
+                            }
+                        }
+                    } catch {
+                        // Ignore errors
+                    }
+                }
+                
+                // Also check node_modules/.bin in case yarn is in node-modules linker mode
+                const binPath = path.join(currentDir, 'node_modules', '.bin', binName);
+                if (fs.existsSync(binPath)) {
+                    logger.debug('Found yarn berry binary in node_modules mode', { path: binPath });
+                    return binPath;
+                }
+            }
+            
+            const parent = path.dirname(currentDir);
+            if (parent === currentDir) break;
+            currentDir = parent;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Find the extension root directory by searching up from __dirname
      */
     private findExtensionRoot(): string | null {
-        // In development, __dirname points to dist/
-        // In production, it's inside the extension folder
         try {
-            // Try to find package.json with our extension name
             let currentDir = __dirname;
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 10; i++) {
                 const pkgPath = path.join(currentDir, 'package.json');
                 if (fs.existsSync(pkgPath)) {
                     try {
@@ -203,7 +248,9 @@ export class DependencyCruiserAdapter {
                         // Continue searching
                     }
                 }
-                currentDir = path.dirname(currentDir);
+                const parent = path.dirname(currentDir);
+                if (parent === currentDir) break;
+                currentDir = parent;
             }
         } catch {
             // Ignore errors
@@ -257,13 +304,11 @@ export class DependencyCruiserAdapter {
                 return;
             }
 
+            logger.debug(`Auto-detected source directories: ${includePaths.join(', ')}`);
             logger.debug(`Analyzing directories: ${includePaths.join(', ')}`);
 
-            // Build exclude pattern for dependency-cruiser
-            // Use simple directory names - dependency-cruiser handles the matching
+            // Build exclude pattern - escape regex special chars
             const excludeDirs = this.config.exclude ?? [];
-            // dependency-cruiser expects a regex pattern, not glob
-            // Escape special regex characters (especially . for directories like .wasp, .git)
             const excludePattern = excludeDirs
                 .map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
                 .join('|');
@@ -276,20 +321,12 @@ export class DependencyCruiserAdapter {
                 '--no-config',
             ];
             
-            // Add exclude pattern if we have exclusions
-            // On Windows, wrap pattern in quotes to prevent | being interpreted as pipe
+            // Add exclude pattern
             if (excludePattern) {
-                if (isWindows) {
-                    args.push('--exclude', `"${excludePattern}"`);
-                } else {
-                    args.push('--exclude', excludePattern);
-                }
+                args.push('--exclude', isWindows ? `"${excludePattern}"` : excludePattern);
             }
             
-            // Add do-not-follow for node_modules
             args.push('--do-not-follow', 'node_modules');
-            
-            // Add source directories
             args.push(...includePaths);
 
             logger.debug(`Running: ${this.dcPath} ${args.join(' ')}`);
@@ -300,15 +337,10 @@ export class DependencyCruiserAdapter {
                 return;
             }
 
-            // Cross-platform spawn configuration
-            const isWindowsPlatform = process.platform === 'win32';
-            
             const proc = spawn(dcPath, args, {
                 cwd: this.workspaceRoot,
                 timeout: this.config.timeout,
-                // On Windows, use shell to handle .cmd files
-                // The special characters in args are already quoted
-                shell: isWindowsPlatform,
+                shell: isWindows,
             });
 
             let stdout = '';
@@ -323,14 +355,12 @@ export class DependencyCruiserAdapter {
             });
 
             proc.on('close', (code) => {
-                // code 0 = success, code 1 = violations found (still valid output)
                 if (code !== 0 && code !== 1) {
                     logger.warn(`dependency-cruiser exited with code ${code}: ${stderr}`);
                     resolve(null);
                     return;
                 }
 
-                // Check for empty output
                 if (!stdout.trim()) {
                     logger.debug('dependency-cruiser returned empty output');
                     if (stderr) {
@@ -343,10 +373,8 @@ export class DependencyCruiserAdapter {
                 try {
                     const output = JSON.parse(stdout) as DCOutput;
                     
-                    // Validate output structure
                     if (!output.modules || !Array.isArray(output.modules)) {
                         logger.warn('dependency-cruiser output missing modules array');
-                        logger.debug(`Output keys: ${Object.keys(output).join(', ')}`);
                         resolve(null);
                         return;
                     }
@@ -366,6 +394,7 @@ export class DependencyCruiserAdapter {
         });
     }
 
+
     /**
      * Convert dependency-cruiser output to our graph format
      */
@@ -379,7 +408,6 @@ export class DependencyCruiserAdapter {
             const filePath = module.source;
             const nodeId = `file:${filePath}`;
 
-            // Create file node
             if (!seenNodes.has(nodeId)) {
                 seenNodes.add(nodeId);
                 const fileName = filePath.split('/').pop() ?? filePath;
@@ -397,7 +425,6 @@ export class DependencyCruiserAdapter {
                     },
                 });
 
-                // Create orphan issue
                 if (module.orphan && this.config.detectOrphans) {
                     issues.push({
                         id: `issue:orphan:${nodeId}`,
@@ -412,19 +439,11 @@ export class DependencyCruiserAdapter {
                 }
             }
 
-            // Create edges for dependencies
             for (const dep of module.dependencies) {
-                // Skip core modules and unresolved
-                if (dep.coreModule || dep.couldNotResolve) {
-                    continue;
-                }
-
-                // Skip external dependencies
+                if (dep.coreModule || dep.couldNotResolve) continue;
                 if (dep.dependencyTypes.some(t => 
                     t === 'npm' || t === 'npm-dev' || t === 'npm-peer' || t === 'npm-optional'
-                )) {
-                    continue;
-                }
+                )) continue;
 
                 const targetPath = dep.resolved;
                 const targetNodeId = `file:${targetPath}`;
@@ -445,7 +464,6 @@ export class DependencyCruiserAdapter {
                     },
                 });
 
-                // Create circular dependency issue
                 if (dep.circular && dep.cycle && this.config.detectCircular) {
                     issues.push({
                         id: `issue:circular:${edgeId}`,
@@ -455,17 +473,12 @@ export class DependencyCruiserAdapter {
                         title: `Circular dependency detected`,
                         evidence: [`Cycle: ${dep.cycle.join(' → ')}`],
                         suggestedFix: ['Break the cycle by extracting shared code'],
-                        meta: { 
-                            filePath, 
-                            cycle: dep.cycle,
-                            source: 'dependency-cruiser',
-                        },
+                        meta: { filePath, cycle: dep.cycle, source: 'dependency-cruiser' },
                     });
                 }
             }
         }
 
-        // Add violations as issues
         for (const violation of output.summary.violations) {
             const severity = violation.rule.severity === 'error' ? 'error' : 
                             violation.rule.severity === 'warn' ? 'warning' : 'info';
@@ -496,25 +509,15 @@ export class DependencyCruiserAdapter {
         return { nodes, edges, issues };
     }
 
-    /**
-     * Map dependency-cruiser violation type to our issue kind
-     */
     private mapViolationType(type: string): IssueKind {
         switch (type) {
-            case 'cycle':
-                return 'CIRCULAR_DEPENDENCY';
-            case 'orphan':
-                return 'HANDLER_UNREACHABLE';
-            case 'not-reachable':
-                return 'HANDLER_UNREACHABLE';
-            default:
-                return 'BROKEN_EXPORT_CHAIN';
+            case 'cycle': return 'CIRCULAR_DEPENDENCY';
+            case 'orphan': return 'HANDLER_UNREACHABLE';
+            case 'not-reachable': return 'HANDLER_UNREACHABLE';
+            default: return 'BROKEN_EXPORT_CHAIN';
         }
     }
 
-    /**
-     * Detect language from file extension
-     */
     private detectLanguage(filePath: string): string {
         if (filePath.endsWith('.tsx')) return 'tsx';
         if (filePath.endsWith('.ts') || filePath.endsWith('.mts') || filePath.endsWith('.cts')) return 'typescript';
@@ -524,17 +527,11 @@ export class DependencyCruiserAdapter {
         return 'javascript';
     }
 
-    /**
-     * Check if this adapter should be used for a file
-     */
     supportsFile(filePath: string): boolean {
         const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
         return extensions.some(ext => filePath.endsWith(ext));
     }
 
-    /**
-     * Auto-detect source directories by looking for directories containing JS/TS files
-     */
     private autoDetectSourceDirs(): string[] {
         const detected: string[] = [];
         const excludeDirs = new Set(this.config.exclude ?? []);
@@ -548,23 +545,15 @@ export class DependencyCruiserAdapter {
                 if (entry.name.startsWith('.')) continue;
                 
                 const dirPath = path.join(this.workspaceRoot, entry.name);
-                
-                // Check if directory contains any JS/TS files (recursively, but shallow check first)
                 if (this.containsJsTsFiles(dirPath)) {
                     detected.push(entry.name);
                 }
             }
             
-            // Also check for JS/TS files in root (for projects without src folder)
-            const rootFiles = entries.filter(e => 
-                e.isFile() && this.supportsFile(e.name)
-            );
+            const rootFiles = entries.filter(e => e.isFile() && this.supportsFile(e.name));
             if (rootFiles.length > 0 && detected.length === 0) {
-                // If there are JS/TS files in root but no source dirs, analyze root
                 detected.push('.');
             }
-            
-            logger.debug(`Auto-detected source directories: ${detected.join(', ') || 'none'}`);
         } catch (error) {
             logger.debug('Failed to auto-detect source directories:', error);
         }
@@ -572,60 +561,36 @@ export class DependencyCruiserAdapter {
         return detected;
     }
 
-    /**
-     * Check if a directory contains JS/TS files (shallow check)
-     */
     private containsJsTsFiles(dirPath: string): boolean {
         try {
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
             
             for (const entry of entries) {
-                if (entry.isFile() && this.supportsFile(entry.name)) {
-                    return true;
-                }
-                // Check one level deep for common patterns
+                if (entry.isFile() && this.supportsFile(entry.name)) return true;
                 if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
                     const subPath = path.join(dirPath, entry.name);
                     try {
                         const subEntries = fs.readdirSync(subPath);
-                        if (subEntries.some(f => this.supportsFile(f))) {
-                            return true;
-                        }
-                    } catch {
-                        // Ignore permission errors
-                    }
+                        if (subEntries.some(f => this.supportsFile(f))) return true;
+                    } catch { /* ignore */ }
                 }
             }
-        } catch {
-            // Ignore errors
-        }
+        } catch { /* ignore */ }
         return false;
     }
 
-    /**
-     * Get installation instructions
-     */
     static getInstallInstructions(): string {
         return `
-dependency-cruiser is bundled with the Ouroboros extension.
-No additional installation required!
+To enable enhanced JS/TS dependency analysis, install dependency-cruiser in your project:
 
-To enable enhanced JS/TS dependency analysis, set in .ouroboros/graph/config.json:
-{
-  "externalTools": {
-    "preferExternal": true,
-    "javascript": { "tool": "auto" }
-  }
-}
+  npm install --save-dev dependency-cruiser
+
+Then refresh the Code Graph.
 `.trim();
     }
 }
 
-/**
- * Check if dependency-cruiser should be recommended for a project
- */
 export function shouldRecommendDependencyCruiser(workspaceRoot: string): boolean {
-    // Check if it's a JS/TS project
     const packageJsonPath = path.join(workspaceRoot, 'package.json');
     return fs.existsSync(packageJsonPath);
 }

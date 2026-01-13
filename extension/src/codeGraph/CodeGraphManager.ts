@@ -245,17 +245,13 @@ export class CodeGraphManager implements vscode.Disposable {
                 {
                     enabled: true,
                     include: ['src'],
-                    // Convert glob patterns to simple directory names for dependency-cruiser
-                    // e.g., '**/node_modules/**' -> 'node_modules'
-                    // Also include excludes from framework adapters (e.g., .wasp from WaspAdapter)
                     exclude: [
                         ...this.config.indexing.exclude.map(p => 
                             p.replace(/^\*\*\//, '').replace(/\/\*\*$/, '')
                         ),
                         ...adapterExcludes,
                     ],
-                },
-                this.extensionPath  // Pass extension path for bundled dependency-cruiser
+                }
             );
             logger.info('DependencyCruiserAdapter initialized');
         }
@@ -471,6 +467,8 @@ export class CodeGraphManager implements vscode.Disposable {
         if (this.dependencyCruiserAdapter && jsConfig.tool !== 'builtin') {
             try {
                 const isAvailable = await this.dependencyCruiserAdapter.checkAvailability();
+                // Cache the availability status
+                this._dependencyCruiserAvailable = isAvailable;
                 
                 if (jsConfig.tool === 'auto' && !isAvailable) {
                     logger.info('dependency-cruiser not available, falling back to built-in indexer for JS/TS');
@@ -813,6 +811,8 @@ export class CodeGraphManager implements vscode.Disposable {
         if (this.dependencyCruiserAdapter) {
             dcAvailable = await this.dependencyCruiserAdapter.checkAvailability();
             dcPath = dcAvailable ? 'available' : null;
+            // Cache the result
+            this._dependencyCruiserAvailable = dcAvailable;
         }
 
         if (this.goModGraphAdapter) {
@@ -828,6 +828,18 @@ export class CodeGraphManager implements vscode.Disposable {
             goModGraph: { available: goAvailable },
             jdeps: { available: jdepsAvailable },
         };
+    }
+
+    /**
+     * Cached dependency-cruiser availability (set during runExternalToolAnalysis)
+     */
+    private _dependencyCruiserAvailable = false;
+
+    /**
+     * Check if dependency-cruiser is available (synchronous, uses cached value)
+     */
+    isDependencyCruiserAvailable(): boolean {
+        return this._dependencyCruiserAvailable;
     }
 
     // ============================================

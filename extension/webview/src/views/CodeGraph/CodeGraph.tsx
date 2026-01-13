@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useVSCode } from '../../context/VSCodeContext';
+import { useAppContext } from '../../context/AppContext';
 import { Card, CardHeader, CardBody } from '../../components/Card';
 import { Icon } from '../../components/Icon';
 import { EmptyState } from '../../components/EmptyState';
@@ -60,6 +61,7 @@ interface GraphFileIndex {
 
 export function CodeGraph() {
     const vscode = useVSCode();
+    const { state } = useAppContext();
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [digest, setDigest] = useState<GraphDigest | null>(null);
     const [issues, setIssues] = useState<GraphIssue[]>([]);
@@ -576,6 +578,17 @@ export function CodeGraph() {
                     <span>{addedToContext.has('digest') ? 'Added' : 'Add to Context'}</span>
                 </button>
             </div>
+
+            {/* Dependency Cruiser Hint */}
+            {!state.dependencyCruiserAvailable && (
+                <div className={styles.hintBanner}>
+                    <Icon name="lightbulb" />
+                    <span>
+                        Install <code>dependency-cruiser</code> for enhanced JS/TS analysis:
+                    </span>
+                    <code className={styles.hintCommand}>npm i -D dependency-cruiser</code>
+                </div>
+            )}
 
             {/* Tab Navigation */}
             <div className={styles.tabs}>

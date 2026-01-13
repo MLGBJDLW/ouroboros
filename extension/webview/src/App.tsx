@@ -117,6 +117,7 @@ function App() {
                         projectName={state.workspaceState?.projectName}
                         workspaces={state.workspaces}
                         selectedWorkspacePath={state.workspaceState?.selectedWorkspacePath}
+                        version={state.version}
                     />
                 );
             case 'pending':

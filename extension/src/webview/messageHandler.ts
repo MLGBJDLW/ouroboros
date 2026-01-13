@@ -167,6 +167,17 @@ export async function handleMessage(
             const selectedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
             const { isInitialized, projectName } = await checkInitializationStatus(selectedPath);
             const workspaceState = stateManager.getWorkspaceState();
+            
+            // Get extension version
+            const vscode = await import('vscode');
+            const extension = vscode.extensions.getExtension('MLGBJDLW.ouroboros-ai');
+            const version = extension?.packageJSON?.version ?? 'unknown';
+            
+            // Check dependency-cruiser availability
+            let dependencyCruiserAvailable = false;
+            if (codeGraphManager) {
+                dependencyCruiserAvailable = codeGraphManager.isDependencyCruiserAvailable();
+            }
 
             logger.debug('Sending init to webview', {
                 activeSpecs: workspaceState.activeSpecs?.length ?? 0,
@@ -183,6 +194,8 @@ export async function handleMessage(
                     },
                     workspaces,
                     history: stateManager.getInteractionHistory(),
+                    version,
+                    dependencyCruiserAvailable,
                 },
             });
             break;

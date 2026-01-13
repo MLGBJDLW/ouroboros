@@ -29,6 +29,11 @@ vi.mock('vscode', () => ({
         Global: 1,
         Workspace: 2,
     },
+    extensions: {
+        getExtension: vi.fn().mockReturnValue({
+            packageJSON: { version: '3.3.11' },
+        }),
+    },
 }));
 
 // Mock logger
