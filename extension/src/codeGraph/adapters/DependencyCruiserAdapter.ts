@@ -82,8 +82,8 @@ export interface DependencyCruiserConfig {
 
 const DEFAULT_CONFIG: DependencyCruiserConfig = {
     enabled: true,
-    include: ['src'],
-    exclude: ['node_modules', 'dist', 'coverage', '.git'],
+    include: ['src', 'app', 'lib', 'client', 'server', 'pages', 'components', 'utils', 'hooks', 'services', 'api'],
+    exclude: ['node_modules', 'dist', 'coverage', '.git', '.wasp', 'build', 'out'],
     detectCircular: true,
     detectOrphans: true,
     timeout: 60000,
@@ -214,14 +214,21 @@ export class DependencyCruiserAdapter {
     private async runDependencyCruiser(): Promise<DCOutput | null> {
         return new Promise((resolve) => {
             // Find directories to analyze
-            const includePaths = (this.config.include ?? ['src'])
+            let includePaths = (this.config.include ?? ['src'])
                 .filter(p => fs.existsSync(path.join(this.workspaceRoot, p)));
+
+            // If no configured directories exist, try to auto-detect source directories
+            if (includePaths.length === 0) {
+                includePaths = this.autoDetectSourceDirs();
+            }
 
             if (includePaths.length === 0) {
                 logger.debug('No source directories found');
                 resolve(null);
                 return;
             }
+
+            logger.debug(`Analyzing directories: ${includePaths.join(', ')}`);
 
             const args = [
                 '--output-type', 'json',
@@ -442,6 +449,76 @@ export class DependencyCruiserAdapter {
     supportsFile(filePath: string): boolean {
         const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
         return extensions.some(ext => filePath.endsWith(ext));
+    }
+
+    /**
+     * Auto-detect source directories by looking for directories containing JS/TS files
+     */
+    private autoDetectSourceDirs(): string[] {
+        const detected: string[] = [];
+        const excludeDirs = new Set(this.config.exclude ?? []);
+        
+        try {
+            const entries = fs.readdirSync(this.workspaceRoot, { withFileTypes: true });
+            
+            for (const entry of entries) {
+                if (!entry.isDirectory()) continue;
+                if (excludeDirs.has(entry.name)) continue;
+                if (entry.name.startsWith('.')) continue;
+                
+                const dirPath = path.join(this.workspaceRoot, entry.name);
+                
+                // Check if directory contains any JS/TS files (recursively, but shallow check first)
+                if (this.containsJsTsFiles(dirPath)) {
+                    detected.push(entry.name);
+                }
+            }
+            
+            // Also check for JS/TS files in root (for projects without src folder)
+            const rootFiles = entries.filter(e => 
+                e.isFile() && this.supportsFile(e.name)
+            );
+            if (rootFiles.length > 0 && detected.length === 0) {
+                // If there are JS/TS files in root but no source dirs, analyze root
+                detected.push('.');
+            }
+            
+            logger.debug(`Auto-detected source directories: ${detected.join(', ') || 'none'}`);
+        } catch (error) {
+            logger.debug('Failed to auto-detect source directories:', error);
+        }
+        
+        return detected;
+    }
+
+    /**
+     * Check if a directory contains JS/TS files (shallow check)
+     */
+    private containsJsTsFiles(dirPath: string): boolean {
+        try {
+            const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+            
+            for (const entry of entries) {
+                if (entry.isFile() && this.supportsFile(entry.name)) {
+                    return true;
+                }
+                // Check one level deep for common patterns
+                if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+                    const subPath = path.join(dirPath, entry.name);
+                    try {
+                        const subEntries = fs.readdirSync(subPath);
+                        if (subEntries.some(f => this.supportsFile(f))) {
+                            return true;
+                        }
+                    } catch {
+                        // Ignore permission errors
+                    }
+                }
+            }
+        } catch {
+            // Ignore errors
+        }
+        return false;
     }
 
     /**
