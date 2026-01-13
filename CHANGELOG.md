@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Major upgrade to Code Graph with external tool integration for more accurate dependency analysis.
 
 ### Added
+- **WaspAdapter** — Full-stack framework support for Wasp projects:
+  - Parses `main.wasp` and `main.wasp.ts` configuration files
+  - Extracts pages, routes, queries, actions, jobs, and APIs as entrypoints
+  - Resolves `@src/`, `@server/`, `@client/` import aliases
+  - Creates registration edges from routes to pages
+  - Detects missing handlers and invalid route references
+  - Fixes ~650 false positive "unreachable" issues in Wasp projects
+
+- **Graph Context Badge** — Visual feedback for items added to context:
+  - Shows badge in empty state: "X item(s) in context"
+  - Floating badge when active request exists
+  - Syncs with backend via `graphContextUpdate` message
+
 - **DependencyCruiserAdapter** — Integrates battle-tested dependency-cruiser for JS/TS:
   - Auto-detects local, global, or npx installation
   - Converts output to GraphNode/GraphEdge format
@@ -43,8 +56,8 @@ Major upgrade to Code Graph with external tool integration for more accurate dep
 - **GraphStore ESM Support** — Node lookup now tries alternative extensions
 
 ### Tests
-- 773 tests passing (+29 new)
-- 69 test files
+- 784 tests passing (+40 new)
+- 70 test files
 
 ---
 

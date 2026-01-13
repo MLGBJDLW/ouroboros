@@ -229,9 +229,9 @@ query getMissing {
             // First extract entrypoints to parse config
             await adapter.extractEntrypoints(mockStore, '/workspace');
             
-            const issues = await adapter.detectIssues!(mockStore);
+            const issues = await adapter.detectIssues?.(mockStore) ?? [];
             
-            const missingPage = issues.find(i => i.message.includes('MissingPage'));
+            const missingPage = issues.find(i => i.message?.includes('MissingPage'));
             expect(missingPage).toBeDefined();
             expect(missingPage?.kind).toBe('ENTRY_MISSING_HANDLER');
         });
@@ -239,9 +239,9 @@ query getMissing {
         it('should detect routes pointing to undefined pages', async () => {
             await adapter.extractEntrypoints(mockStore, '/workspace');
             
-            const issues = await adapter.detectIssues!(mockStore);
+            const issues = await adapter.detectIssues?.(mockStore) ?? [];
             
-            const brokenRoute = issues.find(i => i.message.includes('BrokenRoute'));
+            const brokenRoute = issues.find(i => i.message?.includes('BrokenRoute'));
             expect(brokenRoute).toBeDefined();
             expect(brokenRoute?.kind).toBe('NOT_REGISTERED');
             expect(brokenRoute?.message).toContain('NonExistentPage');
@@ -250,9 +250,9 @@ query getMissing {
         it('should detect missing query handlers', async () => {
             await adapter.extractEntrypoints(mockStore, '/workspace');
             
-            const issues = await adapter.detectIssues!(mockStore);
+            const issues = await adapter.detectIssues?.(mockStore) ?? [];
             
-            const missingQuery = issues.find(i => i.message.includes('getMissing'));
+            const missingQuery = issues.find(i => i.message?.includes('getMissing'));
             expect(missingQuery).toBeDefined();
             expect(missingQuery?.kind).toBe('ENTRY_MISSING_HANDLER');
         });
