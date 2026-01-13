@@ -230,9 +230,14 @@ export class DependencyCruiserAdapter {
 
             logger.debug(`Analyzing directories: ${includePaths.join(', ')}`);
 
+            // Build exclude patterns
+            const excludePatterns = (this.config.exclude ?? []).map(p => `node_modules|${p}`).join('|');
+            
             const args = [
                 '--output-type', 'json',
                 '--no-config',
+                '--exclude', `(${excludePatterns})`,
+                '--do-not-follow', 'node_modules',
                 ...includePaths,
             ];
 
