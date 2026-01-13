@@ -109,6 +109,8 @@ export class DependencyCruiserAdapter {
             return this.isAvailable;
         }
 
+        const isWindows = process.platform === 'win32';
+
         // Check for bundled dependency-cruiser (in extension's node_modules)
         // This is the primary path since we bundle it
         const extensionRoot = this.findExtensionRoot();
@@ -116,17 +118,21 @@ export class DependencyCruiserAdapter {
             const bundledPath = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise');
             const bundledPathWin = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise.cmd');
             
-            if (fs.existsSync(bundledPath)) {
-                this.dcPath = bundledPath;
-                this.isAvailable = true;
-                logger.info('Found bundled dependency-cruiser');
-                return true;
-            }
-            if (fs.existsSync(bundledPathWin)) {
-                this.dcPath = bundledPathWin;
-                this.isAvailable = true;
-                logger.info('Found bundled dependency-cruiser (Windows)');
-                return true;
+            // On Windows, prefer .cmd file; on Unix, prefer the shell script
+            if (isWindows) {
+                if (fs.existsSync(bundledPathWin)) {
+                    this.dcPath = bundledPathWin;
+                    this.isAvailable = true;
+                    logger.info('Found bundled dependency-cruiser (Windows)');
+                    return true;
+                }
+            } else {
+                if (fs.existsSync(bundledPath)) {
+                    this.dcPath = bundledPath;
+                    this.isAvailable = true;
+                    logger.info('Found bundled dependency-cruiser');
+                    return true;
+                }
             }
         }
 
@@ -134,18 +140,20 @@ export class DependencyCruiserAdapter {
         const localPath = path.join(this.workspaceRoot, 'node_modules', '.bin', 'depcruise');
         const localPathWin = path.join(this.workspaceRoot, 'node_modules', '.bin', 'depcruise.cmd');
         
-        if (fs.existsSync(localPath)) {
-            this.dcPath = localPath;
-            this.isAvailable = true;
-            logger.info('Found local dependency-cruiser installation');
-            return true;
-        }
-        
-        if (fs.existsSync(localPathWin)) {
-            this.dcPath = localPathWin;
-            this.isAvailable = true;
-            logger.info('Found local dependency-cruiser installation (Windows)');
-            return true;
+        if (isWindows) {
+            if (fs.existsSync(localPathWin)) {
+                this.dcPath = localPathWin;
+                this.isAvailable = true;
+                logger.info('Found local dependency-cruiser installation (Windows)');
+                return true;
+            }
+        } else {
+            if (fs.existsSync(localPath)) {
+                this.dcPath = localPath;
+                this.isAvailable = true;
+                logger.info('Found local dependency-cruiser installation');
+                return true;
+            }
         }
 
         this.isAvailable = false;
@@ -262,13 +270,26 @@ export class DependencyCruiserAdapter {
             }
 
             // Cross-platform spawn configuration:
-            // - Windows: shell:true needed for .cmd files, but avoid special chars in args
-            // - Unix: shell:false is safer and faster
+            // - Windows .cmd files: spawn cmd.exe with /c flag
+            // - Unix: direct spawn without shell
             const isWindows = process.platform === 'win32';
+            const isCmdFile = dcPath.endsWith('.cmd');
             
-            const proc = spawn(dcPath, args, {
+            let spawnCommand: string;
+            let spawnArgs: string[];
+            
+            if (isWindows && isCmdFile) {
+                // On Windows, .cmd files must be run through cmd.exe
+                // Using /c flag to execute and terminate
+                spawnCommand = 'cmd.exe';
+                spawnArgs = ['/c', dcPath, ...args];
+            } else {
+                spawnCommand = dcPath;
+                spawnArgs = args;
+            }
+            
+            const proc = spawn(spawnCommand, spawnArgs, {
                 cwd: this.workspaceRoot,
-                shell: isWindows, // Only use shell on Windows for .cmd support
                 timeout: this.config.timeout,
             });
 

@@ -87,6 +87,10 @@ Major upgrade to Code Graph with external tool integration for more accurate dep
 #### Fixed
 - **ESM Extension Mapping** — Fixed 697 false positive `HANDLER_UNREACHABLE` issues in TypeScript ESM projects
 - **GraphStore ESM Support** — `getNode()` and `getNodeByPath()` now try alternative extensions
+- **DependencyCruiserAdapter Cross-Platform** — Fixed shell spawn for Windows/macOS/Linux compatibility:
+  - Windows: Uses `cmd.exe /c` for `.cmd` file execution (avoids shell argument parsing issues)
+  - Unix: Uses direct spawn without shell for better performance
+  - Removed problematic parentheses from exclude patterns
 
 #### Improved
 - **fullIndex() Performance** — External tools process files first, built-in indexers handle remaining files
