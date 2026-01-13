@@ -21,17 +21,37 @@ import { BaseIndexer } from './indexers/BaseIndexer';
 import { IssueDetector } from './analyzers/IssueDetector';
 import { IncrementalWatcher } from './watcher/IncrementalWatcher';
 import { AnnotationManager } from './annotations/AnnotationManager';
-import { getAdapterRegistry, registerBuiltinAdapters } from './adapters';
+import { getAdapterRegistry, registerBuiltinAdapters, DependencyCruiserAdapter, GoModGraphAdapter, JdepsAdapter } from './adapters';
 import { getTreeSitterManager, type TreeSitterManager } from './parsers/TreeSitterManager';
 import { CycleDetector } from './analyzers/CycleDetector';
 import { LayerAnalyzer } from './analyzers/LayerAnalyzer';
 import { QueryCache, getQueryCache } from './core/QueryCache';
 import { ParallelIndexer } from './core/ParallelIndexer';
 import type { AdapterRegistry } from './adapters';
-import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig, FrameworkDetection } from './core/types';
+import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig, FrameworkDetection, ExternalToolsConfig } from './core/types';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('CodeGraphManager');
+
+/**
+ * Default external tools configuration
+ * 
+ * NOTE: dependency-cruiser is BUNDLED with the extension, so it's always available
+ * for JS/TS projects. Other language tools (go, jdeps) require system installation.
+ * 
+ * Default behavior:
+ * - JS/TS: Use bundled dependency-cruiser (auto)
+ * - Go/Java: Use built-in indexers (system tools optional)
+ * - Python/Rust: Use built-in indexers only
+ */
+const DEFAULT_EXTERNAL_TOOLS_CONFIG: ExternalToolsConfig = {
+    preferExternal: true,  // Enable external tools by default
+    javascript: { tool: 'auto' }, // Use bundled dependency-cruiser
+    python: { tool: 'builtin' },  // No bundled tool available
+    go: { tool: 'builtin' },      // Requires Go installation
+    java: { tool: 'builtin' },    // Requires JDK installation
+    rust: { tool: 'builtin' },    // No good external tool
+};
 
 const DEFAULT_CONFIG: GraphConfig = {
     indexing: {
@@ -53,7 +73,7 @@ const DEFAULT_CONFIG: GraphConfig = {
             // Frontend single-file components
             '**/*.vue', '**/*.svelte', '**/*.astro',
         ],
-        exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**', '**/target/**', '**/vendor/**'],
+        exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**', '**/target/**', '**/vendor/**', '**/.wasp/**'],
         maxFileSize: 1024 * 1024, // 1MB
     },
     entrypoints: {
@@ -84,11 +104,17 @@ export class CodeGraphManager implements vscode.Disposable {
     private parallelIndexer: ParallelIndexer;
     private watcher: IncrementalWatcher | null = null;
     private config: GraphConfig;
+    private externalToolsConfig: ExternalToolsConfig;
     private workspaceRoot: string;
     private extensionPath: string;
     private isIndexing = false;
     private disposables: vscode.Disposable[] = [];
     private detectedFrameworks: FrameworkDetection[] = [];
+    
+    // External tool adapters (v1.1)
+    private dependencyCruiserAdapter: DependencyCruiserAdapter | null = null;
+    private goModGraphAdapter: GoModGraphAdapter | null = null;
+    private jdepsAdapter: JdepsAdapter | null = null;
 
     constructor(workspaceRoot: string, config?: Partial<GraphConfig>, extensionPath?: string) {
         this.workspaceRoot = workspaceRoot;
@@ -115,6 +141,13 @@ export class CodeGraphManager implements vscode.Disposable {
             },
         };
         
+        // v1.1: Initialize external tools config
+        this.externalToolsConfig = {
+            ...DEFAULT_EXTERNAL_TOOLS_CONFIG,
+            ...fileConfig?.externalTools,
+            ...config?.externalTools,
+        };
+        
         this.store = new GraphStore();
         this.query = new GraphQuery(this.store);
         this.pathResolver = new PathResolver(workspaceRoot);
@@ -134,6 +167,9 @@ export class CodeGraphManager implements vscode.Disposable {
         // v0.3: Initialize adapter registry
         registerBuiltinAdapters();
         this.adapterRegistry = getAdapterRegistry();
+        
+        // v1.1: Initialize external tool adapters
+        this.initializeExternalToolAdapters();
         
         // v0.4: Initialize tree-sitter manager
         this.treeSitterManager = getTreeSitterManager(this.extensionPath);
@@ -187,6 +223,60 @@ export class CodeGraphManager implements vscode.Disposable {
     }
 
     /**
+     * Initialize external tool adapters (v1.1)
+     */
+    private initializeExternalToolAdapters(): void {
+        const jsConfig = this.externalToolsConfig.javascript;
+        const goConfig = this.externalToolsConfig.go;
+        const javaConfig = this.externalToolsConfig.java;
+        
+        // Collect exclude patterns from all registered adapters
+        const adapterExcludes: string[] = [];
+        for (const adapter of this.adapterRegistry.getAdapters()) {
+            if (adapter.excludePatterns) {
+                adapterExcludes.push(...adapter.excludePatterns);
+            }
+        }
+        
+        // Initialize DependencyCruiserAdapter for JS/TS
+        if (jsConfig.tool !== 'builtin') {
+            this.dependencyCruiserAdapter = new DependencyCruiserAdapter(
+                this.workspaceRoot,
+                {
+                    enabled: true,
+                    include: ['src'],
+                    // Convert glob patterns to simple directory names for dependency-cruiser
+                    // e.g., '**/node_modules/**' -> 'node_modules'
+                    // Also include excludes from framework adapters (e.g., .wasp from WaspAdapter)
+                    exclude: [
+                        ...this.config.indexing.exclude.map(p => 
+                            p.replace(/^\*\*\//, '').replace(/\/\*\*$/, '')
+                        ),
+                        ...adapterExcludes,
+                    ],
+                }
+            );
+            logger.info('DependencyCruiserAdapter initialized');
+        }
+
+        // Initialize GoModGraphAdapter for Go
+        if (goConfig.tool !== 'builtin') {
+            this.goModGraphAdapter = new GoModGraphAdapter(this.workspaceRoot, {
+                enabled: true,
+            });
+            logger.info('GoModGraphAdapter initialized');
+        }
+
+        // Initialize JdepsAdapter for Java
+        if (javaConfig.tool !== 'builtin') {
+            this.jdepsAdapter = new JdepsAdapter(this.workspaceRoot, {
+                enabled: true,
+            });
+            logger.info('JdepsAdapter initialized');
+        }
+    }
+
+    /**
      * Initialize and perform full index
      */
     async initialize(): Promise<void> {
@@ -230,10 +320,38 @@ export class CodeGraphManager implements vscode.Disposable {
             const uris = await this.findFiles();
             logger.info(`Found ${uris.length} files to index`);
 
-            // v1.0: Prepare files for parallel indexing
+            // v1.1: Try external tools first for supported languages
+            const externalToolResult = await this.runExternalToolAnalysis();
+            const jsFilesHandledByExternal = new Set<string>();
+            const handledExtensions = externalToolResult?.handledExtensions ?? new Set<string>();
+            
+            if (externalToolResult) {
+                logger.info(`External tools provided ${externalToolResult.nodes.length} nodes, ${externalToolResult.edges.length} edges`);
+                
+                // Add external tool results to store
+                for (const node of externalToolResult.nodes) {
+                    this.store.addNode(node);
+                    if (node.path) {
+                        jsFilesHandledByExternal.add(node.path);
+                    }
+                }
+                for (const edge of externalToolResult.edges) {
+                    this.store.addEdge(edge);
+                }
+                // External tool issues will be added later with other issues
+            }
+
+            // v1.0: Prepare files for parallel indexing (skip files handled by external tools)
             const filesToIndex: Array<{ path: string; content: string }> = [];
             for (const uri of uris) {
                 const filePath = this.getRelativePath(uri);
+                
+                // v1.1: Skip files if already handled by external tool based on extension
+                const ext = path.extname(filePath);
+                if (handledExtensions.has(ext) && jsFilesHandledByExternal.has(filePath)) {
+                    continue;
+                }
+                
                 const indexer = this.indexers.find((i) => i.supports(filePath));
                 if (!indexer) continue;
 
@@ -285,8 +403,11 @@ export class CodeGraphManager implements vscode.Disposable {
             const cycleIssues = this.cycleDetector.detectCycleIssues();
             const layerIssues = this.layerAnalyzer.detectLayerIssues();
             
+            // v1.1: Include external tool issues
+            const externalToolIssues = externalToolResult?.issues ?? [];
+            
             // Filter out ignored issues
-            const allIssues = [...issues, ...barrelIssues, ...frameworkIssues, ...cycleIssues, ...layerIssues];
+            const allIssues = [...issues, ...barrelIssues, ...frameworkIssues, ...cycleIssues, ...layerIssues, ...externalToolIssues];
             const filteredIssues = [];
             for (const issue of allIssues) {
                 const shouldIgnore = await this.annotationManager.shouldIgnore(
@@ -322,6 +443,109 @@ export class CodeGraphManager implements vscode.Disposable {
         } finally {
             this.isIndexing = false;
         }
+    }
+
+    /**
+     * Run external tool analysis for supported languages (v1.1)
+     * Returns results from external tools like dependency-cruiser, go mod graph, jdeps
+     */
+    private async runExternalToolAnalysis(): Promise<{
+        nodes: import('./core/types').GraphNode[];
+        edges: import('./core/types').GraphEdge[];
+        issues: import('./core/types').GraphIssue[];
+        handledExtensions: Set<string>;
+    } | null> {
+        const allNodes: import('./core/types').GraphNode[] = [];
+        const allEdges: import('./core/types').GraphEdge[] = [];
+        const allIssues: import('./core/types').GraphIssue[] = [];
+        const handledExtensions = new Set<string>();
+
+        // Check if we should use external tools
+        if (!this.externalToolsConfig.preferExternal) {
+            return null;
+        }
+
+        // Try dependency-cruiser for JS/TS
+        const jsConfig = this.externalToolsConfig.javascript;
+        if (this.dependencyCruiserAdapter && jsConfig.tool !== 'builtin') {
+            try {
+                const isAvailable = await this.dependencyCruiserAdapter.checkAvailability();
+                
+                if (jsConfig.tool === 'auto' && !isAvailable) {
+                    logger.info('dependency-cruiser not available, falling back to built-in indexer for JS/TS');
+                } else if (jsConfig.tool === 'external' && !isAvailable) {
+                    logger.warn('dependency-cruiser required but not available');
+                } else if (isAvailable) {
+                    logger.info('Using dependency-cruiser for JS/TS analysis');
+                    const result = await this.dependencyCruiserAdapter.analyze();
+                    if (result) {
+                        allNodes.push(...result.nodes);
+                        allEdges.push(...result.edges);
+                        allIssues.push(...result.issues);
+                        // Mark JS/TS extensions as handled
+                        ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'].forEach(ext => handledExtensions.add(ext));
+                    }
+                }
+            } catch (error) {
+                logger.error('dependency-cruiser analysis failed:', error);
+            }
+        }
+
+        // Try go mod graph for Go
+        const goConfig = this.externalToolsConfig.go;
+        if (this.goModGraphAdapter && goConfig.tool !== 'builtin') {
+            try {
+                const isAvailable = await this.goModGraphAdapter.checkAvailability();
+                
+                if (goConfig.tool === 'auto' && !isAvailable) {
+                    logger.info('go mod graph not available, falling back to built-in indexer for Go');
+                } else if (goConfig.tool === 'external' && !isAvailable) {
+                    logger.warn('go mod graph required but not available');
+                } else if (isAvailable) {
+                    logger.info('Using go mod graph for Go analysis');
+                    const result = await this.goModGraphAdapter.analyze();
+                    if (result) {
+                        allNodes.push(...result.nodes);
+                        allEdges.push(...result.edges);
+                        allIssues.push(...result.issues);
+                        // Note: go mod graph provides module-level deps, still use GoIndexer for file-level
+                    }
+                }
+            } catch (error) {
+                logger.error('go mod graph analysis failed:', error);
+            }
+        }
+
+        // Try jdeps for Java
+        const javaConfig = this.externalToolsConfig.java;
+        if (this.jdepsAdapter && javaConfig.tool !== 'builtin') {
+            try {
+                const isAvailable = await this.jdepsAdapter.checkAvailability();
+                
+                if (javaConfig.tool === 'auto' && !isAvailable) {
+                    logger.info('jdeps not available, falling back to built-in indexer for Java');
+                } else if (javaConfig.tool === 'external' && !isAvailable) {
+                    logger.warn('jdeps required but not available');
+                } else if (isAvailable) {
+                    logger.info('Using jdeps for Java analysis');
+                    const result = await this.jdepsAdapter.analyze();
+                    if (result) {
+                        allNodes.push(...result.nodes);
+                        allEdges.push(...result.edges);
+                        allIssues.push(...result.issues);
+                        // Note: jdeps provides class-level deps, still use JavaIndexer for source analysis
+                    }
+                }
+            } catch (error) {
+                logger.error('jdeps analysis failed:', error);
+            }
+        }
+
+        if (allNodes.length === 0 && allEdges.length === 0) {
+            return null;
+        }
+
+        return { nodes: allNodes, edges: allEdges, issues: allIssues, handledExtensions };
     }
 
     /**
@@ -563,6 +787,46 @@ export class CodeGraphManager implements vscode.Disposable {
      */
     invalidateCache(): void {
         this.queryCache.invalidate();
+    }
+
+    /**
+     * Get external tools configuration (v1.1)
+     */
+    getExternalToolsConfig(): ExternalToolsConfig {
+        return { ...this.externalToolsConfig };
+    }
+
+    /**
+     * Check external tool availability status (v1.1)
+     */
+    async getExternalToolStatus(): Promise<{
+        dependencyCruiser: { available: boolean; path: string | null };
+        goModGraph: { available: boolean };
+        jdeps: { available: boolean };
+    }> {
+        let dcAvailable = false;
+        let dcPath: string | null = null;
+        let goAvailable = false;
+        let jdepsAvailable = false;
+        
+        if (this.dependencyCruiserAdapter) {
+            dcAvailable = await this.dependencyCruiserAdapter.checkAvailability();
+            dcPath = dcAvailable ? 'available' : null;
+        }
+
+        if (this.goModGraphAdapter) {
+            goAvailable = await this.goModGraphAdapter.checkAvailability();
+        }
+
+        if (this.jdepsAdapter) {
+            jdepsAvailable = await this.jdepsAdapter.checkAvailability();
+        }
+        
+        return {
+            dependencyCruiser: { available: dcAvailable, path: dcPath },
+            goModGraph: { available: goAvailable },
+            jdeps: { available: jdepsAvailable },
+        };
     }
 
     // ============================================

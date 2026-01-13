@@ -39,6 +39,7 @@ export function PendingRequests() {
     const { state } = useAppContext();
     const [sentMessage, setSentMessage] = useState<SentMessage | null>(null);
     const [showAllActivity, setShowAllActivity] = useState(false);
+    const graphContextCount = state.graphContextCount;
 
     useEffect(() => {
         if (sentMessage) {
@@ -79,6 +80,12 @@ export function PendingRequests() {
                         <Icon name="comment-discussion" className={styles.emptyIcon} />
                         <h3>No pending requests</h3>
                         <p className={styles.emptyHint}>Waiting for agent input...</p>
+                        {graphContextCount > 0 && (
+                            <div className={styles.contextBadge}>
+                                <Icon name="graph" />
+                                <span>{graphContextCount} item{graphContextCount > 1 ? 's' : ''} in context</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -96,6 +103,12 @@ export function PendingRequests() {
                 showAllActivity={showAllActivity}
                 onToggle={() => setShowAllActivity(!showAllActivity)}
             />
+            {graphContextCount > 0 && (
+                <div className={styles.contextBadgeFloating}>
+                    <Icon name="graph" />
+                    <span>{graphContextCount}</span>
+                </div>
+            )}
             <div className={`${styles.listItem} ${isPlanReview ? styles.listItemFullWidth : ''}`}>
                 <RequestChatBubble
                     request={currentRequest}

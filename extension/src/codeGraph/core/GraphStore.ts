@@ -1,6 +1,9 @@
 /**
  * Graph Store
  * Central storage for the code graph with indexed lookups
+ * 
+ * Enhanced with ESM extension mapping support to handle TypeScript projects
+ * where imports use .js extensions but source files are .ts
  */
 
 import type {
@@ -12,8 +15,13 @@ import type {
     NodeKind,
     IssueKind,
 } from './types';
+import { 
+    normalizeExtension, 
+    getPossibleSourcePaths,
+    isSameFile,
+} from './ExtensionMapper';
 
-const GRAPH_VERSION = '1.0.0';
+const GRAPH_VERSION = '1.1.0'; // Bumped for ESM extension mapping support
 
 export class GraphStore {
     // Primary storage
@@ -26,6 +34,8 @@ export class GraphStore {
     private edgesByTo: Map<string, Set<string>> = new Map();
     private nodesByKind: Map<NodeKind, Set<string>> = new Map();
     private nodesByPath: Map<string, string> = new Map();
+    // ESM extension mapping: normalized path → actual node ID
+    private nodesByNormalizedPath: Map<string, string> = new Map();
 
     // Metadata
     private meta: GraphMeta = {
@@ -54,18 +64,54 @@ export class GraphStore {
         // Update path index
         if (node.path) {
             this.nodesByPath.set(node.path, node.id);
+            // Also index by normalized path for ESM extension mapping
+            const normalizedPath = normalizeExtension(node.path);
+            if (normalizedPath !== node.path) {
+                this.nodesByNormalizedPath.set(normalizedPath, node.id);
+            }
         }
 
         this.meta.nodeCount = this.nodes.size;
     }
 
     getNode(id: string): GraphNode | undefined {
-        return this.nodes.get(id);
+        // Direct lookup first
+        const node = this.nodes.get(id);
+        if (node) return node;
+        
+        // Try ESM extension mapping lookup
+        // If id is "file:path/to/file.js", try to find "file:path/to/file.ts"
+        if (id.startsWith('file:')) {
+            const filePath = id.slice(5);
+            const possiblePaths = getPossibleSourcePaths(filePath);
+            for (const possiblePath of possiblePaths) {
+                const possibleId = `file:${possiblePath}`;
+                const possibleNode = this.nodes.get(possibleId);
+                if (possibleNode) return possibleNode;
+            }
+        }
+        
+        return undefined;
     }
 
     getNodeByPath(path: string): GraphNode | undefined {
+        // Direct lookup first
         const id = this.nodesByPath.get(path);
-        return id ? this.nodes.get(id) : undefined;
+        if (id) return this.nodes.get(id);
+        
+        // Try normalized path lookup (ESM extension mapping)
+        const normalizedPath = normalizeExtension(path);
+        const normalizedId = this.nodesByNormalizedPath.get(normalizedPath);
+        if (normalizedId) return this.nodes.get(normalizedId);
+        
+        // Try all possible source paths
+        const possiblePaths = getPossibleSourcePaths(path);
+        for (const possiblePath of possiblePaths) {
+            const possibleId = this.nodesByPath.get(possiblePath);
+            if (possibleId) return this.nodes.get(possibleId);
+        }
+        
+        return undefined;
     }
 
     getNodesByKind(kind: NodeKind): GraphNode[] {
@@ -91,6 +137,11 @@ export class GraphStore {
         // Remove from path index
         if (node.path) {
             this.nodesByPath.delete(node.path);
+            // Also remove from normalized path index
+            const normalizedPath = normalizeExtension(node.path);
+            if (normalizedPath !== node.path) {
+                this.nodesByNormalizedPath.delete(normalizedPath);
+            }
         }
 
         // Remove associated edges
@@ -306,6 +357,7 @@ export class GraphStore {
         this.edgesByTo.clear();
         this.nodesByKind.clear();
         this.nodesByPath.clear();
+        this.nodesByNormalizedPath.clear();
         this.meta = {
             version: GRAPH_VERSION,
             lastIndexed: 0,
@@ -315,6 +367,33 @@ export class GraphStore {
             edgeCount: 0,
             issueCount: 0,
         };
+    }
+
+    /**
+     * Check if two node IDs refer to the same file (considering ESM extension mapping)
+     */
+    isSameNode(id1: string, id2: string): boolean {
+        if (id1 === id2) return true;
+        
+        // Extract paths from node IDs
+        if (id1.startsWith('file:') && id2.startsWith('file:')) {
+            const path1 = id1.slice(5);
+            const path2 = id2.slice(5);
+            return isSameFile(path1, path2);
+        }
+        
+        return false;
+    }
+
+    /**
+     * Find a node by any of its possible paths (handles ESM extension mapping)
+     */
+    findNodeByAnyPath(paths: string[]): GraphNode | undefined {
+        for (const p of paths) {
+            const node = this.getNodeByPath(p);
+            if (node) return node;
+        }
+        return undefined;
     }
 
     get nodeCount(): number {

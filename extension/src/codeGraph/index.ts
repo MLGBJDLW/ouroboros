@@ -9,6 +9,20 @@ export { GraphQuery } from './core/GraphQuery';
 export { PathResolver, type TSConfigPaths, type ResolvedPath } from './core/PathResolver';
 export { QueryCache, getQueryCache, resetQueryCache, type QueryCacheOptions } from './core/QueryCache';
 export { ParallelIndexer, createParallelIndexer, type ParallelIndexerOptions, type FileToIndex, type ParallelIndexResult } from './core/ParallelIndexer';
+export { 
+    ExtensionMapper,
+    normalizeExtension,
+    getPossibleSourcePaths,
+    getPossibleNodeIds,
+    isSameFile,
+    createCanonicalNodeId,
+    EXTENSION_MAPPINGS,
+    LANGUAGE_EXTENSION_MAPPINGS,
+    SOURCE_EXTENSIONS,
+    INDEX_FILES,
+    DEFAULT_CONFIG as DEFAULT_EXTENSION_MAPPER_CONFIG,
+    type ExtensionMapperConfig,
+} from './core/ExtensionMapper';
 export type {
     GraphNode,
     GraphEdge,

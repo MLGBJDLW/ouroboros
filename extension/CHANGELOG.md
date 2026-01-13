@@ -2,6 +2,43 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.8] - 2026-01-12
+
+### Hybrid External Tool Architecture
+
+Major upgrade to Code Graph with external tool integration for more accurate dependency analysis.
+
+#### Added
+- **WaspAdapter** — Full-stack framework support for Wasp projects with `excludePatterns` for `.wasp/out` exclusion
+- **Graph Context Badge** — Visual feedback for items added to context
+- **DependencyCruiserAdapter** — Integrates dependency-cruiser for JS/TS (bundled, no installation required)
+- **GoModGraphAdapter** — Integrates Go's `go mod graph` (built into Go toolchain)
+- **JdepsAdapter** — Integrates JDK's `jdeps` for Java (built into JDK 8+)
+- **ExtensionMapper** — Centralized ESM extension mapping (`.js` → `.ts`, etc.)
+- **ExternalToolsConfig** — Configurable external tool preferences (`auto`/`external`/`builtin`)
+- **CIRCULAR_DEPENDENCY Issue Kind** — New issue type for circular imports
+
+#### Enhanced
+- **PythonIndexer** — Python 3.11+ stdlib, dynamic import detection, `TYPE_CHECKING` handling
+- **RustIndexer** — Visibility tracking, `#[path]` support, use tree parsing, `impl` block tracking
+
+#### Fixed
+- **ESM Extension Mapping** — Fixed 697 false positive issues in TypeScript ESM projects
+- **DependencyCruiserAdapter Cross-Platform** — Windows/macOS/Linux compatibility:
+  - Windows: Uses `.cmd` files with `shell: true` and quoted exclude patterns
+  - Unix: Direct spawn without shell
+  - Proper regex escaping for exclude directories (`.wasp`, `.git`, etc.)
+- **FrameworkAdapter excludePatterns** — Adapters can now specify directories to exclude from analysis
+
+#### Tests
+- 784 tests passing, 70 test files
+- 69 test files
+
+#### Documentation
+- Updated `ARCHITECTURE.md` with hybrid architecture diagram and configuration guide
+
+---
+
 ## [3.3.7] - 2026-01-12
 
 ### Added

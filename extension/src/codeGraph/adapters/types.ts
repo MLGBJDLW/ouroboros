@@ -23,6 +23,12 @@ export interface FrameworkAdapter {
     /** File patterns this adapter cares about */
     filePatterns: string[];
     
+    /** 
+     * Directory patterns to exclude from analysis (optional)
+     * Used for framework build outputs that shouldn't be analyzed
+     */
+    excludePatterns?: string[];
+    
     /**
      * Detect if this framework is used in the project
      * @param projectRoot - Workspace root path

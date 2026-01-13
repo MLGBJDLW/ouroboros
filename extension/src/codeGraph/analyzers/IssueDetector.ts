@@ -1,11 +1,17 @@
 /**
  * Issue Detector
  * Detects code graph issues (missing links, unreachable code, broken exports)
+ * 
+ * Enhanced with ESM extension mapping support to reduce false positives
+ * in TypeScript projects using moduleResolution: NodeNext
  */
 
 import type { GraphStore } from '../core/GraphStore';
 import type { GraphIssue, IssueSeverity, GraphNode } from '../core/types';
 import { ReachabilityAnalyzer } from './ReachabilityAnalyzer';
+import { 
+    getPossibleSourcePaths, 
+} from '../core/ExtensionMapper';
 
 export class IssueDetector {
     private reachabilityAnalyzer: ReachabilityAnalyzer;
@@ -237,6 +243,8 @@ export class IssueDetector {
     /**
      * Find a node with alternative file extension
      * Handles ESM-style .js imports that should resolve to .ts files
+     * 
+     * Enhanced to use the centralized ExtensionMapper for consistent behavior
      */
     private findNodeWithAlternativeExtension(nodeId: string): GraphNode | undefined {
         // Extract path from node ID (format: "file:path/to/file.js")
@@ -246,43 +254,16 @@ export class IssueDetector {
         
         const filePath = nodeId.slice(5); // Remove "file:" prefix
         
-        // Try alternative extensions
-        const extensionMappings: Array<[string, string[]]> = [
-            ['.js', ['.ts', '.tsx', '.mts']],
-            ['.jsx', ['.tsx', '.ts']],
-            ['.mjs', ['.mts', '.ts']],
-            ['.cjs', ['.cts', '.ts']],
-        ];
+        // Use centralized extension mapping
+        const possiblePaths = getPossibleSourcePaths(filePath);
         
-        for (const [fromExt, toExts] of extensionMappings) {
-            if (filePath.endsWith(fromExt)) {
-                const basePath = filePath.slice(0, -fromExt.length);
-                for (const toExt of toExts) {
-                    const altPath = basePath + toExt;
-                    const altNode = this.store.getNode(`file:${altPath}`);
-                    if (altNode) {
-                        return altNode;
-                    }
-                }
-            }
-        }
-        
-        // Also try without extension (for imports like './foo' that might be './foo.ts')
-        if (!filePath.includes('.') || filePath.split('/').pop()?.startsWith('.')) {
-            const sourceExts = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.mjs'];
-            for (const ext of sourceExts) {
-                const altNode = this.store.getNode(`file:${filePath}${ext}`);
-                if (altNode) {
-                    return altNode;
-                }
-            }
-            // Try index files
-            const indexFiles = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
-            for (const indexFile of indexFiles) {
-                const altNode = this.store.getNode(`file:${filePath}/${indexFile}`);
-                if (altNode) {
-                    return altNode;
-                }
+        for (const possiblePath of possiblePaths) {
+            // Skip the original path (already checked)
+            if (possiblePath === filePath) continue;
+            
+            const altNode = this.store.getNode(`file:${possiblePath}`);
+            if (altNode) {
+                return altNode;
             }
         }
         

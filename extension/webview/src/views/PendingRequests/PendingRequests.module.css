@@ -1559,3 +1559,65 @@
 .listItemFullWidth>.messageBubble {
     max-width: 100%;
 }
+
+
+/* ============================================================================
+   Graph Context Badge Styles
+   ============================================================================ */
+
+/* Context badge in empty state */
+.contextBadge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: var(--spacing-md);
+    padding: 8px 14px;
+    background: linear-gradient(135deg, 
+        rgba(0, 127, 212, 0.12) 0%, 
+        rgba(0, 127, 212, 0.06) 100%);
+    border: 1px solid rgba(0, 127, 212, 0.25);
+    border-radius: 20px;
+    color: var(--info);
+    font-size: 12px;
+    font-weight: 500;
+    animation: contextBadgeIn 0.3s ease;
+}
+
+.contextBadge i {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Floating context badge when there's an active request */
+.contextBadgeFloating {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--info);
+    border-radius: 12px;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 127, 212, 0.3);
+    z-index: 10;
+    animation: contextBadgeIn 0.3s ease;
+}
+
+.contextBadgeFloating i {
+    font-size: 12px;
+}
+
+@keyframes contextBadgeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

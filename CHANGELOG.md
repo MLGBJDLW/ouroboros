@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.8] - 2026-01-12
+
+### Hybrid External Tool Architecture
+
+Major upgrade to Code Graph with external tool integration for more accurate dependency analysis.
+
+### Added
+- **WaspAdapter** — Full-stack framework support for Wasp projects with `excludePatterns` for `.wasp/out` exclusion
+- **Graph Context Badge** — Visual feedback for items added to context
+- **DependencyCruiserAdapter** — Integrates dependency-cruiser for JS/TS (bundled)
+- **GoModGraphAdapter** — Integrates Go's `go mod graph`
+- **JdepsAdapter** — Integrates JDK's `jdeps` for Java
+- **ExtensionMapper** — Centralized ESM extension mapping
+- **ExternalToolsConfig** — Configurable external tool preferences (`auto`/`external`/`builtin`)
+
+### Fixed
+- **ESM Extension Mapping** — Fixed 697 false positive issues in TypeScript ESM projects
+- **DependencyCruiserAdapter Cross-Platform** — Windows/macOS/Linux compatibility with proper shell handling and regex escaping
+- **FrameworkAdapter excludePatterns** — Adapters can specify directories to exclude from analysis
+
+### Tests
+- 784 tests passing, 70 test files
+
+---
+
 ## [3.3.7] - 2026-01-12
 
 ### Added
