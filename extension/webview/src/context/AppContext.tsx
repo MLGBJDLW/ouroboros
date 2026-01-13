@@ -22,6 +22,8 @@ interface AppState {
     handoffHistory: AgentHandoff[];
     isLoading: boolean;
     graphContextCount: number;
+    version: string | null;
+    dependencyCruiserAvailable: boolean;
 }
 
 type AppAction =
@@ -34,7 +36,7 @@ type AppAction =
     | { type: 'ADD_HANDOFF'; payload: AgentHandoff }
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'SET_GRAPH_CONTEXT_COUNT'; payload: number }
-    | { type: 'INIT'; payload: { workspaceState: WorkspaceStatePayload; history: StoredInteraction[]; pendingRequests?: PendingRequest[]; workspaces?: WorkspaceInfo[] } };
+    | { type: 'INIT'; payload: { workspaceState: WorkspaceStatePayload; history: StoredInteraction[]; pendingRequests?: PendingRequest[]; workspaces?: WorkspaceInfo[]; version?: string; dependencyCruiserAvailable?: boolean } };
 
 const initialState: AppState = {
     pendingRequests: [],
@@ -45,6 +47,8 @@ const initialState: AppState = {
     handoffHistory: [],
     isLoading: true,
     graphContextCount: 0,
+    version: null,
+    dependencyCruiserAvailable: false,
 };
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -56,6 +60,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 workspaces: action.payload.workspaces ?? [],
                 history: action.payload.history,
                 pendingRequests: action.payload.pendingRequests ?? [],
+                version: action.payload.version ?? null,
+                dependencyCruiserAvailable: action.payload.dependencyCruiserAvailable ?? false,
                 isLoading: false,
             };
         case 'SET_PENDING_REQUESTS':

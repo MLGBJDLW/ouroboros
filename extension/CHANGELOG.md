@@ -4,10 +4,20 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 
 ## [3.3.11] - 2026-01-13
 
+### Added
+- **Welcome Page Version Display** — Shows extension version (e.g., v3.3.11) in top-right corner
+- **Dependency-Cruiser Install Hint** — Graph tab shows installation hint when dependency-cruiser is not available
+
 ### Changed
 - **DependencyCruiserAdapter** — Now uses workspace-local installation only (user must install `dependency-cruiser` in their project)
   - Removed bundled dependency-cruiser (too many transitive dependencies to bundle)
   - Falls back to built-in TypeScriptIndexer if not installed
+
+### Fixed
+- **Package Manager Support** — DependencyCruiserAdapter now supports npm, pnpm, yarn, and yarn berry (PnP):
+  - npm/yarn classic: `node_modules/.bin/depcruise`
+  - pnpm workspace: Searches up for `pnpm-workspace.yaml` and checks workspace root
+  - yarn berry: Checks `.yarn/unplugged/` and node-modules linker mode
 
 ---
 

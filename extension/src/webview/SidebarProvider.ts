@@ -169,6 +169,7 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
                     data: req.data,
                     timestamp: req.timestamp,
                 })),
+                version: this.getExtensionVersion(),
             },
         });
     }
@@ -389,5 +390,17 @@ export class SidebarProvider extends DisposableBase implements vscode.WebviewVie
         this.pendingRequests.clear();
 
         super.dispose();
+    }
+
+    /**
+     * Get extension version from package.json
+     */
+    private getExtensionVersion(): string {
+        try {
+            const extension = vscode.extensions.getExtension('MLGBJDLW.ouroboros-ai');
+            return extension?.packageJSON?.version ?? 'unknown';
+        } catch {
+            return 'unknown';
+        }
     }
 }

@@ -102,7 +102,7 @@ export class DependencyCruiserAdapter {
 
     /**
      * Check if dependency-cruiser is available
-     * Only checks workspace local installation (user must have it installed)
+     * Checks workspace local installation (supports npm, yarn, pnpm)
      */
     async checkAvailability(): Promise<boolean> {
         if (this.isAvailable !== null) {
@@ -112,22 +112,122 @@ export class DependencyCruiserAdapter {
         const isWindows = process.platform === 'win32';
         const binName = isWindows ? 'depcruise.cmd' : 'depcruise';
         
-        // Only check workspace local installation
-        // User must have dependency-cruiser installed in their project
-        const localPath = path.join(this.workspaceRoot, 'node_modules', '.bin', binName);
+        // Check multiple possible locations for different package managers
+        const possiblePaths = [
+            // npm/yarn: node_modules/.bin/
+            path.join(this.workspaceRoot, 'node_modules', '.bin', binName),
+            // pnpm: may also be in node_modules/.bin/ as symlink
+            // Check if the binary exists and is executable
+        ];
         
-        logger.debug('Checking dependency-cruiser at:', { localPath });
+        logger.debug('Checking dependency-cruiser at:', { localPath: possiblePaths[0] });
         
-        if (fs.existsSync(localPath)) {
-            this.dcPath = localPath;
+        for (const localPath of possiblePaths) {
+            if (fs.existsSync(localPath)) {
+                this.dcPath = localPath;
+                this.isAvailable = true;
+                logger.info('Found local dependency-cruiser installation', { path: localPath });
+                return true;
+            }
+        }
+        
+        // For pnpm workspaces, also check if we can resolve via pnpm
+        // Try to find depcruise by checking if the package is installed
+        const pnpmBinPath = await this.findPnpmBinary(binName);
+        if (pnpmBinPath) {
+            this.dcPath = pnpmBinPath;
             this.isAvailable = true;
-            logger.info('Found local dependency-cruiser installation', { path: localPath });
+            logger.info('Found dependency-cruiser via pnpm', { path: pnpmBinPath });
+            return true;
+        }
+        
+        // For yarn berry (v2+) with PnP
+        const yarnBerryPath = await this.findYarnBerryBinary(binName);
+        if (yarnBerryPath) {
+            this.dcPath = yarnBerryPath;
+            this.isAvailable = true;
+            logger.info('Found dependency-cruiser via yarn berry', { path: yarnBerryPath });
             return true;
         }
 
         this.isAvailable = false;
         logger.debug('dependency-cruiser not installed in workspace');
         return false;
+    }
+
+    /**
+     * Find binary in pnpm workspace structure
+     * pnpm may install binaries in workspace root or use different symlink structure
+     */
+    private async findPnpmBinary(binName: string): Promise<string | null> {
+        // Check workspace root's node_modules/.bin (for pnpm -w installs)
+        let currentDir = this.workspaceRoot;
+        
+        // Walk up to find workspace root (look for pnpm-workspace.yaml)
+        for (let i = 0; i < 5; i++) {
+            const workspaceYaml = path.join(currentDir, 'pnpm-workspace.yaml');
+            const binPath = path.join(currentDir, 'node_modules', '.bin', binName);
+            
+            if (fs.existsSync(workspaceYaml) && fs.existsSync(binPath)) {
+                logger.debug('Found pnpm workspace root with binary', { root: currentDir, binPath });
+                return binPath;
+            }
+            
+            const parent = path.dirname(currentDir);
+            if (parent === currentDir) break;
+            currentDir = parent;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Find binary in yarn berry (v2+) PnP structure
+     * Yarn berry uses Plug'n'Play without node_modules
+     */
+    private async findYarnBerryBinary(binName: string): Promise<string | null> {
+        let currentDir = this.workspaceRoot;
+        
+        // Walk up to find yarn berry workspace (look for .yarnrc.yml)
+        for (let i = 0; i < 5; i++) {
+            const yarnrcPath = path.join(currentDir, '.yarnrc.yml');
+            
+            if (fs.existsSync(yarnrcPath)) {
+                // Check .yarn/unplugged for the binary
+                const unpluggedDir = path.join(currentDir, '.yarn', 'unplugged');
+                if (fs.existsSync(unpluggedDir)) {
+                    try {
+                        const entries = fs.readdirSync(unpluggedDir);
+                        for (const entry of entries) {
+                            if (entry.startsWith('dependency-cruiser-')) {
+                                const dcBinPath = path.join(
+                                    unpluggedDir, entry, 'node_modules', 'dependency-cruiser', 'bin', 'dependency-cruise.mjs'
+                                );
+                                if (fs.existsSync(dcBinPath)) {
+                                    logger.debug('Found yarn berry unplugged binary', { path: dcBinPath });
+                                    return dcBinPath;
+                                }
+                            }
+                        }
+                    } catch {
+                        // Ignore errors
+                    }
+                }
+                
+                // Also check node_modules/.bin in case yarn is in node-modules linker mode
+                const binPath = path.join(currentDir, 'node_modules', '.bin', binName);
+                if (fs.existsSync(binPath)) {
+                    logger.debug('Found yarn berry binary in node_modules mode', { path: binPath });
+                    return binPath;
+                }
+            }
+            
+            const parent = path.dirname(currentDir);
+            if (parent === currentDir) break;
+            currentDir = parent;
+        }
+        
+        return null;
     }
 
     /**

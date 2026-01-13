@@ -27,6 +27,8 @@ export interface InitPayload {
     history: StoredInteraction[];
     pendingRequests?: PendingRequest[];
     workspaces?: WorkspaceInfo[];
+    version?: string;
+    dependencyCruiserAvailable?: boolean;
 }
 
 export interface WorkspaceStatePayload {

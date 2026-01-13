@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.3.11] - 2026-01-13
 
+### Added
+- **Welcome Page Version Display** — Shows extension version in top-right corner
+- **Dependency-Cruiser Install Hint** — Graph tab shows installation hint when not available
+
 ### Changed
 - **DependencyCruiserAdapter** — Uses workspace-local installation only (user must install in their project)
+
+### Fixed
+- **Package Manager Support** — DependencyCruiserAdapter now supports npm, pnpm, yarn, and yarn berry (PnP)
 
 ---
 

@@ -18,6 +18,7 @@ interface WelcomeProps {
     projectName?: string;
     workspaces?: WorkspaceInfo[];
     selectedWorkspacePath?: string;
+    version?: string | null;
 }
 
 export function Welcome({
@@ -31,6 +32,7 @@ export function Welcome({
     projectName,
     workspaces = [],
     selectedWorkspacePath,
+    version,
 }: WelcomeProps) {
     const showWorkspaceSelector = workspaces.length > 1;
     const effectiveSelectedPath = selectedWorkspacePath || workspaces[0]?.path;
@@ -39,6 +41,7 @@ export function Welcome({
         <div className={styles.container}>
             {/* Logo and Title */}
             <div className={styles.header}>
+                {version && <span className={styles.version}>v{version}</span>}
                 <div className={styles.logoContainer}>
                     {/* Particle effects */}
                     <div className={styles.particles}>

@@ -41,6 +41,26 @@
     filter: blur(40px);
 }
 
+/* Version badge */
+.version {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--foreground-secondary);
+    background: var(--background-secondary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.version:hover {
+    opacity: 1;
+}
+
 .logoContainer {
     position: relative;
     display: flex;
