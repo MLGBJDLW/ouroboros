@@ -2,6 +2,16 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.10] - 2026-01-13
+
+### Fixed
+- **DependencyCruiserAdapter Production Build** — Fixed dependency-cruiser not working in published extension:
+  - Added `copy-dependency-cruiser.js` build script to bundle CLI binary with extension
+  - Adapter now checks `dist/node_modules` first (production), then `node_modules` (development)
+  - Pass `extensionPath` from VS Code context for correct path resolution
+
+---
+
 ## [3.3.8] - 2026-01-12
 
 ### Hybrid External Tool Architecture
