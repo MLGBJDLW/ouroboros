@@ -104,7 +104,8 @@ export class DependencyCruiserAdapter {
 
     /**
      * Check if dependency-cruiser is available
-     * First checks bundled version, then local/global installations
+     * First checks bundled version (in dist/node_modules for production),
+     * then extension's node_modules (for development), then local/global installations
      */
     async checkAvailability(): Promise<boolean> {
         if (this.isAvailable !== null) {
@@ -112,16 +113,33 @@ export class DependencyCruiserAdapter {
         }
 
         const isWindows = process.platform === 'win32';
-
-        // Check for bundled dependency-cruiser (in extension's node_modules)
-        // This is the primary path since we bundle it
-        // Use extensionPath if provided (from VS Code context), otherwise try to find it
         const extensionRoot = this.extensionPath ?? this.findExtensionRoot();
+
         if (extensionRoot) {
+            // Check dist/node_modules first (production - copied by copy-dependency-cruiser.js)
+            const distBundledPath = path.join(extensionRoot, 'dist', 'node_modules', '.bin', 'depcruise');
+            const distBundledPathWin = path.join(extensionRoot, 'dist', 'node_modules', '.bin', 'depcruise.cmd');
+            
+            if (isWindows) {
+                if (fs.existsSync(distBundledPathWin)) {
+                    this.dcPath = distBundledPathWin;
+                    this.isAvailable = true;
+                    logger.info('Found bundled dependency-cruiser in dist (Windows)', { path: distBundledPathWin });
+                    return true;
+                }
+            } else {
+                if (fs.existsSync(distBundledPath)) {
+                    this.dcPath = distBundledPath;
+                    this.isAvailable = true;
+                    logger.info('Found bundled dependency-cruiser in dist', { path: distBundledPath });
+                    return true;
+                }
+            }
+
+            // Check extension's node_modules (development)
             const bundledPath = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise');
             const bundledPathWin = path.join(extensionRoot, 'node_modules', '.bin', 'depcruise.cmd');
             
-            // On Windows, prefer .cmd file; on Unix, prefer the shell script
             if (isWindows) {
                 if (fs.existsSync(bundledPathWin)) {
                     this.dcPath = bundledPathWin;
