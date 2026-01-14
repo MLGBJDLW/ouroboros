@@ -330,13 +330,13 @@ Your work is complete when:
 ## 📤 Response Format
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ OUROBOROS VALIDATOR
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Spec: [feature name]
 📌 Documents Analyzed: 4/4
 📌 Status: OK | PARTIAL | FAIL | BLOCKED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## Executive Summary
 - Coverage: X/Y requirements (Z%)
@@ -367,9 +367,9 @@ Your work is complete when:
 ## Files Created
 - `.ouroboros/specs/[feature]/validation-report.md` (created)
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
@@ -406,6 +406,20 @@ Your work is complete when:
 └──────────────────────────────────────────────────────────────┘
 IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 ```
+
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I mention "reading documents"? → `read` tool MUST execute for ALL 4 docs
+- [ ] Did I mention "copying template"? → `execute` tool MUST run
+- [ ] Did I mention "creating report"? → `edit` tool MUST execute
+
+---
 
 ## ⚡ ACTION-COMMITMENT (VALIDATOR-SPECIFIC)
 

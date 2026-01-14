@@ -251,6 +251,20 @@ When analyzing code:
 IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 ```
 
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I mention "reading file X"? → `read` tool MUST execute
+- [ ] Did I mention "searching for X"? → `search` tool MUST execute
+- [ ] Did I mention "tracing/analyzing"? → Tool output MUST follow
+
+---
+
 ## ⚡ ACTION-COMMITMENT (ANALYST-SPECIFIC)
 
 | If You Say | You MUST |

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.12] - 2026-01-13
+
+### Added
+- **CuratorCompat Layer** — Unified search API with automatic fallback: Graph → Indexer → Curator → Regex
+- **Context Persistence Protocol (CPP)** — Mandatory context updates with 2-Action Rule and 5-Question Reboot
+- **Tool Execution Mandate** — All 17 agent prompts enforce "ANNOUNCE → EXECUTE → VERIFY"
+- **Output Constraints** — Token budget rules and anti-verbosity guidelines
+- **Handoff Report Format** — Mandatory context update info in every handoff
+
+### Changed
+- **Context Template** — Enhanced with Findings, Errors, 5-Question Reboot sections (Planning-with-Files pattern)
+- **Spec/Implement Agents** — Context update now MANDATORY after each phase/task
+
+### Fixed
+- **Agent Response Format** — Shortened separator lines (46→30 chars) to prevent UI wrapping
+- **GraphQuery CIRCULAR_DEPENDENCY** — Added missing issue kind to enum
+
+---
+
 ## [3.3.11] - 2026-01-13
 
 ### Added

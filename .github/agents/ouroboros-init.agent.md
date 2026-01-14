@@ -60,9 +60,9 @@ Initialize Ouroboros for a new project by:
 **IMMEDIATELY display this banner:**
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚀 OUROBOROS INIT — Project Bootstrap
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Welcome! I'll analyze your project and set up
 Ouroboros persistent memory.
 
@@ -71,7 +71,7 @@ This involves 2 quick phases:
   📝 Phase 2: Create context files
 
 Estimated time: 1-2 minutes
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Then ask for confirmation (Type D: Confirm with Question):**
@@ -136,16 +136,16 @@ runSubagent(
 After both phases complete, display:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ OUROBOROS INITIALIZED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📁 Project: [project name]
 🏗️ Architecture: [detected pattern]
 🛠️ Tech Stack: [key technologies]
 📄 Created:
    - .ouroboros/history/project-arch-YYYY-MM-DD.md
    - .ouroboros/history/context-YYYY-MM-DD.md
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
@@ -155,9 +155,9 @@ After both phases complete, display:
 **After initialization, suggest the next workflow:**
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 What's Next?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Your project is now ready for Ouroboros!
 
 Suggested next steps:
@@ -166,8 +166,21 @@ Suggested next steps:
   ⚙️ /ouroboros       — Start working with the main agent
 
 Type a command or describe what you'd like to build.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+---
+
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I say "delegating to X"? → `runSubagent()` MUST follow immediately
+- [ ] Did I say "executing CCL"? → `run_command` tool MUST execute
 
 ---
 

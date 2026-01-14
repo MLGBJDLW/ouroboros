@@ -80,6 +80,7 @@ export class GraphQuery {
             DYNAMIC_EDGE_UNKNOWN: 0,
             BROKEN_EXPORT_CHAIN: 0,
             CIRCULAR_REEXPORT: 0,
+            CIRCULAR_DEPENDENCY: 0,
             ORPHAN_EXPORT: 0,
             ENTRY_MISSING_HANDLER: 0,
             NOT_REGISTERED: 0,

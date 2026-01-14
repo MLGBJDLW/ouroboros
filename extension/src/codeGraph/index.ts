@@ -10,6 +10,17 @@ export { PathResolver, type TSConfigPaths, type ResolvedPath } from './core/Path
 export { QueryCache, getQueryCache, resetQueryCache, type QueryCacheOptions } from './core/QueryCache';
 export { ParallelIndexer, createParallelIndexer, type ParallelIndexerOptions, type FileToIndex, type ParallelIndexResult } from './core/ParallelIndexer';
 export { 
+    CuratorCompat,
+    type SymbolLocation,
+    type FileMetadata,
+    type Reference,
+    type FileContext,
+    type CuratorSearchResult,
+    type CuratorQueryResult,
+    type IndexLevel,
+    type IndexCapabilities,
+} from './core/CuratorCompat';
+export { 
     ExtensionMapper,
     normalizeExtension,
     getPossibleSourcePaths,

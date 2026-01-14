@@ -405,6 +405,20 @@ Your work is complete when:
 IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 ```
 
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I mention "copying template"? → `execute` tool MUST run
+- [ ] Did I mention "reading research.md"? → `read` tool MUST execute
+- [ ] Did I mention "creating requirements"? → `edit` tool MUST execute
+
+---
+
 ## ⚡ ACTION-COMMITMENT (REQUIREMENTS-SPECIFIC)
 
 | If You Say | You MUST |

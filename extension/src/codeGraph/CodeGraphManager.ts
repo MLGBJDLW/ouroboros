@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { GraphStore } from './core/GraphStore';
 import { GraphQuery } from './core/GraphQuery';
+import { CuratorCompat, type IndexCapabilities, type CuratorQueryResult } from './core/CuratorCompat';
 import { PathResolver } from './core/PathResolver';
 import { TypeScriptIndexer } from './indexers/TypeScriptIndexer';
 import { PythonIndexer } from './indexers/PythonIndexer';
@@ -90,6 +91,7 @@ const DEFAULT_CONFIG: GraphConfig = {
 export class CodeGraphManager implements vscode.Disposable {
     private store: GraphStore;
     private query: GraphQuery;
+    private curatorCompat: CuratorCompat;
     private pathResolver: PathResolver;
     private indexers: BaseIndexer[];
     private entrypointDetector: EntrypointDetector;
@@ -150,6 +152,7 @@ export class CodeGraphManager implements vscode.Disposable {
         
         this.store = new GraphStore();
         this.query = new GraphQuery(this.store);
+        this.curatorCompat = new CuratorCompat(this.store, this.query);
         this.pathResolver = new PathResolver(workspaceRoot);
         this.barrelAnalyzer = new BarrelAnalyzer(this.store);
         this.entrypointDetector = new EntrypointDetector();
@@ -435,6 +438,11 @@ export class CodeGraphManager implements vscode.Disposable {
                 indexDuration: duration,
                 fileCount,
             });
+
+            // v1.2: Sync curator compatibility layer
+            this.curatorCompat.syncFromGraph();
+            const curatorStats = this.curatorCompat.getStats();
+            logger.info(`Curator index synced: ${curatorStats.symbolCount} symbols, ${curatorStats.fileCount} files, ${curatorStats.referenceCount} references`);
 
             logger.info(`Indexed ${fileCount} files in ${duration}ms, found ${filteredIssues.length} issues`);
         } finally {
@@ -758,6 +766,34 @@ export class CodeGraphManager implements vscode.Disposable {
      */
     getLayerAnalyzer(): LayerAnalyzer {
         return this.layerAnalyzer;
+    }
+
+    /**
+     * Get curator compatibility layer (v1.2)
+     * Provides unified search API with automatic fallback
+     */
+    getCuratorCompat(): CuratorCompat {
+        return this.curatorCompat;
+    }
+
+    /**
+     * Get index capabilities (v1.2)
+     * Returns current index level and available features
+     */
+    getIndexCapabilities(): IndexCapabilities {
+        return this.curatorCompat.getCapabilities();
+    }
+
+    /**
+     * Unified search with automatic fallback (v1.2)
+     * Uses full graph when available, falls back to curator-style index
+     */
+    curatorSearch(query: string, options?: {
+        type?: 'symbol' | 'file' | 'all';
+        limit?: number;
+        scope?: string;
+    }): CuratorQueryResult {
+        return this.curatorCompat.search(query, options);
     }
 
     /**
