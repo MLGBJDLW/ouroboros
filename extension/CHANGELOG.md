@@ -2,6 +2,24 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.12] - 2026-01-13
+
+### Added
+- **CuratorCompat Layer** — Unified search API with automatic fallback: Graph → Indexer → Curator → Regex
+- **Context Persistence Protocol** — Mandatory context updates with 2-Action Rule and 5-Question Reboot
+- **Tool Execution Mandate** — All agent prompts enforce "ANNOUNCE → EXECUTE → VERIFY"
+- **Output Constraints** — Token budget rules and anti-verbosity guidelines
+- **Handoff Report Format** — Mandatory context update info in every handoff
+
+### Changed
+- **Context Template** — Enhanced with Findings, Errors, Reboot sections (Planning-with-Files pattern)
+- **Agent Response Format** — Shortened separator lines (46→30 chars)
+
+### Fixed
+- **GraphQuery CIRCULAR_DEPENDENCY** — Added missing `CIRCULAR_DEPENDENCY` to `IssueKind` enum
+
+---
+
 ## [3.3.11] - 2026-01-13
 
 ### Added

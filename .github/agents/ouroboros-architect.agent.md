@@ -366,13 +366,13 @@ Your work is complete when:
 ## 📤 Response Format
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏗️ OUROBOROS ARCHITECT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 Decision: [topic]
 📌 Status: Proposed
 📌 Result: OK | PARTIAL | FAIL | BLOCKED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## Pre-Flight Check
 - Problem understood: ✅
@@ -390,9 +390,9 @@ Your work is complete when:
 ## Files Created
 - `.ouroboros/specs/[feature]/design.md` (created)
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ [TASK COMPLETE]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
@@ -429,6 +429,20 @@ Your work is complete when:
 └──────────────────────────────────────────────────────────────┘
 IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 ```
+
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I mention "copying template"? → `execute` tool MUST run copy command
+- [ ] Did I mention "creating/editing file"? → `edit` tool MUST execute
+- [ ] Did I mention "reading X"? → `read` tool MUST execute
+
+---
 
 ## ⚡ ACTION-COMMITMENT (ARCHITECT-SPECIFIC)
 

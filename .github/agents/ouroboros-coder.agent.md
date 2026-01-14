@@ -387,6 +387,21 @@ $ pnpm test --run
 
 ---
 
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I mention "reading file X"? → `read` tool MUST execute
+- [ ] Did I mention "running tests/lint"? → `execute` tool MUST run
+- [ ] Did I mention "editing/creating"? → `edit` tool MUST execute
+- [ ] Did I mention "searching"? → `search` tool MUST execute
+
+---
+
 ## 🔁 SELF-CHECK PROTOCOL
 
 > **Execute this checklist BEFORE generating every response.**

@@ -314,6 +314,20 @@ RETURN: Output [ARCHIVE COMPLETE]
 IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 ```
 
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I say "delegating to X"? → `runSubagent()` MUST follow immediately
+- [ ] Did I say "executing CCL"? → `run_command` tool MUST execute
+- [ ] Did I say "archiving/moving"? → Delegate to writer MUST happen
+
+---
+
 ## ⚡ ACTION-COMMITMENT (ARCHIVE-ORCHESTRATOR)
 
 | If You Say | You MUST |

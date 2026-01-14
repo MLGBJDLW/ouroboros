@@ -192,7 +192,43 @@ gantt
 
 ---
 
-## 8. Open Questions
+## 8. Assumptions & Decisions
+
+### 8.1 Key Assumptions
+
+> [!WARNING]
+> **If any assumption proves false, revisit affected sections.**
+
+| # | Assumption | Impact if Wrong | Validation Method |
+|---|------------|-----------------|-------------------|
+| 1 | {{assumption-1}} | {{impact}} | {{how-to-validate}} |
+| 2 | {{assumption-2}} | {{impact}} | {{how-to-validate}} |
+| 3 | {{assumption-3}} | {{impact}} | {{how-to-validate}} |
+
+### 8.2 Decision Log
+
+> Decisions made during PRD creation with rationale.
+
+| Decision | Options Considered | Chosen | Rationale |
+|----------|-------------------|--------|-----------|
+| {{decision-1}} | {{options}} | {{choice}} | {{why}} |
+| {{decision-2}} | {{options}} | {{choice}} | {{why}} |
+
+---
+
+## 9. Non-Functional Requirements
+
+| Category | Requirement | Target | Priority |
+|----------|-------------|--------|----------|
+| **Performance** | {{perf-req}} | {{target}} | {{H/M/L}} |
+| **Security** | {{security-req}} | {{target}} | {{H/M/L}} |
+| **Accessibility** | {{a11y-req}} | {{target}} | {{H/M/L}} |
+| **Scalability** | {{scale-req}} | {{target}} | {{H/M/L}} |
+| **Reliability** | {{uptime-req}} | {{target}} | {{H/M/L}} |
+
+---
+
+## 10. Open Questions
 
 > [!NOTE]
 > Questions to clarify before implementation:
@@ -204,16 +240,16 @@ gantt
 
 ---
 
-## 9. Appendix
+## 11. Appendix
 
-### 9.1 Related Documents
+### 11.1 Related Documents
 
 - PRD: This document
 - Research: `.ouroboros/specs/{{feature-name}}/research.md`
 - Requirements: `.ouroboros/specs/{{feature-name}}/requirements.md`
 - Design: `.ouroboros/specs/{{feature-name}}/design.md`
 
-### 9.2 Stakeholders
+### 11.2 Stakeholders
 
 | Role | Name | Responsibility |
 |------|------|----------------|
@@ -222,7 +258,7 @@ gantt
 | Designer | {{name}} | UX/UI |
 | QA Lead | {{name}} | Quality assurance |
 
-### 9.3 Revision History
+### 11.3 Revision History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|

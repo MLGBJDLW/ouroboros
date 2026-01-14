@@ -78,9 +78,9 @@ All specs are stored in: `.ouroboros/specs/[feature-name]/`
 **IMMEDIATELY display this banner:**
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 OUROBOROS SPEC — Spec-Driven Development
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 I'll guide you through 5 structured phases:
 
   🔬 Phase 1: Research      → Analyze codebase
@@ -91,7 +91,7 @@ I'll guide you through 5 structured phases:
 
 Each phase creates a document. You approve
 before we move to the next phase.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Then ask for feature name (Type C: Feature with Question):**
@@ -363,9 +363,9 @@ read(".ouroboros/specs/[feature-name]/[expected-file].md")
 **After all 5 phases complete, display:**
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎉 SPEC COMPLETE: [feature-name]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 All 5 phases are complete and validated.
 
 📋 Documents created:
@@ -375,13 +375,13 @@ All 5 phases are complete and validated.
    ✅ tasks.md
    ✅ validation-report.md
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 What's Next?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   [1] ⚙️ /ouroboros-implement — Start implementing tasks
   [2] 📝 Revise             — Go back to a specific phase
   [3] 🔄 /ouroboros         — Return to main agent
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Execute via `run_command` tool (Type B: Menu with Question):**
@@ -407,17 +407,52 @@ python -c "print('✅ Spec document complete! Select next action:'); print(); pr
 
 ---
 
-## 📝 CONTEXT UPDATE REQUIREMENT
+## 📝 CONTEXT UPDATE REQUIREMENT (MANDATORY)
+
+> [!CRITICAL]
+> **AFTER EACH PHASE, YOU MUST UPDATE CONTEXT.**
+> **Skipping context update = PROTOCOL VIOLATION.**
 
 **After EACH phase completion, delegate to `ouroboros-writer`:**
 ```javascript
 runSubagent(
   agent: "ouroboros-writer",
-  prompt: `Update .ouroboros/history/context-*.md:
-  - Add to ## Completed: "Phase 2: Requirements complete for [feature]"
-  - Add to ## Files Modified: ".ouroboros/specs/[feature]/requirements.md"`
+  prompt: `
+[Context Update]: MANDATORY after Phase X
+[Target]: .ouroboros/history/context-*.md (latest)
+
+## Updates Required:
+1. ## 📍 Where Am I? → "Phase X+1 of spec workflow for [feature]"
+2. ## ✅ Completed → Add: "Phase X: [phase name] complete for [feature]"
+3. ## 📁 Files Modified → Add: ".ouroboros/specs/[feature]/[document].md"
+4. ## 🔬 Findings → Add key discoveries from this phase (if any)
+
+## Return
+Confirm context updated, then [CONTEXT UPDATED]
+  `
 )
 ```
+
+**VERIFICATION CHECKLIST (Before proceeding to next phase):**
+- [ ] Phase document created? → Verified via `read`
+- [ ] Context updated? → Writer confirmed `[CONTEXT UPDATED]`
+- [ ] User approved? → CCL response received
+
+**If context update fails**: Retry once, then proceed with warning.
+
+---
+
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I say "delegating to X"? → `runSubagent()` MUST follow immediately
+- [ ] Did I say "executing CCL"? → `run_command` tool MUST execute
+- [ ] Did I say "verifying file"? → `read` tool MUST execute
 
 ---
 

@@ -369,6 +369,20 @@ TASK-1.1 → TASK-1.3 → TASK-2.1 → TASK-3.2
 IF ANY ☐ IS UNCHECKED → FIX BEFORE RESPONDING
 ```
 
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I mention "copying template"? → `execute` tool MUST run
+- [ ] Did I mention "reading spec docs"? → `read` tool MUST execute
+- [ ] Did I mention "creating tasks.md"? → `edit` tool MUST execute
+
+---
+
 ## ⚡ ACTION-COMMITMENT (TASKS-SPECIFIC)
 
 | If You Say | You MUST |

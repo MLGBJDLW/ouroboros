@@ -70,9 +70,9 @@ All PRDs are stored in: `.ouroboros/prd/[feature-name].md`
 **IMMEDIATELY display this banner:**
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📝 OUROBOROS PRD — AI-Guided PRD Creation
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 I'll guide you through creating a PRD by asking
 structured questions. Answer one at a time.
 
@@ -83,7 +83,7 @@ structured questions. Answer one at a time.
   ⚠️ Phase 5: Constraints & Boundaries
 
 Each answer builds your PRD. Take your time.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Then ask for feature name (Type C: Feature with Question):**
@@ -247,20 +247,20 @@ Target: .ouroboros/prd/[feature-name].md
 
 2. **Display completion banner:**
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎉 PRD COMPLETE: [feature-name]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Your PRD has been created and saved.
 
 📄 Document: .ouroboros/prd/[feature-name].md
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 What's Next?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   [1] 📋 /ouroboros-spec  — Start spec workflow
   [2] 📝 Revise PRD       — Make changes
   [3] 🔄 /ouroboros       — Return to main agent
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 3. **Execute CCL (Type B: Menu):**
@@ -281,6 +281,20 @@ python -c "print('✅ PRD complete! Select next action:'); print(); print('[1] �
 [🎯 Phase]: X/5 - Problem | Users | Features | Priorities | Constraints
 [📌 Status]: COLLECTING | COMPLETE | BLOCKED
 ```
+
+---
+
+## 🔧 TOOL EXECUTION MANDATE
+
+> [!CRITICAL]
+> **ANNOUNCE → EXECUTE → VERIFY**
+> If you say "I will use X tool" or "calling X", the tool call MUST appear in your response.
+> Empty promises = protocol violation. Tool calls are NOT optional.
+
+**BEFORE RESPONDING, VERIFY:**
+- [ ] Did I say "delegating to X"? → `runSubagent()` MUST follow immediately
+- [ ] Did I say "executing CCL"? → `run_command` tool MUST execute
+- [ ] Did I say "generating PRD"? → Delegate to writer MUST happen
 
 ---
 
