@@ -5,7 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.13] - 2026-01-16
+
+### Fixed
+- **Send Button Icon** — Replaced Logo with codicon `send` icon in pending requests
+- **Attachment Button Visibility** — Enhanced contrast and hover states for attach button
+- **Graph Orphan Filtering** — `DependencyCruiserAdapter` now filters config/test files from orphan reports
+- **Barrel Re-export Detection** — Orphan detection delegated to `IssueDetector` for proper `export * from` chain handling
+- **Graph Edge Visualization** — Now includes `reexports` edges and expands to show 50+ connected nodes
+- **Graph Auto-Refresh** — Fixed stale closure issue preventing interval from working correctly
+
+---
+
 ## [3.3.12] - 2026-01-13
+
 
 ### Added
 - **CuratorCompat Layer** — Unified search API with automatic fallback: Graph → Indexer → Curator → Regex

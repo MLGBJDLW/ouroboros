@@ -187,17 +187,18 @@
     height: 28px;
     padding: 0;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--radius-sm);
-    color: var(--foreground-secondary);
+    color: var(--foreground);
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.85;
     transition: all 0.15s ease;
 }
 
 .actionButton:hover:not(:disabled) {
     opacity: 1;
-    background: var(--list-hover);
+    background: rgba(0, 127, 212, 0.12);
+    border-color: rgba(0, 127, 212, 0.35);
     color: var(--info);
 }
 
@@ -209,6 +210,7 @@
 .actionButton i {
     font-size: 16px;
 }
+
 
 /* Error Message */
 .error {

@@ -111,7 +111,7 @@ export class DependencyCruiserAdapter {
 
         const isWindows = process.platform === 'win32';
         const binName = isWindows ? 'depcruise.cmd' : 'depcruise';
-        
+
         // Check multiple possible locations for different package managers
         const possiblePaths = [
             // npm/yarn: node_modules/.bin/
@@ -119,9 +119,9 @@ export class DependencyCruiserAdapter {
             // pnpm: may also be in node_modules/.bin/ as symlink
             // Check if the binary exists and is executable
         ];
-        
+
         logger.debug('Checking dependency-cruiser at:', { localPath: possiblePaths[0] });
-        
+
         for (const localPath of possiblePaths) {
             if (fs.existsSync(localPath)) {
                 this.dcPath = localPath;
@@ -130,7 +130,7 @@ export class DependencyCruiserAdapter {
                 return true;
             }
         }
-        
+
         // For pnpm workspaces, also check if we can resolve via pnpm
         // Try to find depcruise by checking if the package is installed
         const pnpmBinPath = await this.findPnpmBinary(binName);
@@ -140,7 +140,7 @@ export class DependencyCruiserAdapter {
             logger.info('Found dependency-cruiser via pnpm', { path: pnpmBinPath });
             return true;
         }
-        
+
         // For yarn berry (v2+) with PnP
         const yarnBerryPath = await this.findYarnBerryBinary(binName);
         if (yarnBerryPath) {
@@ -162,22 +162,22 @@ export class DependencyCruiserAdapter {
     private async findPnpmBinary(binName: string): Promise<string | null> {
         // Check workspace root's node_modules/.bin (for pnpm -w installs)
         let currentDir = this.workspaceRoot;
-        
+
         // Walk up to find workspace root (look for pnpm-workspace.yaml)
         for (let i = 0; i < 5; i++) {
             const workspaceYaml = path.join(currentDir, 'pnpm-workspace.yaml');
             const binPath = path.join(currentDir, 'node_modules', '.bin', binName);
-            
+
             if (fs.existsSync(workspaceYaml) && fs.existsSync(binPath)) {
                 logger.debug('Found pnpm workspace root with binary', { root: currentDir, binPath });
                 return binPath;
             }
-            
+
             const parent = path.dirname(currentDir);
             if (parent === currentDir) break;
             currentDir = parent;
         }
-        
+
         return null;
     }
 
@@ -187,11 +187,11 @@ export class DependencyCruiserAdapter {
      */
     private async findYarnBerryBinary(binName: string): Promise<string | null> {
         let currentDir = this.workspaceRoot;
-        
+
         // Walk up to find yarn berry workspace (look for .yarnrc.yml)
         for (let i = 0; i < 5; i++) {
             const yarnrcPath = path.join(currentDir, '.yarnrc.yml');
-            
+
             if (fs.existsSync(yarnrcPath)) {
                 // Check .yarn/unplugged for the binary
                 const unpluggedDir = path.join(currentDir, '.yarn', 'unplugged');
@@ -213,7 +213,7 @@ export class DependencyCruiserAdapter {
                         // Ignore errors
                     }
                 }
-                
+
                 // Also check node_modules/.bin in case yarn is in node-modules linker mode
                 const binPath = path.join(currentDir, 'node_modules', '.bin', binName);
                 if (fs.existsSync(binPath)) {
@@ -221,12 +221,12 @@ export class DependencyCruiserAdapter {
                     return binPath;
                 }
             }
-            
+
             const parent = path.dirname(currentDir);
             if (parent === currentDir) break;
             currentDir = parent;
         }
-        
+
         return null;
     }
 
@@ -312,20 +312,20 @@ export class DependencyCruiserAdapter {
             const excludePattern = excludeDirs
                 .map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
                 .join('|');
-            
+
             const isWindows = process.platform === 'win32';
-            
+
             // Build args
             const args = [
                 '--output-type', 'json',
                 '--no-config',
             ];
-            
+
             // Add exclude pattern
             if (excludePattern) {
                 args.push('--exclude', isWindows ? `"${excludePattern}"` : excludePattern);
             }
-            
+
             args.push('--do-not-follow', 'node_modules');
             args.push(...includePaths);
 
@@ -372,13 +372,13 @@ export class DependencyCruiserAdapter {
 
                 try {
                     const output = JSON.parse(stdout) as DCOutput;
-                    
+
                     if (!output.modules || !Array.isArray(output.modules)) {
                         logger.warn('dependency-cruiser output missing modules array');
                         resolve(null);
                         return;
                     }
-                    
+
                     logger.debug(`dependency-cruiser found ${output.modules.length} modules`);
                     resolve(output);
                 } catch {
@@ -411,7 +411,7 @@ export class DependencyCruiserAdapter {
             if (!seenNodes.has(nodeId)) {
                 seenNodes.add(nodeId);
                 const fileName = filePath.split('/').pop() ?? filePath;
-                
+
                 nodes.push({
                     id: nodeId,
                     kind: 'file',
@@ -419,29 +419,23 @@ export class DependencyCruiserAdapter {
                     path: filePath,
                     meta: {
                         language: this.detectLanguage(filePath),
-                        orphan: module.orphan,
+                        orphan: module.orphan,  // Keep for reference, but don't create issue here
                         valid: module.valid,
                         source: 'dependency-cruiser',
                     },
                 });
 
-                if (module.orphan && this.config.detectOrphans) {
-                    issues.push({
-                        id: `issue:orphan:${nodeId}`,
-                        kind: 'HANDLER_UNREACHABLE',
-                        severity: 'warning',
-                        nodeId,
-                        title: `Orphan file: ${fileName}`,
-                        evidence: ['File is not imported by any other file'],
-                        suggestedFix: ['Import this file from another module', 'Remove if unused'],
-                        meta: { filePath, source: 'dependency-cruiser' },
-                    });
-                }
+                // NOTE: We intentionally do NOT create HANDLER_UNREACHABLE issues here.
+                // Orphan detection must be done by IssueDetector which properly handles:
+                // 1. Barrel re-exports (export * from './file')
+                // 2. Transitive re-export chains
+                // 3. Workspace package imports
+                // dependency-cruiser's orphan flag doesn't account for these patterns.
             }
 
             for (const dep of module.dependencies) {
                 if (dep.coreModule || dep.couldNotResolve) continue;
-                if (dep.dependencyTypes.some(t => 
+                if (dep.dependencyTypes.some(t =>
                     t === 'npm' || t === 'npm-dev' || t === 'npm-peer' || t === 'npm-optional'
                 )) continue;
 
@@ -479,10 +473,17 @@ export class DependencyCruiserAdapter {
             }
         }
 
+
         for (const violation of output.summary.violations) {
-            const severity = violation.rule.severity === 'error' ? 'error' : 
-                            violation.rule.severity === 'warn' ? 'warning' : 'info';
-            
+            // Skip orphan/not-reachable violations - IssueDetector handles these
+            // with proper barrel re-export chain detection
+            if (violation.type === 'orphan' || violation.type === 'not-reachable') {
+                continue;
+            }
+
+            const severity = violation.rule.severity === 'error' ? 'error' :
+                violation.rule.severity === 'warn' ? 'warning' : 'info';
+
             issues.push({
                 id: `issue:dc:${violation.rule.name}:${violation.from}:${violation.to}`,
                 kind: this.mapViolationType(violation.type),
@@ -527,6 +528,30 @@ export class DependencyCruiserAdapter {
         return 'javascript';
     }
 
+    /**
+     * Check if an orphan file should be skipped from reporting
+     * These are files that are expected to be "orphans" (not imported by other files):
+     * - Test files (.test.ts, .spec.ts, __tests__)
+     * - Config files (vitest.config.ts, vite.config.ts, etc.)
+     * - Type definition files (.d.ts)
+     * - Entry point type files (types.ts in directories)
+     */
+    private shouldSkipOrphan(filePath: string): boolean {
+        const skipPatterns = [
+            /\.test\./,           // test.ts, test.tsx
+            /\.spec\./,           // spec.ts, spec.tsx
+            /__tests__/,          // __tests__ directories
+            /\.config\./,         // vitest.config.ts, vite.config.ts, etc.
+            /\.d\.ts$/,           // type definition files
+            /node_modules/,       // node_modules
+            /\/e2e\//,            // e2e test directories
+            /\.setup\./,          // setup files (vitest.setup.ts)
+            /\.stories\./,        // Storybook stories
+        ];
+
+        return skipPatterns.some((pattern) => pattern.test(filePath));
+    }
+
     supportsFile(filePath: string): boolean {
         const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
         return extensions.some(ext => filePath.endsWith(ext));
@@ -535,21 +560,21 @@ export class DependencyCruiserAdapter {
     private autoDetectSourceDirs(): string[] {
         const detected: string[] = [];
         const excludeDirs = new Set(this.config.exclude ?? []);
-        
+
         try {
             const entries = fs.readdirSync(this.workspaceRoot, { withFileTypes: true });
-            
+
             for (const entry of entries) {
                 if (!entry.isDirectory()) continue;
                 if (excludeDirs.has(entry.name)) continue;
                 if (entry.name.startsWith('.')) continue;
-                
+
                 const dirPath = path.join(this.workspaceRoot, entry.name);
                 if (this.containsJsTsFiles(dirPath)) {
                     detected.push(entry.name);
                 }
             }
-            
+
             const rootFiles = entries.filter(e => e.isFile() && this.supportsFile(e.name));
             if (rootFiles.length > 0 && detected.length === 0) {
                 detected.push('.');
@@ -557,14 +582,14 @@ export class DependencyCruiserAdapter {
         } catch (error) {
             logger.debug('Failed to auto-detect source directories:', error);
         }
-        
+
         return detected;
     }
 
     private containsJsTsFiles(dirPath: string): boolean {
         try {
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-            
+
             for (const entry of entries) {
                 if (entry.isFile() && this.supportsFile(entry.name)) return true;
                 if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
