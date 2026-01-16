@@ -8,6 +8,7 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 - **Send Button Icon** — Replaced Logo with codicon `send` icon in PendingRequests
 - **Attachment Button Visibility** — Higher contrast (0.85 opacity) and blue hover border
 - **Graph Orphan Filtering** — Config files, test files, and type definitions no longer reported as unreachable
+- **Barrel Re-export Detection** — Files exported via `export * from` chains now correctly marked as reachable
 
 ---
 

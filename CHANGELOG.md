@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Send Button Icon** — Replaced Logo with codicon `send` icon in pending requests
 - **Attachment Button Visibility** — Enhanced contrast and hover states for attach button
 - **Graph Orphan Filtering** — `DependencyCruiserAdapter` now filters config/test files from orphan reports
+- **Barrel Re-export Detection** — Orphan detection delegated to `IssueDetector` for proper `export * from` chain handling
 
 ---
 

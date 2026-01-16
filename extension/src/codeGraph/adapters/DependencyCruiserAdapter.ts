@@ -419,25 +419,18 @@ export class DependencyCruiserAdapter {
                     path: filePath,
                     meta: {
                         language: this.detectLanguage(filePath),
-                        orphan: module.orphan,
+                        orphan: module.orphan,  // Keep for reference, but don't create issue here
                         valid: module.valid,
                         source: 'dependency-cruiser',
                     },
                 });
 
-                // Only report orphans that are not expected to be orphans
-                if (module.orphan && this.config.detectOrphans && !this.shouldSkipOrphan(filePath)) {
-                    issues.push({
-                        id: `issue:orphan:${nodeId}`,
-                        kind: 'HANDLER_UNREACHABLE',
-                        severity: 'warning',
-                        nodeId,
-                        title: `Orphan file: ${fileName}`,
-                        evidence: ['File is not imported by any other file'],
-                        suggestedFix: ['Import this file from another module', 'Remove if unused'],
-                        meta: { filePath, source: 'dependency-cruiser' },
-                    });
-                }
+                // NOTE: We intentionally do NOT create HANDLER_UNREACHABLE issues here.
+                // Orphan detection must be done by IssueDetector which properly handles:
+                // 1. Barrel re-exports (export * from './file')
+                // 2. Transitive re-export chains
+                // 3. Workspace package imports
+                // dependency-cruiser's orphan flag doesn't account for these patterns.
             }
 
             for (const dep of module.dependencies) {
@@ -480,7 +473,14 @@ export class DependencyCruiserAdapter {
             }
         }
 
+
         for (const violation of output.summary.violations) {
+            // Skip orphan/not-reachable violations - IssueDetector handles these
+            // with proper barrel re-export chain detection
+            if (violation.type === 'orphan' || violation.type === 'not-reachable') {
+                continue;
+            }
+
             const severity = violation.rule.severity === 'error' ? 'error' :
                 violation.rule.severity === 'warn' ? 'warning' : 'info';
 
