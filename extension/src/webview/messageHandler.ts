@@ -167,12 +167,12 @@ export async function handleMessage(
             const selectedPath = stateManager.getWorkspaceState().selectedWorkspacePath;
             const { isInitialized, projectName } = await checkInitializationStatus(selectedPath);
             const workspaceState = stateManager.getWorkspaceState();
-            
+
             // Get extension version
             const vscode = await import('vscode');
             const extension = vscode.extensions.getExtension('MLGBJDLW.ouroboros-ai');
             const version = extension?.packageJSON?.version ?? 'unknown';
-            
+
             // Check dependency-cruiser availability
             let dependencyCruiserAvailable = false;
             if (codeGraphManager) {
@@ -206,24 +206,24 @@ export async function handleMessage(
             logger.info('Executing command:', payload.command);
             try {
                 const vscode = await import('vscode');
-                
+
                 // Special handling for vscode.open command
                 // The webview sends { path: string } but vscode.open needs a Uri
                 if (payload.command === 'vscode.open' && payload.args && payload.args.length > 0) {
                     const firstArg = payload.args[0] as { path?: string } | string;
                     let filePath: string | undefined;
-                    
+
                     if (typeof firstArg === 'string') {
                         filePath = firstArg;
                     } else if (firstArg && typeof firstArg === 'object' && 'path' in firstArg) {
                         filePath = firstArg.path;
                     }
-                    
+
                     if (filePath) {
                         // Convert relative path to absolute if needed
                         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                         let uri: typeof vscode.Uri.prototype;
-                        
+
                         if (filePath.startsWith('/') || /^[a-zA-Z]:/.test(filePath)) {
                             // Absolute path
                             uri = vscode.Uri.file(filePath);
@@ -233,12 +233,12 @@ export async function handleMessage(
                         } else {
                             uri = vscode.Uri.file(filePath);
                         }
-                        
+
                         await vscode.commands.executeCommand('vscode.open', uri);
                         return;
                     }
                 }
-                
+
                 // Default command execution
                 await vscode.commands.executeCommand(payload.command, ...(payload.args || []));
             } catch (error) {
@@ -352,28 +352,28 @@ export async function handleMessage(
                         type: 'graphRefreshStarted',
                         payload: null,
                     });
-                    
+
                     // Invalidate cache before re-index
                     codeGraphManager.invalidateCache();
-                    
+
                     // Perform full re-index
                     await codeGraphManager.fullIndex();
-                    
+
                     // Invalidate cache again after re-index to ensure fresh data
                     codeGraphManager.invalidateCache();
-                    
+
                     // Send updated data (these will recompute, not use cache)
                     const digest = codeGraphManager.getDigest();
                     const issues = codeGraphManager.getIssues();
                     const fileIndex = codeGraphManager.getFileIndex();
-                    
+
                     // Get edges
                     const store = codeGraphManager.getStore();
                     const allEdges = store.getAllEdges();
                     const edges = allEdges
-                        .filter(edge => 
-                            edge.kind === 'imports' && 
-                            edge.from.startsWith('file:') && 
+                        .filter(edge =>
+                            (edge.kind === 'imports' || edge.kind === 'reexports') &&
+                            edge.from.startsWith('file:') &&
                             edge.to.startsWith('file:')
                         )
                         .map(edge => ({
@@ -381,7 +381,8 @@ export async function handleMessage(
                             target: edge.to.slice(5),
                             type: edge.kind,
                         }));
-                    
+
+
                     sidebarProvider.postMessage({
                         type: 'graphDigest',
                         payload: digest,
@@ -465,13 +466,13 @@ export async function handleMessage(
                 try {
                     const store = codeGraphManager.getStore();
                     const allEdges = store.getAllEdges();
-                    
+
                     // Transform edges to a simpler format for the webview
-                    // Only include import edges between files
+                    // Include import and reexport edges between files
                     const edges = allEdges
-                        .filter(edge => 
-                            edge.kind === 'imports' && 
-                            edge.from.startsWith('file:') && 
+                        .filter(edge =>
+                            (edge.kind === 'imports' || edge.kind === 'reexports') &&
+                            edge.from.startsWith('file:') &&
                             edge.to.startsWith('file:')
                         )
                         .map(edge => ({
@@ -479,7 +480,7 @@ export async function handleMessage(
                             target: edge.to.slice(5),
                             type: edge.kind,
                         }));
-                    
+
                     sidebarProvider.postMessage({
                         type: 'graphEdges',
                         payload: { edges },

@@ -71,7 +71,7 @@ export function CodeGraph() {
     const [addedToContext, setAddedToContext] = useState<Set<string>>(new Set());
     // Temporary flash feedback for newly added items
     const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set());
-    
+
     // Graph view state
     const [graphData, setGraphData] = useState<GraphData | null>(null);
     const [fileNodes, setFileNodes] = useState<GraphNode[]>([]);
@@ -95,7 +95,7 @@ export function CodeGraph() {
 
     // Build graph data from digest and real edges
     const buildGraphData = useCallback((
-        digest: GraphDigest, 
+        digest: GraphDigest,
         issues: GraphIssue[],
         edges: Array<{ source: string; target: string; type: string }>
     ): GraphData => {
@@ -176,14 +176,14 @@ export function CodeGraph() {
             }
         });
 
-        // If we have nodes but no links between them, try to add links from edges
-        // that connect to nodes we have (even if one end is missing)
-        if (links.length === 0 && nodes.length > 1) {
+        // Always expand the graph to include nodes connected to hotspots/entrypoints
+        // This ensures we show a meaningful dependency structure, not just isolated nodes
+        {
             // Find edges where at least one end is in our node set
-            const relevantEdges = edges.filter(edge => 
+            const relevantEdges = edges.filter(edge =>
                 nodeIds.has(edge.source) || nodeIds.has(edge.target)
             );
-            
+
             // Add missing nodes that are connected to our hotspots/entrypoints
             const nodesToAdd = new Set<string>();
             relevantEdges.forEach(edge => {
@@ -195,10 +195,10 @@ export function CodeGraph() {
                 }
             });
 
-            // Add up to 20 connected nodes
+            // Add up to 50 connected nodes for a richer graph
             let addedCount = 0;
             nodesToAdd.forEach(path => {
-                if (addedCount >= 20) return;
+                if (addedCount >= 50) return;
                 const node: GraphNode = {
                     id: path,
                     path: path,
@@ -214,19 +214,25 @@ export function CodeGraph() {
                 };
                 nodes.push(node);
                 nodeMap.set(path, node);
+                nodeIds.add(path); // Update nodeIds for link creation
                 addedCount++;
             });
 
             // Now add links with the expanded node set
-            const expandedNodeIds = new Set(nodes.map(n => n.id));
             edges.forEach(edge => {
-                if (expandedNodeIds.has(edge.source) && expandedNodeIds.has(edge.target)) {
-                    links.push({
-                        source: edge.source,
-                        target: edge.target,
-                        type: edge.type as 'import' | 'export' | 'reexport' | 'dynamic',
-                        weight: 1,
-                    });
+                if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
+                    // Avoid duplicate links (all links at this point have string source/target)
+                    const exists = links.some(l =>
+                        l.source === edge.source && l.target === edge.target
+                    );
+                    if (!exists) {
+                        links.push({
+                            source: edge.source,
+                            target: edge.target,
+                            type: edge.type as 'import' | 'export' | 'reexport' | 'dynamic',
+                            weight: 1,
+                        });
+                    }
                 }
             });
         }
@@ -283,16 +289,16 @@ export function CodeGraph() {
             data,
             timestamp: Date.now(),
         };
-        vscode.postMessage({ 
-            type: 'addGraphContext', 
-            payload: contextItem 
+        vscode.postMessage({
+            type: 'addGraphContext',
+            payload: contextItem
         });
-        
+
         // Track what's been added - persistent until context is consumed
-        const id = type === 'issue' ? (data as GraphIssue).id : 
-                   type === 'hotspot' ? (data as { path: string }).path : 'digest';
+        const id = type === 'issue' ? (data as GraphIssue).id :
+            type === 'hotspot' ? (data as { path: string }).path : 'digest';
         setAddedToContext(prev => new Set(prev).add(id));
-        
+
         // Show brief flash feedback for newly added item
         setRecentlyAdded(prev => new Set(prev).add(id));
         setTimeout(() => {
@@ -464,30 +470,40 @@ export function CodeGraph() {
     }, [fetchData, vscode]);
 
     // Auto-refresh interval (every 2 minutes when tab is visible)
+    // Use refs to avoid stale closures and prevent interval reset on state changes
+    const isRefreshingRef = useRef(isRefreshing);
+    const isLoadingRef = useRef(isLoading);
+
+    // Keep refs in sync with state
+    useEffect(() => {
+        isRefreshingRef.current = isRefreshing;
+        isLoadingRef.current = isLoading;
+    }, [isRefreshing, isLoading]);
+
     const AUTO_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
     useEffect(() => {
         let intervalId: ReturnType<typeof setInterval> | null = null;
-        
+
         const startAutoRefresh = () => {
             if (intervalId) return;
             intervalId = setInterval(() => {
-                // Only auto-fetch cached data, don't trigger full re-index
-                if (!isRefreshing && !isLoading) {
+                // Use refs to get current values (avoids stale closure)
+                if (!isRefreshingRef.current && !isLoadingRef.current) {
                     fetchData();
                 }
             }, AUTO_REFRESH_INTERVAL);
         };
-        
+
         const stopAutoRefresh = () => {
             if (intervalId) {
                 clearInterval(intervalId);
                 intervalId = null;
             }
         };
-        
+
         // Start auto-refresh
         startAutoRefresh();
-        
+
         // Handle visibility change - pause when hidden, resume when visible
         const handleVisibilityChange = () => {
             if (document.hidden) {
@@ -495,19 +511,20 @@ export function CodeGraph() {
             } else {
                 startAutoRefresh();
                 // Fetch immediately when becoming visible
-                if (!isRefreshing && !isLoading) {
+                if (!isRefreshingRef.current && !isLoadingRef.current) {
                     fetchData();
                 }
             }
         };
-        
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        
+
         return () => {
             stopAutoRefresh();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [fetchData, isRefreshing, isLoading]);
+    }, [fetchData]); // Only depend on fetchData, not on loading states
+
 
     // Build graph data when digest/issues/edges change
     useEffect(() => {
@@ -568,7 +585,7 @@ export function CodeGraph() {
                     <Icon name="graph" />
                     <span>Code Graph</span>
                 </div>
-                <button 
+                <button
                     className={`${styles.contextBtn} ${addedToContext.has('digest') ? styles.added : ''}`}
                     onClick={() => addToContext('digest', digest)}
                     title="Add full digest to context for Copilot"
@@ -805,21 +822,21 @@ export function CodeGraph() {
                     </div>
                 )}
                 {activeTab === 'issues' && (
-                    <IssuesTab 
-                        issues={issues} 
+                    <IssuesTab
+                        issues={issues}
                         addToContext={addToContext}
                         addedToContext={addedToContext}
                         recentlyAdded={recentlyAdded}
-                        openFile={openFile} 
+                        openFile={openFile}
                     />
                 )}
                 {activeTab === 'hotspots' && (
-                    <HotspotsTab 
-                        hotspots={digest.hotspots} 
+                    <HotspotsTab
+                        hotspots={digest.hotspots}
                         addToContext={addToContext}
                         addedToContext={addedToContext}
                         recentlyAdded={recentlyAdded}
-                        openFile={openFile} 
+                        openFile={openFile}
                     />
                 )}
             </div>
@@ -834,9 +851,9 @@ export function CodeGraph() {
                     <Icon name="symbol-numeric" />
                     ~{digest.meta.tokensEstimate} tokens
                 </span>
-                <button 
-                    className={`${styles.refreshBtn} ${isRefreshing ? styles.refreshing : ''}`} 
-                    onClick={refreshData} 
+                <button
+                    className={`${styles.refreshBtn} ${isRefreshing ? styles.refreshing : ''}`}
+                    onClick={refreshData}
                     title="Re-index the codebase"
                     disabled={isRefreshing}
                 >
@@ -966,8 +983,8 @@ function OverviewTab({ digest }: { digest: GraphDigest }) {
 }
 
 // Issues Tab Component
-function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFile }: { 
-    issues: GraphIssue[]; 
+function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFile }: {
+    issues: GraphIssue[];
     addToContext: (type: string, data: unknown) => void;
     addedToContext: Set<string>;
     recentlyAdded: Set<string>;
@@ -1004,22 +1021,22 @@ function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFi
     // Filter issues by type and search query
     const filteredIssues = useMemo(() => {
         let result = issues;
-        
+
         // Apply type filter
         if (filter !== 'all') {
             result = result.filter((i) => i.kind === filter);
         }
-        
+
         // Apply search filter
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            result = result.filter((i) => 
+            result = result.filter((i) =>
                 i.file.toLowerCase().includes(query) ||
                 i.summary.toLowerCase().includes(query) ||
                 i.kind.toLowerCase().includes(query)
             );
         }
-        
+
         return result;
     }, [issues, filter, searchQuery]);
 
@@ -1054,7 +1071,7 @@ function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFi
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     {searchQuery && (
-                        <button 
+                        <button
                             className={styles.clearSearch}
                             onClick={() => setSearchQuery('')}
                             title="Clear search"
@@ -1082,7 +1099,7 @@ function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFi
                         })}
                 </select>
                 <div className={styles.limitSelector}>
-                    <button 
+                    <button
                         className={styles.limitBtn}
                         onClick={() => setShowLimitSelector(!showLimitSelector)}
                         title="Change display limit"
@@ -1154,9 +1171,9 @@ function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFi
                 ) : (
                     <div className={styles.issueList}>
                         {displayedIssues.map((issue) => (
-                            <IssueCard 
-                                key={issue.id} 
-                                issue={issue} 
+                            <IssueCard
+                                key={issue.id}
+                                issue={issue}
                                 addToContext={addToContext}
                                 isAdded={addedToContext.has(issue.id)}
                                 isRecentlyAdded={recentlyAdded.has(issue.id)}
@@ -1164,7 +1181,7 @@ function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFi
                             />
                         ))}
                         {hasMoreIssues && (
-                            <button 
+                            <button
                                 className={styles.loadMoreBtn}
                                 onClick={() => setDisplayLimit(prev => prev === -1 ? -1 : prev + 50)}
                             >
@@ -1180,7 +1197,7 @@ function IssuesTab({ issues, addToContext, addedToContext, recentlyAdded, openFi
 }
 
 // Hotspots Tab Component
-function HotspotsTab({ hotspots, addToContext, addedToContext, recentlyAdded, openFile }: { 
+function HotspotsTab({ hotspots, addToContext, addedToContext, recentlyAdded, openFile }: {
     hotspots: GraphDigest['hotspots'];
     addToContext: (type: string, data: unknown) => void;
     addedToContext: Set<string>;
@@ -1205,7 +1222,7 @@ function HotspotsTab({ hotspots, addToContext, addedToContext, recentlyAdded, op
             <div className={styles.infoBanner}>
                 <Icon name="flame" />
                 <span>
-                    <strong>Hotspots</strong> are files with many dependents. 
+                    <strong>Hotspots</strong> are files with many dependents.
                     Changes here have wide impact — add to context before asking Copilot about changes.
                 </span>
             </div>
@@ -1231,7 +1248,7 @@ function HotspotsTab({ hotspots, addToContext, addedToContext, recentlyAdded, op
                         <div key={hotspot.path} className={`${styles.hotspotItem} ${isRecent ? styles.recentlyAdded : ''}`}>
                             <div className={styles.hotspotRank}>#{index + 1}</div>
                             <div className={styles.hotspotInfo}>
-                                <span 
+                                <span
                                     className={styles.hotspotPath}
                                     onClick={() => openFile(hotspot.path)}
                                     title={`Open ${hotspot.path}`}
@@ -1331,7 +1348,7 @@ function IssueStat({ count, label, severity, tooltip }: {
     );
 }
 
-function IssueCard({ issue, addToContext, isAdded, isRecentlyAdded, openFile }: { 
+function IssueCard({ issue, addToContext, isAdded, isRecentlyAdded, openFile }: {
     issue: GraphIssue;
     addToContext: (type: string, data: unknown) => void;
     isAdded: boolean;
@@ -1367,7 +1384,7 @@ function IssueCard({ issue, addToContext, isAdded, isRecentlyAdded, openFile }: 
             {expanded && (
                 <div className={styles.issueBody}>
                     <p className={styles.issueSummaryText}>{issue.summary}</p>
-                    
+
                     {issue.evidence.length > 0 && (
                         <div className={styles.issueSection}>
                             <div className={styles.issueSectionHeader}>
@@ -1379,7 +1396,7 @@ function IssueCard({ issue, addToContext, isAdded, isRecentlyAdded, openFile }: 
                             </ul>
                         </div>
                     )}
-                    
+
                     {issue.suggestedFix.length > 0 && (
                         <div className={styles.issueSection}>
                             <div className={styles.issueSectionHeader}>
@@ -1393,7 +1410,7 @@ function IssueCard({ issue, addToContext, isAdded, isRecentlyAdded, openFile }: 
                     )}
 
                     <div className={styles.issueActions}>
-                        <button 
+                        <button
                             className={styles.issueActionBtn}
                             onClick={() => openFile(issue.file)}
                             title="Open file in editor"
@@ -1401,7 +1418,7 @@ function IssueCard({ issue, addToContext, isAdded, isRecentlyAdded, openFile }: 
                             <Icon name="go-to-file" />
                             Open File
                         </button>
-                        <button 
+                        <button
                             className={`${styles.issueActionBtn} ${styles.primary} ${isAdded ? styles.added : ''}`}
                             onClick={() => addToContext('issue', issue)}
                             title={isAdded ? 'Added to context' : 'Add this issue to context for Copilot'}

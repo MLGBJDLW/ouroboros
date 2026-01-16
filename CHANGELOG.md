@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Attachment Button Visibility** — Enhanced contrast and hover states for attach button
 - **Graph Orphan Filtering** — `DependencyCruiserAdapter` now filters config/test files from orphan reports
 - **Barrel Re-export Detection** — Orphan detection delegated to `IssueDetector` for proper `export * from` chain handling
+- **Graph Edge Visualization** — Now includes `reexports` edges and expands to show 50+ connected nodes
+- **Graph Auto-Refresh** — Fixed stale closure issue preventing interval from working correctly
 
 ---
 
