@@ -2,7 +2,17 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.13] - 2026-01-16
+
+### Fixed
+- **Send Button Icon** — Replaced Logo with codicon `send` icon in PendingRequests
+- **Attachment Button Visibility** — Higher contrast (0.85 opacity) and blue hover border
+- **Graph Orphan Filtering** — Config files, test files, and type definitions no longer reported as unreachable
+
+---
+
 ## [3.3.12] - 2026-01-13
+
 
 ### Added
 - **CuratorCompat Layer** — Unified search API with automatic fallback: Graph → Indexer → Curator → Regex

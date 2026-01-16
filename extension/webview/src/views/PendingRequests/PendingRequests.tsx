@@ -293,7 +293,7 @@ function SentMessageBubble({ message }: SentMessageBubbleProps) {
                 {/* Texture layers */}
                 <div className={styles.sentScanlines} />
                 <div className={styles.sentGlowEdge} />
-                
+
                 {/* Header */}
                 <div className={styles.sentCardHeader}>
                     <div className={styles.sentStatusBadge}>
@@ -746,7 +746,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                         disabled={!value.trim() && attachments.length === 0}
                         title="Send"
                     >
-                        <Logo size={18} />
+                        <Icon name="send" />
                     </button>
                 </div>
             </div>
@@ -883,7 +883,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                                 disabled={!customValue.trim() && attachments.length === 0}
                                 title="Send"
                             >
-                                <Logo size={18} />
+                                <Icon name="send" />
                             </button>
                         </div>
 
@@ -1037,7 +1037,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                                 disabled={!customValue.trim() && attachments.length === 0}
                                 title="Send"
                             >
-                                <Logo size={18} />
+                                <Icon name="send" />
                             </button>
                         </div>
 
@@ -1245,7 +1245,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                             disabled={!customValue.trim() && attachments.length === 0}
                             title="Send"
                         >
-                            <Logo size={18} />
+                            <Icon name="send" />
                         </button>
                     </div>
                 )}
