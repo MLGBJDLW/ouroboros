@@ -174,7 +174,7 @@ go test ./... -v -race
      ↓
 2. ISOLATE: Find the smallest failing case
      ↓
-3. UNDERSTAND: Trace to root cause (not just symptom!)
+3. UNDERSTAND: Trace to root cause (use `git blame`/`git log` for context)
      ↓
 4. INVESTIGATE CHAIN: Check related/upstream code
      ↓

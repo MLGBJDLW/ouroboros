@@ -1,6 +1,6 @@
 ---
 description: "⚙️ Ouroboros Implement. Execute tasks from spec with smart resume and modes."
-tools: ['agent', 'read', 'search', 'execute']
+tools: ['agent', 'read', 'search', 'execute', 'todo']
 handoffs:
   - label: "Return to Orchestrator"
     agent: ouroboros
@@ -51,6 +51,29 @@ handoffs:
 | `read` | ⚠️ **LIMITED** | `.ouroboros/specs/*/tasks.md` only |
 | `execute` | ⚠️ **CCL ONLY** | Heartbeat command |
 | `edit` | ⛔ **FORBIDDEN** | Delegate to coder/writer |
+
+---
+
+## 📋 TASK TRACKING PROTOCOL
+
+> [!IMPORTANT]
+> **For tasks with 3+ steps, use `todo` tool to track progress.**
+
+### When to Create Task List
+| Scenario | Use Todo? |
+|----------|-----------|
+| Simple question/lookup | ❌ No |
+| Single file edit | ❌ No |
+| Multi-step implementation (3+) | ✅ Yes |
+| Feature development | ✅ Yes |
+| Debugging complex issue | ✅ Yes |
+
+### Task State Management
+- `pending`: Not started
+- `in_progress`: Currently working (MAX ONE at a time)
+- `completed`: Finished and verified
+
+**RULE**: Mark tasks complete IMMEDIATELY after finishing, not in batches.
 
 ---
 

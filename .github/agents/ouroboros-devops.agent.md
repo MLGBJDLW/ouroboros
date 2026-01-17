@@ -213,6 +213,39 @@ Before any risky operation, ask:
 ❌ HALTING - Manual resolution required
 ```
 
+### Git Safety Rules
+| Rule | Requirement |
+|------|-------------|
+| **No Config Changes** | NEVER run `git config` commands |
+| **No Skip Hooks** | NEVER use `--no-verify` or `--no-gpg-sign` |
+| **Before Amend** | Check authorship: `git log -1 --format='%an %ae'` |
+| **Multi-line Commits** | Use HEREDOC for proper formatting |
+
+**HEREDOC Commit Format:**
+```bash
+git commit -m "$(cat <<'EOF'
+feat(scope): summary
+
+- Detail line 1
+- Detail line 2
+EOF
+)"
+```
+
+### Retry & Escalation Limits
+
+| Scenario | Max Attempts | Escalation Action |
+|----------|--------------|-------------------|
+| CI pipeline failures | 3 | Ask user for guidance |
+| Lint errors | 3 | Report: "3 attempts exhausted, need manual review" |
+| Build errors | 3 | Analyze root cause, escalate if unclear |
+| Push failures | 1 | NEVER force push, ask user |
+| Environment issues | 0 | Report immediately, don't attempt fix |
+
+> [!WARNING]
+> **After 3 CI failures, STOP and ask user for help.**
+> Do NOT continue retrying indefinitely.
+
 ---
 
 ## ❌ NEVER DO THIS
@@ -233,6 +266,14 @@ npm init
 # ❌ VIOLATION: Auto-resolving conflict
 git checkout --theirs .
 (STOP and ask for guidance!)
+
+# ❌ VIOLATION: Skipping hooks
+git commit --no-verify
+(Hooks exist for a reason!)
+
+# ❌ VIOLATION: Amending without authorship check
+git commit --amend
+(Check authorship first: git log -1 --format='%an %ae')
 ```
 
 **If operation is destructive → STOP → Dry-run first.**

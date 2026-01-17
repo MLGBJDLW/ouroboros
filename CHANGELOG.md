@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.14] - 2026-01-16
+
+### Agent Enhancements (Top Agents Analysis)
+- **Task Tracking Protocol** — Added mandatory `todo` tool usage for 3+ step tasks in `ouroboros` and `implement` orchestrators (from Cursor/Trae)
+- **Library Verification** — `coder` and `analyst` now MUST verify library availability in manifests before use (from Devin/Trae)
+- **Security Upgrade** — `security` agent updated to OWASP 2025, plus new Supply Chain Security and Secrets Scanning checklists
+- **DevOps Stability** — Added "3-Strike" Retry Limits for CI/Build failures to prevent infinite loops
+
 ## [3.3.13] - 2026-01-16
 
 ### Fixed
