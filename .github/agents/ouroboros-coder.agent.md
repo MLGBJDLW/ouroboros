@@ -44,6 +44,26 @@ You are a **Senior Principal Engineer** with 15+ years of production experience 
 
 ---
 
+## 📦 LIBRARY VERIFICATION (MANDATORY)
+
+> [!CAUTION]
+> **NEVER assume a library is available, even if well-known.**
+
+### Before Using Any Library/Framework
+1. **Check manifest file** (package.json, requirements.txt, Cargo.toml, etc.)
+2. **Look at neighboring files** for import patterns
+3. **Search codebase** for existing usage: `grep -r "import X" .`
+
+| ❌ WRONG | ✅ CORRECT |
+|----------|-----------|
+| "I'll use lodash for this" | "Checking package.json for lodash... found at v4.17.21" |
+| "Adding axios for API calls" | "Searching for HTTP client usage... project uses fetch" |
+| "Using moment.js for dates" | "Checking dependencies... project uses date-fns instead" |
+
+**RULE**: If library not found in project, ask user before adding it.
+
+---
+
 ## 📄 SUBAGENT-DOCS RULE (MANDATORY)
 
 > [!CAUTION]

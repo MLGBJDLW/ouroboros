@@ -124,25 +124,58 @@ Your training data does NOT include recent CVEs. Always verify.
 
 ---
 
-## 📊 OWASP Top 10 (2021) Checklist
+## 📊 OWASP Top 10 (2021 → 2025 Update)
 
-| # | Category | Check For |
-|---|----------|-----------|
-| A01 | Broken Access Control | Missing auth checks, IDOR, privilege escalation |
-| A02 | Cryptographic Failures | Weak algorithms, exposed secrets, insecure storage |
-| A03 | Injection | SQL, XSS, Command, LDAP injection |
-| A04 | Insecure Design | Missing security controls by design |
-| A05 | Security Misconfiguration | Default configs, unnecessary features |
-| A06 | Vulnerable Components | Outdated deps, known CVEs |
-| A07 | Auth/Session Failures | Weak passwords, session fixation |
-| A08 | Data Integrity Failures | Unsigned data, insecure deserialization |
-| A09 | Logging Failures | Missing logs, exposed sensitive data in logs |
-| A10 | SSRF | Unvalidated URL fetching, metadata endpoints |
+> [!NOTE]
+> OWASP 2025 updates are expected. Currently using 2021 as baseline.
+> **Always search for latest OWASP guidance before auditing.**
 
-**Additional checks:**
-- **File Handling**: Path traversal, unsafe unzip, size limits
-- **Deserialization**: Unsafe pickle/yaml, object injection
-- **Supply Chain**: Dependency pinning, lockfiles, CVE check
+| # | Category | Check For | 2025 Notes |
+|---|----------|-----------|------------|
+| A01 | Broken Access Control | Missing auth checks, IDOR | Remains #1 |
+| A02 | Cryptographic Failures | Weak algorithms, exposed secrets | |
+| A03 | Injection | SQL, XSS, Command, NoSQL, LDAP | Template injection added |
+| A04 | Insecure Design | Missing security controls | Threat modeling emphasis |
+| A05 | Security Misconfiguration | Default configs, CORS, headers | Cloud misconfig focus |
+| A06 | Vulnerable Components | Outdated deps, known CVEs | SBOM requirement |
+| A07 | Auth/Session Failures | Weak passwords, MFA bypass | Passkey considerations |
+| A08 | Data Integrity Failures | Unsigned data, CI/CD attacks | Pipeline security |
+| A09 | Logging Failures | Missing logs, PII in logs | SIEM integration |
+| A10 | SSRF | Unvalidated URL fetching | Cloud metadata focus |
+
+### 🔗 Supply Chain Security Checklist
+
+| Check | Tool/Method | Severity if Failed |
+|-------|-------------|-------------------|
+| **Dependency Pinning** | Lockfile exists and committed | HIGH |
+| **Known CVEs** | `npm audit` / `pip-audit` / `cargo audit` | Varies by CVE |
+| **Dependency Confusion** | Private registry configured | CRITICAL |
+| **SBOM Generation** | Can generate Software Bill of Materials | MEDIUM |
+| **Typosquatting** | Package names match expected | HIGH |
+
+**Specific Checks:**
+- [ ] No `*` versions in dependencies
+- [ ] Lockfile (package-lock.json, yarn.lock) committed
+- [ ] Private packages use scoped names (@company/pkg)
+- [ ] Pre-commit hooks don't pull external code
+
+### 🔑 Secrets Scanning Checklist
+
+| Pattern | Regex | Example |
+|---------|-------|---------|
+| AWS Keys | `AKIA[0-9A-Z]{16}` | AKIAIOSFODNN7EXAMPLE |
+| GitHub Token | `gh[ps]_[A-Za-z0-9_]{36,}` | ghp_xxxx |
+| Private Keys | `-----BEGIN.*PRIVATE KEY-----` | RSA keys |
+| Generic Secrets | `(api[_-]?key|secret|password)\s*[:=]` | api_key=xxx |
+
+**Scanning Commands:**
+```bash
+# Git secrets pre-commit hook
+git secrets --scan
+
+# Search for hardcoded secrets
+grep -rE "(password|secret|api_key)\s*=" --include="*.py" .
+```
 
 ---
 
