@@ -69,7 +69,7 @@ export function AttachmentInput({
         }
 
         const isImage = isImageType(file.type);
-        
+
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -201,32 +201,32 @@ export function AttachmentBadge({ attachment, onRemove, compact = false }: Attac
     const [showPreview, setShowPreview] = useState(false);
 
     return (
-        <div 
+        <div
             className={`${styles.badge} ${compact ? styles.badgeCompact : ''}`}
             onMouseEnter={() => setShowPreview(true)}
             onMouseLeave={() => setShowPreview(false)}
         >
             {attachment.type === 'image' && attachment.previewUrl ? (
-                <img 
-                    src={attachment.previewUrl} 
+                <img
+                    src={attachment.previewUrl}
                     alt={attachment.name}
                     className={styles.badgeThumbnail}
                 />
             ) : (
                 <Icon name={getFileIcon(attachment)} className={styles.badgeIcon} />
             )}
-            
+
             <span className={styles.badgeName} title={attachment.name}>
                 {attachment.name}
             </span>
-            
+
             {attachment.size && !compact && (
                 <span className={styles.badgeSize}>
                     {formatFileSize(attachment.size)}
                 </span>
             )}
-            
-            <button 
+
+            <button
                 className={styles.badgeRemove}
                 onClick={(e) => {
                     e.stopPropagation();
@@ -295,8 +295,8 @@ interface AttachmentActionsProps {
     maxAttachments: number;
 }
 
-export function AttachmentActions({ 
-    onOpenFilePicker, 
+export function AttachmentActions({
+    onOpenFilePicker,
     disabled,
     attachmentCount,
     maxAttachments,
@@ -311,7 +311,7 @@ export function AttachmentActions({
                 disabled={disabled || !canAddMore}
                 title={canAddMore ? 'Attach file (images, code, documents)' : 'Max attachments reached'}
             >
-                <Icon name="attach" />
+                <Icon name="pin" />
             </button>
         </div>
     );

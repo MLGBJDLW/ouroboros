@@ -235,6 +235,26 @@ After identifying root cause:
 3. **Verify fix doesn't break** other consumers
 4. **Add tests** for each affected path
 
+### Library Limitation Pattern (NEW)
+
+> [!WARNING]
+> **Repeated failures may indicate the library doesn't support the feature at all.**
+
+| Symptom | Surface Diagnosis | Root Cause |
+|---------|-------------------|------------|
+| Feature fails repeatedly | "Code bug" | Library doesn't support feature |
+| No examples found online | "Need more research" | Feature may not exist |
+| Only workarounds exist | "Complex implementation" | Native support missing |
+| Same error after 3+ attempts | "Edge case" | Fundamental limitation |
+
+**Detection Checklist**:
+- [ ] Have I tried 3+ different approaches for the same feature?
+- [ ] Can I find official documentation for this feature?
+- [ ] Are there open GitHub issues requesting this feature?
+- [ ] Does only a community fork provide this capability?
+
+**RULE**: If debugging the same feature 3+ times, check if the library supports it at all. Report BLOCKED if library limitation confirmed.
+
 ---
 
 ## 📊 Test Coverage Checklist

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.15] - 2026-01-19
+
+### Agent Enhancements
+- **Library Capability Verification** — New mandatory section in `coder`, `researcher`, `architect` agents to verify library features before implementation
+- **Step 2.5 Pre-Check** — Coder must verify library capabilities via official docs → GitHub Issues → npm/PyPI before coding
+- **Library Limitation Pattern** — QA agent now detects when repeated failures indicate library doesn't support feature
+- **Dependency Verification Expansion** — Analyst agent extended to include capability assessment
+
+### Fixed
+- **Attachment Icon** — Changed from invalid `codicon-attach` to `codicon-pin` (icon was not rendering)
+
+---
+
 ## [3.3.14] - 2026-01-16
 
 ### Agent Enhancements (Top Agents Analysis)

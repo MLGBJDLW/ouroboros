@@ -2,6 +2,18 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.15] - 2026-01-19
+
+### Agent Enhancements
+- **Library Capability Verification** — Coder/Researcher/Architect agents must verify library features before implementation
+- **Step 2.5 Pre-Check** — Mandatory pre-implementation check: official docs → GitHub Issues → forks
+- **Library Limitation Pattern** — QA detects when repeated failures indicate unsupported library feature
+
+### Fixed
+- **Attachment Icon** — Changed from invalid `codicon-attach` to `codicon-pin`
+
+---
+
 ## [3.3.14] - 2026-01-16
 
 ### Agent Enhancements (Top Agents Analysis)
