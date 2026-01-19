@@ -98,7 +98,7 @@ Task: Implement virtual scrolling in Ink TUI
 | ❌ Wrong | ✅ Correct |
 |----------|------------|
 | "I'll implement virtual scroll using Ink" | "Checking official docs for virtual scroll support..." |
-| "Ink should support this" | "Found no virtual scroll API in ink@4.x docs; checking forks" |
+| "Ink should support this" | "Found no virtual scroll API in `ink@4.x` docs; checking forks" |
 | Keep trying different approaches | After 2 failed attempts, research library capabilities |
 
 **RULE**: If you attempt the same feature 3+ times and fail → STOP → Verify library capabilities.
