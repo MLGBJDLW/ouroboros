@@ -315,7 +315,7 @@ function SentMessageBubble({ message }: SentMessageBubbleProps) {
                 <div className={styles.sentCardFooter}>
                     {message.attachmentCount && message.attachmentCount > 0 && (
                         <div className={styles.sentAttachmentTag}>
-                            <Icon name="attach" />
+                            <Icon name="pin" />
                             <span>{message.attachmentCount}</span>
                         </div>
                     )}

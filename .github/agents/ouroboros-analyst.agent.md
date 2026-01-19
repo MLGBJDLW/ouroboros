@@ -50,6 +50,21 @@ When analyzing code dependencies:
 2. **Don't assume availability** - Even common libraries (lodash, axios)
 3. **Report missing dependencies** as findings
 
+### Library Capability Assessment (NEW)
+
+When analyzing features that rely on external libraries:
+1. **Verify feature exists** in the library's official documentation
+2. **Check GitHub issues** for open feature requests (implies not supported)
+3. **Note fork/alternative packages** if original lacks capability
+4. **Flag as risk** if feature requires workarounds or unofficial support
+
+| Analysis Output | Action Required |
+|-----------------|-----------------|
+| Feature undocumented in library | ⚠️ Flag: May not be supported |
+| Open feature request 2+ years | 🔴 Flag: Likely not implemented |
+| Only workarounds found | 🟡 Flag: May need fork or custom impl |
+| Feature in community fork only | Note fork package as alternative |
+
 ---
 
 ## 📄 SUBAGENT-DOCS RULE (MANDATORY)
