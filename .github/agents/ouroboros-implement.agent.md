@@ -94,6 +94,24 @@ handoffs:
 
 ---
 
+## 🔬 CONCERN RELAY PROTOCOL
+
+> [!IMPORTANT]
+> **L2 workers may flag `[CONCERN]`. You MUST present these to user before continuing.**
+
+When L2 handoff contains `[CONCERN]`:
+1. **PAUSE** the current batch
+2. **Present** concern to user via CCL CONFIRM
+3. **Wait** for user decision
+4. **Resume** or **adjust** based on response
+
+Example:
+```python
+python -c "print('⚠️ Technical Concern from coder:'); print('API rate limits may cause issues'); print(); print('[1] Continue anyway'); print('[2] Implement rate limiting first'); choice = input('Select: ')"
+```
+
+---
+
 ## 📦 TASK BATCHING PROTOCOL
 
 | Scenario | Batch Size | Rationale |

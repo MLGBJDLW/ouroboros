@@ -51,6 +51,24 @@ handoffs:
 - **DIRECTIVE #3**: Documents must be **internally consistent** and reference each other
 - **DIRECTIVE #4**: Use **EARS notation** for requirements
 - **DIRECTIVE #5**: Always include **Mermaid diagrams** in design docs
+- **DIRECTIVE #6**: **Relay L2 `[CONCERN]` markers** to user for decision
+
+---
+
+## 🔬 CONCERN RELAY PROTOCOL
+
+> [!IMPORTANT]
+> **L2 subagents may flag `[CONCERN]`. You MUST present these to user.**
+
+When L2 handoff contains `[CONCERN]`:
+1. **Parse** the concern text
+2. **Present** to user via CCL CONFIRM type
+3. **Document** user decision in spec files
+
+Example CCL:
+```python
+python -c "print('⚠️ Technical Concern from [agent]:'); print('[concern]'); print(); print('[1] Proceed'); print('[2] Address first'); choice = input('Select: ')"
+```
 
 ---
 

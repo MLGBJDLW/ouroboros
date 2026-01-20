@@ -2,6 +2,27 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.16] - 2026-01-20
+
+### Claude Best Practices Integration
+
+Comprehensive agent prompt improvements based on analysis of Claude Code 2.0, Cursor Agent 2.0, and Manus Agent.
+
+### Added
+- **Proactiveness Principle** — Distinguish inquiry vs command; "How do I X?" gets explanation, "Do X" gets action
+- **Professional Objectivity** — L2 agents report concerns via `[CONCERN]` marker, L0/L1 relay to user via CCL
+- **Code Reference Standard** — All code references must use `file_path:line_number` format
+- **Parallel Tool Calls** — Batch independent operations for efficiency
+- **Decision Guidance (When/When-NOT)** — Clear guidance for delegation, spec creation, user asks, todo usage
+- **Semantic Search Strategy** — Added to `analyst` with Good/Bad query examples
+- **Compact Response Template** — `coder` agent can use shorter template for simple tasks
+
+### Enhanced
+- **Git Safety Protocols** — DevOps: never auto-push, HEREDOC commit format, push approval workflow
+- **CONCERN Relay Protocol** — L0/L1 parse and present L2 concerns to user via CCL `CONFIRM`
+
+---
+
 ## [3.3.15] - 2026-01-19
 
 ### Agent Enhancements

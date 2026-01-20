@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.16] - 2026-01-20
+
+### Claude Best Practices Integration
+
+Comprehensive agent prompt improvements based on analysis of Claude Code 2.0, Cursor Agent 2.0, and Manus Agent.
+
+### Added
+
+- **Proactiveness Principle** — Distinguish inquiry vs command; "How do I X?" gets explanation first, "Do X" gets action
+- **Professional Objectivity** — L2 agents report concerns via `[CONCERN]` marker in handoff, L0/L1 relay to user
+- **Code Reference Standard** — All code references must use `file_path:line_number` format
+- **Parallel Tool Calls** — Batch independent operations for efficiency
+- **Decision Guidance (When/When-NOT)** — Clear guidance for delegation, spec creation, user confirmation, and todo usage
+- **Semantic Search Strategy** — Added to `analyst` agent with Good/Bad query examples and context maximization rules
+- **Compact Response Template** — `coder` agent can use shorter template for simple tasks
+- **Template Selection Guide** — Choose full/compact/ultra-compact based on task complexity
+
+### Enhanced
+
+- **Git Safety Protocols** — DevOps agent: never auto-push, never auto-commit, HEREDOC commit format, push approval workflow
+- **CONCERN Relay Protocol** — L0 (`ouroboros`), L1 (`spec`, `implement`) now parse and present L2 concerns to user via CCL
+
+### Agent Files Changed
+- `copilot-instructions.md` — Added 4 new sections (Proactiveness, Objectivity, Code Reference, Decision Guidance)
+- `ouroboros.agent.md` — Added CONCERN Relay Protocol
+- `ouroboros-spec.agent.md` — Added DIRECTIVE #6 and CONCERN Relay
+- `ouroboros-implement.agent.md` — Added CONCERN Relay with batch pause
+- `ouroboros-coder.agent.md` — Added Professional Objectivity, Compact Template
+- `ouroboros-analyst.agent.md` — Added Professional Objectivity, Semantic Search Strategy
+- `ouroboros-devops.agent.md` — Enhanced Git Safety Rules with full commit/push protocols
+
+---
+
 ## [3.3.15] - 2026-01-19
 
 ### Agent Enhancements
