@@ -123,16 +123,54 @@ export class LspEnhancer {
      * Scans all files in workspace that have diagnostics
      */
     refreshAllDiagnostics(): void {
+        // Get all diagnostics that VS Code currently knows about
         const allDiagnostics = vscode.languages.getDiagnostics();
+        let count = 0;
+        
         for (const [uri, diagnostics] of allDiagnostics) {
             if (diagnostics.length > 0) {
                 const filePath = this.getRelativePath(uri);
                 if (filePath) {
                     this.updateDiagnosticsCache(uri, filePath);
+                    count++;
                 }
             }
         }
-        logger.debug('Refreshed all diagnostics', { fileCount: this.diagnosticsCache.size });
+        
+        logger.debug('Refreshed all diagnostics', { 
+            fileCount: count,
+            totalCached: this.diagnosticsCache.size 
+        });
+    }
+
+    /**
+     * Get diagnostics for files in the graph
+     * This actively queries VS Code for diagnostics of indexed files
+     */
+    async refreshDiagnosticsForGraphFiles(): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) return;
+
+        // Get all file nodes from the store
+        const fileNodes = this.store.getNodesByKind('file');
+        let count = 0;
+
+        for (const node of fileNodes) {
+            if (!node.path) continue;
+            
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, node.path);
+            const diagnostics = vscode.languages.getDiagnostics(uri);
+            
+            if (diagnostics.length > 0) {
+                this.updateDiagnosticsCache(uri, node.path);
+                count++;
+            }
+        }
+
+        logger.debug('Refreshed diagnostics for graph files', { 
+            filesChecked: fileNodes.length,
+            filesWithDiagnostics: count 
+        });
     }
 
     /**

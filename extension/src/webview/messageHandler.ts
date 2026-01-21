@@ -830,8 +830,9 @@ export async function handleMessage(
                 const lspEnhancer = getLspEnhancer();
                 
                 if (lspEnhancer) {
-                    // Refresh diagnostics before returning
+                    // Refresh diagnostics - both from VS Code cache and graph files
                     lspEnhancer.refreshAllDiagnostics();
+                    await lspEnhancer.refreshDiagnosticsForGraphFiles();
                     
                     const allDiagnostics = lspEnhancer.getAllDiagnostics();
                     // Convert Map to object for serialization
@@ -843,6 +844,7 @@ export async function handleMessage(
                             diagnosticsObj[path] = { errors, warnings };
                         }
                     }
+                    logger.debug('LSP diagnostics collected', { fileCount: Object.keys(diagnosticsObj).length });
                     sidebarProvider.postMessage({
                         type: 'lspDiagnostics',
                         payload: diagnosticsObj,
