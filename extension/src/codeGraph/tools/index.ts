@@ -21,6 +21,12 @@ export { createGraphLayersTool, type GraphLayersInput, type GraphLayersResult } 
 export { createGraphSearchTool, type GraphSearchInput } from './graphSearch';
 export { createGraphTreeTool, type GraphTreeInput } from './graphTree';
 
+// v2.0 Tools - LSP Enhanced
+export { createGraphSymbolsTool, type GraphSymbolsInput } from './graphSymbols';
+export { createGraphReferencesTool, type GraphReferencesInput } from './graphReferences';
+export { createGraphDefinitionTool, type GraphDefinitionInput } from './graphDefinition';
+export { createGraphCallHierarchyTool, type GraphCallHierarchyInput } from './graphCallHierarchy';
+
 // v1.0 Envelope
 export {
     createSuccessEnvelope,
@@ -35,3 +41,4 @@ export {
     type NextQuerySuggestion,
     type PageInfo,
 } from './envelope';
+

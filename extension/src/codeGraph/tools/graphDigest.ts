@@ -81,10 +81,10 @@ export function createGraphDigestTool(
                 }
 
                 const { scope, include, hotspotLimit, entrypointLimit } = parsed.data;
-                
+
                 // Determine which sections to include
                 const sections = new Set<DigestSection>(include ?? DIGEST_SECTIONS);
-                
+
                 const fullResult = manager.getDigest(scope);
 
                 // Build filtered result based on requested sections
@@ -129,6 +129,35 @@ export function createGraphDigestTool(
                     fullResult.issues.BROKEN_EXPORT_CHAIN > 0
                 );
 
+                // Build next query suggestions
+                const suggestions = [];
+
+                if (hasIssues) {
+                    suggestions.push({
+                        tool: TOOLS.GRAPH_ISSUES,
+                        args: { severity: 'error', limit: 10 },
+                        reason: 'Issues detected - review errors first',
+                    });
+                }
+
+                if (!sections.has('hotspots') && fullResult.hotspots.length > 0) {
+                    suggestions.push({
+                        tool: TOOLS.GRAPH_DIGEST,
+                        args: { include: ['hotspots'], hotspotLimit: 5 },
+                        reason: 'Get hotspot files for impact analysis',
+                    });
+                }
+
+                // Suggest LSP tools for deeper analysis
+                if (fullResult.hotspots.length > 0) {
+                    const topHotspot = fullResult.hotspots[0];
+                    suggestions.push({
+                        tool: TOOLS.GRAPH_SYMBOLS,
+                        args: { target: topHotspot.path, mode: 'document' },
+                        reason: `Analyze symbols in top hotspot: ${topHotspot.path}`,
+                    });
+                }
+
                 const envelope = createSuccessEnvelope(
                     TOOLS.GRAPH_DIGEST,
                     filteredResult,
@@ -139,19 +168,7 @@ export function createGraphDigestTool(
                             hotspotLimit: hotspotLimit ?? 10,
                             entrypointLimit: entrypointLimit ?? 5,
                         },
-                        nextQuerySuggestion: hasIssues
-                            ? [{
-                                tool: TOOLS.GRAPH_ISSUES,
-                                args: { severity: 'error', limit: 10 },
-                                reason: 'Issues detected - review errors first',
-                            }]
-                            : !sections.has('hotspots') && fullResult.hotspots.length > 0
-                                ? [{
-                                    tool: TOOLS.GRAPH_DIGEST,
-                                    args: { include: ['hotspots'], hotspotLimit: 5 },
-                                    reason: 'Get hotspot files for impact analysis',
-                                }]
-                                : undefined,
+                        nextQuerySuggestion: suggestions.length > 0 ? suggestions.slice(0, 3) : undefined,
                     }
                 );
                 return envelopeToResult(envelope);

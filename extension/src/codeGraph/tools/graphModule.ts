@@ -1,6 +1,8 @@
 /**
  * Graph Module Tool
  * LM Tool for getting detailed information about a specific module
+ * 
+ * Enhanced with LSP integration for symbol-level details
  */
 
 import * as vscode from 'vscode';
@@ -15,13 +17,14 @@ import {
     getWorkspaceContext,
 } from './envelope';
 import { TOOLS } from '../../constants';
+import { getSymbolService, type SymbolInfo } from '../lsp';
 
 const logger = createLogger('GraphModuleTool');
 
 /**
  * Sections that can be included in module response
  */
-const MODULE_SECTIONS = ['imports', 'importedBy', 'exports', 'reexports', 'entrypoints'] as const;
+const MODULE_SECTIONS = ['imports', 'importedBy', 'exports', 'reexports', 'entrypoints', 'symbols'] as const;
 type ModuleSection = typeof MODULE_SECTIONS[number];
 
 export const GraphModuleInputSchema = z.object({
@@ -35,7 +38,11 @@ export const GraphModuleInputSchema = z.object({
     include: z
         .array(z.enum(MODULE_SECTIONS))
         .optional()
-        .describe('Sections to include: imports, importedBy, exports, reexports, entrypoints. Default: all'),
+        .describe('Sections to include: imports, importedBy, exports, reexports, entrypoints, symbols. Default: all except symbols'),
+    includeSymbols: z
+        .boolean()
+        .optional()
+        .describe('Include LSP symbols (classes, functions, etc.) - requires active language server'),
     importLimit: z
         .number()
         .min(1)
@@ -48,9 +55,27 @@ export const GraphModuleInputSchema = z.object({
         .max(50)
         .optional()
         .describe('Max importedBy to return (1-50, default: all)'),
+    symbolKindFilter: z
+        .array(z.string())
+        .optional()
+        .describe('Filter symbols by kind: class, function, interface, method, property'),
 });
 
 export type GraphModuleInput = z.infer<typeof GraphModuleInputSchema>;
+
+// Extended result type with symbols
+interface EnhancedModuleResult extends Record<string, unknown> {
+    symbols?: Array<{
+        name: string;
+        kind: string;
+        line: number;
+        children?: Array<{ name: string; kind: string; line: number }>;
+    }>;
+    symbolStats?: {
+        total: number;
+        byKind: Record<string, number>;
+    };
+}
 
 export function createGraphModuleTool(
     manager: CodeGraphManager
@@ -79,7 +104,16 @@ export function createGraphModuleTool(
                     return envelopeToResult(envelope);
                 }
 
-                const { target, includeTransitive, include, importLimit, importedByLimit } = parsed.data;
+                const {
+                    target,
+                    includeTransitive,
+                    include,
+                    includeSymbols,
+                    importLimit,
+                    importedByLimit,
+                    symbolKindFilter,
+                } = parsed.data;
+
                 const query = manager.getQuery();
 
                 if (!query) {
@@ -111,11 +145,17 @@ export function createGraphModuleTool(
                     includeTransitive,
                 });
 
-                // Determine which sections to include
-                const sections = new Set<ModuleSection>(include ?? MODULE_SECTIONS);
+                // Default sections (exclude symbols by default for backwards compatibility)
+                const defaultSections: ModuleSection[] = ['imports', 'importedBy', 'exports', 'reexports', 'entrypoints'];
+                const sections = new Set<ModuleSection>(include ?? defaultSections);
+
+                // Add symbols if explicitly requested
+                if (includeSymbols) {
+                    sections.add('symbols');
+                }
 
                 // Build filtered result
-                const filteredResult: Record<string, unknown> = {
+                const filteredResult: EnhancedModuleResult = {
                     id: fullResult.id,
                     path: fullResult.path,
                     name: fullResult.name,
@@ -156,6 +196,41 @@ export function createGraphModuleTool(
                     filteredResult.entrypoints = fullResult.entrypoints;
                 }
 
+                // Get LSP symbols if requested
+                if (sections.has('symbols') && fullResult.path) {
+                    try {
+                        const symbolService = getSymbolService();
+                        const modulePath = fullResult.path;
+                        const resolvedPath = modulePath.startsWith('/')
+                            ? modulePath
+                            : `${vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? ''}/${modulePath}`;
+
+                        let symbols = await symbolService.getDocumentSymbols(resolvedPath);
+
+                        // Apply kind filter if specified
+                        if (symbolKindFilter && symbolKindFilter.length > 0) {
+                            const filterSet = new Set(symbolKindFilter.map(k => k.toLowerCase()));
+                            symbols = filterSymbolsByKind(symbols, filterSet);
+                        }
+
+                        // Convert to simplified format
+                        filteredResult.symbols = convertSymbolsToSimple(symbols);
+                        filteredResult.symbolStats = {
+                            total: countTotalSymbols(symbols),
+                            byKind: countSymbolsByKind(symbols),
+                        };
+
+                        logger.debug('LSP symbols retrieved', {
+                            target,
+                            symbolCount: filteredResult.symbolStats.total,
+                        });
+                    } catch (error) {
+                        // LSP not available - add a note but don't fail
+                        logger.warn('Failed to get LSP symbols', { target, error });
+                        filteredResult.symbolsError = 'LSP not available - open file in editor first';
+                    }
+                }
+
                 // Recalculate token estimate
                 const tokensEstimate = Math.ceil(JSON.stringify(filteredResult).length / 4);
                 (filteredResult.meta as Record<string, unknown>).tokensEstimate = tokensEstimate;
@@ -165,6 +240,34 @@ export function createGraphModuleTool(
                     sections: Array.from(sections),
                     tokensEstimate,
                 });
+
+                // Construct next query suggestions
+                const suggestions = [];
+
+                if (fullResult.importedBy.length > 5) {
+                    suggestions.push({
+                        tool: TOOLS.GRAPH_IMPACT,
+                        args: { target, depth: 2 },
+                        reason: `High importer count (${fullResult.importedBy.length}) - analyze impact`,
+                    });
+                }
+
+                if (filteredResult.symbols && (filteredResult.symbols as unknown[]).length > 0) {
+                    suggestions.push({
+                        tool: TOOLS.GRAPH_REFERENCES,
+                        args: {
+                            path: fullResult.path,
+                            line: (filteredResult.symbols[0] as { line: number }).line
+                        },
+                        reason: 'Find references to first symbol',
+                    });
+                } else if (fullResult.isBarrel && fullResult.imports.length > 0) {
+                    suggestions.push({
+                        tool: TOOLS.GRAPH_PATH,
+                        args: { from: fullResult.imports[0]?.path, to: target },
+                        reason: 'Barrel file detected - trace re-export chain',
+                    });
+                }
 
                 const envelope = createSuccessEnvelope(
                     TOOLS.GRAPH_MODULE,
@@ -176,19 +279,7 @@ export function createGraphModuleTool(
                             importLimit,
                             importedByLimit,
                         },
-                        nextQuerySuggestion: fullResult.importedBy.length > 5
-                            ? [{
-                                tool: TOOLS.GRAPH_IMPACT,
-                                args: { target, depth: 2 },
-                                reason: `High importer count (${fullResult.importedBy.length}) - analyze impact`,
-                            }]
-                            : fullResult.isBarrel
-                                ? [{
-                                    tool: TOOLS.GRAPH_PATH,
-                                    args: { from: fullResult.imports[0]?.path, to: target },
-                                    reason: 'Barrel file detected - trace re-export chain',
-                                }]
-                                : undefined,
+                        nextQuerySuggestion: suggestions.length > 0 ? suggestions : undefined,
                     }
                 );
                 return envelopeToResult(envelope);
@@ -205,3 +296,73 @@ export function createGraphModuleTool(
         },
     };
 }
+
+// ============================================
+// Helper Functions
+// ============================================
+
+function filterSymbolsByKind(symbols: SymbolInfo[], kindFilter: Set<string>): SymbolInfo[] {
+    const result: SymbolInfo[] = [];
+
+    for (const symbol of symbols) {
+        const matchesFilter = kindFilter.has(symbol.kind.toLowerCase());
+
+        if (matchesFilter) {
+            const filteredChildren = symbol.children
+                ? filterSymbolsByKind(symbol.children, kindFilter)
+                : undefined;
+
+            result.push({
+                ...symbol,
+                children: filteredChildren && filteredChildren.length > 0 ? filteredChildren : undefined,
+            });
+        } else if (symbol.children) {
+            const filteredChildren = filterSymbolsByKind(symbol.children, kindFilter);
+            result.push(...filteredChildren);
+        }
+    }
+
+    return result;
+}
+
+function convertSymbolsToSimple(symbols: SymbolInfo[]): Array<{
+    name: string;
+    kind: string;
+    line: number;
+    children?: Array<{ name: string; kind: string; line: number }>;
+}> {
+    return symbols.map(s => ({
+        name: s.name,
+        kind: s.kind,
+        line: s.selectionRange.startLine,
+        children: s.children ? convertSymbolsToSimple(s.children) : undefined,
+    }));
+}
+
+function countTotalSymbols(symbols: SymbolInfo[]): number {
+    let count = 0;
+    for (const s of symbols) {
+        count++;
+        if (s.children) {
+            count += countTotalSymbols(s.children);
+        }
+    }
+    return count;
+}
+
+function countSymbolsByKind(symbols: SymbolInfo[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+
+    function countRecursive(syms: SymbolInfo[]) {
+        for (const s of syms) {
+            counts[s.kind] = (counts[s.kind] ?? 0) + 1;
+            if (s.children) {
+                countRecursive(s.children);
+            }
+        }
+    }
+
+    countRecursive(symbols);
+    return counts;
+}
+

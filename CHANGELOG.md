@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.17] - 2026-01-21
+
+### LSP Integration (Code Graph v2.0)
+
+Major upgrade adding Language Server Protocol integration for semantic code intelligence.
+
+### Added
+- **4 New LSP Tools** — Symbol and reference navigation using VS Code's built-in language servers:
+  - `ouroborosai_graph_symbols` — Get document symbols or search workspace symbols
+  - `ouroborosai_graph_references` — Find all references to a symbol
+  - `ouroborosai_graph_definition` — Go to definition for a symbol
+  - `ouroborosai_graph_call_hierarchy` — Analyze function callers and callees
+- **SymbolService** — LSP service layer with 30-second caching and singleton pattern
+- **L2 Worker Tool Injection** — All 4 LSP tools added to `WORKER_GRAPH_TOOLS` for worker agents
+
+### Enhanced
+- **graph_module** — New `includeSymbols` option to get LSP symbols for a module
+- **graph_impact** — New `useSymbolRefs` option for precise symbol-level reference counting
+- **graph_digest** — Enhanced `nextQuerySuggestion` to recommend LSP tools for hotspot analysis
+- **promptTransformer** — Both `OUROBOROS_TOOLS` and `WORKER_GRAPH_TOOLS` now include all 4 LSP tools
+
+### Fixed
+- Various lint warnings in new LSP code
+
+---
+
 ## [3.3.16] - 2026-01-20
 
 ### Claude Best Practices Integration

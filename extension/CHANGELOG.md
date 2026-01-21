@@ -2,6 +2,37 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.17] - 2026-01-21
+
+### LSP Integration (Code Graph v2.0)
+
+Major upgrade adding Language Server Protocol integration for semantic code intelligence.
+
+### Added
+- **4 New LSP Tools** — Symbol and reference navigation using VS Code's built-in language servers:
+  - `ouroborosai_graph_symbols` — Get document symbols or search workspace symbols
+  - `ouroborosai_graph_references` — Find all references to a symbol
+  - `ouroborosai_graph_definition` — Go to definition for a symbol
+  - `ouroborosai_graph_call_hierarchy` — Analyze function callers and callees
+- **SymbolService** — LSP service layer with 30-second caching and singleton pattern
+- **L2 Worker Tool Injection** — All 4 LSP tools added to `WORKER_GRAPH_TOOLS` for worker agents
+
+### Enhanced
+- **graph_module** — New `includeSymbols` option to get LSP symbols (classes, functions) for a module
+- **graph_impact** — New `useSymbolRefs` option with `symbolLine` for precise symbol-level reference counting
+- **graph_digest** — Enhanced `nextQuerySuggestion` to recommend LSP tools for hotspot analysis
+- **promptTransformer** — Both `OUROBOROS_TOOLS` and `WORKER_GRAPH_TOOLS` now include all 4 LSP tools
+
+### Tests
+- `SymbolService.test.ts` — Comprehensive unit tests for LSP service layer
+- `graphSymbols.test.ts` — Tests for symbols tool
+- `graphReferences.test.ts` — Tests for references tool
+
+### Fixed
+- Various lint warnings in new LSP code
+
+---
+
 ## [3.3.16] - 2026-01-20
 
 ### Claude Best Practices Integration

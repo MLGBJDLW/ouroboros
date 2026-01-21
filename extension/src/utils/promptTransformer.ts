@@ -934,6 +934,11 @@ const OUROBOROS_TOOLS = [
     // Code Graph Tools v0.6 (search & navigation)
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_search',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_tree',
+    // Code Graph Tools v2.0 (LSP-enhanced)
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_symbols',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_references',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_definition',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_call_hierarchy',
 ];
 
 /**
@@ -953,6 +958,11 @@ const WORKER_GRAPH_TOOLS = [
     // Code Graph Tools v0.6 (search & navigation)
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_search',
     'mlgbjdlw.ouroboros-ai/ouroborosai_graph_tree',
+    // Code Graph Tools v2.0 (LSP-enhanced)
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_symbols',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_references',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_definition',
+    'mlgbjdlw.ouroboros-ai/ouroborosai_graph_call_hierarchy',
 ];
 
 /**
@@ -1210,6 +1220,11 @@ function addWorkerExtensionModeHeader(content: string): string {
     - ouroborosai_graph_layers: Check architecture rules
     - ouroborosai_graph_search: Search files/symbols/directories by name
     - ouroborosai_graph_tree: Browse directory structure
+  - LSP-enhanced tools (v2.0):
+    - ouroborosai_graph_symbols: Get document/workspace symbols
+    - ouroborosai_graph_references: Find all symbol references
+    - ouroborosai_graph_definition: Go to definition
+    - ouroborosai_graph_call_hierarchy: Analyze call hierarchy
 -->
 
 `;
@@ -1413,7 +1428,7 @@ export async function fetchAndTransformPrompts(
         const content = await fetchFromGitHub(file);
         if (content) {
             const destUri = vscode.Uri.joinPath(workspaceRoot, file);
-            
+
             // Create all parent directories recursively
             const pathParts = file.split('/');
             let currentPath = workspaceRoot;
@@ -1425,7 +1440,7 @@ export async function fetchAndTransformPrompts(
                     // Directory may already exist, ignore error
                 }
             }
-            
+
             await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
             success++;
             logger.info(`Copied template: ${file}`);
@@ -1807,7 +1822,7 @@ export async function smartUpdatePrompts(
         const content = await fetchFromGitHub(file);
         if (content) {
             const destUri = vscode.Uri.joinPath(workspaceRoot, file);
-            
+
             // Create all parent directories recursively
             // For path like .ouroboros/specs/templates/design-template.md
             // We need to create .ouroboros, .ouroboros/specs, .ouroboros/specs/templates
@@ -1821,7 +1836,7 @@ export async function smartUpdatePrompts(
                     // Directory may already exist, ignore error
                 }
             }
-            
+
             // Always overwrite template files during update
             await vscode.workspace.fs.writeFile(destUri, new TextEncoder().encode(content));
             updated++;

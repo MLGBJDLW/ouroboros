@@ -40,6 +40,11 @@ export const TOOLS = {
     // Code Graph Tools (v0.6) - Search & Navigation
     GRAPH_SEARCH: 'ouroborosai_graph_search',
     GRAPH_TREE: 'ouroborosai_graph_tree',
+    // Code Graph Tools (v2.0) - LSP Enhanced
+    GRAPH_SYMBOLS: 'ouroborosai_graph_symbols',
+    GRAPH_REFERENCES: 'ouroborosai_graph_references',
+    GRAPH_DEFINITION: 'ouroborosai_graph_definition',
+    GRAPH_CALL_HIERARCHY: 'ouroborosai_graph_call_hierarchy',
 } as const;
 
 // Configuration Keys
