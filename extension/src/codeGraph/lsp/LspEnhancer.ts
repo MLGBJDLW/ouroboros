@@ -145,14 +145,30 @@ export class LspEnhancer {
 
     /**
      * Initialize workspace-wide diagnostics
-     * Triggers TypeScript to analyze the entire project
+     * Triggers language servers to analyze the entire project
      */
     async initializeWorkspaceDiagnostics(): Promise<void> {
         try {
-            // Trigger TypeScript to reload and analyze the project
-            await vscode.commands.executeCommand('typescript.reloadProjects');
+            // Trigger various language servers to reload/analyze
+            const commands = [
+                'typescript.reloadProjects',      // TypeScript/JavaScript
+                'python.analysis.restartLanguageServer', // Python (Pylance)
+                'eslint.restart',                 // ESLint
+                'rust-analyzer.reload',           // Rust
+                'go.languageserver.restart',      // Go
+            ];
+
+            const results = await Promise.allSettled(
+                commands.map(cmd => vscode.commands.executeCommand(cmd))
+            );
+
+            const succeeded = results.filter(r => r.status === 'fulfilled').length;
+            logger.debug('Language server reload commands', { 
+                total: commands.length, 
+                succeeded 
+            });
             
-            // Wait a bit for TypeScript to process
+            // Wait for language servers to process
             await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Now collect all diagnostics
