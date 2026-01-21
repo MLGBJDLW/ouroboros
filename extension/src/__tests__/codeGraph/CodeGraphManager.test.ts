@@ -4,18 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock vscode
-vi.mock('vscode', () => ({
-    workspace: {
-        findFiles: vi.fn().mockResolvedValue([]),
-        fs: {
-            readFile: vi.fn().mockResolvedValue(new Uint8Array()),
-        },
-    },
-    Uri: {
-        joinPath: vi.fn(),
-    },
-}));
+// Use global vscode mock from __mocks__/vscode.ts (no vi.mock needed)
 
 // Mock logger
 vi.mock('../../utils/logger', () => ({

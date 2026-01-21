@@ -2,9 +2,13 @@
  * GraphSymbols Tool Tests
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import type { GraphSymbolsInput } from '../../../codeGraph/tools/graphSymbols';
+
+// Mock functions - defined at module level
+const mockGetDocumentSymbols = vi.fn();
+const mockSearchWorkspaceSymbols = vi.fn();
 
 // Mock vscode
 vi.mock('vscode', async () => {
@@ -33,9 +37,6 @@ vi.mock('../../../utils/logger', () => ({
 }));
 
 // Mock SymbolService
-const mockGetDocumentSymbols = vi.fn();
-const mockSearchWorkspaceSymbols = vi.fn();
-
 vi.mock('../../../codeGraph/lsp', () => ({
     getSymbolService: () => ({
         getDocumentSymbols: mockGetDocumentSymbols,
@@ -43,24 +44,36 @@ vi.mock('../../../codeGraph/lsp', () => ({
     }),
 }));
 
-// Mock envelope
+// Mock envelope - must match actual envelope structure
 vi.mock('../../../codeGraph/tools/envelope', () => ({
-    createSuccessEnvelope: vi.fn((tool, data, workspace, meta) => ({
+    createSuccessEnvelope: (tool: string, result: unknown, workspace: unknown, meta: unknown) => ({
         success: true,
-        tool,
-        data,
-        meta,
-    })),
-    createErrorEnvelope: vi.fn((tool, code, message, workspace, details) => ({
+        data: {
+            tool,
+            version: '1.0',
+            requestId: 'test-123',
+            generatedAt: new Date().toISOString(),
+            workspace,
+            result,
+            meta: { ...(meta as object), approxTokens: 100, truncated: false, limits: {} },
+        },
+    }),
+    createErrorEnvelope: (tool: string, code: string, message: string, workspace: unknown, details: unknown) => ({
         success: false,
-        tool,
-        error: { code, message },
-        details,
-    })),
-    envelopeToResult: vi.fn((envelope) => ({
+        data: {
+            tool,
+            version: '1.0',
+            requestId: 'test-123',
+            generatedAt: new Date().toISOString(),
+            workspace,
+            result: { error: { code, message, details } },
+            meta: { approxTokens: 50, truncated: false, limits: {} },
+        },
+    }),
+    envelopeToResult: (envelope: unknown) => ({
         content: [{ type: 'text', text: JSON.stringify(envelope) }],
-    })),
-    getWorkspaceContext: vi.fn(() => ({ name: 'test-workspace' })),
+    }),
+    getWorkspaceContext: () => ({ root: '/test', repoName: 'test-workspace' }),
 }));
 
 // Mock constants
@@ -71,17 +84,13 @@ vi.mock('../../../constants', () => ({
     },
 }));
 
+// Import after mocks
+import { createGraphSymbolsTool } from '../../../codeGraph/tools/graphSymbols';
+
 describe('GraphSymbolsTool', () => {
-    let createGraphSymbolsTool: typeof import('../../../codeGraph/tools/graphSymbols').createGraphSymbolsTool;
-
-    beforeEach(async () => {
-        vi.resetAllMocks();
-        const module = await import('../../../codeGraph/tools/graphSymbols');
-        createGraphSymbolsTool = module.createGraphSymbolsTool;
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
+    beforeEach(() => {
+        mockGetDocumentSymbols.mockReset();
+        mockSearchWorkspaceSymbols.mockReset();
     });
 
     describe('document mode', () => {
@@ -119,8 +128,8 @@ describe('GraphSymbolsTool', () => {
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
             expect(parsed.success).toBe(true);
-            expect(parsed.data.mode).toBe('document');
-            expect(parsed.data.symbols).toHaveLength(1);
+            expect(parsed.data.result.mode).toBe('document');
+            expect(parsed.data.result.symbols).toHaveLength(1);
         });
 
         it('should apply kind filter', async () => {
@@ -151,8 +160,8 @@ describe('GraphSymbolsTool', () => {
             );
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
-            expect(parsed.data.symbols).toHaveLength(1);
-            expect(parsed.data.symbols[0].name).toBe('MyClass');
+            expect(parsed.data.result.symbols).toHaveLength(1);
+            expect(parsed.data.result.symbols[0].name).toBe('MyClass');
         });
 
         it('should exclude children when includeChildren is false', async () => {
@@ -185,7 +194,7 @@ describe('GraphSymbolsTool', () => {
             );
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
-            expect(parsed.data.symbols[0].children).toBeUndefined();
+            expect(parsed.data.result.symbols[0].children).toBeUndefined();
         });
     });
 
@@ -226,8 +235,8 @@ describe('GraphSymbolsTool', () => {
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
             expect(parsed.success).toBe(true);
-            expect(parsed.data.mode).toBe('workspace');
-            expect(parsed.data.symbols).toHaveLength(2);
+            expect(parsed.data.result.mode).toBe('workspace');
+            expect(parsed.data.result.symbols).toHaveLength(2);
         });
 
         it('should apply limit in workspace mode', async () => {
@@ -263,7 +272,7 @@ describe('GraphSymbolsTool', () => {
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
             expect(parsed.success).toBe(false);
-            expect(parsed.error.code).toBe('INVALID_INPUT');
+            expect(parsed.data.result.error.code).toBe('INVALID_INPUT');
         });
 
         it('should handle LSP errors', async () => {

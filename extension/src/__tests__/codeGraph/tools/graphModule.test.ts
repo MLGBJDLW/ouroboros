@@ -4,15 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock vscode
-vi.mock('vscode', () => ({
-    LanguageModelToolResult: class {
-        constructor(public parts: unknown[]) {}
-    },
-    LanguageModelTextPart: class {
-        constructor(public text: string) {}
-    },
-}));
+// Use global vscode mock from __mocks__/vscode.ts (no vi.mock needed)
 
 // Mock logger
 vi.mock('../../../utils/logger', () => ({
@@ -30,7 +22,7 @@ import type { GraphQuery } from '../../../codeGraph/core/GraphQuery';
 import type { ModuleResult } from '../../../codeGraph/core/types';
 
 interface MockToolResult {
-    parts: Array<{ text: string }>;
+    parts: Array<{ value: string }>;
 }
 
 // Helper to invoke tool with proper VS Code API format
@@ -43,7 +35,7 @@ async function invokeTool(
         { isCancellationRequested: false } as never
     );
     // Parse the JSON from LanguageModelToolResult
-    const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
+    const output = JSON.parse((result as unknown as MockToolResult).parts[0].value);
     return output;
 }
 

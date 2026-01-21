@@ -2,8 +2,11 @@
  * GraphReferences Tool Tests
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
+
+// Mock function - defined at module level
+const mockFindReferences = vi.fn();
 
 // Mock vscode
 vi.mock('vscode', async () => {
@@ -25,32 +28,42 @@ vi.mock('../../../utils/logger', () => ({
 }));
 
 // Mock SymbolService
-const mockFindReferences = vi.fn();
-
 vi.mock('../../../codeGraph/lsp', () => ({
     getSymbolService: () => ({
         findReferences: mockFindReferences,
     }),
 }));
 
-// Mock envelope
+// Mock envelope - must match actual envelope structure
 vi.mock('../../../codeGraph/tools/envelope', () => ({
-    createSuccessEnvelope: vi.fn((tool, data, workspace, meta) => ({
+    createSuccessEnvelope: (tool: string, result: unknown, workspace: unknown, meta: unknown) => ({
         success: true,
-        tool,
-        data,
-        meta,
-    })),
-    createErrorEnvelope: vi.fn((tool, code, message, workspace, details) => ({
+        data: {
+            tool,
+            version: '1.0',
+            requestId: 'test-123',
+            generatedAt: new Date().toISOString(),
+            workspace,
+            result,
+            meta: { ...(meta as object), approxTokens: 100, truncated: false, limits: {} },
+        },
+    }),
+    createErrorEnvelope: (tool: string, code: string, message: string, workspace: unknown, details: unknown) => ({
         success: false,
-        tool,
-        error: { code, message },
-        details,
-    })),
-    envelopeToResult: vi.fn((envelope) => ({
+        data: {
+            tool,
+            version: '1.0',
+            requestId: 'test-123',
+            generatedAt: new Date().toISOString(),
+            workspace,
+            result: { error: { code, message, details } },
+            meta: { approxTokens: 50, truncated: false, limits: {} },
+        },
+    }),
+    envelopeToResult: (envelope: unknown) => ({
         content: [{ type: 'text', text: JSON.stringify(envelope) }],
-    })),
-    getWorkspaceContext: vi.fn(() => ({ name: 'test-workspace' })),
+    }),
+    getWorkspaceContext: () => ({ root: '/test', repoName: 'test-workspace' }),
 }));
 
 // Mock constants
@@ -62,17 +75,12 @@ vi.mock('../../../constants', () => ({
     },
 }));
 
+// Import after mocks
+import { createGraphReferencesTool } from '../../../codeGraph/tools/graphReferences';
+
 describe('GraphReferencesTool', () => {
-    let createGraphReferencesTool: typeof import('../../../codeGraph/tools/graphReferences').createGraphReferencesTool;
-
-    beforeEach(async () => {
-        vi.resetAllMocks();
-        const module = await import('../../../codeGraph/tools/graphReferences');
-        createGraphReferencesTool = module.createGraphReferencesTool;
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
+    beforeEach(() => {
+        mockFindReferences.mockReset();
     });
 
     describe('find references', () => {
@@ -111,9 +119,9 @@ describe('GraphReferencesTool', () => {
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
             expect(parsed.success).toBe(true);
-            expect(parsed.data.references).toHaveLength(2);
-            expect(parsed.data.stats.files).toBe(2);
-            expect(parsed.data.stats.definitionFound).toBe(true);
+            expect(parsed.data.result.references).toHaveLength(2);
+            expect(parsed.data.result.stats.files).toBe(2);
+            expect(parsed.data.result.stats.definitionFound).toBe(true);
         });
 
         it('should use custom column', async () => {
@@ -168,10 +176,10 @@ describe('GraphReferencesTool', () => {
             );
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
-            expect(parsed.data.grouped).toBeDefined();
-            expect(Object.keys(parsed.data.grouped)).toHaveLength(2);
-            expect(parsed.data.grouped['/path/to/file1.ts']).toHaveLength(2);
-            expect(parsed.data.grouped['/path/to/file2.ts']).toHaveLength(1);
+            expect(parsed.data.result.grouped).toBeDefined();
+            expect(Object.keys(parsed.data.result.grouped)).toHaveLength(2);
+            expect(parsed.data.result.grouped['/path/to/file1.ts']).toHaveLength(2);
+            expect(parsed.data.result.grouped['/path/to/file2.ts']).toHaveLength(1);
         });
     });
 
@@ -187,7 +195,7 @@ describe('GraphReferencesTool', () => {
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
             expect(parsed.success).toBe(false);
-            expect(parsed.error.code).toBe('INVALID_INPUT');
+            expect(parsed.data.result.error.code).toBe('INVALID_INPUT');
         });
 
         it('should handle file not found error', async () => {
@@ -203,7 +211,7 @@ describe('GraphReferencesTool', () => {
 
             const parsed = JSON.parse((result.content[0] as { text: string }).text);
             expect(parsed.success).toBe(false);
-            expect(parsed.error.code).toBe('FILE_NOT_FOUND');
+            expect(parsed.data.result.error.code).toBe('FILE_NOT_FOUND');
         });
     });
 });
