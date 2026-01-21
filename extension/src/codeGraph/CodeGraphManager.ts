@@ -28,6 +28,7 @@ import { CycleDetector } from './analyzers/CycleDetector';
 import { LayerAnalyzer } from './analyzers/LayerAnalyzer';
 import { QueryCache, getQueryCache } from './core/QueryCache';
 import { ParallelIndexer } from './core/ParallelIndexer';
+import { initLspEnhancer, resetLspEnhancer, type LspEnhancer } from './lsp';
 import type { AdapterRegistry } from './adapters';
 import type { DigestResult, IssueListResult, ImpactResult, PathResult, ModuleResult, GraphConfig, FrameworkDetection, ExternalToolsConfig } from './core/types';
 import { createLogger } from '../utils/logger';
@@ -104,6 +105,7 @@ export class CodeGraphManager implements vscode.Disposable {
     private layerAnalyzer: LayerAnalyzer;
     private queryCache: QueryCache;
     private parallelIndexer: ParallelIndexer;
+    private lspEnhancer: LspEnhancer | null = null;
     private watcher: IncrementalWatcher | null = null;
     private config: GraphConfig;
     private externalToolsConfig: ExternalToolsConfig;
@@ -294,6 +296,10 @@ export class CodeGraphManager implements vscode.Disposable {
         if (this.detectedFrameworks.length > 0) {
             logger.info(`Detected frameworks: ${this.detectedFrameworks.map(f => f.displayName).join(', ')}`);
         }
+        
+        // v1.3: Initialize LSP Enhancer for semantic code intelligence
+        this.lspEnhancer = initLspEnhancer(this.store);
+        logger.info('LSP Enhancer initialized');
         
         await this.fullIndex();
         this.startWatcher();
@@ -973,10 +979,26 @@ export class CodeGraphManager implements vscode.Disposable {
     }
 
     /**
+     * Get LSP Enhancer (v1.3)
+     * Provides LSP-based semantic code intelligence
+     */
+    getLspEnhancer(): LspEnhancer | null {
+        return this.lspEnhancer;
+    }
+
+    /**
      * Dispose resources
      */
     dispose(): void {
         this.stopWatcher();
+        
+        // Dispose LSP Enhancer
+        if (this.lspEnhancer) {
+            this.lspEnhancer.dispose();
+            this.lspEnhancer = null;
+            resetLspEnhancer();
+        }
+        
         for (const disposable of this.disposables) {
             disposable.dispose();
         }

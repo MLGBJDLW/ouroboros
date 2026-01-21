@@ -599,6 +599,230 @@ export async function handleMessage(
             break;
         }
 
+        // ============================================
+        // LSP Enhanced Messages
+        // ============================================
+
+        case 'getEnhancedNodeInfo': {
+            logger.info('Getting enhanced node info (Graph + LSP)');
+            if (codeGraphManager) {
+                try {
+                    const payload = message.payload as { path: string };
+                    const { getLspEnhancer } = await import('../codeGraph/lsp');
+                    const lspEnhancer = getLspEnhancer();
+                    
+                    if (lspEnhancer) {
+                        const enhancedInfo = await lspEnhancer.getEnhancedNodeInfo(payload.path);
+                        sidebarProvider.postMessage({
+                            type: 'enhancedNodeInfo',
+                            payload: enhancedInfo,
+                        });
+                    } else {
+                        // Fallback: return graph-only info
+                        const moduleInfo = codeGraphManager.getModule(payload.path);
+                        sidebarProvider.postMessage({
+                            type: 'enhancedNodeInfo',
+                            payload: {
+                                path: payload.path,
+                                graph: {
+                                    imports: moduleInfo.imports.map(i => i.path),
+                                    importedBy: moduleInfo.importedBy.map(i => i.path),
+                                    exports: moduleInfo.exports,
+                                    isEntrypoint: moduleInfo.entrypoints.length > 0,
+                                    isHotspot: moduleInfo.importedBy.length >= 5,
+                                    issueCount: 0,
+                                },
+                                lsp: {
+                                    available: false,
+                                    symbols: [],
+                                    diagnostics: [],
+                                    lastUpdated: 0,
+                                },
+                            },
+                        });
+                    }
+                } catch (error) {
+                    logger.error('Failed to get enhanced node info:', error);
+                    sidebarProvider.postMessage({
+                        type: 'graphError',
+                        payload: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                }
+            } else {
+                sidebarProvider.postMessage({
+                    type: 'graphError',
+                    payload: 'Code Graph not initialized',
+                });
+            }
+            break;
+        }
+
+        case 'getCallHierarchy': {
+            logger.info('Getting call hierarchy (LSP)');
+            try {
+                const payload = message.payload as { path: string; line: number; column: number };
+                const { getLspEnhancer } = await import('../codeGraph/lsp');
+                const lspEnhancer = getLspEnhancer();
+                
+                if (lspEnhancer) {
+                    const hierarchy = await lspEnhancer.getCallHierarchy(
+                        payload.path,
+                        payload.line,
+                        payload.column
+                    );
+                    sidebarProvider.postMessage({
+                        type: 'callHierarchy',
+                        payload: hierarchy,
+                    });
+                } else {
+                    sidebarProvider.postMessage({
+                        type: 'callHierarchy',
+                        payload: null,
+                    });
+                }
+            } catch (error) {
+                logger.error('Failed to get call hierarchy:', error);
+                sidebarProvider.postMessage({
+                    type: 'callHierarchy',
+                    payload: null,
+                });
+            }
+            break;
+        }
+
+        case 'findReferences': {
+            logger.info('Finding references (LSP)');
+            try {
+                const payload = message.payload as { path: string; line: number; column: number };
+                const { getLspEnhancer } = await import('../codeGraph/lsp');
+                const lspEnhancer = getLspEnhancer();
+                
+                if (lspEnhancer) {
+                    const references = await lspEnhancer.findReferences(
+                        payload.path,
+                        payload.line,
+                        payload.column,
+                        { includeDeclaration: true, limit: 50 }
+                    );
+                    sidebarProvider.postMessage({
+                        type: 'references',
+                        payload: references,
+                    });
+                } else {
+                    sidebarProvider.postMessage({
+                        type: 'references',
+                        payload: [],
+                    });
+                }
+            } catch (error) {
+                logger.error('Failed to find references:', error);
+                sidebarProvider.postMessage({
+                    type: 'references',
+                    payload: [],
+                });
+            }
+            break;
+        }
+
+        case 'getDefinition': {
+            logger.info('Getting definition (LSP)');
+            try {
+                const payload = message.payload as { path: string; line: number; column: number };
+                const { getLspEnhancer } = await import('../codeGraph/lsp');
+                const lspEnhancer = getLspEnhancer();
+                
+                if (lspEnhancer) {
+                    const definitions = await lspEnhancer.getDefinition(
+                        payload.path,
+                        payload.line,
+                        payload.column
+                    );
+                    sidebarProvider.postMessage({
+                        type: 'definition',
+                        payload: definitions,
+                    });
+                } else {
+                    sidebarProvider.postMessage({
+                        type: 'definition',
+                        payload: [],
+                    });
+                }
+            } catch (error) {
+                logger.error('Failed to get definition:', error);
+                sidebarProvider.postMessage({
+                    type: 'definition',
+                    payload: [],
+                });
+            }
+            break;
+        }
+
+        case 'validateIssues': {
+            logger.info('Validating issues with LSP');
+            if (codeGraphManager) {
+                try {
+                    const { getLspEnhancer } = await import('../codeGraph/lsp');
+                    const lspEnhancer = getLspEnhancer();
+                    
+                    if (lspEnhancer) {
+                        const issues = codeGraphManager.getIssues();
+                        const validated = await lspEnhancer.validateIssues(issues.issues.map(i => ({
+                            id: i.id,
+                            kind: i.kind,
+                            severity: i.severity,
+                            title: i.summary,
+                            message: i.summary,
+                            meta: { filePath: i.file, symbol: i.evidence[0] },
+                        })));
+                        sidebarProvider.postMessage({
+                            type: 'validatedIssues',
+                            payload: validated,
+                        });
+                    } else {
+                        sidebarProvider.postMessage({
+                            type: 'validatedIssues',
+                            payload: [],
+                        });
+                    }
+                } catch (error) {
+                    logger.error('Failed to validate issues:', error);
+                    sidebarProvider.postMessage({
+                        type: 'validatedIssues',
+                        payload: [],
+                    });
+                }
+            }
+            break;
+        }
+
+        case 'openFileAtLocation': {
+            logger.info('Opening file at location');
+            try {
+                const vscode = await import('vscode');
+                const payload = message.payload as { path: string; line?: number; column?: number };
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                if (workspaceFolder) {
+                    const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, payload.path);
+                    const doc = await vscode.workspace.openTextDocument(fileUri);
+                    const editor = await vscode.window.showTextDocument(doc);
+                    
+                    if (payload.line !== undefined) {
+                        const line = Math.max(0, payload.line - 1);
+                        const column = Math.max(0, (payload.column ?? 1) - 1);
+                        const position = new vscode.Position(line, column);
+                        editor.selection = new vscode.Selection(position, position);
+                        editor.revealRange(
+                            new vscode.Range(position, position),
+                            vscode.TextEditorRevealType.InCenter
+                        );
+                    }
+                }
+            } catch (error) {
+                logger.error('Failed to open file:', error);
+            }
+            break;
+        }
+
         default:
             logger.warn('Unknown message type:', message.type);
     }

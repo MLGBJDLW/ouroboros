@@ -9,28 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### LSP Integration (Code Graph v2.0)
 
-Major upgrade adding Language Server Protocol integration for semantic code intelligence.
+Full LSP integration with Graph visualization for semantic code intelligence.
 
 ### Added
-- **4 New LSP Tools** — Symbol and reference navigation using VS Code's built-in language servers:
-  - `ouroborosai_graph_symbols` — Get document symbols or search workspace symbols
-  - `ouroborosai_graph_references` — Find all references to a symbol
-  - `ouroborosai_graph_definition` — Go to definition for a symbol
-  - `ouroborosai_graph_call_hierarchy` — Analyze function callers and callees
-- **SymbolService** — LSP service layer with 30-second caching and singleton pattern
-- **L2 Worker Tool Injection** — All 4 LSP tools added to `WORKER_GRAPH_TOOLS` for worker agents
+- **4 LSP Tools** — `graph_symbols`, `graph_references`, `graph_definition`, `graph_call_hierarchy`
+- **SymbolService** — LSP service layer with 30-second caching
+- **LspEnhancer** — Bridge layer combining Graph (fast) + LSP (precise) data
+- **NodeDetailEnhanced** — Webview component with Symbols/Diagnostics/Calls tabs
+- **6 Message Handlers** — LSP-related webview communication
 
 ### Enhanced
-- **graph_module** — New `includeSymbols` option to get LSP symbols for a module
-- **graph_impact** — New `useSymbolRefs` option for precise symbol-level reference counting
-- **graph_digest** — Enhanced `nextQuerySuggestion` to recommend LSP tools for hotspot analysis
-- **promptTransformer** — Both `OUROBOROS_TOOLS` and `WORKER_GRAPH_TOOLS` now include all 4 LSP tools
+- **graph_module/impact** — `includeSymbols`, `useSymbolRefs` options
+- **CodeGraphManager** — Manages LspEnhancer lifecycle
 
 ### Fixed
-- **Missing Tool Definitions** — Added `ouroborosai_graph_search` and `ouroborosai_graph_tree` to `package.json` languageModelTools
-- **Input History UX** — Arrow keys only trigger history navigation when cursor is at start (↑) or end (↓) of text
-- **LSP Eager Initialization** — SymbolService now initialized at extension startup for reliability
-- **LSP Logging** — Added initialization and operation logging to SymbolService for debugging
+- **Missing Tool Definitions** — Added `graph_search` and `graph_tree` to `package.json`
+- **Input History UX** — Arrow keys only trigger at cursor boundaries
 
 ---
 

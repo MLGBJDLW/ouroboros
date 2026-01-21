@@ -542,3 +542,366 @@
 .actionBtn.primary:hover {
     background: var(--button-hover-background);
 }
+
+/* ============================================
+   LSP Enhanced Styles (v1.3)
+   ============================================ */
+
+/* Header Actions */
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.lspBadge {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    background: color-mix(in srgb, var(--info) 20%, transparent);
+    color: var(--info);
+    border-radius: var(--radius-sm);
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.typeBadge.lsp {
+    background: color-mix(in srgb, var(--info) 20%, transparent);
+    color: var(--info);
+}
+
+/* Stats with diagnostics */
+.stat.hasDiagnostics .statValue {
+    color: var(--error);
+}
+
+/* Symbols Tab */
+.symbolsTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.symbolList {
+    display: flex;
+    flex-direction: column;
+}
+
+.symbolItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.symbolItem:hover {
+    background: var(--list-hover);
+}
+
+.symbolItem.selected {
+    background: var(--list-active);
+}
+
+.symbolIcon {
+    color: var(--foreground-secondary);
+    flex-shrink: 0;
+}
+
+.symbolName {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--foreground);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.symbolKind {
+    font-size: 9px;
+    padding: 2px 4px;
+    background: var(--badge-background);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    flex-shrink: 0;
+}
+
+.symbolActions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.symbolItem:hover .symbolActions {
+    opacity: 1;
+}
+
+.symbolBtn {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.symbolBtn:hover {
+    background: var(--list-hover);
+    color: var(--foreground);
+}
+
+/* References Panel */
+.referencesPanel {
+    border-top: 1px solid var(--border);
+    padding-top: var(--spacing-sm);
+}
+
+.referencesPanelHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--foreground-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.emptyRefs {
+    text-align: center;
+    padding: var(--spacing-md);
+    color: var(--foreground-secondary);
+    font-size: 11px;
+}
+
+.referenceList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.referenceList li {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    transition: background var(--transition-fast);
+}
+
+.referenceList li:hover {
+    background: var(--list-hover);
+}
+
+.referenceList li.definition {
+    background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+.refPath {
+    color: var(--foreground-secondary);
+    flex-shrink: 0;
+}
+
+.refLine {
+    color: var(--foreground-secondary);
+    font-family: var(--font-mono);
+}
+
+.defBadge {
+    padding: 1px 4px;
+    background: var(--success);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    font-size: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.refText {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--foreground);
+}
+
+/* Diagnostics Tab */
+.diagnosticsTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.diagnosticItem {
+    padding: var(--spacing-sm);
+    background: var(--background);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--border);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.diagnosticItem:hover {
+    background: var(--list-hover);
+}
+
+.diagnosticItem.error { border-left-color: var(--error); }
+.diagnosticItem.warning { border-left-color: var(--warning); }
+.diagnosticItem.info { border-left-color: var(--info); }
+.diagnosticItem.hint { border-left-color: var(--foreground-secondary); }
+
+.diagnosticHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.diagnosticSource {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--foreground-secondary);
+}
+
+.diagnosticLocation {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--foreground-secondary);
+}
+
+.diagnosticCode {
+    font-size: 9px;
+    padding: 1px 4px;
+    background: var(--badge-background);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+    font-family: var(--font-mono);
+}
+
+.diagnosticMessage {
+    margin: 0;
+    font-size: 11px;
+    color: var(--foreground);
+    line-height: 1.4;
+}
+
+/* Calls Tab */
+.callsTab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.callsHint {
+    font-size: 11px;
+    color: var(--foreground-secondary);
+    margin: 0 0 var(--spacing-sm);
+}
+
+.callableList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.callableList li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.callableList li:hover {
+    background: var(--list-hover);
+}
+
+.callHierarchyRoot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: var(--spacing-sm);
+    background: var(--background);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+.callRootName {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--foreground);
+}
+
+.callRootKind {
+    font-size: 9px;
+    padding: 2px 4px;
+    background: var(--badge-background);
+    border-radius: var(--radius-sm);
+    color: var(--foreground-secondary);
+}
+
+.callSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.callSectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--foreground-secondary);
+}
+
+.callList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.callNode {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.callNode:hover {
+    background: var(--list-hover);
+}
+
+.callName {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--foreground);
+}
+
+.callPath {
+    font-size: 9px;
+    color: var(--foreground-secondary);
+    font-family: var(--font-mono);
+}
