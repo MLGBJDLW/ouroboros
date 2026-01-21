@@ -27,6 +27,7 @@ import { createGraphSymbolsTool } from '../codeGraph/tools/graphSymbols';
 import { createGraphReferencesTool } from '../codeGraph/tools/graphReferences';
 import { createGraphDefinitionTool } from '../codeGraph/tools/graphDefinition';
 import { createGraphCallHierarchyTool } from '../codeGraph/tools/graphCallHierarchy';
+import { initSymbolService } from '../codeGraph/lsp';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Tools');
@@ -116,6 +117,9 @@ export function registerTools(
     }
 
     // v2.0 tools - LSP Enhanced (always available, not dependent on CodeGraphManager)
+    // Initialize SymbolService eagerly to ensure LSP is ready
+    initSymbolService();
+
     const symbolsTool = createGraphSymbolsTool();
     disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_SYMBOLS, symbolsTool));
     logger.info(`Registered tool: ${TOOLS.GRAPH_SYMBOLS}`);

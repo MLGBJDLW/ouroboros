@@ -29,6 +29,7 @@ Major upgrade adding Language Server Protocol integration for semantic code inte
 ### Fixed
 - **Missing Tool Definitions** — Added `ouroborosai_graph_search` and `ouroborosai_graph_tree` to `package.json` languageModelTools
 - **Input History UX** — Arrow keys only trigger history navigation when cursor is at start (↑) or end (↓) of text
+- **LSP Eager Initialization** — SymbolService now initialized at extension startup for reliability
 - **LSP Logging** — Added initialization and operation logging to SymbolService for debugging
 
 ---

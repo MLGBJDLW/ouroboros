@@ -598,6 +598,19 @@ export class SymbolService {
 
 let symbolServiceInstance: SymbolService | null = null;
 
+/**
+ * Initialize the SymbolService eagerly at extension startup
+ * This ensures the service is ready and logs initialization
+ */
+export function initSymbolService(): SymbolService {
+    if (!symbolServiceInstance) {
+        logger.info('Initializing SymbolService for LSP integration...');
+        symbolServiceInstance = new SymbolService();
+        logger.info('SymbolService ready - LSP tools available');
+    }
+    return symbolServiceInstance;
+}
+
 export function getSymbolService(): SymbolService {
     if (!symbolServiceInstance) {
         symbolServiceInstance = new SymbolService();
@@ -609,5 +622,6 @@ export function resetSymbolService(): void {
     if (symbolServiceInstance) {
         symbolServiceInstance.clearCache();
         symbolServiceInstance = null;
+        logger.info('SymbolService reset');
     }
 }

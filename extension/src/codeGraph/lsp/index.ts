@@ -6,6 +6,7 @@
 export {
     SymbolService,
     getSymbolService,
+    initSymbolService,
     resetSymbolService,
     type SymbolInfo,
     type WorkspaceSymbolInfo,
