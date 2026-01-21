@@ -77,6 +77,7 @@ export function CodeGraph() {
     const [fileNodes, setFileNodes] = useState<GraphNode[]>([]);
     const [fileIndex, setFileIndex] = useState<GraphFileIndex | null>(null);
     const [realEdges, setRealEdges] = useState<Array<{ source: string; target: string; type: string }>>([]);
+    const [lspDiagnostics, setLspDiagnostics] = useState<Record<string, { errors: number; warnings: number }>>({});
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
     const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
@@ -97,7 +98,8 @@ export function CodeGraph() {
     const buildGraphData = useCallback((
         digest: GraphDigest,
         issues: GraphIssue[],
-        edges: Array<{ source: string; target: string; type: string }>
+        edges: Array<{ source: string; target: string; type: string }>,
+        lspDiags: Record<string, { errors: number; warnings: number }>
     ): GraphData => {
         const nodes: GraphNode[] = [];
         const links: GraphEdge[] = [];
@@ -125,6 +127,7 @@ export function CodeGraph() {
 
         // Add hotspot nodes
         digest.hotspots.forEach((hotspot, index) => {
+            const lspDiag = lspDiags[hotspot.path];
             const node: GraphNode = {
                 id: hotspot.path,
                 path: hotspot.path,
@@ -137,6 +140,9 @@ export function CodeGraph() {
                 isHotspot: true,
                 depth: index,
                 val: Math.max(5, Math.min(20, hotspot.importers)),
+                lspErrorCount: lspDiag?.errors || 0,
+                lspWarningCount: lspDiag?.warnings || 0,
+                hasLspDiagnostics: !!(lspDiag && (lspDiag.errors > 0 || lspDiag.warnings > 0)),
             };
             nodes.push(node);
             nodeMap.set(hotspot.path, node);
@@ -145,6 +151,7 @@ export function CodeGraph() {
         // Add entrypoint nodes not in hotspots
         [...entrypointPaths].forEach(path => {
             if (!nodeMap.has(path)) {
+                const lspDiag = lspDiags[path];
                 const node: GraphNode = {
                     id: path,
                     path: path,
@@ -157,6 +164,9 @@ export function CodeGraph() {
                     isHotspot: false,
                     depth: 0,
                     val: 8,
+                    lspErrorCount: lspDiag?.errors || 0,
+                    lspWarningCount: lspDiag?.warnings || 0,
+                    hasLspDiagnostics: !!(lspDiag && (lspDiag.errors > 0 || lspDiag.warnings > 0)),
                 };
                 nodes.push(node);
                 nodeMap.set(path, node);
@@ -199,6 +209,7 @@ export function CodeGraph() {
             let addedCount = 0;
             nodesToAdd.forEach(path => {
                 if (addedCount >= 50) return;
+                const lspDiag = lspDiags[path];
                 const node: GraphNode = {
                     id: path,
                     path: path,
@@ -211,6 +222,9 @@ export function CodeGraph() {
                     isHotspot: false,
                     depth: nodes.length,
                     val: 5,
+                    lspErrorCount: lspDiag?.errors || 0,
+                    lspWarningCount: lspDiag?.warnings || 0,
+                    hasLspDiagnostics: !!(lspDiag && (lspDiag.errors > 0 || lspDiag.warnings > 0)),
                 };
                 nodes.push(node);
                 nodeMap.set(path, node);
@@ -240,27 +254,37 @@ export function CodeGraph() {
         return { nodes, links };
     }, []);
 
-    const buildFileNodes = useCallback((fileIndex: GraphFileIndex, issues: GraphIssue[]): GraphNode[] => {
+    const buildFileNodes = useCallback((
+        fileIndex: GraphFileIndex,
+        issues: GraphIssue[],
+        lspDiags: Record<string, { errors: number; warnings: number }>
+    ): GraphNode[] => {
         const issueCountMap = new Map<string, number>();
         issues.forEach(issue => {
             const count = issueCountMap.get(issue.file) || 0;
             issueCountMap.set(issue.file, count + 1);
         });
 
-        return fileIndex.files.map((file, index) => ({
-            id: file.path,
-            path: file.path,
-            name: file.name || file.path.split('/').pop() || file.path,
-            type: 'file',
-            language: file.language,
-            issueCount: issueCountMap.get(file.path) || 0,
-            importers: file.importers,
-            exports: file.exports,
-            isEntrypoint: file.isEntrypoint,
-            isHotspot: file.isHotspot,
-            depth: index,
-            val: Math.max(4, Math.min(18, file.importers || 4)),
-        }));
+        return fileIndex.files.map((file, index) => {
+            const lspDiag = lspDiags[file.path];
+            return {
+                id: file.path,
+                path: file.path,
+                name: file.name || file.path.split('/').pop() || file.path,
+                type: 'file',
+                language: file.language,
+                issueCount: issueCountMap.get(file.path) || 0,
+                importers: file.importers,
+                exports: file.exports,
+                isEntrypoint: file.isEntrypoint,
+                isHotspot: file.isHotspot,
+                depth: index,
+                val: Math.max(4, Math.min(18, file.importers || 4)),
+                lspErrorCount: lspDiag?.errors || 0,
+                lspWarningCount: lspDiag?.warnings || 0,
+                hasLspDiagnostics: !!(lspDiag && (lspDiag.errors > 0 || lspDiag.warnings > 0)),
+            };
+        });
     }, []);
 
     // Request graph data from extension (fetch cached data)
@@ -272,6 +296,7 @@ export function CodeGraph() {
         vscode.postMessage({ type: 'getGraphIssues' });
         vscode.postMessage({ type: 'getGraphFiles' });
         vscode.postMessage({ type: 'getGraphEdges' });
+        vscode.postMessage({ type: 'getLspDiagnostics' });
     }, [vscode]);
 
     // Force refresh - triggers full re-index
@@ -434,6 +459,8 @@ export function CodeGraph() {
                 setIsFileIndexLoading(false);
             } else if (message.type === 'graphEdges') {
                 setRealEdges(message.payload?.edges || []);
+            } else if (message.type === 'lspDiagnostics') {
+                setLspDiagnostics(message.payload || {});
             } else if (message.type === 'graphError') {
                 setError(message.payload);
                 setIsLoading(false);
@@ -526,20 +553,20 @@ export function CodeGraph() {
     }, [fetchData]); // Only depend on fetchData, not on loading states
 
 
-    // Build graph data when digest/issues/edges change
+    // Build graph data when digest/issues/edges/lspDiagnostics change
     useEffect(() => {
         if (digest) {
-            const data = buildGraphData(digest, issues, realEdges);
+            const data = buildGraphData(digest, issues, realEdges, lspDiagnostics);
             setGraphData(data);
         }
-    }, [digest, issues, realEdges, buildGraphData]);
+    }, [digest, issues, realEdges, lspDiagnostics, buildGraphData]);
 
     useEffect(() => {
         if (fileIndex) {
-            const nodes = buildFileNodes(fileIndex, issues);
+            const nodes = buildFileNodes(fileIndex, issues, lspDiagnostics);
             setFileNodes(nodes);
         }
-    }, [fileIndex, issues, buildFileNodes]);
+    }, [fileIndex, issues, lspDiagnostics, buildFileNodes]);
 
     // Get selected node object
     const selectedGraphNode = graphData?.nodes.find(n => n.id === selectedNode) || null;

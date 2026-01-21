@@ -4,15 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock vscode
-vi.mock('vscode', () => ({
-    LanguageModelToolResult: class {
-        constructor(public parts: unknown[]) {}
-    },
-    LanguageModelTextPart: class {
-        constructor(public text: string) {}
-    },
-}));
+// Use global vscode mock from __mocks__/vscode.ts (no vi.mock needed)
 
 // Mock logger
 vi.mock('../../../utils/logger', () => ({
@@ -25,7 +17,7 @@ vi.mock('../../../utils/logger', () => ({
 }));
 
 interface MockToolResult {
-    parts: Array<{ text: string }>;
+    parts: Array<{ value: string }>;
 }
 
 describe('createGraphImpactTool', () => {
@@ -73,7 +65,7 @@ describe('createGraphImpactTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].value);
         expect(output.success).toBe(true);
         expect(output.data.result.target).toBe('src/utils.ts');
         expect(output.data.result.directDependents).toHaveLength(2);
@@ -108,7 +100,7 @@ describe('createGraphImpactTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].value);
         expect(output.success).toBe(false);
         expect(output.data.result.error.message).toBe('Test error');
         expect(output.data.result.error.code).toBe('INTERNAL_ERROR');
@@ -124,7 +116,7 @@ describe('createGraphImpactTool', () => {
             { isCancellationRequested: false } as never
         );
 
-        const output = JSON.parse((result as unknown as MockToolResult).parts[0].text);
+        const output = JSON.parse((result as unknown as MockToolResult).parts[0].value);
         expect(output.success).toBe(false);
         expect(output.data.result.error.code).toBe('INVALID_INPUT');
     });

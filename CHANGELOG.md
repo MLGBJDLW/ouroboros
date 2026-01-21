@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.17] - 2026-01-21
+
+### LSP Integration (Code Graph v2.0)
+
+Full LSP integration with Graph visualization for semantic code intelligence.
+
+### Added
+- **4 LSP Tools** — `graph_symbols`, `graph_references`, `graph_definition`, `graph_call_hierarchy`
+- **SymbolService** — LSP service layer with 30-second caching
+- **LspEnhancer** — Bridge layer combining Graph (fast) + LSP (precise) data
+- **NodeDetailEnhanced** — Webview component with Symbols/Diagnostics/Calls tabs
+- **6 Message Handlers** — LSP-related webview communication
+
+### Enhanced
+- **graph_module/impact** — `includeSymbols`, `useSymbolRefs` options
+- **CodeGraphManager** — Manages LspEnhancer lifecycle
+
+### Fixed
+- **Missing Tool Definitions** — Added `graph_search` and `graph_tree` to `package.json`
+- **Input History UX** — Arrow keys only trigger at cursor boundaries
+
+---
+
 ## [3.3.16] - 2026-01-20
 
 ### Claude Best Practices Integration

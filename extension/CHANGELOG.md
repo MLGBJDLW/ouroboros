@@ -2,6 +2,32 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.17] - 2026-01-21
+
+### LSP Integration (Code Graph v2.0)
+
+Full LSP integration with Graph visualization system.
+
+### Added
+- **LSP Tools** — `graph_symbols`, `graph_references`, `graph_definition`, `graph_call_hierarchy`
+- **SymbolService** — LSP service layer with caching
+- **LspEnhancer** — Bridge combining Graph + LSP data
+- **Issue Validation** — LSP-based validation in IssueDetector to reduce false positives
+- **Hotspot Precision** — LSP reference counts for accurate hotspot detection (`findHotspotsWithLsp`)
+- **UI Diagnostics** — LSP error/warning markers in Graph view nodes
+
+### Enhanced
+- **graph_module** — `includeSymbols` option
+- **graph_impact** — `useSymbolRefs` for symbol-level refs
+- **ForceGraph** — Red/yellow indicators for LSP errors/warnings
+- **CodeGraph** — Fetches and displays LSP diagnostics per node
+
+### Fixed
+- **Missing Tools** — Added `graph_search`, `graph_tree` to `package.json`
+- **Input History UX** — Arrow keys only trigger at cursor boundaries
+
+---
+
 ## [3.3.16] - 2026-01-20
 
 ### Claude Best Practices Integration

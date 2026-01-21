@@ -9,7 +9,7 @@ export { GraphQuery } from './core/GraphQuery';
 export { PathResolver, type TSConfigPaths, type ResolvedPath } from './core/PathResolver';
 export { QueryCache, getQueryCache, resetQueryCache, type QueryCacheOptions } from './core/QueryCache';
 export { ParallelIndexer, createParallelIndexer, type ParallelIndexerOptions, type FileToIndex, type ParallelIndexResult } from './core/ParallelIndexer';
-export { 
+export {
     CuratorCompat,
     type SymbolLocation,
     type FileMetadata,
@@ -20,7 +20,7 @@ export {
     type IndexLevel,
     type IndexCapabilities,
 } from './core/CuratorCompat';
-export { 
+export {
     ExtensionMapper,
     normalizeExtension,
     getPossibleSourcePaths,
@@ -71,9 +71,9 @@ export { EntrypointDetector, type EntrypointPattern } from './indexers/Entrypoin
 export { BarrelAnalyzer, type BarrelInfo, type ReexportInfo, type BarrelChain } from './indexers/BarrelAnalyzer';
 
 // Parsers (v0.4)
-export { 
-    TreeSitterManager, 
-    getTreeSitterManager, 
+export {
+    TreeSitterManager,
+    getTreeSitterManager,
     resetTreeSitterManager,
     type SupportedLanguage,
     type ParsedNode,
@@ -90,9 +90,9 @@ export { LayerAnalyzer, type LayerRule, type LayerViolation, type LayerAnalyzerO
 export { AnnotationManager, type ManualEdge, type ManualEntrypoint, type IgnoreRule, type AnnotationFile } from './annotations/AnnotationManager';
 
 // Adapters (v0.3)
-export { 
-    AdapterRegistry, 
-    getAdapterRegistry, 
+export {
+    AdapterRegistry,
+    getAdapterRegistry,
     resetAdapterRegistry,
     registerBuiltinAdapters,
     ExpressAdapter,
@@ -105,5 +105,20 @@ export type { FrameworkAdapter, PackageJson, RouteInfo, CommandInfo } from './ad
 // Watcher
 export { IncrementalWatcher, type WatcherOptions } from './watcher/IncrementalWatcher';
 
+// LSP (v2.0)
+export {
+    SymbolService,
+    getSymbolService,
+    resetSymbolService,
+    type SymbolInfo,
+    type WorkspaceSymbolInfo,
+    type ReferenceInfo,
+    type DefinitionInfo,
+    type CallHierarchyInfo,
+    type CallHierarchyResult,
+    type HoverInfo,
+} from './lsp';
+
 // Manager
 export { CodeGraphManager } from './CodeGraphManager';
+

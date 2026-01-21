@@ -1,6 +1,8 @@
 /**
  * Graph Query
  * High-level query interface with token-aware output
+ * 
+ * Enhanced with LSP integration for precise hotspot detection
  */
 
 import type { GraphStore } from './GraphStore';
@@ -14,12 +16,16 @@ import type {
     IssueSeverity,
     GraphNode,
 } from './types';
+import { getLspEnhancer } from '../lsp';
+import { createLogger } from '../../utils/logger';
 
+const logger = createLogger('GraphQuery');
 const CHARS_PER_TOKEN = 4;
 
 export interface DigestOptions {
     scope?: string;
     limit?: number;
+    useLspForHotspots?: boolean; // Use LSP reference counts for more accurate hotspots
 }
 
 export interface IssueQueryOptions {
@@ -32,6 +38,7 @@ export interface IssueQueryOptions {
 export interface ImpactOptions {
     depth?: number;
     limit?: number;
+    useLspRefs?: boolean; // Use LSP for precise reference counting
 }
 
 export interface PathQueryOptions {
@@ -41,6 +48,7 @@ export interface PathQueryOptions {
 
 export interface ModuleQueryOptions {
     includeTransitive?: boolean;
+    includeSymbols?: boolean; // Include LSP symbols
 }
 
 export class GraphQuery {
@@ -332,6 +340,132 @@ export class GraphQuery {
         }
 
         return hotspots.slice(0, limit);
+    }
+
+    /**
+     * Find hotspots using LSP reference counts (more accurate)
+     * Falls back to graph-based detection if LSP is unavailable
+     */
+    async findHotspotsWithLsp(
+        files: GraphNode[],
+        limit: number
+    ): Promise<DigestResult['hotspots']> {
+        const lspEnhancer = getLspEnhancer();
+        
+        if (!lspEnhancer) {
+            logger.debug('LSP not available, using graph-based hotspot detection');
+            return this.findHotspots(files, limit);
+        }
+
+        const hotspots: Array<{ path: string; importers: number; exports: number; lspRefs?: number }> = [];
+
+        // First, get graph-based counts as baseline
+        const graphHotspots = this.findHotspots(files, Math.min(limit * 2, 50));
+        
+        // Enhance top candidates with LSP reference counts
+        for (const hotspot of graphHotspots.slice(0, 20)) {
+            try {
+                const exportRefs = await lspEnhancer.getExportReferences(hotspot.path);
+                
+                // Count total external references across all exports
+                let totalLspRefs = 0;
+                for (const ref of exportRefs) {
+                    const externalRefs = ref.references.filter(r => r.path !== hotspot.path);
+                    totalLspRefs += externalRefs.length;
+                }
+
+                hotspots.push({
+                    ...hotspot,
+                    lspRefs: totalLspRefs,
+                    // Use LSP refs if available, otherwise fall back to graph importers
+                    importers: totalLspRefs > 0 ? totalLspRefs : hotspot.importers,
+                });
+            } catch {
+                // LSP failed for this file, use graph data
+                hotspots.push(hotspot);
+            }
+        }
+
+        // Sort by importers (which now includes LSP refs where available)
+        hotspots.sort((a, b) => b.importers - a.importers);
+
+        logger.debug('LSP-enhanced hotspot detection complete', {
+            total: hotspots.length,
+            withLspRefs: hotspots.filter(h => h.lspRefs !== undefined).length,
+        });
+
+        return hotspots.slice(0, limit);
+    }
+
+    /**
+     * Get digest with optional LSP enhancement (async version)
+     */
+    async digestWithLsp(options?: DigestOptions): Promise<DigestResult> {
+        const scope = options?.scope ?? null;
+        const limit = options?.limit ?? 10;
+        const useLsp = options?.useLspForHotspots ?? false;
+
+        const allNodes = this.store.getAllNodes();
+        const filteredNodes = scope
+            ? allNodes.filter((n) => n.path?.startsWith(scope))
+            : allNodes;
+
+        const files = filteredNodes.filter((n) => n.kind === 'file');
+        const entrypoints = filteredNodes.filter((n) => n.kind === 'entrypoint');
+        const modules = filteredNodes.filter((n) => n.kind === 'module');
+
+        // Group entrypoints by type
+        const entrypointsByType = this.groupEntrypointsByType(entrypoints);
+
+        // Find hotspots (with optional LSP enhancement)
+        const hotspots = useLsp 
+            ? await this.findHotspotsWithLsp(files, limit)
+            : this.findHotspots(files, limit);
+
+        // Count issues by kind
+        const issues = this.store.getIssues();
+        const filteredIssues = scope
+            ? issues.filter((i) => i.meta?.filePath?.startsWith(scope))
+            : issues;
+
+        const issuesByKind: Record<IssueKind, number> = {
+            HANDLER_UNREACHABLE: 0,
+            DYNAMIC_EDGE_UNKNOWN: 0,
+            BROKEN_EXPORT_CHAIN: 0,
+            CIRCULAR_REEXPORT: 0,
+            CIRCULAR_DEPENDENCY: 0,
+            ORPHAN_EXPORT: 0,
+            ENTRY_MISSING_HANDLER: 0,
+            NOT_REGISTERED: 0,
+            CYCLE_RISK: 0,
+            LAYER_VIOLATION: 0,
+        };
+
+        for (const issue of filteredIssues) {
+            issuesByKind[issue.kind]++;
+        }
+
+        const result: DigestResult = {
+            summary: {
+                files: files.length,
+                modules: modules.length,
+                entrypoints: entrypoints.length,
+                edges: this.store.edgeCount,
+            },
+            entrypoints: entrypointsByType,
+            hotspots,
+            issues: issuesByKind,
+            meta: {
+                lastIndexed: new Date(this.store.getMeta().lastIndexed).toISOString(),
+                tokensEstimate: 0,
+                truncated: false,
+                scopeApplied: scope,
+                lspEnhanced: useLsp,
+            },
+        };
+
+        result.meta.tokensEstimate = this.estimateTokens(result);
+        return result;
     }
 
     private resolveTarget(target: string): string | null {

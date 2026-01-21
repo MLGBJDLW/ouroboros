@@ -22,6 +22,12 @@ import { createGraphCyclesTool } from '../codeGraph/tools/graphCycles';
 import { createGraphLayersTool } from '../codeGraph/tools/graphLayers';
 import { createGraphSearchTool } from '../codeGraph/tools/graphSearch';
 import { createGraphTreeTool } from '../codeGraph/tools/graphTree';
+// v2.0 LSP Tools
+import { createGraphSymbolsTool } from '../codeGraph/tools/graphSymbols';
+import { createGraphReferencesTool } from '../codeGraph/tools/graphReferences';
+import { createGraphDefinitionTool } from '../codeGraph/tools/graphDefinition';
+import { createGraphCallHierarchyTool } from '../codeGraph/tools/graphCallHierarchy';
+import { initSymbolService } from '../codeGraph/lsp';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Tools');
@@ -110,6 +116,26 @@ export function registerTools(
         logger.info(`Registered tool: ${TOOLS.GRAPH_TREE}`);
     }
 
+    // v2.0 tools - LSP Enhanced (always available, not dependent on CodeGraphManager)
+    // Initialize SymbolService eagerly to ensure LSP is ready
+    initSymbolService();
+
+    const symbolsTool = createGraphSymbolsTool();
+    disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_SYMBOLS, symbolsTool));
+    logger.info(`Registered tool: ${TOOLS.GRAPH_SYMBOLS}`);
+
+    const referencesTool = createGraphReferencesTool();
+    disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_REFERENCES, referencesTool));
+    logger.info(`Registered tool: ${TOOLS.GRAPH_REFERENCES}`);
+
+    const definitionTool = createGraphDefinitionTool();
+    disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_DEFINITION, definitionTool));
+    logger.info(`Registered tool: ${TOOLS.GRAPH_DEFINITION}`);
+
+    const callHierarchyTool = createGraphCallHierarchyTool();
+    disposables.push(vscode.lm.registerTool(TOOLS.GRAPH_CALL_HIERARCHY, callHierarchyTool));
+    logger.info(`Registered tool: ${TOOLS.GRAPH_CALL_HIERARCHY}`);
+
     logger.info('All LM Tools registered successfully');
 
     return disposables;
@@ -117,3 +143,4 @@ export function registerTools(
 
 export * from './types';
 export * from './schemas';
+

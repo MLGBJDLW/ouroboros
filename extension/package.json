@@ -2,7 +2,7 @@
     "name": "ouroboros-ai",
     "displayName": "Ouroboros AI",
     "description": "Structured AI agent workflow with spec-driven development",
-    "version": "3.3.16",
+    "version": "3.3.17",
     "publisher": "MLGBJDLW",
     "license": "MIT",
     "icon": "resources/icon.png",
@@ -352,7 +352,7 @@
                 "displayName": "Code Graph Impact",
                 "toolReferenceName": "ouroborosai_graph_impact",
                 "description": "Analyze the impact of changes to a file or symbol",
-                "modelDescription": "Use this tool BEFORE making changes to understand impact. Returns: direct dependents, transitive impact at depths 1-3, affected entrypoints, and risk assessment (low/medium/high/critical). Helps prevent breaking changes by showing what depends on the target file.",
+                "modelDescription": "Use this tool BEFORE making changes to understand impact. Returns: direct dependents, transitive impact at depths 1-3, affected entrypoints, and risk assessment. NEW: Set useSymbolRefs=true with symbolLine to get LSP symbol reference counts for precise impact analysis.",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
@@ -362,11 +362,19 @@
                     "properties": {
                         "target": {
                             "type": "string",
-                            "description": "File path or symbol to analyze (e.g., 'src/utils/helpers.ts')"
+                            "description": "File path or symbol to analyze"
                         },
                         "depth": {
                             "type": "number",
                             "description": "Depth of transitive analysis (1-4, default: 2)"
+                        },
+                        "useSymbolRefs": {
+                            "type": "boolean",
+                            "description": "Use LSP to get precise symbol reference counts"
+                        },
+                        "symbolLine": {
+                            "type": "number",
+                            "description": "Line number for symbol-level impact (required with useSymbolRefs)"
                         }
                     }
                 }
@@ -405,7 +413,7 @@
                 "displayName": "Code Graph Module",
                 "toolReferenceName": "ouroborosai_graph_module",
                 "description": "Get detailed information about a specific module",
-                "modelDescription": "Use this tool to understand a module's role in the codebase. Returns: imports, importedBy (dependents), exports, re-exports, related entrypoints, and whether it's a barrel file. Helps understand module structure and dependencies.",
+                "modelDescription": "Use this tool to understand a module's role in the codebase. Returns: imports, importedBy (dependents), exports, re-exports, related entrypoints, and whether it's a barrel file. NEW: Set includeSymbols=true to get LSP symbols (classes, functions). Helps understand module structure and dependencies.",
                 "canBeReferencedInPrompt": true,
                 "inputSchema": {
                     "type": "object",
@@ -416,6 +424,17 @@
                         "target": {
                             "type": "string",
                             "description": "File path to analyze"
+                        },
+                        "includeSymbols": {
+                            "type": "boolean",
+                            "description": "Include LSP symbols (classes, functions) in response"
+                        },
+                        "symbolKindFilter": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Filter symbols by kind: class, function, interface, method"
                         }
                     }
                 }
@@ -562,6 +581,236 @@
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_search",
+                "displayName": "Code Graph Search",
+                "toolReferenceName": "ouroborosai_graph_search",
+                "description": "Search for files, symbols, or directories in the codebase",
+                "modelDescription": "Use this tool to find files, symbols (functions, classes, exports), or directories by name or pattern. Supports fuzzy matching with relevance scoring. Returns path, type, match details, and import counts. Use type='file' for paths, 'symbol' for exports/functions, 'directory' for folders, or 'all'.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "query"
+                    ],
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query - file name, path pattern, symbol name, or keyword"
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "file",
+                                "symbol",
+                                "directory",
+                                "all"
+                            ],
+                            "description": "Search type: file (paths), symbol (exports), directory (folders), all. Default: all"
+                        },
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope to limit search (e.g., 'src/features')"
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Max results to return (1-50, default: 20)"
+                        },
+                        "includeImports": {
+                            "type": "boolean",
+                            "description": "Include import count for each result (default: true)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_tree",
+                "displayName": "Code Graph Tree",
+                "toolReferenceName": "ouroborosai_graph_tree",
+                "description": "Browse directory structure and file organization",
+                "modelDescription": "Use this tool to explore the codebase directory structure. Returns a tree with directories and files, including stats like file counts, imports, and exports. Identifies barrel files (index.ts) and entrypoints. Use depth to control traversal (1-5), pattern to filter files.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Directory path to browse (e.g., 'src/features'). Default: root"
+                        },
+                        "depth": {
+                            "type": "number",
+                            "description": "Max depth to traverse (1-5, default: 2)"
+                        },
+                        "includeFiles": {
+                            "type": "boolean",
+                            "description": "Include files in output (default: true)"
+                        },
+                        "includeStats": {
+                            "type": "boolean",
+                            "description": "Include file counts and import stats (default: true)"
+                        },
+                        "pattern": {
+                            "type": "string",
+                            "description": "Filter pattern for file names (e.g., '*.test.ts', 'index.*')"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_symbols",
+                "displayName": "Code Graph Symbols",
+                "toolReferenceName": "ouroborosai_graph_symbols",
+                "description": "Get symbols (classes, functions, interfaces) from a file or search workspace",
+                "modelDescription": "Use this tool to discover code structure. Mode 'document' returns all symbols in a file with hierarchy (classes, functions, methods, properties). Mode 'workspace' searches for symbols by name across the project. Returns symbol name, kind, location, and children for nested symbols. RECOMMENDED: Use this before graph_references to find the exact symbol location.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "target"
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "File path (for document mode) or search query (for workspace mode)"
+                        },
+                        "mode": {
+                            "type": "string",
+                            "enum": [
+                                "document",
+                                "workspace"
+                            ],
+                            "description": "document: symbols in file, workspace: search project"
+                        },
+                        "kindFilter": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Filter by kind: class, function, interface, method, property, variable"
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Max results for workspace search (1-100, default: 50)"
+                        },
+                        "includeChildren": {
+                            "type": "boolean",
+                            "description": "Include nested symbols in document mode (default: true)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_references",
+                "displayName": "Code Graph References",
+                "toolReferenceName": "ouroborosai_graph_references",
+                "description": "Find all references to a symbol",
+                "modelDescription": "Use this tool before refactoring to find all usages of a symbol. Provide the file path and line number of the symbol. Returns list of files and lines where the symbol is referenced, with line text preview. Essential for understanding impact of changes at symbol level.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "path",
+                        "line"
+                    ],
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "File path containing the symbol"
+                        },
+                        "line": {
+                            "type": "number",
+                            "description": "Line number (1-indexed)"
+                        },
+                        "column": {
+                            "type": "number",
+                            "description": "Column number (1-indexed, default: 1)"
+                        },
+                        "includeDeclaration": {
+                            "type": "boolean",
+                            "description": "Include the declaration in results (default: true)"
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Max references to return (default: 50)"
+                        },
+                        "groupByFile": {
+                            "type": "boolean",
+                            "description": "Group references by file (default: false)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_definition",
+                "displayName": "Code Graph Definition",
+                "toolReferenceName": "ouroborosai_graph_definition",
+                "description": "Go to definition of a symbol",
+                "modelDescription": "Use this tool to find where a symbol is defined. Provide file path and line number. Returns the definition location(s) with line text. Useful for understanding where functions, classes, or types come from, especially for imported symbols.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "path",
+                        "line"
+                    ],
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "File path containing the symbol reference"
+                        },
+                        "line": {
+                            "type": "number",
+                            "description": "Line number (1-indexed)"
+                        },
+                        "column": {
+                            "type": "number",
+                            "description": "Column number (1-indexed)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_call_hierarchy",
+                "displayName": "Code Graph Call Hierarchy",
+                "toolReferenceName": "ouroborosai_graph_call_hierarchy",
+                "description": "Get call hierarchy for a function",
+                "modelDescription": "Use this tool to understand function call relationships. Returns who calls this function (callers) and what functions it calls (callees). Essential for impact analysis and refactoring. Provides more precise information than graph_impact for function-level changes.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "path",
+                        "line"
+                    ],
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "File path containing the function"
+                        },
+                        "line": {
+                            "type": "number",
+                            "description": "Line number of the function (1-indexed)"
+                        },
+                        "column": {
+                            "type": "number",
+                            "description": "Column number (1-indexed)"
+                        },
+                        "direction": {
+                            "type": "string",
+                            "enum": [
+                                "incoming",
+                                "outgoing",
+                                "both"
+                            ],
+                            "description": "incoming: callers, outgoing: callees, both: all (default: both)"
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Max items per direction (1-50, default: 20)"
                         }
                     }
                 }

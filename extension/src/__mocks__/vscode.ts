@@ -150,6 +150,65 @@ export const FileType = {
     SymbolicLink: 64,
 };
 
+// SymbolKind enum for LSP integration
+export const SymbolKind = {
+    File: 0,
+    Module: 1,
+    Namespace: 2,
+    Package: 3,
+    Class: 4,
+    Method: 5,
+    Property: 6,
+    Field: 7,
+    Constructor: 8,
+    Enum: 9,
+    Interface: 10,
+    Function: 11,
+    Variable: 12,
+    Constant: 13,
+    String: 14,
+    Number: 15,
+    Boolean: 16,
+    Array: 17,
+    Object: 18,
+    Key: 19,
+    Null: 20,
+    EnumMember: 21,
+    Struct: 22,
+    Event: 23,
+    Operator: 24,
+    TypeParameter: 25,
+};
+
+// DiagnosticSeverity enum for LSP diagnostics
+export const DiagnosticSeverity = {
+    Error: 0,
+    Warning: 1,
+    Information: 2,
+    Hint: 3,
+};
+
+// Position class for LSP
+export class Position {
+    constructor(public line: number, public character: number) {}
+}
+
+// Range class for LSP
+export class Range {
+    constructor(public start: Position, public end: Position) {}
+}
+
+// Location class for LSP
+export class Location {
+    constructor(public uri: { fsPath: string }, public range: Range) {}
+}
+
+// LSP-related mock functions
+export const languages = {
+    getDiagnostics: vi.fn().mockReturnValue([]),
+    onDidChangeDiagnostics: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+};
+
 export default {
     Uri,
     workspace,
@@ -167,4 +226,10 @@ export default {
     authentication,
     RelativePattern,
     FileType,
+    SymbolKind,
+    DiagnosticSeverity,
+    Position,
+    Range,
+    Location,
+    languages,
 };

@@ -16,6 +16,10 @@ export interface GraphNode {
     isEntrypoint: boolean;
     isHotspot: boolean;
     depth: number;
+    // LSP diagnostic counts
+    lspErrorCount?: number;
+    lspWarningCount?: number;
+    hasLspDiagnostics?: boolean;
     // For force graph
     x?: number;
     y?: number;
@@ -157,4 +161,100 @@ export interface GraphContextItem {
     type: 'issue' | 'hotspot' | 'digest' | 'impact' | 'module';
     data: unknown;
     timestamp: number;
+}
+
+// ============================================
+// LSP Enhanced Types
+// ============================================
+
+// Symbol info from LSP
+export interface LspSymbol {
+    name: string;
+    kind: string;
+    kindValue: number;
+    range: {
+        startLine: number;
+        startColumn: number;
+        endLine: number;
+        endColumn: number;
+    };
+    selectionRange: {
+        startLine: number;
+        startColumn: number;
+        endLine: number;
+        endColumn: number;
+    };
+    detail?: string;
+    children?: LspSymbol[];
+}
+
+// LSP Diagnostic
+export interface LspDiagnostic {
+    severity: 'error' | 'warning' | 'info' | 'hint';
+    message: string;
+    line: number;
+    column: number;
+    endLine: number;
+    endColumn: number;
+    source?: string;
+    code?: string | number;
+}
+
+// Enhanced node info combining Graph and LSP data
+export interface EnhancedNodeInfo {
+    path: string;
+    // From Graph (fast, cached)
+    graph: {
+        imports: string[];
+        importedBy: string[];
+        exports: string[];
+        isEntrypoint: boolean;
+        isHotspot: boolean;
+        issueCount: number;
+    };
+    // From LSP (precise, on-demand)
+    lsp: {
+        available: boolean;
+        symbols: LspSymbol[];
+        diagnostics: LspDiagnostic[];
+        lastUpdated: number;
+    };
+}
+
+// Reference info from LSP
+export interface LspReference {
+    path: string;
+    line: number;
+    column: number;
+    lineText: string;
+    isDefinition?: boolean;
+}
+
+// Symbol with its references
+export interface SymbolReferences {
+    symbol: LspSymbol;
+    references: LspReference[];
+    isExported: boolean;
+    isUnused: boolean;
+}
+
+// Call hierarchy node
+export interface CallHierarchyNode {
+    name: string;
+    kind: string;
+    path: string;
+    line: number;
+    detail?: string;
+    callers: CallHierarchyNode[];
+    callees: CallHierarchyNode[];
+}
+
+// Definition info
+export interface DefinitionInfo {
+    path: string;
+    line: number;
+    column: number;
+    endLine: number;
+    endColumn: number;
+    lineText?: string;
 }
