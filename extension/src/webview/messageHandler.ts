@@ -399,6 +399,28 @@ export async function handleMessage(
                         type: 'graphEdges',
                         payload: { edges },
                     });
+
+                    // Refresh LSP diagnostics
+                    const { getLspEnhancer } = await import('../codeGraph/lsp');
+                    const lspEnhancer = getLspEnhancer();
+                    if (lspEnhancer) {
+                        lspEnhancer.refreshAllDiagnostics();
+                        await lspEnhancer.refreshDiagnosticsForGraphFiles();
+                        const allDiagnostics = lspEnhancer.getAllDiagnostics();
+                        const diagnosticsObj: Record<string, { errors: number; warnings: number }> = {};
+                        for (const [path, diags] of allDiagnostics) {
+                            const errors = diags.filter(d => d.severity === 'error').length;
+                            const warnings = diags.filter(d => d.severity === 'warning').length;
+                            if (errors > 0 || warnings > 0) {
+                                diagnosticsObj[path] = { errors, warnings };
+                            }
+                        }
+                        sidebarProvider.postMessage({
+                            type: 'lspDiagnostics',
+                            payload: diagnosticsObj,
+                        });
+                    }
+
                     sidebarProvider.postMessage({
                         type: 'graphRefreshCompleted',
                         payload: null,
