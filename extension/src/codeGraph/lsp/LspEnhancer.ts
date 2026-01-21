@@ -144,6 +144,29 @@ export class LspEnhancer {
     }
 
     /**
+     * Initialize workspace-wide diagnostics
+     * Triggers TypeScript to analyze the entire project
+     */
+    async initializeWorkspaceDiagnostics(): Promise<void> {
+        try {
+            // Trigger TypeScript to reload and analyze the project
+            await vscode.commands.executeCommand('typescript.reloadProjects');
+            
+            // Wait a bit for TypeScript to process
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Now collect all diagnostics
+            this.refreshAllDiagnostics();
+            
+            logger.info('Workspace diagnostics initialized', { 
+                filesWithDiagnostics: this.diagnosticsCache.size 
+            });
+        } catch (error) {
+            logger.debug('Failed to initialize workspace diagnostics', { error });
+        }
+    }
+
+    /**
      * Get diagnostics for files in the graph
      * This actively queries VS Code for diagnostics of indexed files
      */

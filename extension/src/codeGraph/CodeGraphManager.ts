@@ -301,6 +301,11 @@ export class CodeGraphManager implements vscode.Disposable {
         this.lspEnhancer = initLspEnhancer(this.store);
         logger.info('LSP Enhancer initialized');
         
+        // Initialize workspace-wide diagnostics (async, don't block)
+        this.lspEnhancer.initializeWorkspaceDiagnostics().catch(err => {
+            logger.debug('Workspace diagnostics init failed', { error: err });
+        });
+        
         await this.fullIndex();
         this.startWatcher();
         logger.info('Code Graph initialized');
