@@ -113,6 +113,26 @@ export class LspEnhancer {
             }
         });
         this.disposables.push(listener);
+        
+        // Initial scan of all existing diagnostics
+        this.refreshAllDiagnostics();
+    }
+
+    /**
+     * Refresh all diagnostics from VS Code
+     * Scans all files in workspace that have diagnostics
+     */
+    refreshAllDiagnostics(): void {
+        const allDiagnostics = vscode.languages.getDiagnostics();
+        for (const [uri, diagnostics] of allDiagnostics) {
+            if (diagnostics.length > 0) {
+                const filePath = this.getRelativePath(uri);
+                if (filePath) {
+                    this.updateDiagnosticsCache(uri, filePath);
+                }
+            }
+        }
+        logger.debug('Refreshed all diagnostics', { fileCount: this.diagnosticsCache.size });
     }
 
     /**

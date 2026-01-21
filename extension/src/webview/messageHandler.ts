@@ -830,6 +830,9 @@ export async function handleMessage(
                 const lspEnhancer = getLspEnhancer();
                 
                 if (lspEnhancer) {
+                    // Refresh diagnostics before returning
+                    lspEnhancer.refreshAllDiagnostics();
+                    
                     const allDiagnostics = lspEnhancer.getAllDiagnostics();
                     // Convert Map to object for serialization
                     const diagnosticsObj: Record<string, { errors: number; warnings: number }> = {};
