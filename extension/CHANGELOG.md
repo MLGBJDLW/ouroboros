@@ -6,24 +6,25 @@ All notable changes to the Ouroboros AI VS Code Extension will be documented in 
 
 ### LSP Integration (Code Graph v2.0)
 
-Full LSP integration with Graph visualization system for semantic code intelligence.
+Full LSP integration with Graph visualization system.
 
 ### Added
-- **4 LSP Tools** — `graph_symbols`, `graph_references`, `graph_definition`, `graph_call_hierarchy`
-- **SymbolService** — LSP service layer with 30-second caching
-- **LspEnhancer** — Bridge layer combining Graph (fast) + LSP (precise) data
-- **NodeDetailEnhanced** — Webview component with Symbols/Diagnostics/Calls tabs
-- **6 Message Handlers** — `getEnhancedNodeInfo`, `getCallHierarchy`, `findReferences`, `getDefinition`, `validateIssues`, `openFileAtLocation`
+- **LSP Tools** — `graph_symbols`, `graph_references`, `graph_definition`, `graph_call_hierarchy`
+- **SymbolService** — LSP service layer with caching
+- **LspEnhancer** — Bridge combining Graph + LSP data
+- **Issue Validation** — LSP-based validation in IssueDetector to reduce false positives
+- **Hotspot Precision** — LSP reference counts for accurate hotspot detection (`findHotspotsWithLsp`)
+- **UI Diagnostics** — LSP error/warning markers in Graph view nodes
 
 ### Enhanced
-- **graph_module** — `includeSymbols` option for LSP symbols
-- **graph_impact** — `useSymbolRefs` for symbol-level reference counting
-- **CodeGraphManager** — Manages LspEnhancer lifecycle
+- **graph_module** — `includeSymbols` option
+- **graph_impact** — `useSymbolRefs` for symbol-level refs
+- **ForceGraph** — Red/yellow indicators for LSP errors/warnings
+- **CodeGraph** — Fetches and displays LSP diagnostics per node
 
 ### Fixed
-- **Missing Tool Definitions** — Added `graph_search` and `graph_tree` to `package.json`
+- **Missing Tools** — Added `graph_search`, `graph_tree` to `package.json`
 - **Input History UX** — Arrow keys only trigger at cursor boundaries
-- **LSP Eager Init** — SymbolService initialized at startup
 
 ---
 

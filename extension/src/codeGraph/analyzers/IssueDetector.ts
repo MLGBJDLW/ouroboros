@@ -2,8 +2,9 @@
  * Issue Detector
  * Detects code graph issues (missing links, unreachable code, broken exports)
  * 
- * Enhanced with ESM extension mapping support to reduce false positives
- * in TypeScript projects using moduleResolution: NodeNext
+ * Enhanced with:
+ * - ESM extension mapping support to reduce false positives
+ * - LSP validation to verify issues with semantic analysis
  */
 
 import type { GraphStore } from '../core/GraphStore';
@@ -12,12 +13,31 @@ import { ReachabilityAnalyzer } from './ReachabilityAnalyzer';
 import { 
     getPossibleSourcePaths, 
 } from '../core/ExtensionMapper';
+import { getLspEnhancer } from '../lsp';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('IssueDetector');
+
+export interface LspValidationResult {
+    validated: boolean;
+    confidence: 'high' | 'medium' | 'low';
+    evidence?: string[];
+    isFalsePositive?: boolean;
+}
 
 export class IssueDetector {
     private reachabilityAnalyzer: ReachabilityAnalyzer;
+    private lspValidationEnabled = true;
 
     constructor(private store: GraphStore) {
         this.reachabilityAnalyzer = new ReachabilityAnalyzer(store);
+    }
+
+    /**
+     * Enable or disable LSP validation
+     */
+    setLspValidation(enabled: boolean): void {
+        this.lspValidationEnabled = enabled;
     }
 
     /**
@@ -31,6 +51,185 @@ export class IssueDetector {
         issues.push(...this.detectBrokenExports());
 
         return issues;
+    }
+
+    /**
+     * Detect all issues with LSP validation (async)
+     * This filters out false positives using LSP semantic analysis
+     */
+    async detectAllWithLspValidation(): Promise<GraphIssue[]> {
+        const issues = this.detectAll();
+        
+        if (!this.lspValidationEnabled) {
+            return issues;
+        }
+
+        const lspEnhancer = getLspEnhancer();
+        if (!lspEnhancer) {
+            logger.debug('LSP Enhancer not available, skipping validation');
+            return issues;
+        }
+
+        const validatedIssues: GraphIssue[] = [];
+        
+        for (const issue of issues) {
+            const validation = await this.validateIssueWithLsp(issue);
+            
+            if (validation.isFalsePositive) {
+                logger.debug('LSP validation filtered false positive', {
+                    issueId: issue.id,
+                    kind: issue.kind,
+                    evidence: validation.evidence,
+                });
+                continue;
+            }
+
+            // Add LSP validation info to issue meta
+            if (validation.evidence && validation.evidence.length > 0) {
+                issue.meta = {
+                    ...issue.meta,
+                    lspValidated: true,
+                    lspConfidence: validation.confidence,
+                    lspEvidence: validation.evidence,
+                };
+            }
+
+            validatedIssues.push(issue);
+        }
+
+        logger.info(`LSP validation: ${issues.length} issues → ${validatedIssues.length} validated (${issues.length - validatedIssues.length} false positives filtered)`);
+        
+        return validatedIssues;
+    }
+
+    /**
+     * Validate a single issue using LSP
+     */
+    private async validateIssueWithLsp(issue: GraphIssue): Promise<LspValidationResult> {
+        const lspEnhancer = getLspEnhancer();
+        if (!lspEnhancer) {
+            return { validated: true, confidence: 'low' };
+        }
+
+        const filePath = issue.meta?.filePath as string | undefined;
+        if (!filePath) {
+            return { validated: true, confidence: 'low' };
+        }
+
+        try {
+            switch (issue.kind) {
+                case 'HANDLER_UNREACHABLE':
+                    return await this.validateUnreachableWithLsp(issue, filePath);
+                
+                case 'BROKEN_EXPORT_CHAIN':
+                    return await this.validateBrokenExportWithLsp(issue, filePath);
+                
+                default:
+                    return { validated: true, confidence: 'medium' };
+            }
+        } catch (error) {
+            logger.debug('LSP validation error', { issueId: issue.id, error });
+            return { validated: true, confidence: 'low' };
+        }
+    }
+
+    /**
+     * Validate HANDLER_UNREACHABLE using LSP references
+     * If LSP finds external references, the file is actually used
+     */
+    private async validateUnreachableWithLsp(
+        issue: GraphIssue,
+        filePath: string
+    ): Promise<LspValidationResult> {
+        const lspEnhancer = getLspEnhancer();
+        if (!lspEnhancer) {
+            return { validated: true, confidence: 'low' };
+        }
+
+        try {
+            // Get export references for the file
+            const exportRefs = await lspEnhancer.getExportReferences(filePath);
+            
+            // Check if any exported symbol has external references
+            const usedExports = exportRefs.filter(ref => ref.isExported && !ref.isUnused);
+            
+            if (usedExports.length > 0) {
+                // LSP found references - this is a false positive
+                return {
+                    validated: false,
+                    confidence: 'high',
+                    evidence: [
+                        `LSP found ${usedExports.length} exported symbols with external references`,
+                        `Used exports: ${usedExports.slice(0, 3).map(e => e.symbol.name).join(', ')}`,
+                    ],
+                    isFalsePositive: true,
+                };
+            }
+
+            // No external references found - issue is valid
+            return {
+                validated: true,
+                confidence: 'high',
+                evidence: ['LSP confirmed no external references to exported symbols'],
+            };
+        } catch {
+            return { validated: true, confidence: 'low' };
+        }
+    }
+
+    /**
+     * Validate BROKEN_EXPORT_CHAIN using LSP definition lookup
+     * If LSP can find the definition, the export chain is not broken
+     */
+    private async validateBrokenExportWithLsp(
+        issue: GraphIssue,
+        filePath: string
+    ): Promise<LspValidationResult> {
+        const lspEnhancer = getLspEnhancer();
+        if (!lspEnhancer) {
+            return { validated: true, confidence: 'low' };
+        }
+
+        const symbolName = issue.meta?.symbol as string | undefined;
+        if (!symbolName) {
+            return { validated: true, confidence: 'medium' };
+        }
+
+        try {
+            // Check if LSP is available for this file
+            const isAvailable = await lspEnhancer.isLspAvailable(filePath);
+            if (!isAvailable) {
+                return { validated: true, confidence: 'low' };
+            }
+
+            // Get enhanced node info to check symbols
+            const nodeInfo = await lspEnhancer.getEnhancedNodeInfo(filePath);
+            
+            if (nodeInfo.lsp.available && nodeInfo.lsp.symbols.length > 0) {
+                // Check if the symbol exists in the file
+                const symbolExists = nodeInfo.lsp.symbols.some(
+                    s => s.name === symbolName || 
+                         s.children?.some(c => c.name === symbolName)
+                );
+                
+                if (symbolExists) {
+                    return {
+                        validated: false,
+                        confidence: 'high',
+                        evidence: [`LSP found symbol '${symbolName}' in file`],
+                        isFalsePositive: true,
+                    };
+                }
+            }
+
+            return {
+                validated: true,
+                confidence: 'high',
+                evidence: [`LSP confirmed symbol '${symbolName}' not found`],
+            };
+        } catch {
+            return { validated: true, confidence: 'low' };
+        }
     }
 
     /**

@@ -12,7 +12,7 @@ vi.mock('vscode', () => ({
         getDiagnostics: vi.fn(() => []),
     },
     workspace: {
-        getWorkspaceFolder: vi.fn((uri) => ({
+        getWorkspaceFolder: vi.fn((_uri) => ({
             uri: { fsPath: '/workspace' },
         })),
         openTextDocument: vi.fn(),

@@ -16,6 +16,10 @@ export interface GraphNode {
     isEntrypoint: boolean;
     isHotspot: boolean;
     depth: number;
+    // LSP diagnostic counts
+    lspErrorCount?: number;
+    lspWarningCount?: number;
+    hasLspDiagnostics?: boolean;
     // For force graph
     x?: number;
     y?: number;

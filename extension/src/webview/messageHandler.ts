@@ -823,6 +823,43 @@ export async function handleMessage(
             break;
         }
 
+        case 'getLspDiagnostics': {
+            logger.info('Getting LSP diagnostics for all files');
+            try {
+                const { getLspEnhancer } = await import('../codeGraph/lsp');
+                const lspEnhancer = getLspEnhancer();
+                
+                if (lspEnhancer) {
+                    const allDiagnostics = lspEnhancer.getAllDiagnostics();
+                    // Convert Map to object for serialization
+                    const diagnosticsObj: Record<string, { errors: number; warnings: number }> = {};
+                    for (const [path, diags] of allDiagnostics) {
+                        const errors = diags.filter(d => d.severity === 'error').length;
+                        const warnings = diags.filter(d => d.severity === 'warning').length;
+                        if (errors > 0 || warnings > 0) {
+                            diagnosticsObj[path] = { errors, warnings };
+                        }
+                    }
+                    sidebarProvider.postMessage({
+                        type: 'lspDiagnostics',
+                        payload: diagnosticsObj,
+                    });
+                } else {
+                    sidebarProvider.postMessage({
+                        type: 'lspDiagnostics',
+                        payload: {},
+                    });
+                }
+            } catch (error) {
+                logger.error('Failed to get LSP diagnostics:', error);
+                sidebarProvider.postMessage({
+                    type: 'lspDiagnostics',
+                    payload: {},
+                });
+            }
+            break;
+        }
+
         default:
             logger.warn('Unknown message type:', message.type);
     }

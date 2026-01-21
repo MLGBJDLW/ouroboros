@@ -38,6 +38,8 @@ const COLORS = {
     fileWithIssue: '#FFC107',   // Amber
     selected: '#E91E63',        // Pink
     hovered: '#9C27B0',         // Purple
+    lspError: '#f44336',        // Red - LSP errors
+    lspWarning: '#ff9800',      // Orange - LSP warnings
     // These will be computed from CSS variables
     edge: '',
     edgeHighlight: '',
@@ -193,6 +195,57 @@ export function ForceGraph({
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(String(node.issueCount), badgeX, badgeY);
+        }
+
+        // Draw LSP diagnostic indicators (errors = red dot, warnings = yellow dot)
+        if (node.hasLspDiagnostics) {
+            const indicatorSize = Math.max(4, size * 0.3);
+            
+            // Error indicator (top-left)
+            if (node.lspErrorCount && node.lspErrorCount > 0) {
+                const errX = x - size * 0.7;
+                const errY = y - size * 0.7;
+                
+                ctx.beginPath();
+                ctx.arc(errX, errY, indicatorSize, 0, 2 * Math.PI);
+                ctx.fillStyle = COLORS.lspError;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Show count if > 1
+                if (node.lspErrorCount > 1) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `bold ${indicatorSize}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(node.lspErrorCount), errX, errY);
+                }
+            }
+            
+            // Warning indicator (bottom-left)
+            if (node.lspWarningCount && node.lspWarningCount > 0) {
+                const warnX = x - size * 0.7;
+                const warnY = y + size * 0.7;
+                
+                ctx.beginPath();
+                ctx.arc(warnX, warnY, indicatorSize, 0, 2 * Math.PI);
+                ctx.fillStyle = COLORS.lspWarning;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Show count if > 1
+                if (node.lspWarningCount > 1) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `bold ${indicatorSize}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(node.lspWarningCount), warnX, warnY);
+                }
+            }
         }
 
         // Draw label (only when zoomed or focused to reduce clutter)
@@ -390,6 +443,14 @@ export function ForceGraph({
                 <div className={styles.legendItem}>
                     <span className={styles.legendDot} style={{ background: COLORS.fileWithIssue }} />
                     <span>Has Issues</span>
+                </div>
+                <div className={styles.legendItem}>
+                    <span className={styles.legendDot} style={{ background: COLORS.lspError }} />
+                    <span>LSP Error</span>
+                </div>
+                <div className={styles.legendItem}>
+                    <span className={styles.legendDot} style={{ background: COLORS.lspWarning }} />
+                    <span>LSP Warning</span>
                 </div>
             </div>
 

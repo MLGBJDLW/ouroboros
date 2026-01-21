@@ -249,6 +249,7 @@ export interface DigestResult {
         tokensEstimate: number;
         truncated: boolean;
         scopeApplied: string | null;
+        lspEnhanced?: boolean;
     };
 }
 
