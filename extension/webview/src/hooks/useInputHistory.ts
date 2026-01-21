@@ -41,21 +41,21 @@ interface UseInputHistoryReturn {
 export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputHistoryReturn {
     const { maxSize = MAX_HISTORY_SIZE, filterType } = options;
     const { state } = useAppContext();
-    
+
     // Extract unique responses from history (most recent first)
     const history = useMemo(() => {
         const responses: string[] = [];
         const seen = new Set<string>();
-        
+
         // History is already sorted by timestamp, but we want most recent first
         const sortedHistory = [...state.history]
             .filter(item => item.status === 'responded' && item.response)
             .sort((a, b) => b.timestamp - a.timestamp);
-        
+
         for (const item of sortedHistory) {
             // Filter by type if specified
             if (filterType && item.type !== filterType) continue;
-            
+
             const response = item.response?.trim();
             if (response && !seen.has(response)) {
                 seen.add(response);
@@ -63,23 +63,23 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
                 if (responses.length >= maxSize) break;
             }
         }
-        
+
         console.log('[InputHistory] loaded from history tab:', responses.length, 'items');
         return responses;
     }, [state.history, maxSize, filterType]);
 
     const [navigationIndex, setNavigationIndex] = useState(-1);
-    
+
     // Store the current input before navigating
     const currentInputRef = useRef<string>('');
 
     // Navigate up (older entries)
     const navigateUp = useCallback((): string | null => {
         if (history.length === 0) return null;
-        
+
         const newIndex = navigationIndex + 1;
         if (newIndex >= history.length) return null;
-        
+
         setNavigationIndex(newIndex);
         return history[newIndex];
     }, [history, navigationIndex]);
@@ -87,15 +87,15 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
     // Navigate down (newer entries)
     const navigateDown = useCallback((): string | null => {
         if (navigationIndex < 0) return null;
-        
+
         const newIndex = navigationIndex - 1;
         setNavigationIndex(newIndex);
-        
+
         if (newIndex < 0) {
             // Return to current input
             return currentInputRef.current;
         }
-        
+
         return history[newIndex];
     }, [history, navigationIndex]);
 
@@ -112,7 +112,7 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
     ): boolean => {
         const target = e.target as HTMLTextAreaElement | HTMLInputElement;
         const isTextarea = target.tagName === 'TEXTAREA';
-        
+
         // Debug logging
         console.log('[InputHistory] handleKeyDown:', {
             key: e.key,
@@ -121,33 +121,33 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
             currentValue: currentValue.substring(0, 20) + (currentValue.length > 20 ? '...' : ''),
             isTextarea,
         });
-        
-        // For textarea, only handle up/down at start/end of content
+
+        // For textarea, only handle up/down when cursor is at the very start or end
         if (isTextarea) {
             const textarea = target as HTMLTextAreaElement;
             const { selectionStart, selectionEnd, value } = textarea;
             const hasNoSelection = selectionStart === selectionEnd;
-            
-            // Check if cursor is on first or last line
-            const beforeCursor = value.substring(0, selectionStart ?? 0);
-            const afterCursor = value.substring(selectionEnd ?? 0);
-            const isOnFirstLine = !beforeCursor.includes('\n');
-            const isOnLastLine = !afterCursor.includes('\n');
-            
-            if (e.key === 'ArrowUp' && isOnFirstLine && hasNoSelection) {
+            const cursorPosition = selectionStart ?? 0;
+
+            // ArrowUp: only navigate history if cursor is at position 0 (very start)
+            const isAtStart = cursorPosition === 0;
+            // ArrowDown: only navigate history if cursor is at the end of text
+            const isAtEnd = cursorPosition === value.length;
+
+            if (e.key === 'ArrowUp' && isAtStart && hasNoSelection) {
                 // Store current input if starting navigation
                 if (navigationIndex === -1) {
                     currentInputRef.current = currentValue;
                 }
-                
+
                 // Direct navigation
                 if (history.length === 0) return false;
                 const newIndex = navigationIndex + 1;
                 if (newIndex >= history.length) return false;
-                
+
                 const prevValue = history[newIndex];
                 console.log('[InputHistory] ArrowUp - prevValue:', prevValue?.substring(0, 30));
-                
+
                 setNavigationIndex(newIndex);
                 e.preventDefault();
                 setValue(prevValue);
@@ -157,22 +157,22 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
                 }, 0);
                 return true;
             }
-            
-            if (e.key === 'ArrowDown' && isOnLastLine && hasNoSelection) {
+
+            if (e.key === 'ArrowDown' && isAtEnd && hasNoSelection) {
                 if (navigationIndex < 0) return false;
-                
+
                 const newIndex = navigationIndex - 1;
                 setNavigationIndex(newIndex);
-                
+
                 let nextValue: string;
                 if (newIndex < 0) {
                     nextValue = currentInputRef.current;
                 } else {
                     nextValue = history[newIndex];
                 }
-                
+
                 console.log('[InputHistory] ArrowDown - nextValue:', nextValue?.substring(0, 30));
-                
+
                 e.preventDefault();
                 setValue(nextValue);
                 // Move cursor to end after state update
@@ -182,37 +182,44 @@ export function useInputHistory(options: UseInputHistoryOptions = {}): UseInputH
                 return true;
             }
         } else {
-            // For regular input, always handle up/down
-            if (e.key === 'ArrowUp') {
+            // For regular input (single line), also check cursor position
+            const input = target as HTMLInputElement;
+            const { selectionStart, selectionEnd, value } = input;
+            const hasNoSelection = selectionStart === selectionEnd;
+            const cursorPosition = selectionStart ?? 0;
+
+            // ArrowUp: only at start
+            if (e.key === 'ArrowUp' && cursorPosition === 0 && hasNoSelection) {
                 // Store current input if starting navigation
                 if (navigationIndex === -1) {
                     currentInputRef.current = currentValue;
                 }
-                
+
                 if (history.length === 0) return false;
                 const newIndex = navigationIndex + 1;
                 if (newIndex >= history.length) return false;
-                
+
                 const prevValue = history[newIndex];
                 setNavigationIndex(newIndex);
                 e.preventDefault();
                 setValue(prevValue);
                 return true;
             }
-            
-            if (e.key === 'ArrowDown') {
+
+            // ArrowDown: only at end
+            if (e.key === 'ArrowDown' && cursorPosition === value.length && hasNoSelection) {
                 if (navigationIndex < 0) return false;
-                
+
                 const newIndex = navigationIndex - 1;
                 setNavigationIndex(newIndex);
-                
+
                 const nextValue = newIndex < 0 ? currentInputRef.current : history[newIndex];
                 e.preventDefault();
                 setValue(nextValue);
                 return true;
             }
         }
-        
+
         return false;
     }, [history, navigationIndex]);
 

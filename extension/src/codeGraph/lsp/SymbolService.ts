@@ -134,6 +134,10 @@ export class SymbolService {
     private cache: Map<string, { symbols: SymbolInfo[]; timestamp: number }> = new Map();
     private cacheTimeout = 30000; // 30 seconds
 
+    constructor() {
+        logger.info('SymbolService initialized - LSP integration ready');
+    }
+
     /**
      * Get document symbols for a file
      * Uses LSP DocumentSymbolProvider

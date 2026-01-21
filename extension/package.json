@@ -586,6 +586,81 @@
                 }
             },
             {
+                "name": "ouroborosai_graph_search",
+                "displayName": "Code Graph Search",
+                "toolReferenceName": "ouroborosai_graph_search",
+                "description": "Search for files, symbols, or directories in the codebase",
+                "modelDescription": "Use this tool to find files, symbols (functions, classes, exports), or directories by name or pattern. Supports fuzzy matching with relevance scoring. Returns path, type, match details, and import counts. Use type='file' for paths, 'symbol' for exports/functions, 'directory' for folders, or 'all'.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "required": [
+                        "query"
+                    ],
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query - file name, path pattern, symbol name, or keyword"
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "file",
+                                "symbol",
+                                "directory",
+                                "all"
+                            ],
+                            "description": "Search type: file (paths), symbol (exports), directory (folders), all. Default: all"
+                        },
+                        "scope": {
+                            "type": "string",
+                            "description": "Directory scope to limit search (e.g., 'src/features')"
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Max results to return (1-50, default: 20)"
+                        },
+                        "includeImports": {
+                            "type": "boolean",
+                            "description": "Include import count for each result (default: true)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "ouroborosai_graph_tree",
+                "displayName": "Code Graph Tree",
+                "toolReferenceName": "ouroborosai_graph_tree",
+                "description": "Browse directory structure and file organization",
+                "modelDescription": "Use this tool to explore the codebase directory structure. Returns a tree with directories and files, including stats like file counts, imports, and exports. Identifies barrel files (index.ts) and entrypoints. Use depth to control traversal (1-5), pattern to filter files.",
+                "canBeReferencedInPrompt": true,
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Directory path to browse (e.g., 'src/features'). Default: root"
+                        },
+                        "depth": {
+                            "type": "number",
+                            "description": "Max depth to traverse (1-5, default: 2)"
+                        },
+                        "includeFiles": {
+                            "type": "boolean",
+                            "description": "Include files in output (default: true)"
+                        },
+                        "includeStats": {
+                            "type": "boolean",
+                            "description": "Include file counts and import stats (default: true)"
+                        },
+                        "pattern": {
+                            "type": "string",
+                            "description": "Filter pattern for file names (e.g., '*.test.ts', 'index.*')"
+                        }
+                    }
+                }
+            },
+            {
                 "name": "ouroborosai_graph_symbols",
                 "displayName": "Code Graph Symbols",
                 "toolReferenceName": "ouroborosai_graph_symbols",

@@ -29,7 +29,9 @@ Major upgrade adding Language Server Protocol integration for semantic code inte
 - `graphReferences.test.ts` — Tests for references tool
 
 ### Fixed
-- Various lint warnings in new LSP code
+- **Missing Tool Definitions** — Added `ouroborosai_graph_search` and `ouroborosai_graph_tree` to `package.json` languageModelTools
+- **Input History UX** — Arrow keys only trigger history navigation when cursor is at start (↑) or end (↓) of text
+- **LSP Logging** — Added initialization and operation logging to SymbolService for debugging
 
 ---
 
