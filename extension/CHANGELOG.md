@@ -2,6 +2,16 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.18] - 2026-01-23
+
+### Added
+- **Image Compression** — Automatic compression of image attachments to reduce vision token consumption
+  - Smart compression (0.92 quality, 2048px max)
+  - Skip small files (<100KB)
+  - PNG transparency preserved for screenshots
+
+---
+
 ## [3.3.17] - 2026-01-21
 
 ### LSP Integration (Code Graph v2.0)

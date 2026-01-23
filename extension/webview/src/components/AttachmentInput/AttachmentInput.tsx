@@ -13,7 +13,18 @@ import {
     formatFileSize,
     getFileIcon,
 } from '../../types/attachments';
+import { compressImage } from '../../utils/imageCompression';
 import styles from './AttachmentInput.module.css';
+
+/** Read a file as data URL */
+function readFileAsDataURL(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+        reader.readAsDataURL(file);
+    });
+}
 
 const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const DEFAULT_MAX_ATTACHMENTS = 10;
@@ -70,28 +81,30 @@ export function AttachmentInput({
 
         const isImage = isImageType(file.type);
 
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const attachment: Attachment = {
-                    id: generateAttachmentId(),
-                    type: isImage ? 'image' : (detectLanguage(file.name) ? 'code' : 'file'),
-                    name: file.name,
-                    data: reader.result as string,
-                    mimeType: file.type,
-                    size: file.size,
-                    language: detectLanguage(file.name),
-                };
+        try {
+            // Compress images to reduce vision token consumption
+            const data = isImage
+                ? await compressImage(file, { quality: 0.92, maxDimension: 2048 })
+                : await readFileAsDataURL(file);
 
-                if (isImage) {
-                    attachment.previewUrl = URL.createObjectURL(file);
-                }
-
-                resolve(attachment);
+            const attachment: Attachment = {
+                id: generateAttachmentId(),
+                type: isImage ? 'image' : (detectLanguage(file.name) ? 'code' : 'file'),
+                name: file.name,
+                data,
+                mimeType: file.type,
+                size: file.size,
+                language: detectLanguage(file.name),
             };
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-        });
+
+            if (isImage) {
+                attachment.previewUrl = URL.createObjectURL(file);
+            }
+
+            return attachment;
+        } catch {
+            return null;
+        }
     }, [maxFileSize, acceptedTypes, clearError]);
 
     const handlePaste = useCallback(async (e: React.ClipboardEvent) => {

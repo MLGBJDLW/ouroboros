@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.18] - 2026-01-23
+
+### Added
+- **Image Compression** — Automatic compression of image attachments to reduce vision token consumption:
+  - Smart compression with quality preservation (0.92 quality, 2048px max dimension)
+  - Small files (<100KB) skip compression
+  - PNG transparency preserved for small screenshots
+  - Large PNGs converted to JPEG for better compression
+
+---
+
 ## [3.3.17] - 2026-01-21
 
 ### LSP Integration (Code Graph v2.0)
