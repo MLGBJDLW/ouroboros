@@ -15,6 +15,7 @@ import { AGENT_DISPLAY_NAMES } from '../../types/agent';
 import { serializeAttachments } from '../../types/requests';
 import type { Attachment } from '../../types/attachments';
 import { generateAttachmentId, isImageType, detectLanguage, formatFileSize } from '../../types/attachments';
+import { compressImage } from '../../utils/imageCompression';
 import type { PendingRequest, AskRequestData, MenuRequestData, ConfirmRequestData, PlanReviewRequestData } from '../../types/requests';
 import styles from './PendingRequests.module.css';
 
@@ -400,6 +401,16 @@ function RequestContent({ request, onRespond, onCancel }: RequestContentProps) {
 // Attachment Hook
 // ============================================================================
 
+/** Read a file as data URL */
+function readFileAsDataURL(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+        reader.readAsDataURL(file);
+    });
+}
+
 function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE_SIZE) {
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -419,24 +430,26 @@ function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE
 
         const isImage = isImageType(file.type);
 
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const attachment: Attachment = {
-                    id: generateAttachmentId(),
-                    type: isImage ? 'image' : (detectLanguage(file.name) ? 'code' : 'file'),
-                    name: file.name,
-                    data: reader.result as string,
-                    mimeType: file.type,
-                    size: file.size,
-                    language: detectLanguage(file.name),
-                };
-                if (isImage) attachment.previewUrl = URL.createObjectURL(file);
-                resolve(attachment);
+        try {
+            // Compress images to reduce vision token consumption
+            const data = isImage
+                ? await compressImage(file, { quality: 0.92, maxDimension: 2048 })
+                : await readFileAsDataURL(file);
+
+            const attachment: Attachment = {
+                id: generateAttachmentId(),
+                type: isImage ? 'image' : (detectLanguage(file.name) ? 'code' : 'file'),
+                name: file.name,
+                data,
+                mimeType: file.type,
+                size: file.size,
+                language: detectLanguage(file.name),
             };
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-        });
+            if (isImage) attachment.previewUrl = URL.createObjectURL(file);
+            return attachment;
+        } catch {
+            return null;
+        }
     }, [maxFileSize, clearError]);
 
     const addAttachment = useCallback(async (file: File) => {

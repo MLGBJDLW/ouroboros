@@ -255,7 +255,12 @@ describe('useInputHistory', () => {
             const downEvent = {
                 key: 'ArrowDown',
                 preventDefault: vi.fn(),
-                target: { tagName: 'INPUT' } as HTMLInputElement,
+                target: {
+                    tagName: 'INPUT',
+                    selectionStart: 10,  // At end of 'Response 2'
+                    selectionEnd: 10,
+                    value: 'Response 2',
+                } as unknown as HTMLInputElement,
             } as unknown as React.KeyboardEvent<HTMLInputElement>;
 
             let handled: boolean;
