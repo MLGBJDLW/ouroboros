@@ -887,6 +887,63 @@ export async function handleMessage(
             break;
         }
 
+        // ============================================
+        // File Mention Support
+        // ============================================
+
+        case 'getFileList': {
+            logger.info('Getting file list for @ mentions');
+            try {
+                const vscode = await import('vscode');
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                
+                if (!workspaceFolder) {
+                    logger.warn('No workspace folder found');
+                    sidebarProvider.postMessage({
+                        type: 'fileListResponse',
+                        payload: [],
+                    });
+                    break;
+                }
+
+                // Use findFiles to get workspace files, respecting .gitignore
+                // Exclude pattern must use glob brace syntax
+                const files = await vscode.workspace.findFiles(
+                    '**/*',
+                    '{**/node_modules/**,**/.git/**,**/dist/**,**/build/**,**/.ouroboros/**,**/coverage/**}',
+                    2000 // Limit to 2000 files for performance
+                );
+
+                logger.info(`Found ${files.length} files in workspace`);
+
+                const fileList = files.map(uri => {
+                    const relativePath = vscode.workspace.asRelativePath(uri, false);
+                    const name = relativePath.split(/[/\\]/).pop() || relativePath;
+                    return {
+                        path: relativePath,
+                        name,
+                        isDirectory: false,
+                    };
+                });
+
+                // Sort by path for consistent ordering
+                fileList.sort((a, b) => a.path.localeCompare(b.path));
+
+                logger.debug(`Sending ${fileList.length} files to webview`);
+                sidebarProvider.postMessage({
+                    type: 'fileListResponse',
+                    payload: fileList,
+                });
+            } catch (error) {
+                logger.error('Failed to get file list:', error);
+                sidebarProvider.postMessage({
+                    type: 'fileListResponse',
+                    payload: [],
+                });
+            }
+            break;
+        }
+
         default:
             logger.warn('Unknown message type:', message.type);
     }

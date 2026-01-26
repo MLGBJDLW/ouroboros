@@ -91,7 +91,7 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const input = screen.getByPlaceholderText('Type / for commands, ↑↓ for history');
+        const input = screen.getByPlaceholderText('Type / for commands, @ for files, ↑↓ for history');
         fireEvent.change(input, { target: { value: 'My Answer' } });
         fireEvent.click(screen.getByTitle('Send'));
 
@@ -116,7 +116,7 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const input = screen.getByPlaceholderText('Type / for commands, ↑↓ for history');
+        const input = screen.getByPlaceholderText('Type / for commands, @ for files, ↑↓ for history');
         fireEvent.change(input, { target: { value: 'My Answer' } });
         fireEvent.keyDown(input, { key: 'Enter', shiftKey: false });
 
@@ -141,7 +141,7 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const input = screen.getByPlaceholderText('Type / for commands, ↑↓ for history');
+        const input = screen.getByPlaceholderText('Type / for commands, @ for files, ↑↓ for history');
         fireEvent.change(input, { target: { value: 'My Answer' } });
         fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
 
