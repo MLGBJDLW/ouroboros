@@ -19,3 +19,5 @@ export {
     DragOverlay,
     AttachmentActions,
 } from './AttachmentInput';
+export { SlashCommandDropdown } from './SlashCommandDropdown';
+export { FileMentionDropdown } from './FileMentionDropdown';

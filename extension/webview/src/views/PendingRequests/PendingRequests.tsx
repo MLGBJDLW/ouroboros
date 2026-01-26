@@ -3,6 +3,7 @@ import { usePendingRequests } from '../../hooks/usePendingRequests';
 import { useAppContext } from '../../context/AppContext';
 import { useInputHistory } from '../../hooks/useInputHistory';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
+import { useFileMentions } from '../../hooks/useFileMentions';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
@@ -10,6 +11,7 @@ import { Logo } from '../../components/Logo';
 import { Markdown } from '../../components/Markdown';
 import { AttachmentsList, DragOverlay, AttachmentActions } from '../../components/AttachmentInput';
 import { SlashCommandDropdown } from '../../components/SlashCommandDropdown';
+import { FileMentionDropdown } from '../../components/FileMentionDropdown';
 import { formatRelativeTime, formatRequestType } from '../../utils/formatters';
 import { AGENT_DISPLAY_NAMES } from '../../types/agent';
 import { serializeAttachments } from '../../types/requests';
@@ -580,9 +582,11 @@ interface ContentProps {
 
 function AskContent({ request, data, onRespond, onCancel }: ContentProps & { data: AskRequestData }) {
     const [value, setValue] = useState('');
+    const [cursorPosition, setCursorPosition] = useState(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputHistory = useInputHistory();
     const slashCommands = useSlashCommands();
+    const fileMentions = useFileMentions();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -600,14 +604,17 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
             });
             clearAttachments();
             slashCommands.cancel();
+            fileMentions.cancel();
         }
-    }, [request.id, value, attachments, onRespond, clearAttachments, slashCommands]);
+    }, [request.id, value, attachments, onRespond, clearAttachments, slashCommands, fileMentions]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 if (slashCommands.isActive) {
                     slashCommands.cancel();
+                } else if (fileMentions.isActive) {
+                    fileMentions.cancel();
                 } else {
                     onCancel(request.id);
                 }
@@ -615,19 +622,61 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [request.id, onCancel, slashCommands]);
+    }, [request.id, onCancel, slashCommands, fileMentions]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newValue = e.target.value;
+        const newCursor = e.target.selectionStart;
         setValue(newValue);
+        setCursorPosition(newCursor);
         inputHistory.resetNavigation();
-        // Update slash command matches
+        
+        // Update slash command matches (only at start of input)
         slashCommands.update(newValue);
+        
+        // Update file mention matches (can be anywhere in input)
+        if (!slashCommands.isActive) {
+            fileMentions.update(newValue, newCursor);
+        }
+        
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
     };
 
     const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle file mention navigation first (higher priority when active)
+        if (fileMentions.isActive) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                fileMentions.moveUp();
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                fileMentions.moveDown();
+                return;
+            }
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault();
+                const { text, newCursor } = fileMentions.complete(value, cursorPosition);
+                setValue(text);
+                setCursorPosition(newCursor);
+                // Set cursor position after state update
+                setTimeout(() => {
+                    if (textareaRef.current) {
+                        textareaRef.current.selectionStart = newCursor;
+                        textareaRef.current.selectionEnd = newCursor;
+                    }
+                }, 0);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                fileMentions.cancel();
+                return;
+            }
+        }
+        
         // Handle slash command navigation
         if (slashCommands.isActive) {
             if (e.key === 'ArrowUp') {
@@ -653,13 +702,13 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
             }
         }
 
-        // Handle history navigation (only when slash commands not active)
-        if (!slashCommands.isActive && inputHistory.handleKeyDown(e, value, setValue)) {
+        // Handle history navigation (only when no dropdowns active)
+        if (!slashCommands.isActive && !fileMentions.isActive && inputHistory.handleKeyDown(e, value, setValue)) {
             return;
         }
 
-        // Handle submit
-        if (e.key === 'Enter' && !e.shiftKey) {
+        // Handle submit (only when file mentions not active, to allow Enter for completion)
+        if (e.key === 'Enter' && !e.shiftKey && !fileMentions.isActive) {
             e.preventDefault();
             handleSubmit();
         }
@@ -670,6 +719,29 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
         slashCommands.cancel();
         textareaRef.current?.focus();
     }, [slashCommands]);
+
+    const handleFileMentionSelect = useCallback((_file: { path: string }) => {
+        const { text, newCursor } = fileMentions.complete(value, cursorPosition);
+        setValue(text);
+        setCursorPosition(newCursor);
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.selectionStart = newCursor;
+                textareaRef.current.selectionEnd = newCursor;
+                textareaRef.current.focus();
+            }
+        }, 0);
+    }, [fileMentions, value, cursorPosition]);
+
+    // Track cursor position on click/selection
+    const handleTextareaSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+        setCursorPosition(target.selectionStart);
+        // Update file mentions based on new cursor position
+        if (!slashCommands.isActive) {
+            fileMentions.update(value, target.selectionStart);
+        }
+    }, [slashCommands.isActive, fileMentions, value]);
 
     return (
         <div className={styles.askContent}>
@@ -705,6 +777,14 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                             onSelect={handleSlashCommandSelect}
                         />
                     )}
+                    {fileMentions.isActive && !slashCommands.isActive && (
+                        <FileMentionDropdown
+                            matches={fileMentions.matches}
+                            selectedIndex={fileMentions.selectedIndex}
+                            onSelect={handleFileMentionSelect}
+                            isLoading={fileMentions.isLoading}
+                        />
+                    )}
                     {isDragOver && (
                         <div className={styles.dropIndicator}>
                             <Icon name="cloud-upload" />
@@ -713,10 +793,11 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                     )}
                     <textarea
                         ref={textareaRef}
-                        className={`${styles.chatTextarea} ${slashCommands.isActive ? styles.slashActive : ''}`}
-                        placeholder={data.inputLabel ?? 'Type / for commands, ↑↓ for history'}
+                        className={`${styles.chatTextarea} ${slashCommands.isActive || fileMentions.isActive ? styles.slashActive : ''}`}
+                        placeholder={data.inputLabel ?? 'Type / for commands, @ for files, ↑↓ for history'}
                         value={value}
                         onChange={handleTextareaChange}
+                        onSelect={handleTextareaSelect}
                         onPaste={handlePaste}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); handleDragOver(e); }}
                         onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(e); }}
@@ -750,7 +831,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                             maxAttachments={MAX_ATTACHMENTS}
                         />
                         <span className={styles.inputHint}>
-                            Enter to send · / for commands
+                            Enter to send · / for commands · @ for files
                         </span>
                     </div>
                     <button

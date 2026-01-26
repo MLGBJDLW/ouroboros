@@ -2,6 +2,19 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.19] - 2026-01-26
+
+### Added
+- **@ File Mentions** — Type `@` in input boxes to reference workspace files
+  - Fuzzy search with path/name matching
+  - Keyboard navigation (↑/↓/Enter/Escape)
+  - File paths sent as text for Copilot to read on-demand
+
+### Fixed
+- **Webview Messaging** — Fixed VS Code API usage in useFileMentions hook
+
+---
+
 ## [3.3.18] - 2026-01-23
 
 ### Added

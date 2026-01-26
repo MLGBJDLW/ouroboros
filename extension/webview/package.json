@@ -1,6 +1,6 @@
 {
     "name": "ouroboros-webview",
-    "version": "3.3.18",
+    "version": "3.3.19",
     "private": true,
     "type": "module",
     "scripts": {
