@@ -203,9 +203,9 @@ describe('PendingRequests Component', () => {
 
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
-        
+
         // Now the input should be visible
-        expect(screen.getByPlaceholderText('Type your message... (↑↓ for history)')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Type your message... @ for files, ↑↓ for history')).toBeInTheDocument();
     });
 
     it('handles MENU custom input submission', () => {
@@ -232,8 +232,8 @@ describe('PendingRequests Component', () => {
 
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
-        
-        const input = screen.getByPlaceholderText('Type your message... (↑↓ for history)');
+
+        const input = screen.getByPlaceholderText('Type your message... @ for files, ↑↓ for history');
         fireEvent.change(input, { target: { value: 'Custom Value' } });
         fireEvent.click(screen.getByTitle('Send'));
 
@@ -403,8 +403,8 @@ describe('PendingRequests Component', () => {
 
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
-        
-        const input = screen.getByPlaceholderText('Type your message... (↑↓ for history)');
+
+        const input = screen.getByPlaceholderText('Type your message... @ for files, ↑↓ for history');
         fireEvent.change(input, { target: { value: 'Maybe later' } });
         fireEvent.click(screen.getByTitle('Send'));
 
@@ -525,7 +525,7 @@ describe('PendingRequests Component', () => {
 
         render(<PendingRequests />);
 
-        const feedbackInput = screen.getByPlaceholderText('Feedback (required for changes)... Ctrl+V to paste');
+        const feedbackInput = screen.getByPlaceholderText('Feedback (required for changes)... @ for files, Ctrl+V to paste');
         fireEvent.change(feedbackInput, { target: { value: 'Please add more details' } });
         fireEvent.click(screen.getByText('Request Changes'));
 
@@ -558,8 +558,8 @@ describe('PendingRequests Component', () => {
 
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
-        
-        const input = screen.getByPlaceholderText('Type your message...');
+
+        const input = screen.getByPlaceholderText('Type your message... @ for files');
         fireEvent.change(input, { target: { value: 'Let me think about it' } });
         fireEvent.click(screen.getByTitle('Send'));
 
@@ -733,7 +733,7 @@ describe('PendingRequests Component', () => {
         // Press 'C' to show custom input
         fireEvent.keyDown(window, { key: 'C' });
 
-        expect(screen.getByPlaceholderText('Type your message... (↑↓ for history)')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Type your message... @ for files, ↑↓ for history')).toBeInTheDocument();
     });
 
     it('handles CONFIRM Y key for yes', () => {
@@ -840,8 +840,8 @@ describe('PendingRequests Component', () => {
 
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
-        
-        const input = screen.getByPlaceholderText('Type your message... (↑↓ for history)');
+
+        const input = screen.getByPlaceholderText('Type your message... @ for files, ↑↓ for history');
         fireEvent.change(input, { target: { value: 'Custom Value' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -876,8 +876,8 @@ describe('PendingRequests Component', () => {
 
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
-        
-        const input = screen.getByPlaceholderText('Type your message... (↑↓ for history)');
+
+        const input = screen.getByPlaceholderText('Type your message... @ for files, ↑↓ for history');
         fireEvent.change(input, { target: { value: 'Maybe' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -911,8 +911,8 @@ describe('PendingRequests Component', () => {
 
         // Click the custom response toggle
         fireEvent.click(screen.getByText('Custom response'));
-        
-        const input = screen.getByPlaceholderText('Type your message...');
+
+        const input = screen.getByPlaceholderText('Type your message... @ for files');
         fireEvent.change(input, { target: { value: 'Need more time' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 

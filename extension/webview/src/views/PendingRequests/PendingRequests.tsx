@@ -630,15 +630,15 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
         setValue(newValue);
         setCursorPosition(newCursor);
         inputHistory.resetNavigation();
-        
+
         // Update slash command matches (only at start of input)
         slashCommands.update(newValue);
-        
+
         // Update file mention matches (can be anywhere in input)
         if (!slashCommands.isActive) {
             fileMentions.update(newValue, newCursor);
         }
-        
+
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
     };
@@ -676,7 +676,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                 return;
             }
         }
-        
+
         // Handle slash command navigation
         if (slashCommands.isActive) {
             if (e.key === 'ArrowUp') {
@@ -850,8 +850,11 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
 
 function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { data: MenuRequestData }) {
     const [customValue, setCustomValue] = useState('');
+    const [cursorPosition, setCursorPosition] = useState(0);
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputHistory = useInputHistory();
+    const fileMentions = useFileMentions();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -878,33 +881,97 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, customValue, attachments, onRespond, clearAttachments]);
+        fileMentions.cancel();
+    }, [request.id, customValue, attachments, onRespond, clearAttachments, fileMentions]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setCustomValue(e.target.value);
+        const newValue = e.target.value;
+        const newCursor = e.target.selectionStart;
+        setCustomValue(newValue);
+        setCursorPosition(newCursor);
         inputHistory.resetNavigation();
+
+        // Update file mention matches
+        fileMentions.update(newValue, newCursor);
+
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
     };
 
     const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        // Handle history navigation first
+        // Handle file mention navigation first (higher priority when active)
+        if (fileMentions.isActive) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                fileMentions.moveUp();
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                fileMentions.moveDown();
+                return;
+            }
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault();
+                const { text, newCursor } = fileMentions.complete(customValue, cursorPosition);
+                setCustomValue(text);
+                setCursorPosition(newCursor);
+                setTimeout(() => {
+                    if (textareaRef.current) {
+                        textareaRef.current.selectionStart = newCursor;
+                        textareaRef.current.selectionEnd = newCursor;
+                    }
+                }, 0);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                fileMentions.cancel();
+                return;
+            }
+        }
+
+        // Handle history navigation
         if (inputHistory.handleKeyDown(e, customValue, setCustomValue)) {
             return;
         }
-        // Handle submit
-        if (e.key === 'Enter' && !e.shiftKey) {
+        // Handle submit (only when file mentions not active)
+        if (e.key === 'Enter' && !e.shiftKey && !fileMentions.isActive) {
             e.preventDefault();
             handleCustomSubmit();
         }
     };
 
+    const handleFileMentionSelect = useCallback((_file: { path: string }) => {
+        const { text, newCursor } = fileMentions.complete(customValue, cursorPosition);
+        setCustomValue(text);
+        setCursorPosition(newCursor);
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.selectionStart = newCursor;
+                textareaRef.current.selectionEnd = newCursor;
+                textareaRef.current.focus();
+            }
+        }, 0);
+    }, [fileMentions, customValue, cursorPosition]);
+
+    // Track cursor position on click/selection
+    const handleTextareaSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+        setCursorPosition(target.selectionStart);
+        fileMentions.update(customValue, target.selectionStart);
+    }, [fileMentions, customValue]);
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 if (e.key === 'Escape') {
-                    setShowCustomInput(false);
-                    (e.target as HTMLElement).blur();
+                    if (fileMentions.isActive) {
+                        fileMentions.cancel();
+                    } else {
+                        setShowCustomInput(false);
+                        (e.target as HTMLElement).blur();
+                    }
                 }
                 return;
             }
@@ -915,7 +982,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [request.id, data.options, handleSelect, onCancel]);
+    }, [request.id, data.options, handleSelect, onCancel, fileMentions]);
 
     return (
         <div className={styles.menuContent}>
@@ -956,11 +1023,21 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                         )}
 
                         <div className={styles.customInputWrapper}>
+                            {fileMentions.isActive && (
+                                <FileMentionDropdown
+                                    matches={fileMentions.matches}
+                                    selectedIndex={fileMentions.selectedIndex}
+                                    onSelect={handleFileMentionSelect}
+                                    isLoading={fileMentions.isLoading}
+                                />
+                            )}
                             <textarea
-                                className={styles.customInput}
-                                placeholder="Type your message... (↑↓ for history)"
+                                ref={textareaRef}
+                                className={`${styles.customInput} ${fileMentions.isActive ? styles.slashActive : ''}`}
+                                placeholder="Type your message... @ for files, ↑↓ for history"
                                 value={customValue}
                                 onChange={handleTextareaChange}
+                                onSelect={handleTextareaSelect}
                                 onPaste={handlePaste}
                                 onKeyDown={handleCustomKeyDown}
                                 rows={1}
@@ -998,7 +1075,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                 )}
 
                 <p className={styles.shortcutHintText}>
-                    Press 1-{Math.min(data.options.length, 9)} to select · C for custom · ↑↓ for history
+                    Press 1-{Math.min(data.options.length, 9)} to select · C for custom · @ for files · ↑↓ for history
                 </p>
             </div>
         </div>
@@ -1007,8 +1084,11 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
 
 function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & { data: ConfirmRequestData }) {
     const [customValue, setCustomValue] = useState('');
+    const [cursorPosition, setCursorPosition] = useState(0);
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputHistory = useInputHistory();
+    const fileMentions = useFileMentions();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -1030,33 +1110,97 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, customValue, attachments, onRespond, clearAttachments]);
+        fileMentions.cancel();
+    }, [request.id, customValue, attachments, onRespond, clearAttachments, fileMentions]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setCustomValue(e.target.value);
+        const newValue = e.target.value;
+        const newCursor = e.target.selectionStart;
+        setCustomValue(newValue);
+        setCursorPosition(newCursor);
         inputHistory.resetNavigation();
+
+        // Update file mention matches
+        fileMentions.update(newValue, newCursor);
+
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
     };
 
     const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        // Handle history navigation first
+        // Handle file mention navigation first (higher priority when active)
+        if (fileMentions.isActive) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                fileMentions.moveUp();
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                fileMentions.moveDown();
+                return;
+            }
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault();
+                const { text, newCursor } = fileMentions.complete(customValue, cursorPosition);
+                setCustomValue(text);
+                setCursorPosition(newCursor);
+                setTimeout(() => {
+                    if (textareaRef.current) {
+                        textareaRef.current.selectionStart = newCursor;
+                        textareaRef.current.selectionEnd = newCursor;
+                    }
+                }, 0);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                fileMentions.cancel();
+                return;
+            }
+        }
+
+        // Handle history navigation
         if (inputHistory.handleKeyDown(e, customValue, setCustomValue)) {
             return;
         }
-        // Handle submit
-        if (e.key === 'Enter' && !e.shiftKey) {
+        // Handle submit (only when file mentions not active)
+        if (e.key === 'Enter' && !e.shiftKey && !fileMentions.isActive) {
             e.preventDefault();
             handleCustomSubmit();
         }
     };
 
+    const handleFileMentionSelect = useCallback((_file: { path: string }) => {
+        const { text, newCursor } = fileMentions.complete(customValue, cursorPosition);
+        setCustomValue(text);
+        setCursorPosition(newCursor);
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.selectionStart = newCursor;
+                textareaRef.current.selectionEnd = newCursor;
+                textareaRef.current.focus();
+            }
+        }, 0);
+    }, [fileMentions, customValue, cursorPosition]);
+
+    // Track cursor position on click/selection
+    const handleTextareaSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+        setCursorPosition(target.selectionStart);
+        fileMentions.update(customValue, target.selectionStart);
+    }, [fileMentions, customValue]);
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 if (e.key === 'Escape') {
-                    setShowCustomInput(false);
-                    (e.target as HTMLElement).blur();
+                    if (fileMentions.isActive) {
+                        fileMentions.cancel();
+                    } else {
+                        setShowCustomInput(false);
+                        (e.target as HTMLElement).blur();
+                    }
                 }
                 return;
             }
@@ -1067,7 +1211,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [request.id, handleConfirm, onCancel]);
+    }, [request.id, handleConfirm, onCancel, fileMentions]);
 
     return (
         <div className={styles.confirmContent}>
@@ -1110,11 +1254,21 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                         )}
 
                         <div className={styles.customInputWrapper}>
+                            {fileMentions.isActive && (
+                                <FileMentionDropdown
+                                    matches={fileMentions.matches}
+                                    selectedIndex={fileMentions.selectedIndex}
+                                    onSelect={handleFileMentionSelect}
+                                    isLoading={fileMentions.isLoading}
+                                />
+                            )}
                             <textarea
-                                className={styles.customInput}
-                                placeholder="Type your message... (↑↓ for history)"
+                                ref={textareaRef}
+                                className={`${styles.customInput} ${fileMentions.isActive ? styles.slashActive : ''}`}
+                                placeholder="Type your message... @ for files, ↑↓ for history"
                                 value={customValue}
                                 onChange={handleTextareaChange}
+                                onSelect={handleTextareaSelect}
                                 onPaste={handlePaste}
                                 onKeyDown={handleCustomKeyDown}
                                 rows={1}
@@ -1152,7 +1306,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                 )}
 
                 <p className={styles.shortcutHintText}>
-                    Press Y for yes · N for no · C for custom · ↑↓ for history
+                    Press Y for yes · N for no · C for custom · @ for files · ↑↓ for history
                 </p>
             </div>
         </div>
@@ -1161,10 +1315,16 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
 
 function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps & { data: PlanReviewRequestData }) {
     const [feedback, setFeedback] = useState('');
+    const [feedbackCursor, setFeedbackCursor] = useState(0);
     const [customValue, setCustomValue] = useState('');
+    const [customCursor, setCustomCursor] = useState(0);
     const [showCustomInput, setShowCustomInput] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
+    const [activeInput, setActiveInput] = useState<'feedback' | 'custom'>('feedback');
+    const feedbackRef = useRef<HTMLTextAreaElement>(null);
+    const customRef = useRef<HTMLTextAreaElement>(null);
     const showHeader = Boolean(data.title || data.mode);
+    const fileMentions = useFileMentions();
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -1179,7 +1339,8 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, feedback, attachments, onRespond, clearAttachments]);
+        fileMentions.cancel();
+    }, [request.id, feedback, attachments, onRespond, clearAttachments, fileMentions]);
 
     const handleRequestChanges = useCallback(() => {
         const trimmed = feedback.trim();
@@ -1191,7 +1352,8 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, feedback, attachments, onRespond, clearAttachments]);
+        fileMentions.cancel();
+    }, [request.id, feedback, attachments, onRespond, clearAttachments, fileMentions]);
 
     const handleCustomSubmit = useCallback(() => {
         const trimmed = customValue.trim();
@@ -1204,14 +1366,149 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
             attachments: serializeAttachments(attachments),
         });
         clearAttachments();
-    }, [request.id, customValue, attachments, onRespond, clearAttachments]);
+        fileMentions.cancel();
+    }, [request.id, customValue, attachments, onRespond, clearAttachments, fileMentions]);
+
+    const handleFeedbackChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        const newCursor = e.target.selectionStart;
+        setFeedback(newValue);
+        setFeedbackCursor(newCursor);
+        setActiveInput('feedback');
+        fileMentions.update(newValue, newCursor);
+    };
+
+    const handleFeedbackKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (fileMentions.isActive) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                fileMentions.moveUp();
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                fileMentions.moveDown();
+                return;
+            }
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault();
+                const { text, newCursor } = fileMentions.complete(feedback, feedbackCursor);
+                setFeedback(text);
+                setFeedbackCursor(newCursor);
+                setTimeout(() => {
+                    if (feedbackRef.current) {
+                        feedbackRef.current.selectionStart = newCursor;
+                        feedbackRef.current.selectionEnd = newCursor;
+                    }
+                }, 0);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                fileMentions.cancel();
+                return;
+            }
+        }
+    };
+
+    const handleFeedbackSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+        setFeedbackCursor(target.selectionStart);
+        setActiveInput('feedback');
+        fileMentions.update(feedback, target.selectionStart);
+    }, [fileMentions, feedback]);
+
+    const handleCustomChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        const newCursor = e.target.selectionStart;
+        setCustomValue(newValue);
+        setCustomCursor(newCursor);
+        setActiveInput('custom');
+        fileMentions.update(newValue, newCursor);
+        e.target.style.height = 'auto';
+        e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
+    };
+
+    const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (fileMentions.isActive) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                fileMentions.moveUp();
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                fileMentions.moveDown();
+                return;
+            }
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault();
+                const { text, newCursor } = fileMentions.complete(customValue, customCursor);
+                setCustomValue(text);
+                setCustomCursor(newCursor);
+                setTimeout(() => {
+                    if (customRef.current) {
+                        customRef.current.selectionStart = newCursor;
+                        customRef.current.selectionEnd = newCursor;
+                    }
+                }, 0);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                fileMentions.cancel();
+                return;
+            }
+        }
+        if (e.key === 'Enter' && !e.shiftKey && !fileMentions.isActive) {
+            e.preventDefault();
+            handleCustomSubmit();
+        }
+    };
+
+    const handleCustomSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+        setCustomCursor(target.selectionStart);
+        setActiveInput('custom');
+        fileMentions.update(customValue, target.selectionStart);
+    }, [fileMentions, customValue]);
+
+    const handleFileMentionSelect = useCallback((_file: { path: string }) => {
+        if (activeInput === 'feedback') {
+            const { text, newCursor } = fileMentions.complete(feedback, feedbackCursor);
+            setFeedback(text);
+            setFeedbackCursor(newCursor);
+            setTimeout(() => {
+                if (feedbackRef.current) {
+                    feedbackRef.current.selectionStart = newCursor;
+                    feedbackRef.current.selectionEnd = newCursor;
+                    feedbackRef.current.focus();
+                }
+            }, 0);
+        } else {
+            const { text, newCursor } = fileMentions.complete(customValue, customCursor);
+            setCustomValue(text);
+            setCustomCursor(newCursor);
+            setTimeout(() => {
+                if (customRef.current) {
+                    customRef.current.selectionStart = newCursor;
+                    customRef.current.selectionEnd = newCursor;
+                    customRef.current.focus();
+                }
+            }, 0);
+        }
+    }, [fileMentions, activeInput, feedback, feedbackCursor, customValue, customCursor]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
                 if (e.key === 'Escape') {
-                    setShowCustomInput(false);
-                    (e.target as HTMLElement).blur();
+                    if (fileMentions.isActive) {
+                        fileMentions.cancel();
+                    } else {
+                        setShowCustomInput(false);
+                        (e.target as HTMLElement).blur();
+                    }
                 }
                 return;
             }
@@ -1221,7 +1518,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [request.id, handleApprove, onCancel]);
+    }, [request.id, handleApprove, onCancel, fileMentions]);
 
     return (
         <div className={styles.planReviewContainer}>
@@ -1267,13 +1564,24 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                 )}
 
                 <div className={styles.feedbackInputWrapper}>
+                    {fileMentions.isActive && activeInput === 'feedback' && (
+                        <FileMentionDropdown
+                            matches={fileMentions.matches}
+                            selectedIndex={fileMentions.selectedIndex}
+                            onSelect={handleFileMentionSelect}
+                            isLoading={fileMentions.isLoading}
+                        />
+                    )}
                     <textarea
-                        className={styles.chatTextarea}
+                        ref={feedbackRef}
+                        className={`${styles.chatTextarea} ${fileMentions.isActive && activeInput === 'feedback' ? styles.slashActive : ''}`}
                         rows={2}
-                        placeholder="Feedback (required for changes)... Ctrl+V to paste"
+                        placeholder="Feedback (required for changes)... @ for files, Ctrl+V to paste"
                         value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
+                        onChange={handleFeedbackChange}
+                        onSelect={handleFeedbackSelect}
                         onPaste={handlePaste}
+                        onKeyDown={handleFeedbackKeyDown}
                     />
                     <AttachmentActions
                         onOpenFilePicker={openFilePicker}
@@ -1315,21 +1623,22 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                     </button>
                 ) : (
                     <div className={styles.customInputWrapper}>
+                        {fileMentions.isActive && activeInput === 'custom' && (
+                            <FileMentionDropdown
+                                matches={fileMentions.matches}
+                                selectedIndex={fileMentions.selectedIndex}
+                                onSelect={handleFileMentionSelect}
+                                isLoading={fileMentions.isLoading}
+                            />
+                        )}
                         <textarea
-                            className={styles.customInput}
-                            placeholder="Type your message..."
+                            ref={customRef}
+                            className={`${styles.customInput} ${fileMentions.isActive && activeInput === 'custom' ? styles.slashActive : ''}`}
+                            placeholder="Type your message... @ for files"
                             value={customValue}
-                            onChange={(e) => {
-                                setCustomValue(e.target.value);
-                                e.target.style.height = 'auto';
-                                e.target.style.height = Math.min(e.target.scrollHeight, 240) + 'px';
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleCustomSubmit();
-                                }
-                            }}
+                            onChange={handleCustomChange}
+                            onSelect={handleCustomSelect}
+                            onKeyDown={handleCustomKeyDown}
                             rows={1}
                             autoFocus
                         />
@@ -1351,7 +1660,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                 )}
 
                 <p className={styles.shortcutHintText}>
-                    Ctrl+Enter to approve · C for custom · Ctrl+V to paste
+                    Ctrl+Enter to approve · C for custom · @ for files · Ctrl+V to paste
                 </p>
             </div>
         </div>
