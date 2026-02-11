@@ -2,6 +2,15 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.21] - 2026-02-11
+
+### Added
+- **Formatted Paste** — Pasting rich text auto-converts to Markdown in all input boxes
+  - Supports headings, lists, code blocks, tables, inline formatting
+  - New `useFormattedPaste` hook and `htmlToMarkdown` utility
+
+---
+
 ## [3.3.19] - 2026-01-26
 
 ### Added
