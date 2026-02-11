@@ -4,6 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import { useInputHistory } from '../../hooks/useInputHistory';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
 import { useFileMentions } from '../../hooks/useFileMentions';
+import { useFormattedPaste } from '../../hooks/useFormattedPaste';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
@@ -587,6 +588,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
     const inputHistory = useInputHistory();
     const slashCommands = useSlashCommands();
     const fileMentions = useFileMentions();
+    const formatPaste = useFormattedPaste(textareaRef, setValue, setCursorPosition);
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -798,7 +800,7 @@ function AskContent({ request, data, onRespond, onCancel }: ContentProps & { dat
                         value={value}
                         onChange={handleTextareaChange}
                         onSelect={handleTextareaSelect}
-                        onPaste={handlePaste}
+                        onPaste={(e) => { if (!formatPaste.tryFormatPaste(e)) handlePaste(e); }}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); handleDragOver(e); }}
                         onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(e); }}
                         onKeyDown={handleTextareaKeyDown}
@@ -855,6 +857,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputHistory = useInputHistory();
     const fileMentions = useFileMentions();
+    const formatPaste = useFormattedPaste(textareaRef, setCustomValue, setCursorPosition);
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -1038,7 +1041,7 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
                                 value={customValue}
                                 onChange={handleTextareaChange}
                                 onSelect={handleTextareaSelect}
-                                onPaste={handlePaste}
+                                onPaste={(e) => { if (!formatPaste.tryFormatPaste(e)) handlePaste(e); }}
                                 onKeyDown={handleCustomKeyDown}
                                 rows={1}
                                 autoFocus
@@ -1089,6 +1092,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputHistory = useInputHistory();
     const fileMentions = useFileMentions();
+    const formatPaste = useFormattedPaste(textareaRef, setCustomValue, setCursorPosition);
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -1269,7 +1273,7 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
                                 value={customValue}
                                 onChange={handleTextareaChange}
                                 onSelect={handleTextareaSelect}
-                                onPaste={handlePaste}
+                                onPaste={(e) => { if (!formatPaste.tryFormatPaste(e)) handlePaste(e); }}
                                 onKeyDown={handleCustomKeyDown}
                                 rows={1}
                                 autoFocus
@@ -1325,6 +1329,8 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
     const customRef = useRef<HTMLTextAreaElement>(null);
     const showHeader = Boolean(data.title || data.mode);
     const fileMentions = useFileMentions();
+    const feedbackFormatPaste = useFormattedPaste(feedbackRef, setFeedback, setFeedbackCursor);
+    const customFormatPaste = useFormattedPaste(customRef, setCustomValue, setCustomCursor);
     const {
         attachments, isDragOver, error, fileInputRef,
         removeAttachment, handlePaste, handleDragOver, handleDragLeave,
@@ -1580,7 +1586,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                         value={feedback}
                         onChange={handleFeedbackChange}
                         onSelect={handleFeedbackSelect}
-                        onPaste={handlePaste}
+                        onPaste={(e) => { if (!feedbackFormatPaste.tryFormatPaste(e)) handlePaste(e); }}
                         onKeyDown={handleFeedbackKeyDown}
                     />
                     <AttachmentActions
@@ -1638,6 +1644,7 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                             value={customValue}
                             onChange={handleCustomChange}
                             onSelect={handleCustomSelect}
+                            onPaste={(e) => { if (!customFormatPaste.tryFormatPaste(e)) handlePaste(e); }}
                             onKeyDown={handleCustomKeyDown}
                             rows={1}
                             autoFocus
