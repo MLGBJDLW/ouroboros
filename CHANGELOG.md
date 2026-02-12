@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.22] - 2026-02-12
+
+### Cyberpunk UI Overhaul
+
+Unified all extension views to a cyberpunk/brutalist design language.
+
+### Changed
+- **Design System** — All `--radius-*` set to 0px, added `--font-mono`, `--scanline-color`, `--focus-glow`, `--glow-*` tokens, consolidated 8 canonical `@keyframes` in `global.css`
+- **Core Components** — Card, Button, Badge, ProgressBar, EmptyState, App restyled: sharp corners, scanline overlays, monospace labels, glow effects
+- **Welcome** — Sharp cards with scanline+glow pseudo-elements, monospace fonts throughout
+- **WorkflowProgress** — Diamond phase nodes, scanline on active card, skewed type labels, glow connectors
+- **CopilotInsights** — Scanline+glow cards, square stroke caps on ring, diamond unlimited icon
+- **History** — Cyberpunk list styling with border-left accent on questions
+- **PendingRequests** — Replaced 67+ direct `--vscode-*` references with abstracted design tokens, all `border-radius` → 0
+
+### Added
+- **History Search & Filter** — Search input with type filter buttons (all/ask/menu/confirm/plan_review)
+
+### Fixed
+- Removed 9 debug `console.log` statements from `PendingRequests.tsx`
+- Removed unused `paths` variable in drag-drop handler
+
+---
+
 ## [3.3.21] - 2026-02-11
 
 ### Added

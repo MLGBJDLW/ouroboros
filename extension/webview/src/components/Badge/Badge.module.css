@@ -1,10 +1,14 @@
+/* Badge — Cyberpunk Sharp */
 .badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
-    font-weight: 500;
+    border-radius: 0;
+    font-family: var(--font-mono);
+    font-weight: 600;
     white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Sizes */
@@ -14,7 +18,7 @@
 }
 
 .medium {
-    padding: 2px 8px;
+    padding: 2px var(--spacing-sm);
     font-size: 11px;
 }
 

@@ -1,4 +1,4 @@
-/* Global Styles */
+/* Global Styles — Cyberpunk */
 body {
     background: var(--background);
     color: var(--foreground);
@@ -20,7 +20,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
     background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
-    border-radius: 5px;
+    border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -42,7 +42,22 @@ body {
     background: var(--vscode-editor-selectionBackground, #264f78);
 }
 
-/* Animations */
+/* ============================================================================
+   Canonical Keyframes — Defined ONCE, referenced everywhere
+   ============================================================================ */
+
+@keyframes cyberFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -87,7 +102,97 @@ body {
     }
 }
 
-/* Utility classes */
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes breathe {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shakeIn {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+
+    75% {
+        transform: translateX(4px);
+    }
+}
+
+/* ============================================================================
+   Cyberpunk Utility Classes
+   ============================================================================ */
+
+/* Scanline texture overlay — apply to a ::after pseudo-element */
+.cyber-scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.1;
+}
+
+/* Holographic diagonal line texture — apply to a ::before pseudo-element */
+.cyber-holographic::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg,
+            transparent,
+            transparent 10px,
+            var(--holographic-line-color) 10px,
+            var(--holographic-line-color) 11px);
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Top-edge glow border */
+.cyber-glow-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-focus);
+    opacity: 0.5;
+    z-index: 10;
+}
+
+/* Utility animation classes */
+.cyberFadeIn {
+    animation: cyberFadeIn 0.3s ease;
+}
+
 .fadeIn {
     animation: fadeIn var(--transition-normal);
 }

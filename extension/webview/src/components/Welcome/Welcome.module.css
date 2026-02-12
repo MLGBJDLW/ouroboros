@@ -1,23 +1,12 @@
+/* Welcome — Cyberpunk / Native Avant-Garde */
 .container {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
     padding: var(--spacing-xl) var(--spacing-lg);
-    animation: fadeIn 0.4s var(--transition-normal);
+    animation: cyberFadeIn 0.4s ease;
     max-width: 600px;
     margin: 0 auto;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* Header */
@@ -51,7 +40,6 @@
     color: var(--foreground-secondary);
     background: var(--background-secondary);
     padding: 2px 6px;
-    border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     opacity: 0.7;
     transition: opacity var(--transition-fast);
@@ -59,6 +47,7 @@
 
 .version:hover {
     opacity: 1;
+    border-color: var(--border-focus);
 }
 
 .logoContainer {
@@ -100,7 +89,7 @@
 
 /* Right arc path - blue */
 .arcRight {
-    filter: drop-shadow(0 0 6px #3794ff);
+    filter: drop-shadow(0 0 6px var(--info));
     animation: arcGlow 2.5s ease-in-out infinite;
     animation-delay: 0.15s;
 }
@@ -122,12 +111,11 @@
     0%,
     100% {
         opacity: 0.4;
-        box-shadow: 0 0 6px #7C3AED;
     }
 
     50% {
         opacity: 1;
-        box-shadow: 0 0 14px #9C6ADE, 0 0 20px #7C3AED;
+        filter: drop-shadow(0 0 14px #9C6ADE) drop-shadow(0 0 20px #7C3AED);
     }
 }
 
@@ -136,12 +124,11 @@
     0%,
     100% {
         opacity: 0.4;
-        box-shadow: 0 0 6px var(--button-background);
     }
 
     50% {
         opacity: 1;
-        box-shadow: 0 0 12px var(--info), 0 0 18px var(--button-background);
+        filter: drop-shadow(0 0 12px var(--info)) drop-shadow(0 0 18px var(--button-background));
     }
 }
 
@@ -161,7 +148,7 @@
     width: 3px;
     height: 3px;
     background: var(--info);
-    border-radius: 50%;
+    border-radius: 0;
     animation:
         particleFlow 5s ease-in-out infinite,
         particleColor 3s ease-in-out infinite;
@@ -204,55 +191,70 @@
     }
 }
 
-@keyframes pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(14, 99, 156, 0.4);
-    }
-
-    50% {
-        transform: scale(1.05);
-        box-shadow: 0 0 0 10px rgba(14, 99, 156, 0);
-    }
-}
-
 .title {
     margin: var(--spacing-md) 0 0 0;
     font-size: 24px;
     font-weight: 700;
     color: var(--foreground);
-    background: var(--foreground);
-    -webkit-background-clip: text;
-    background-clip: text;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .subtitle {
     margin: var(--spacing-xs) 0 0 0;
-    font-size: 13px;
+    font-size: 12px;
+    font-family: var(--font-mono);
     color: var(--foreground-secondary);
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
-/* Cards */
+/* Cards — Cyberpunk: sharp corners, edge glow, scanline */
 .statusCard,
 .actionsCard,
-.infoCard,
-.shortcutsCard {
+.infoCard {
+    position: relative;
     background: var(--background-secondary);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* Scanline layer on cards */
+.statusCard::after,
+.actionsCard::after,
+.infoCard::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.06;
+}
+
+/* Top edge glow */
+.statusCard::before,
+.actionsCard::before,
+.infoCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-focus);
+    opacity: 0.4;
+    z-index: 10;
 }
 
 .statusCard:hover,
 .actionsCard:hover,
-.infoCard:hover,
-.shortcutsCard:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+.infoCard:hover {
     border-color: var(--border-focus);
+    box-shadow: var(--shadow-md), 0 0 8px var(--glow-info);
 }
 
 .statusItem {
@@ -261,6 +263,8 @@
     align-items: center;
     padding: var(--spacing-sm) 0;
     font-size: 12px;
+    position: relative;
+    z-index: 2;
 }
 
 .statusItem:not(:last-child) {
@@ -269,11 +273,16 @@
 
 .statusLabel {
     color: var(--foreground-secondary);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .statusValue {
     color: var(--foreground);
     font-weight: 500;
+    font-family: var(--font-mono);
 }
 
 .warning {
@@ -284,6 +293,7 @@
 .step {
     padding: var(--spacing-md) 0;
     position: relative;
+    z-index: 2;
     transition: background-color var(--transition-fast);
 }
 
@@ -298,6 +308,7 @@
     gap: var(--spacing-sm);
     font-size: 13px;
     font-weight: 600;
+    font-family: var(--font-mono);
     color: var(--foreground);
     margin-bottom: var(--spacing-xs);
 }
@@ -313,16 +324,17 @@
     background: var(--input-background);
     color: var(--info);
     padding: 2px 6px;
-    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 11px;
 }
 
 .actionButton {
+    position: relative;
+    z-index: 2;
     width: 100%;
     justify-content: center;
     gap: var(--spacing-sm);
-    padding: 8px 16px;
+    padding: var(--spacing-sm) var(--spacing-lg);
     font-weight: 500;
 }
 
@@ -332,6 +344,8 @@
     flex-direction: column;
     gap: var(--spacing-xs);
     margin-bottom: var(--spacing-md);
+    position: relative;
+    z-index: 2;
 }
 
 .workspaceLabel {
@@ -339,18 +353,20 @@
     align-items: center;
     gap: var(--spacing-xs);
     font-size: 11px;
+    font-family: var(--font-mono);
     color: var(--foreground-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .workspaceSelect {
     width: 100%;
-    padding: 8px 12px;
+    padding: var(--spacing-sm) var(--spacing-md);
     font-size: 12px;
-    font-family: inherit;
+    font-family: var(--font-mono);
     color: var(--foreground);
     background: var(--input-background);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
     cursor: pointer;
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     appearance: none;
@@ -367,13 +383,13 @@
 .workspaceSelect:focus {
     outline: none;
     border-color: var(--button-background);
-    box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.15);
+    box-shadow: var(--focus-glow);
 }
 
 .workspaceSelect option {
     color: var(--foreground);
     background: var(--background-secondary);
-    padding: 8px;
+    padding: var(--spacing-sm);
 }
 
 /* File List */
@@ -381,6 +397,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    position: relative;
+    z-index: 2;
 }
 
 .fileItem {
@@ -389,9 +407,10 @@
     gap: var(--spacing-sm);
     font-size: 11px;
     color: var(--foreground-secondary);
-    padding: 4px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     background: var(--background);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
 }
 
 .fileItem code {
@@ -404,41 +423,7 @@
     margin-left: auto;
     font-size: 10px;
     opacity: 0.8;
-}
-
-/* Shortcuts */
-.shortcutGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: var(--spacing-sm);
-}
-
-.shortcut {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--foreground-secondary);
-    padding: 4px;
-    border-radius: var(--radius-sm);
-    background: var(--background);
-}
-
-.shortcut kbd {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    font-size: 10px;
     font-family: var(--font-mono);
-    font-weight: 600;
-    color: var(--foreground);
-    background: var(--background-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Footer */
@@ -446,6 +431,7 @@
     text-align: center;
     padding: var(--spacing-lg) 0;
     font-size: 11px;
+    font-family: var(--font-mono);
     color: var(--foreground-secondary);
     opacity: 0.5;
     transition: opacity var(--transition-normal);

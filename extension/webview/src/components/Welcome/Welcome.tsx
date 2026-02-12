@@ -234,23 +234,6 @@ export function Welcome({
                 </CardBody>
             </Card>
 
-            {/* Keyboard Shortcuts */}
-            <Card className={styles.shortcutsCard}>
-                <CardHeader>
-                    <Icon name="keyboard" />
-                    <span>Shortcuts</span>
-                </CardHeader>
-                <CardBody>
-                    <div className={styles.shortcutGrid}>
-                        <div className={styles.shortcut}><kbd>0</kbd> Home</div>
-                        <div className={styles.shortcut}><kbd>1</kbd> Pending</div>
-                        <div className={styles.shortcut}><kbd>2</kbd> Workflow</div>
-                        <div className={styles.shortcut}><kbd>3</kbd> Agents</div>
-                        <div className={styles.shortcut}><kbd>4</kbd> History</div>
-                    </div>
-                </CardBody>
-            </Card>
-
             {/* Footer */}
             <div className={styles.footer}>
                 <span>The Loop Never Ends</span>
