@@ -1,9 +1,37 @@
+/* Card — Cyberpunk Brutalist */
 .card {
+    position: relative;
     background: var(--background-secondary);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     overflow: hidden;
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Scanline texture */
+.card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.06;
+}
+
+/* Top edge glow */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-focus);
+    opacity: 0.4;
+    z-index: 10;
 }
 
 .card.clickable {
@@ -12,28 +40,39 @@
 
 .card.clickable:hover {
     border-color: var(--border-focus);
+    box-shadow: var(--shadow-md);
 }
 
 .card.highlighted {
     border-color: var(--info);
+    box-shadow: 0 0 8px var(--glow-info);
 }
 
 .header {
+    position: relative;
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--background);
     border-bottom: 1px solid var(--border);
     font-weight: 500;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
 .body {
+    position: relative;
     padding: var(--spacing-md);
+    z-index: 2;
 }
 
 .footer {
+    position: relative;
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--background);
     border-top: 1px solid var(--border);
     display: flex;
     gap: var(--spacing-sm);
     justify-content: flex-end;
+    z-index: 2;
 }

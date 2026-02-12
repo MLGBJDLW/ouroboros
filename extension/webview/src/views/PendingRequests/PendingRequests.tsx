@@ -456,17 +456,14 @@ function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE
     }, [maxFileSize, clearError]);
 
     const addAttachment = useCallback(async (file: File) => {
-        console.log('[Attachment] Adding file:', file.name, file.size, file.type);
         if (attachments.length >= maxAttachments) {
             setError(`Max ${maxAttachments} attachments`);
             clearError();
             return;
         }
         const attachment = await processFile(file);
-        console.log('[Attachment] Processed:', attachment?.name, attachment?.id);
         if (attachment) {
             setAttachments(prev => {
-                console.log('[Attachment] State update, new count:', prev.length + 1);
                 return [...prev, attachment];
             });
         }
@@ -494,7 +491,6 @@ function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('[Attachment] DragOver event triggered');
         if (e.dataTransfer) {
             e.dataTransfer.dropEffect = 'copy';
         }
@@ -504,7 +500,6 @@ function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE
     const handleDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('[Attachment] DragLeave event triggered');
         setIsDragOver(false);
     }, []);
 
@@ -518,25 +513,17 @@ function useAttachments(maxAttachments = MAX_ATTACHMENTS, maxFileSize = MAX_FILE
         const uriListData = e.dataTransfer?.getData('application/vnd.code.uri-list') || '';
         const pathData = textData || uriListData;
 
-        console.log('[Attachment] Drop - text:', textData, 'uri-list:', uriListData);
 
         if (pathData) {
             // Files dragged from VS Code Explorer - we get paths, not file content
-            // For now, just insert the path as text (could be enhanced to read file content)
-            const paths = pathData.split(/\r?\n/).filter(line => line.trim());
-            console.log('[Attachment] Got paths:', paths);
-
-            // Insert paths as mentions or text
             // TODO: Could enhance to actually read file content via extension
             return;
         }
 
         // Try to get actual files (from OS file manager)
         const files = Array.from(e.dataTransfer?.files || []);
-        console.log('[Attachment] Drop - files count:', files.length);
 
         for (const file of files) {
-            console.log('[Attachment] Processing file:', file.name, file.size, file.type);
             await addAttachment(file);
         }
     }, [addAttachment]);

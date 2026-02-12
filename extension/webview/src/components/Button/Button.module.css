@@ -1,13 +1,16 @@
+/* Button — Cyberpunk Brutalist */
 .button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--spacing-xs);
-    border: none;
-    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    border-radius: 0;
     font-weight: 500;
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .button:disabled {
@@ -19,42 +22,49 @@
 .primary {
     background: var(--button-background);
     color: var(--button-foreground);
+    border-color: var(--button-background);
 }
 
 .primary:hover:not(:disabled) {
     background: var(--button-hover);
+    border-color: var(--button-hover);
+    box-shadow: 0 0 8px var(--glow-info);
 }
 
 .secondary {
     background: var(--button-secondary-background);
     color: var(--button-secondary-foreground);
+    border-color: var(--border);
 }
 
 .secondary:hover:not(:disabled) {
     background: var(--button-secondary-hover);
+    border-color: var(--border-focus);
 }
 
 .ghost {
     background: transparent;
     color: var(--foreground);
+    border-color: transparent;
 }
 
 .ghost:hover:not(:disabled) {
     background: var(--list-hover);
+    border-color: var(--border);
 }
 
 /* Sizes */
 .small {
-    padding: 4px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 11px;
 }
 
 .medium {
-    padding: 6px 12px;
+    padding: 6px var(--spacing-md);
     font-size: 13px;
 }
 
 .large {
-    padding: 8px 16px;
+    padding: var(--spacing-sm) var(--spacing-lg);
     font-size: 14px;
 }

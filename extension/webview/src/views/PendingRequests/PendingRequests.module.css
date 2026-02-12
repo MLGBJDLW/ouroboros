@@ -16,14 +16,14 @@
     position: relative;
     width: 100%;
     margin-bottom: var(--spacing-lg);
-    background: var(--vscode-editor-background);
-    border: 1px solid var(--vscode-widget-border);
+    background: var(--editor-bg);
+    border: 1px solid var(--widget-border);
     /* "Brutalist" corners for tech feel */
     border-radius: 0px;
     overflow: hidden;
     flex-shrink: 0;
     /* Subtle depth using widget shadow */
-    box-shadow: 0 4px 12px var(--vscode-widget-shadow);
+    box-shadow: 0 4px 12px var(--widget-shadow);
 }
 
 /* Active Border Concept: Uses focus border for the "powered on" feel */
@@ -34,7 +34,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: var(--vscode-focusBorder);
+    background: var(--border-focus);
     opacity: 0.5;
     z-index: 10;
 }
@@ -48,8 +48,8 @@
         repeating-linear-gradient(45deg,
             transparent,
             transparent 10px,
-            var(--vscode-editor-lineHighlightBorder) 10px,
-            var(--vscode-editor-lineHighlightBorder) 11px);
+            var(--holographic-line-color) 10px,
+            var(--holographic-line-color) 11px);
     opacity: 0.3;
     pointer-events: none;
     z-index: 0;
@@ -59,7 +59,7 @@
     position: absolute;
     inset: 0;
     /* Use editor ruler color for the scanline grid */
-    background: linear-gradient(to bottom, transparent 50%, var(--vscode-editorRuler-foreground) 50%);
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
     background-size: 100% 4px;
     pointer-events: none;
     z-index: 1;
@@ -84,7 +84,7 @@
 
 .techHeader:hover {
     /* Use list hover background for native interaction feel */
-    background: var(--vscode-list-hoverBackground);
+    background: var(--list-hover);
 }
 
 .headerLeft {
@@ -101,15 +101,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--vscode-focusBorder);
-    background: var(--vscode-editor-background);
+    border: 1px solid var(--border-focus);
+    background: var(--editor-bg);
     transform: skew(-10deg);
     /* Tech skew */
 }
 
 .badgeIcon {
     /* Use the "Link" color for the icon to make it pop like a data point */
-    color: var(--vscode-textLink-foreground);
+    color: var(--link-foreground);
     font-size: 18px;
     transform: skew(10deg);
 }
@@ -118,7 +118,7 @@
     position: absolute;
     inset: 0;
     /* Simulated glow using inset shadow of the focus color */
-    box-shadow: inset 0 0 10px var(--vscode-focusBorder);
+    box-shadow: inset 0 0 10px var(--border-focus);
     opacity: 0.2;
     animation: badgePulse 3s infinite;
 }
@@ -143,9 +143,9 @@
 
 .techLabel {
     /* Use Code Font for the "system" feel */
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--foreground-secondary);
     letter-spacing: 1px;
     text-transform: uppercase;
 }
@@ -158,36 +158,36 @@
 
 .agentNameGlitch {
     /* Use UI Font for the name */
-    font-family: var(--vscode-font-family);
+    font-family: inherit;
     font-size: 16px;
     font-weight: 700;
-    color: var(--vscode-editor-foreground);
+    color: var(--foreground);
     position: relative;
     letter-spacing: 0.5px;
 }
 
 /* Simple native hover effect instead of complex glitch */
 .techHeader:hover .agentNameGlitch {
-    color: var(--vscode-textLink-activeForeground);
+    color: var(--link-active-foreground);
     text-decoration: underline;
     text-decoration-style: dotted;
 }
 
 .levelTag {
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
     font-size: 10px;
     /* Use "Keyword" color logic effectively by grabbing a high-vis token if available, 
        but standardizing on badge colors is safer */
-    color: var(--vscode-badge-foreground);
-    background: var(--vscode-badge-background);
+    color: var(--badge-foreground);
+    background: var(--badge-background);
     padding: 1px 4px;
-    border-radius: 2px;
+    border-radius: 0;
 }
 
 .agentSystemIdle {
-    color: var(--vscode-disabledForeground);
+    color: var(--disabled-foreground);
     font-style: italic;
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
 }
 
 .headerRight {
@@ -205,15 +205,15 @@
     width: 4px;
     height: 4px;
     background: var(--vscode-scrollbarSlider-background);
-    border-radius: 50%;
+    border-radius: 0;
 }
 
 .statusLightActive {
     width: 4px;
     height: 4px;
     /* Use Git "Added" color for positive/active status */
-    background: var(--vscode-gitDecoration-addedResourceForeground);
-    border-radius: 50%;
+    background: var(--git-added);
+    border-radius: 0;
     /* Hard to do native glow without box-shadow opacity, so we rely on the vibrant color itself */
     animation: blink 2s infinite;
 }
@@ -234,18 +234,18 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--vscode-textLink-foreground);
+    color: var(--link-foreground);
 }
 
 .dataCount {
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--foreground-secondary);
 }
 
 .techChevron {
     font-size: 14px;
-    color: var(--vscode-icon-foreground);
+    color: var(--icon-foreground);
     transition: transform 0.2s;
 }
 
@@ -258,8 +258,8 @@
 .streamContainer {
     position: relative;
     padding: 0 16px 16px;
-    background: var(--vscode-editor-background);
-    border-top: 1px solid var(--vscode-widget-border);
+    background: var(--editor-bg);
+    border-top: 1px solid var(--widget-border);
     z-index: 2;
 }
 
@@ -286,8 +286,8 @@
     width: 8px;
     height: 8px;
     /* Use the background to "punch out" the shape */
-    background: var(--vscode-editor-background);
-    border: 1px solid var(--vscode-textLink-foreground);
+    background: var(--editor-bg);
+    border: 1px solid var(--link-foreground);
     transform: rotate(45deg);
     /* Diamond */
     flex-shrink: 0;
@@ -298,7 +298,7 @@
     flex: 1;
     width: 1px;
     /* Dashed line for data flow feel */
-    border-left: 1px dashed var(--vscode-tree-indentGuidesStroke);
+    border-left: 1px dashed var(--border);
     margin-top: 2px;
     margin-bottom: -2px;
 }
@@ -306,7 +306,7 @@
 .streamContent {
     flex: 1;
     padding-bottom: 8px;
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
 }
 
 .dataLink {
@@ -317,26 +317,26 @@
 }
 
 .sourceNode {
-    color: var(--vscode-descriptionForeground);
+    color: var(--foreground-secondary);
 }
 
 .linkArrow {
-    color: var(--vscode-textLink-foreground);
+    color: var(--link-foreground);
     font-weight: bold;
     font-size: 14px;
 }
 
 .targetNode {
-    color: var(--vscode-textLink-activeForeground);
+    color: var(--link-active-foreground);
     font-weight: 600;
 }
 
 .systemLog {
     font-size: 10px;
-    color: var(--vscode-textPreformat-foreground);
+    color: var(--foreground);
     margin-top: 2px;
     padding-left: 8px;
-    border-left: 1px solid var(--vscode-tree-indentGuidesStroke);
+    border-left: 1px solid var(--border);
 }
 
 /* Empty State with breathing animation */
@@ -405,12 +405,12 @@
     flex-direction: column;
     min-width: 280px;
     max-width: 100%;
-    background: var(--vscode-editor-background);
-    border: 1px solid var(--vscode-widget-border);
+    background: var(--editor-bg);
+    border: 1px solid var(--widget-border);
     /* Brutalist corners matching handoff card */
     border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 4px 12px var(--vscode-widget-shadow);
+    box-shadow: 0 4px 12px var(--widget-shadow);
     animation: sentFadeOut 0.6s ease 3.4s forwards;
 }
 
@@ -422,28 +422,28 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--vscode-gitDecoration-addedResourceForeground);
+    background: var(--git-added);
     z-index: 10;
 }
 
 /* Color variants - accent line color */
 .sentCardInfo::before {
-    background: var(--vscode-textLink-foreground);
+    background: var(--link-foreground);
 }
 
 .sentCardSuccess::before {
-    background: var(--vscode-gitDecoration-addedResourceForeground);
+    background: var(--git-added);
 }
 
 .sentCardWarning::before {
-    background: var(--vscode-editorWarning-foreground);
+    background: var(--warning);
 }
 
 /* Scanline texture layer */
 .sentScanlines {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 50%, var(--vscode-editorRuler-foreground) 50%);
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
     background-size: 100% 4px;
     pointer-events: none;
     z-index: 1;
@@ -457,7 +457,7 @@
     right: 0;
     width: 40%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, var(--vscode-focusBorder));
+    background: linear-gradient(90deg, transparent, var(--border-focus));
     opacity: 0.05;
     pointer-events: none;
     z-index: 1;
@@ -470,7 +470,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 14px;
-    border-bottom: 1px solid var(--vscode-widget-border);
+    border-bottom: 1px solid var(--widget-border);
     z-index: 2;
 }
 
@@ -483,17 +483,17 @@
 .sentStatusDot {
     width: 6px;
     height: 6px;
-    background: var(--vscode-gitDecoration-addedResourceForeground);
-    border-radius: 50%;
+    background: var(--git-added);
+    border-radius: 0;
     animation: statusPulse 2s infinite;
 }
 
 .sentCardInfo .sentStatusDot {
-    background: var(--vscode-textLink-foreground);
+    background: var(--link-foreground);
 }
 
 .sentCardWarning .sentStatusDot {
-    background: var(--vscode-editorWarning-foreground);
+    background: var(--warning);
 }
 
 @keyframes statusPulse {
@@ -502,29 +502,29 @@
 }
 
 .sentStatusText {
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 1.5px;
-    color: var(--vscode-gitDecoration-addedResourceForeground);
+    color: var(--git-added);
     text-transform: uppercase;
 }
 
 .sentCardInfo .sentStatusText {
-    color: var(--vscode-textLink-foreground);
+    color: var(--link-foreground);
 }
 
 .sentCardWarning .sentStatusText {
-    color: var(--vscode-editorWarning-foreground);
+    color: var(--warning);
 }
 
 .sentTimestamp {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--foreground-secondary);
 }
 
 .sentTimeIcon {
@@ -540,10 +540,10 @@
 }
 
 .sentMessageText {
-    font-family: var(--vscode-font-family);
+    font-family: inherit;
     font-size: 13px;
     line-height: 1.6;
-    color: var(--vscode-editor-foreground);
+    color: var(--foreground);
     margin: 0;
     word-break: break-word;
     max-height: 200px;
@@ -563,8 +563,8 @@
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
-    background: var(--vscode-sideBar-background);
-    border-top: 1px solid var(--vscode-widget-border);
+    background: var(--background);
+    border-top: 1px solid var(--widget-border);
     z-index: 2;
 }
 
@@ -573,9 +573,9 @@
     align-items: center;
     gap: 4px;
     padding: 2px 8px;
-    background: var(--vscode-badge-background);
-    color: var(--vscode-badge-foreground);
-    font-family: var(--vscode-editor-font-family);
+    background: var(--badge-background);
+    color: var(--badge-foreground);
+    font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 600;
 }
@@ -589,19 +589,19 @@
     align-items: center;
     gap: 4px;
     padding: 2px 8px;
-    border: 1px solid var(--vscode-widget-border);
+    border: 1px solid var(--widget-border);
     background: transparent;
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.5px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--foreground-secondary);
     text-transform: uppercase;
 }
 
 .sentTypeTag i {
     font-size: 11px;
-    color: var(--vscode-textLink-foreground);
+    color: var(--link-foreground);
 }
 
 .sentCheckmark {
@@ -611,7 +611,7 @@
     justify-content: center;
     width: 20px;
     height: 20px;
-    color: var(--vscode-gitDecoration-addedResourceForeground);
+    color: var(--git-added);
     animation: checkmarkPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
 }
 
@@ -791,7 +791,7 @@
 .questionAvatar {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: 0;
     background: linear-gradient(135deg,
             rgba(0, 127, 212, 0.15) 0%,
             rgba(0, 127, 212, 0.08) 100%);
@@ -811,7 +811,7 @@
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 4px 16px 16px 16px;
+    border-radius: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -836,7 +836,7 @@
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 4px 16px 16px 16px;
+    border-radius: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -875,7 +875,7 @@
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--input-background);
     border: 1px solid var(--input-border);
-    border-radius: 18px;
+    border-radius: 0;
     color: var(--input-foreground);
     font-family: inherit;
     font-size: 13px;
@@ -893,7 +893,7 @@
 }
 
 .chatTextarea.slashActive {
-    border-color: var(--vscode-textLink-foreground);
+    border-color: var(--link-foreground);
     box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.2);
 }
 
@@ -917,7 +917,7 @@
     padding: 0;
     background: var(--button-background);
     border: none;
-    border-radius: 50%;
+    border-radius: 0;
     color: var(--button-foreground);
     cursor: pointer;
     transition: background 0.15s, transform 0.1s;
@@ -1135,7 +1135,7 @@
     padding: 0;
     background: var(--button-background);
     border: none;
-    border-radius: 50%;
+    border-radius: 0;
     color: var(--button-foreground);
     cursor: pointer;
     transition: background 0.15s, transform 0.1s, opacity 0.15s;
@@ -1184,7 +1184,7 @@
     height: 16px;
     margin-right: var(--spacing-xs);
     background: rgba(255, 255, 255, 0.15);
-    border-radius: 3px;
+    border-radius: 0;
     font-size: 10px;
     font-weight: 600;
 }
@@ -1265,7 +1265,7 @@
     justify-content: center;
     gap: 4px;
     background: rgba(0, 127, 212, 0.1);
-    border-radius: 18px;
+    border-radius: 0;
     color: var(--info);
     font-size: 12px;
     font-weight: 500;
@@ -1598,7 +1598,7 @@
     gap: 4px;
     padding: 4px 10px;
     background: var(--info);
-    border-radius: 12px;
+    border-radius: 0;
     color: white;
     font-size: 11px;
     font-weight: 600;

@@ -17,43 +17,20 @@ interface TabConfig {
     id: ViewType;
     icon: string;
     label: string;
-    shortcut: string;
 }
 
 const TABS: TabConfig[] = [
-    { id: 'home', icon: 'home', label: 'Home', shortcut: '0' },
-    { id: 'pending', icon: 'bell', label: 'Pending', shortcut: '1' },
-    { id: 'workflow', icon: 'pulse', label: 'Workflow', shortcut: '2' },
-    { id: 'graph', icon: 'type-hierarchy', label: 'Graph', shortcut: '3' },
-    { id: 'history', icon: 'history', label: 'History', shortcut: '4' },
+    { id: 'home', icon: 'home', label: 'Home' },
+    { id: 'pending', icon: 'bell', label: 'Pending' },
+    { id: 'workflow', icon: 'pulse', label: 'Workflow' },
+    { id: 'graph', icon: 'type-hierarchy', label: 'Graph' },
+    { id: 'history', icon: 'history', label: 'History' },
 ];
 
 function App() {
     const [activeView, setActiveView] = useState<ViewType>('home');
     const { state } = useAppContext();
     const vscode = useVSCode();
-
-    // Keyboard navigation
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // Don't capture if typing in input/textarea
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-            return;
-        }
-
-        // Number keys for tab switching (only with Alt modifier to avoid conflicts)
-        if (e.key >= '0' && e.key <= '4' && e.altKey && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            const index = parseInt(e.key);
-            if (TABS[index]) {
-                setActiveView(TABS[index].id);
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleKeyDown]);
 
     // Auto-switch to pending when new request arrives
     useEffect(() => {
@@ -65,12 +42,12 @@ function App() {
     const handleInitialize = useCallback(() => {
         // Pass the selected workspace path as argument
         const targetPath = state.workspaceState?.selectedWorkspacePath;
-        vscode.postMessage({ 
-            type: 'command', 
-            payload: { 
+        vscode.postMessage({
+            type: 'command',
+            payload: {
                 command: 'ouroboros.initializeProject',
                 args: targetPath ? [targetPath] : []
-            } 
+            }
         });
     }, [vscode, state.workspaceState?.selectedWorkspacePath]);
 
@@ -81,12 +58,12 @@ function App() {
     const handleUpdatePrompts = useCallback(() => {
         // Pass the selected workspace path as argument
         const targetPath = state.workspaceState?.selectedWorkspacePath;
-        vscode.postMessage({ 
-            type: 'command', 
-            payload: { 
+        vscode.postMessage({
+            type: 'command',
+            payload: {
                 command: 'ouroboros.updatePrompts',
                 args: targetPath ? [targetPath] : []
-            } 
+            }
         });
     }, [vscode, state.workspaceState?.selectedWorkspacePath]);
 
@@ -139,7 +116,7 @@ function App() {
         <div className={styles.container}>
             <nav className={styles.tabs} role="tablist" aria-label="View navigation">
                 {TABS.map((tab) => (
-                    <Tooltip key={tab.id} content={`${tab.label} (${tab.shortcut})`}>
+                    <Tooltip key={tab.id} content={tab.label}>
                         <button
                             role="tab"
                             aria-selected={activeView === tab.id}

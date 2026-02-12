@@ -1,9 +1,10 @@
-/* WorkflowProgress Styles - Redesigned */
+/* WorkflowProgress — Cyberpunk / Native Avant-Garde */
 
 .container {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
+    animation: cyberFadeIn 0.3s ease;
 }
 
 .loading {
@@ -14,15 +15,13 @@
     padding: var(--spacing-xl);
     gap: var(--spacing-sm);
     color: var(--foreground-secondary);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .spinIcon {
     animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
 }
 
 /* Section Styles */
@@ -38,8 +37,9 @@
     gap: var(--spacing-sm);
     font-size: 11px;
     font-weight: 600;
+    font-family: var(--font-mono);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     color: var(--foreground-secondary);
     margin: 0;
     padding: var(--spacing-xs) 0;
@@ -49,9 +49,9 @@
     background: var(--badge-background);
     color: var(--badge-foreground);
     padding: 2px 6px;
-    border-radius: 10px;
     font-size: 10px;
     font-weight: 600;
+    font-family: var(--font-mono);
 }
 
 .activeBadge {
@@ -72,10 +72,23 @@
     padding: var(--spacing-lg);
     text-align: center;
     font-size: 12px;
+    font-family: var(--font-mono);
     color: var(--foreground-secondary);
     background: var(--background-secondary);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
     gap: var(--spacing-xs);
+    position: relative;
+}
+
+/* Scanline on empty section */
+.emptySection::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    opacity: 0.04;
 }
 
 .emptyIcon {
@@ -102,13 +115,14 @@
     justify-content: space-between;
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--background-secondary);
-    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
     transition: all var(--transition-fast);
     cursor: default;
 }
 
 .archivedCard:hover {
     background: var(--list-hover);
+    border-color: var(--border);
 }
 
 .archivedInfo {
@@ -126,6 +140,7 @@
 
 .archivedName {
     font-size: 12px;
+    font-family: var(--font-mono);
     color: var(--foreground);
     white-space: nowrap;
     overflow: hidden;
@@ -141,6 +156,7 @@
 
 .archivedDate {
     font-size: 10px;
+    font-family: var(--font-mono);
     color: var(--foreground-secondary);
 }
 
@@ -150,10 +166,15 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    border-radius: 50%;
+    /* Diamond shape */
+    transform: rotate(45deg);
     background: color-mix(in srgb, var(--success) 20%, transparent);
     color: var(--success);
     font-size: 10px;
+}
+
+.completeBadge i {
+    transform: rotate(-45deg);
 }
 
 /* Show More Button */
@@ -165,9 +186,9 @@
     padding: var(--spacing-sm);
     background: transparent;
     border: 1px dashed var(--border);
-    border-radius: var(--radius-sm);
     color: var(--foreground-secondary);
     font-size: 11px;
+    font-family: var(--font-mono);
     cursor: pointer;
     transition: all var(--transition-fast);
     margin-top: var(--spacing-xs);
@@ -189,23 +210,23 @@
 /* Spec Selector Tabs */
 .specSelector {
     display: flex;
-    gap: 4px;
+    gap: var(--spacing-xs);
     padding: var(--spacing-xs);
     background: var(--background-secondary);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
     overflow-x: auto;
 }
 
 .specTab {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--spacing-xs);
     padding: var(--spacing-xs) var(--spacing-sm);
     background: transparent;
-    border: none;
-    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
     color: var(--foreground-secondary);
     font-size: 11px;
+    font-family: var(--font-mono);
     cursor: pointer;
     transition: all var(--transition-fast);
     white-space: nowrap;
@@ -214,11 +235,13 @@
 .specTab:hover {
     background: var(--list-hover);
     color: var(--foreground);
+    border-color: var(--border);
 }
 
 .specTab.selected {
     background: var(--button-background);
     color: var(--button-foreground);
+    border-color: var(--button-background);
 }
 
 /* Active Spec Card */
@@ -227,16 +250,16 @@
     overflow: hidden;
 }
 
+/* Gradient border using mask — cyberpunk sharp */
 .activeCard::before {
     content: '';
     position: absolute;
     inset: 0;
     padding: 1px;
-    border-radius: var(--radius-md);
     background: linear-gradient(135deg,
-        var(--button-background) 0%,
-        var(--info) 50%,
-        var(--button-hover) 100%);
+            var(--button-background) 0%,
+            var(--info) 50%,
+            var(--button-hover) 100%);
     -webkit-mask:
         linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
@@ -249,6 +272,18 @@
     opacity: 0.5;
 }
 
+/* Scanline on active card */
+.activeCard::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.05;
+}
+
 .cardHeader {
     display: flex;
     align-items: center;
@@ -258,20 +293,26 @@
 .typeLabel {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--spacing-xs);
     font-size: 10px;
     font-weight: 700;
+    font-family: var(--font-mono);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     color: var(--info);
     background: color-mix(in srgb, var(--info) 15%, transparent);
     padding: 2px 6px;
-    border-radius: var(--radius-sm);
+    transform: skew(-6deg);
+}
+
+.typeLabel i {
+    transform: skew(6deg);
 }
 
 .specName {
     font-size: 13px;
     font-weight: 500;
+    font-family: var(--font-mono);
     color: var(--foreground);
     white-space: nowrap;
     overflow: hidden;
@@ -280,9 +321,11 @@
 
 .progressSection {
     margin-bottom: var(--spacing-md);
+    position: relative;
+    z-index: 2;
 }
 
-/* Phase Timeline */
+/* Phase Timeline — Cyberpunk Diamond Nodes */
 .timeline {
     display: flex;
     justify-content: space-between;
@@ -312,29 +355,35 @@
 
 .connectorCompleted {
     background: linear-gradient(90deg, var(--success), var(--success));
+    box-shadow: 0 0 6px var(--glow-success);
 }
 
-/* Phase node */
+/* Phase node — Diamond (rotated square) */
 .phaseNode {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    transform: rotate(45deg);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     z-index: 1;
     background: var(--background);
+    border: 1px solid var(--border);
     transition: all var(--transition-normal);
 }
 
 .phaseNode.completed {
     background: color-mix(in srgb, var(--success) 15%, var(--background));
+    border-color: var(--success);
+    box-shadow: 0 0 8px var(--glow-success);
 }
 
 .phaseNode.current {
     background: color-mix(in srgb, var(--info) 15%, var(--background));
-    transform: scale(1.1);
+    border-color: var(--info);
+    transform: rotate(45deg) scale(1.15);
+    box-shadow: 0 0 10px var(--glow-info);
 }
 
 .phaseNode.pending {
@@ -342,10 +391,11 @@
     opacity: 0.6;
 }
 
-/* SVG styling */
+/* SVG styling - counter-rotate to be upright */
 .phaseSvg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+    transform: rotate(-45deg);
 }
 
 .phaseIconPath {
@@ -394,6 +444,7 @@
         opacity: 0.6;
         r: 11;
     }
+
     100% {
         opacity: 0;
         r: 16;
@@ -404,9 +455,12 @@
 .phaseLabel {
     font-size: 9px;
     font-weight: 500;
-    margin-top: 6px;
+    font-family: var(--font-mono);
+    margin-top: var(--spacing-sm);
     text-align: center;
     color: var(--foreground-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     transition: color var(--transition-fast);
 }
 
@@ -429,9 +483,12 @@
     align-items: center;
     gap: var(--spacing-xs);
     font-size: 11px;
+    font-family: var(--font-mono);
     color: var(--foreground-secondary);
     padding-top: var(--spacing-sm);
     border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 2;
 }
 
 .inProgress {

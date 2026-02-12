@@ -2,6 +2,25 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.22] - 2026-02-12
+
+### Cyberpunk UI Overhaul
+
+### Changed
+- **Design System** — Brutalist `border-radius: 0`, `--scanline-color`, `--focus-glow`, `--glow-*` tokens, canonical `@keyframes` in `global.css`
+- **Core Components** — Card, Button, Badge, ProgressBar, EmptyState, App: sharp corners, scanline overlays, monospace labels, glow effects
+- **All Views** — Unified cyberpunk style: diamond nodes, skewed labels, edge glows, scanline textures
+- **PendingRequests CSS** — Replaced 67+ `--vscode-*` refs with abstracted tokens
+
+### Added
+- **History Search & Filter** — Search bar + type filter (all/ask/menu/confirm/plan_review)
+
+### Fixed
+- Removed debug `console.log` statements from attachment handling
+- Removed unused variable lint warning
+
+---
+
 ## [3.3.21] - 2026-02-11
 
 ### Added

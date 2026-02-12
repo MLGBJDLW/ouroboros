@@ -1,3 +1,4 @@
+/* EmptyState — Cyberpunk */
 .container {
     display: flex;
     flex-direction: column;
@@ -5,43 +6,51 @@
     justify-content: center;
     padding: var(--spacing-xl) var(--spacing-lg);
     text-align: center;
-    animation: fadeIn 0.3s ease;
+    animation: cyberFadeIn 0.3s ease;
+    position: relative;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Subtle scanline background */
+.container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, var(--scanline-color) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    opacity: 0.04;
 }
 
 .iconWrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     margin-bottom: var(--spacing-md);
-    background: var(--background-secondary);
-    border-radius: 50%;
+    background: var(--editor-bg);
+    border: 1px solid var(--border-focus);
+    /* Diamond shape */
+    transform: rotate(45deg);
+    position: relative;
 }
 
 .icon {
-    font-size: 28px;
-    color: var(--foreground-secondary);
-    opacity: 0.6;
+    font-size: 22px;
+    color: var(--link-foreground);
+    opacity: 0.7;
+    /* Counter-rotate icon so it's upright */
+    transform: rotate(-45deg);
 }
 
 .title {
     margin: 0 0 var(--spacing-xs) 0;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-mono);
     color: var(--foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .description {
@@ -53,4 +62,6 @@
 
 .action {
     margin-top: var(--spacing-md);
+    position: relative;
+    z-index: 2;
 }

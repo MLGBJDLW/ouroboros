@@ -1,4 +1,4 @@
-/* VS Code Theme Variables */
+/* VS Code Theme Variables — Cyberpunk / "Native Avant-Garde" Design System */
 :root {
     /* Background colors */
     --background: var(--vscode-sideBar-background, #1e1e1e);
@@ -9,6 +9,15 @@
     /* Border */
     --border: var(--vscode-sideBar-border, #3c3c3c);
     --border-focus: var(--vscode-focusBorder, #007fd4);
+
+    /* Extended theme mappings */
+    --editor-bg: var(--vscode-editor-background, #1e1e1e);
+    --widget-border: var(--vscode-widget-border, #3c3c3c);
+    --widget-shadow: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+    --link-foreground: var(--vscode-textLink-foreground, #3794ff);
+    --link-active-foreground: var(--vscode-textLink-activeForeground, #3794ff);
+    --disabled-foreground: var(--vscode-disabledForeground, #6c6c6c);
+    --icon-foreground: var(--vscode-icon-foreground, #c5c5c5);
 
     /* Buttons */
     --button-background: var(--vscode-button-background, #0e639c);
@@ -35,12 +44,18 @@
     --error: var(--vscode-editorError-foreground, #f14c4c);
     --info: var(--vscode-editorInfo-foreground, #3794ff);
 
+    /* Git decorations (for status indicators) */
+    --git-added: var(--vscode-gitDecoration-addedResourceForeground, #73c991);
+
     /* Progress */
     --progress-background: var(--vscode-progressBar-background, #0e70c0);
 
     /* Badge */
     --badge-background: var(--vscode-badge-background, #4d4d4d);
     --badge-foreground: var(--vscode-badge-foreground, #ffffff);
+
+    /* Editor fonts */
+    --font-mono: var(--vscode-editor-font-family, 'Consolas', 'Courier New', monospace);
 
     /* Spacing */
     --spacing-xs: 4px;
@@ -49,10 +64,10 @@
     --spacing-lg: 16px;
     --spacing-xl: 24px;
 
-    /* Border radius */
-    --radius-sm: 2px;
-    --radius-md: 4px;
-    --radius-lg: 8px;
+    /* Border radius — Cyberpunk: all zero (brutalist) */
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
 
     /* Transitions */
     --transition-fast: 0.1s ease;
@@ -60,9 +75,23 @@
     --transition-slow: 0.3s ease;
 
     /* Architecture / Depth */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-sm: 0 1px 2px 0 var(--widget-shadow);
+    --shadow-md: 0 4px 8px var(--widget-shadow);
+    --shadow-lg: 0 10px 15px -3px var(--widget-shadow);
+
+    /* Cyberpunk: Focus glow using color-mix */
+    --focus-glow: 0 0 0 2px color-mix(in srgb, var(--border-focus) 20%, transparent);
+    --focus-glow-strong: 0 0 0 3px color-mix(in srgb, var(--border-focus) 30%, transparent);
+
+    /* Cyberpunk: Scanline & texture references */
+    --scanline-color: var(--vscode-editorRuler-foreground, rgba(100, 100, 100, 0.15));
+    --holographic-line-color: var(--vscode-editor-lineHighlightBorder, rgba(100, 100, 100, 0.1));
+
+    /* Cyberpunk: Status glow colors */
+    --glow-info: color-mix(in srgb, var(--info) 15%, transparent);
+    --glow-success: color-mix(in srgb, var(--success) 15%, transparent);
+    --glow-warning: color-mix(in srgb, var(--warning) 15%, transparent);
+    --glow-error: color-mix(in srgb, var(--error) 15%, transparent);
 
     /* Accents & Gradients */
     --accent-gradient: linear-gradient(135deg, var(--button-background) 0%, var(--button-hover) 100%);
