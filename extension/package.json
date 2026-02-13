@@ -2,7 +2,7 @@
     "name": "ouroboros-ai",
     "displayName": "Ouroboros AI",
     "description": "Structured AI agent workflow with spec-driven development",
-    "version": "3.3.22",
+    "version": "3.3.23",
     "publisher": "MLGBJDLW",
     "license": "MIT",
     "icon": "resources/icon.png",

@@ -247,6 +247,60 @@ python -c "task = input('[Ouroboros] > ')"
 
 ---
 
+## 🚀 PARALLEL SUBAGENT DISPATCH
+
+> [!IMPORTANT]
+> **Orchestrators (L0/L1) can dispatch MULTIPLE subagents in PARALLEL when tasks are independent.**
+> This dramatically reduces total execution time for multi-agent workflows.
+
+### Planning Before Dispatch
+
+**BEFORE dispatching, analyze task dependencies:**
+1. List all subtasks needed
+2. Identify data dependencies between them (does Task B need Task A's output?)
+3. Group independent tasks together for parallel dispatch
+4. Dispatch each group, wait for results, then dispatch the next dependent group
+
+### Parallel Dispatch Syntax
+
+**Multiple independent `runSubagent()` calls in the SAME response = parallel execution:**
+
+```javascript
+// ✅ PARALLEL: Two independent agents dispatched simultaneously
+runSubagent(
+  agent: "ouroboros-analyst",
+  prompt: `Analyze authentication module dependencies...`
+)
+
+runSubagent(
+  agent: "ouroboros-security",
+  prompt: `Review authentication module for vulnerabilities...`
+)
+// Both run at the same time — results arrive together
+```
+
+### Decision Matrix
+
+| Scenario | Parallel? | Rationale |
+|----------|-----------|-----------|
+| Analyst + Security on same module | ✅ Yes | Both read-only, no conflict |
+| Coder (file A) + Coder (file B) | ✅ Yes | Different files, no overlap |
+| Writer (task status) + Analyst (verify) | ✅ Yes | Write to tasks.md while verifying code |
+| Researcher + Writer (context update) | ✅ Yes | Independent outputs |
+| Coder then QA on same code | ❌ No | QA needs Coder's output |
+| Phase 1 then Phase 2 of spec | ❌ No | Phase 2 depends on Phase 1 |
+| Two Coders on same file | ❌ No | Write conflict |
+| Writer (tasks.md) + Writer (context.md) | ✅ Yes | Different target files |
+
+### Safety Rules (ABSOLUTE)
+
+1. **NEVER** parallel-dispatch two agents that write to the **same file**
+2. **NEVER** parallel-dispatch when Task B needs Task A's **output as input**
+3. **ALWAYS** wait for all parallel agents to return before dispatching the **next dependent group**
+4. **IF UNCERTAIN** about dependencies → dispatch **sequentially** (safe default)
+
+---
+
 ## ⚡ DELEGATION PROTOCOL
 
 **SAY = DO** - If you say "delegating to X", tool call MUST follow immediately.

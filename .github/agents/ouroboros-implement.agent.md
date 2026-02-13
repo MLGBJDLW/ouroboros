@@ -115,22 +115,94 @@ python -c "print('⚠️ Technical Concern from coder:'); print('API rate limits
 ## 📦 TASK BATCHING PROTOCOL
 
 | Scenario | Batch Size | Rationale |
-|----------|-----------|-----------|
+|----------|-----------|-----------| 
 | Simple tasks (config, typo) | 5-6 tasks | Low complexity, fast completion |
 | Medium tasks (new functions) | 3-4 tasks | Moderate complexity |
 | Complex tasks (new features) | 1-2 tasks | High complexity, needs focus |
 
 **Workflow:**
 1. Read all tasks from `tasks.md`
-2. **Dispatch first batch** (4-5 tasks)
-3. Wait for completion, verify each
-4. **Dispatch next batch**
-5. Repeat until all complete
+2. **Analyze dependencies** within the batch (see below)
+3. **Dispatch independent tasks in PARALLEL** using multiple `runSubagent()` calls
+4. Wait for ALL parallel agents to return, verify each
+5. **Dispatch next batch**
+6. Repeat until all complete
 
 **NEVER:**
 - Dump 10+ tasks on a subagent at once
 - Skip verification between batches
 - Mix high-complexity with low-complexity in same batch
+
+---
+
+## 🚀 PARALLEL TASK DISPATCH
+
+> [!IMPORTANT]
+> **Within each batch, dispatch INDEPENDENT tasks simultaneously for maximum speed.**
+> Tasks are independent when they modify **different files** and don't depend on each other's output.
+
+### Dependency Analysis (Before Each Batch)
+
+**For each batch of tasks, PLAN parallel groups:**
+
+1. **List** all tasks in the current batch
+2. **Check** which files each task will modify
+3. **Group** tasks that don't share files → **parallel group**
+4. **Identify** tasks that depend on another task's output → **sequential after dependency**
+
+### Parallel Dispatch Example
+
+```javascript
+// ✅ PARALLEL: Task 2.1 modifies auth.ts, Task 2.2 modifies database.ts — NO overlap
+runSubagent(
+  agent: "ouroboros-coder",
+  prompt: `[Task]: 2.1 - Implement JWT validation in src/auth.ts ...`
+)
+
+runSubagent(
+  agent: "ouroboros-coder",
+  prompt: `[Task]: 2.2 - Add connection pooling to src/database.ts ...`
+)
+// Both execute simultaneously — 2x faster!
+
+// After BOTH return, parallel update + verify:
+runSubagent(
+  agent: "ouroboros-writer",
+  prompt: `Mark Tasks 2.1 and 2.2 as complete [x] in tasks.md`
+)
+
+runSubagent(
+  agent: "ouroboros-analyst",
+  prompt: `Verify Tasks 2.1 and 2.2 implementation meets requirements`
+)
+```
+
+### When NOT to Parallel Dispatch
+
+```javascript
+// ❌ SEQUENTIAL: Task 2.3 imports from file modified by Task 2.2
+runSubagent(agent: "ouroboros-coder", prompt: `[Task]: 2.2 ...`)
+// WAIT for return
+runSubagent(agent: "ouroboros-coder", prompt: `[Task]: 2.3 (depends on 2.2) ...`)
+```
+
+### Post-Task: Parallel Update + Verify
+
+> [!TIP]
+> **After task completion, task status update (writer) and verification (analyst) can ALWAYS run in parallel** — they write to different targets.
+
+```javascript
+// ✅ ALWAYS PARALLEL: Writer updates tasks.md, Analyst reads source code
+runSubagent(
+  agent: "ouroboros-writer",
+  prompt: `Mark Task 2.1 as complete [x] in .ouroboros/specs/[feature]/tasks.md`
+)
+
+runSubagent(
+  agent: "ouroboros-analyst",
+  prompt: `Verify Task 2.1 implementation in src/auth.py meets requirements`
+)
+```
 
 ---
 

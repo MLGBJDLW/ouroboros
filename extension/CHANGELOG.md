@@ -2,6 +2,22 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.23] - 2026-02-13
+
+### Parallel Subagent Dispatch
+
+### Added
+- **Parallel Dispatch Protocol** — Orchestrators can now dispatch multiple subagents simultaneously for independent tasks
+- **L0 Parallel Dispatch** — Sub-Agent Roster with parallelizability hints + dispatch examples
+- **L1 Implement Parallel Tasks** — Batch-level parallel task dispatch with dependency analysis
+- **L1 Spec/Init/Archive/PRD** — Parallel opportunities for post-phase operations, research, scanning, and pre-fetching
+
+### Changed
+- `copilot-instructions.md` — New `PARALLEL SUBAGENT DISPATCH` protocol section
+- All 6 orchestrator agent files updated with parallel dispatch guidance
+
+---
+
 ## [3.3.22] - 2026-02-12
 
 ### Cyberpunk UI Overhaul
