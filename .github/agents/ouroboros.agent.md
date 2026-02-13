@@ -240,20 +240,20 @@ Here are your options:
 
 ## 📋 Sub-Agent Roster
 
-| Agent | Purpose | When to Use |
-|-------|---------|-------------|
-| `ouroboros-analyst` | Code analysis, dependency mapping | Understanding codebase |
-| `ouroboros-architect` | System design, ADRs | Architecture decisions |
-| `ouroboros-coder` | Implementation | Writing code |
-| `ouroboros-qa` | Testing, debugging | Verification |
-| `ouroboros-devops` | CI/CD, Git operations | Deployment, version control |
-| `ouroboros-writer` | Documentation, context updates | Any file writing |
-| `ouroboros-security` | Security review | Security concerns |
-| `ouroboros-researcher` | Project research | Spec Phase 1 |
-| `ouroboros-requirements` | Requirements (EARS) | Spec Phase 2 |
-| `ouroboros-tasks` | Task planning | Spec Phase 4 |
-| `ouroboros-validator` | Spec validation | Spec Phase 5 |
-| `ouroboros-prd` | AI-guided PRD creation | Before Spec workflow |
+| Agent | Purpose | When to Use | Parallel? |
+|-------|---------|-------------|-----------|
+| `ouroboros-analyst` | Code analysis, dependency mapping | Understanding codebase | ✅ Read-only |
+| `ouroboros-architect` | System design, ADRs | Architecture decisions | ✅ Read-only |
+| `ouroboros-coder` | Implementation | Writing code | ⚠️ If different files |
+| `ouroboros-qa` | Testing, debugging | Verification | ❌ After coder |
+| `ouroboros-devops` | CI/CD, Git operations | Deployment, version control | ⚠️ Context-dependent |
+| `ouroboros-writer` | Documentation, context updates | Any file writing | ⚠️ If different files |
+| `ouroboros-security` | Security review | Security concerns | ✅ Read-only |
+| `ouroboros-researcher` | Project research | Spec Phase 1 | ✅ Read-only |
+| `ouroboros-requirements` | Requirements (EARS) | Spec Phase 2 | ❌ After researcher |
+| `ouroboros-tasks` | Task planning | Spec Phase 4 | ❌ After architect |
+| `ouroboros-validator` | Spec validation | Spec Phase 5 | ❌ After all phases |
+| `ouroboros-prd` | AI-guided PRD creation | Before Spec workflow | ✅ Independent |
 
 ---
 
@@ -307,6 +307,59 @@ runSubagent(
 | `writer` | ❌ N/A | ❌ N/A | ✅ Required (path) |
 | `analyst` | ❌ N/A | ❌ N/A | ⚠️ Optional |
 | `devops` | ⚠️ Optional | ✅ Required | ✅ Required |
+
+---
+
+## 🚀 PARALLEL SUBAGENT DISPATCH
+
+> [!IMPORTANT]
+> **Dispatch MULTIPLE subagents simultaneously when their tasks are INDEPENDENT.**
+> This can reduce total workflow time by 2-3x. See `copilot-instructions.md` for full protocol.
+
+### When to Use Parallel Dispatch
+
+**BEFORE each dispatch, ask yourself:**
+1. Do these agents write to **different files**? → ✅ Can parallel
+2. Does Agent B need Agent A's **output**? → ❌ Must be sequential
+3. Are both agents **read-only** (analyst, security, researcher)? → ✅ Can parallel
+
+### Parallel Dispatch Examples
+
+**Example 1: Code Analysis + Security Review (both read-only)**
+```javascript
+// ✅ PARALLEL — Both agents only READ code, no write conflicts
+runSubagent(
+  agent: "ouroboros-analyst",
+  prompt: `Analyze dependency graph for auth module...`
+)
+
+runSubagent(
+  agent: "ouroboros-security",
+  prompt: `Review auth module for vulnerabilities...`
+)
+```
+
+**Example 2: Implementation + Documentation (different files)**
+```javascript
+// ✅ PARALLEL — Coder writes to src/, Writer writes to docs/
+runSubagent(
+  agent: "ouroboros-coder",
+  prompt: `Implement feature X in src/feature.ts...`
+)
+
+runSubagent(
+  agent: "ouroboros-writer",
+  prompt: `Update context.md with current progress...`
+)
+```
+
+**Example 3: Sequential (has dependency)**
+```javascript
+// ❌ SEQUENTIAL — QA needs to test what Coder just wrote
+runSubagent(agent: "ouroboros-coder", prompt: `Implement feature...`)
+// WAIT for coder to return
+runSubagent(agent: "ouroboros-qa", prompt: `Test the feature...`)
+```
 
 ---
 

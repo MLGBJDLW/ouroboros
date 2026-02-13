@@ -94,7 +94,21 @@ python -c "print('📝 What feature or product are you building?'); feature = in
 **After receiving feature name:**
 1. Create folder `.ouroboros/prd/` if not exists
 2. Store feature name in memory
-3. Proceed to Phase 1
+3. **Parallel Pre-fetch**: Dispatch researcher for project context WHILE proceeding to Phase 1
+4. Proceed to Phase 1
+
+> [!TIP]
+> **Parallel Opportunity**: Start Phase 1 questions to the user while the researcher analyzes the codebase in the background:
+> ```javascript
+> // ✅ PARALLEL: Researcher scans codebase while user answers Phase 1 questions
+> runSubagent(
+>   agent: "ouroboros-researcher",
+>   prompt: `Analyze project for feature context: [feature-name]. 
+>   Scan tech stack, existing related code, patterns. Return summary.`
+> )
+> // Simultaneously ask user Phase 1 questions via CCL
+> // Researcher results will enrich the final PRD
+> ```
 
 ---
 

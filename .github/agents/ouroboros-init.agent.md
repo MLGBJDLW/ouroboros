@@ -109,6 +109,14 @@ Status + [PHASE 1 COMPLETE]
 
 **After Phase 1**: Wait for user confirmation before Phase 2.
 
+> [!TIP]
+> **Parallel Opportunity**: If the project is large, you can dispatch `ouroboros-researcher` (broad scan) and `ouroboros-analyst` (deep dependency analysis) **in parallel** during Phase 1, since both are read-only:
+> ```javascript
+> // ✅ PARALLEL: Both read-only — researcher scans structure, analyst maps dependencies
+> runSubagent(agent: "ouroboros-researcher", prompt: `[Phase 1] Scan project structure...`)
+> runSubagent(agent: "ouroboros-analyst", prompt: `[Phase 1] Analyze deep dependencies...`)
+> ```
+
 ---
 
 ### Phase 2: Context Initialization

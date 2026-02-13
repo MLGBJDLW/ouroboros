@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.23] - 2026-02-13
+
+### Parallel Subagent Dispatch
+
+Enable orchestrators to dispatch multiple subagents simultaneously for independent tasks.
+
+### Added
+- **Parallel Dispatch Protocol** — New `🚀 PARALLEL SUBAGENT DISPATCH` section in `copilot-instructions.md` with planning-before-dispatch flow, syntax examples, decision matrix, and safety rules
+- **L0 Parallel Dispatch** — `ouroboros.agent.md`: Sub-Agent Roster with `Parallel?` column + parallel dispatch section with 3 concrete examples
+- **L1 Implement Parallel Tasks** — `ouroboros-implement.agent.md`: Upgraded Task Batching to support parallel dispatch of independent tasks within batches, with dependency analysis and post-task parallel update+verify
+- **L1 Spec Parallel Post-Phase** — `ouroboros-spec.agent.md`: Post-phase verification + context update can now run in parallel
+- **L1 Init Parallel Research** — `ouroboros-init.agent.md`: Researcher + Analyst can run in parallel during Phase 1
+- **L1 Archive Parallel Scan** — `ouroboros-archive.agent.md`: Spec scan + cleanup scan dispatched simultaneously
+- **L1 PRD Parallel Pre-fetch** — `ouroboros-prd.agent.md`: Researcher pre-fetch while user answers Phase 1 questions
+
+### Agent Files Changed
+- `copilot-instructions.md` — Added parallel subagent dispatch protocol
+- `ouroboros.agent.md` — Parallel dispatch section + roster parallelizability hints
+- `ouroboros-implement.agent.md` — Parallel task dispatch within batches
+- `ouroboros-spec.agent.md` — Parallel opportunities section
+- `ouroboros-init.agent.md` — Parallel research tip
+- `ouroboros-archive.agent.md` — Parallel scan dispatch
+- `ouroboros-prd.agent.md` — Parallel pre-fetch tip
+
+---
+
 ## [3.3.22] - 2026-02-12
 
 ### Cyberpunk UI Overhaul

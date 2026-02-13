@@ -131,22 +131,31 @@ clean up old temporary files.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**STEP 2: Scan for Completed Specs** (delegate to analyst)
+**STEP 2: Scan for Completed Specs + Cleanup Check** (dispatch in PARALLEL)
+
+> [!TIP]
+> **Parallel Opportunity**: Scan for archivable specs AND check cleanup targets **simultaneously** — they read different directories.
 
 ```javascript
+// ✅ PARALLEL: Analyst scans specs/, Writer checks cleanup targets
 runSubagent(
   agent: "ouroboros-analyst",
   prompt: `
-[Archive Phase]: Scan
-[Skills]: (Include any matched skill paths here)
-
+[Archive Phase]: Scan Specs
 Scan .ouroboros/specs/ for archivable specs.
 - List all folders (exclude templates/, archived/)
 - For each folder, read tasks.md and count completed [x] vs total [ ]
-- RETURN: List of {folder_name, completed_count, total_count, is_complete}
-Also check:
+- RETURN: List of {folder_name, completed_count, total_count, is_complete}`
+)
+
+runSubagent(
+  agent: "ouroboros-analyst",
+  prompt: `
+[Archive Phase]: Scan Cleanup
+Check for files requiring cleanup:
 - .ouroboros/subagent-docs/ for files > 3 days old
-- .ouroboros/history/ for files > 7 days old`
+- .ouroboros/history/ for files > 7 days old
+- RETURN: List of {path, age, action: delete|archive}`
 )
 ```
 

@@ -460,6 +460,39 @@ Confirm context updated, then [CONTEXT UPDATED]
 
 ---
 
+## 🚀 PARALLEL OPPORTUNITIES
+
+> [!TIP]
+> **Spec phases are sequential, but post-phase operations can be parallelized.**
+
+### What CAN Be Parallelized
+
+| Operation A | Operation B | Parallel? | Why |
+|-------------|-------------|-----------|-----|
+| Verify file exists (`read`) | Context update (`writer`) | ✅ Yes | Different targets |
+| Phase subagent | Context from previous phase | ❌ No | Phase needs prior output |
+| Researcher (Phase 1) | Analyst (deep dive) | ✅ Yes | Both read-only |
+
+### Example: Post-Phase Parallel Operations
+
+After each phase subagent returns, dispatch verification + context update **simultaneously**:
+
+```javascript
+// ✅ PARALLEL: Verify file creation while updating context
+runSubagent(
+  agent: "ouroboros-analyst",
+  prompt: `Verify .ouroboros/specs/[feature]/research.md exists and is valid`
+)
+
+runSubagent(
+  agent: "ouroboros-writer",
+  prompt: `[Context Update]: Phase 1 research complete for [feature]...`
+)
+// Both run at the same time — saves one round-trip per phase!
+```
+
+---
+
 ## 🔧 TOOL EXECUTION MANDATE
 
 > [!CRITICAL]
