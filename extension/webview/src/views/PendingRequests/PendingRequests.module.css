@@ -1046,6 +1046,62 @@
     flex: 1;
 }
 
+/* Option row: option button + insert button */
+.optionRow {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+}
+
+.optionRow .optionButton {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Insert-to-custom button */
+.insertButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    padding: 0;
+    background: var(--button-secondary-background);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+.insertButton:hover {
+    opacity: 1;
+    background: var(--button-secondary-hover);
+    border-color: var(--border-focus);
+    color: var(--link-foreground);
+    box-shadow: 0 0 6px rgba(0, 127, 212, 0.3);
+}
+
+.insertButton:active {
+    transform: scale(0.95);
+}
+
+.insertButton i {
+    font-size: 13px;
+}
+
+/* Confirm/Plan button row with insert */
+.buttonWithInsert {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+}
+
+.buttonWithInsert > button:first-child {
+    flex: 1;
+}
+
 /* Custom input toggle */
 .customToggle {
     display: flex;

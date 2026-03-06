@@ -860,6 +860,19 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
         });
     }, [request.id, onRespond]);
 
+    const handleInsertOption = useCallback((option: string) => {
+        setShowCustomInput(true);
+        setCustomValue(option);
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+                const len = option.length;
+                textareaRef.current.selectionStart = len;
+                textareaRef.current.selectionEnd = len;
+            }
+        }, 0);
+    }, []);
+
     const handleCustomSubmit = useCallback(() => {
         const trimmed = customValue.trim();
         if (!trimmed && attachments.length === 0) return;
@@ -986,10 +999,19 @@ function MenuContent({ request, data, onRespond, onCancel }: ContentProps & { da
             <div className={styles.userInputArea}>
                 <div className={styles.options}>
                     {data.options.map((option, index) => (
-                        <button key={index} className={styles.optionButton} onClick={() => handleSelect(index, option)}>
-                            <span className={styles.optionNumber}>{index + 1}</span>
-                            <span className={styles.optionText}>{option}</span>
-                        </button>
+                        <div key={index} className={styles.optionRow}>
+                            <button className={styles.optionButton} onClick={() => handleSelect(index, option)}>
+                                <span className={styles.optionNumber}>{index + 1}</span>
+                                <span className={styles.optionText}>{option}</span>
+                            </button>
+                            <button
+                                className={styles.insertButton}
+                                onClick={(e) => { e.stopPropagation(); handleInsertOption(option); }}
+                                title="Insert to custom input"
+                            >
+                                <Icon name="insert" />
+                            </button>
+                        </div>
                     ))}
                 </div>
 
@@ -1089,6 +1111,19 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
     const handleConfirm = useCallback((confirmed: boolean) => {
         onRespond(request.id, { confirmed, cancelled: false });
     }, [request.id, onRespond]);
+
+    const handleInsertOption = useCallback((label: string) => {
+        setShowCustomInput(true);
+        setCustomValue(label);
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+                const len = label.length;
+                textareaRef.current.selectionStart = len;
+                textareaRef.current.selectionEnd = len;
+            }
+        }, 0);
+    }, []);
 
     const handleCustomSubmit = useCallback(() => {
         const trimmed = customValue.trim();
@@ -1215,14 +1250,32 @@ function ConfirmContent({ request, data, onRespond, onCancel }: ContentProps & {
 
             <div className={styles.userInputArea}>
                 <div className={styles.confirmButtons}>
-                    <Button onClick={() => handleConfirm(true)}>
-                        <span className={styles.buttonShortcut}>Y</span>
-                        {data.yesLabel ?? 'Yes'}
-                    </Button>
-                    <Button variant="secondary" onClick={() => handleConfirm(false)}>
-                        <span className={styles.buttonShortcut}>N</span>
-                        {data.noLabel ?? 'No'}
-                    </Button>
+                    <div className={styles.buttonWithInsert}>
+                        <Button onClick={() => handleConfirm(true)}>
+                            <span className={styles.buttonShortcut}>Y</span>
+                            {data.yesLabel ?? 'Yes'}
+                        </Button>
+                        <button
+                            className={styles.insertButton}
+                            onClick={() => handleInsertOption(data.yesLabel ?? 'Yes')}
+                            title="Insert to custom input"
+                        >
+                            <Icon name="insert" />
+                        </button>
+                    </div>
+                    <div className={styles.buttonWithInsert}>
+                        <Button variant="secondary" onClick={() => handleConfirm(false)}>
+                            <span className={styles.buttonShortcut}>N</span>
+                            {data.noLabel ?? 'No'}
+                        </Button>
+                        <button
+                            className={styles.insertButton}
+                            onClick={() => handleInsertOption(data.noLabel ?? 'No')}
+                            title="Insert to custom input"
+                        >
+                            <Icon name="insert" />
+                        </button>
+                    </div>
                 </div>
 
                 {!showCustomInput ? (
@@ -1361,6 +1414,18 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
         clearAttachments();
         fileMentions.cancel();
     }, [request.id, customValue, attachments, onRespond, clearAttachments, fileMentions]);
+
+    const handleInsertToFeedback = useCallback((label: string) => {
+        setFeedback(label);
+        setTimeout(() => {
+            if (feedbackRef.current) {
+                feedbackRef.current.focus();
+                const len = label.length;
+                feedbackRef.current.selectionStart = len;
+                feedbackRef.current.selectionEnd = len;
+            }
+        }, 0);
+    }, []);
 
     const handleFeedbackChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newValue = e.target.value;
@@ -1592,20 +1657,47 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
                 />
 
                 <div className={styles.planActionButtons}>
-                    <Button size="small" onClick={() => handleApprove(true)}>
-                        <Icon name="check" /> Approve
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={handleRequestChanges}
-                        disabled={!feedback.trim() && attachments.length === 0}
-                    >
-                        <Icon name="edit" /> Request Changes
-                    </Button>
-                    <Button variant="ghost" size="small" onClick={() => handleApprove(false)}>
-                        <Icon name="close" /> Reject
-                    </Button>
+                    <div className={styles.buttonWithInsert}>
+                        <Button size="small" onClick={() => handleApprove(true)}>
+                            <Icon name="check" /> Approve
+                        </Button>
+                        <button
+                            className={styles.insertButton}
+                            onClick={() => handleInsertToFeedback('Approve')}
+                            title="Insert to feedback"
+                        >
+                            <Icon name="insert" />
+                        </button>
+                    </div>
+                    <div className={styles.buttonWithInsert}>
+                        <Button
+                            variant="secondary"
+                            size="small"
+                            onClick={handleRequestChanges}
+                            disabled={!feedback.trim() && attachments.length === 0}
+                        >
+                            <Icon name="edit" /> Request Changes
+                        </Button>
+                        <button
+                            className={styles.insertButton}
+                            onClick={() => handleInsertToFeedback('Request Changes')}
+                            title="Insert to feedback"
+                        >
+                            <Icon name="insert" />
+                        </button>
+                    </div>
+                    <div className={styles.buttonWithInsert}>
+                        <Button variant="ghost" size="small" onClick={() => handleApprove(false)}>
+                            <Icon name="close" /> Reject
+                        </Button>
+                        <button
+                            className={styles.insertButton}
+                            onClick={() => handleInsertToFeedback('Reject')}
+                            title="Insert to feedback"
+                        >
+                            <Icon name="insert" />
+                        </button>
+                    </div>
                 </div>
 
                 {!showCustomInput ? (
