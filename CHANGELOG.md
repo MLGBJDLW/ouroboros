@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.24] - 2026-03-06
+
+### Insert to Custom Input
+
+Allow users to take any selectable option and insert it into the free-text custom input for editing.
+
+### Added
+- **Insert Button (⤓)** — Every selectable option/button now has an insert icon on its right side:
+  - **Menu**: Each option row gets an insert button that pre-fills the custom input textarea
+  - **Confirm**: Yes/No buttons get insert buttons to copy the label into custom input
+  - **Plan Review**: Approve/Request Changes/Reject get insert buttons for the feedback textarea
+  - Automatically opens the custom input area, pre-fills text, and focuses with cursor at end
+
+### UI Files Changed
+- `PendingRequests.tsx` — Added `handleInsertOption` / `handleInsertToFeedback` callbacks, wrapped options in `.optionRow`, buttons in `.buttonWithInsert`
+- `PendingRequests.module.css` — Added `.optionRow`, `.insertButton`, `.buttonWithInsert` styles
+
+---
+
 ## [3.3.23] - 2026-02-13
 
 ### Parallel Subagent Dispatch

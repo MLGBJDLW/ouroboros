@@ -2,6 +2,17 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.24] - 2026-03-06
+
+### Added
+- **Insert to Custom Input** — Each selectable option now has an insert (⤓) button on the right side
+  - **Menu options**: Click insert to pre-fill the custom input with the option text for editing
+  - **Confirm buttons**: Insert Yes/No label into custom input for modification
+  - **Plan Review actions**: Insert Approve/Request Changes/Reject into feedback textarea
+  - Opens custom input area automatically and focuses the textarea with cursor at end
+
+---
+
 ## [3.3.23] - 2026-02-13
 
 ### Parallel Subagent Dispatch
