@@ -229,6 +229,17 @@ When analyzing code:
 
 ---
 
+### Architecture Fitness (include in every report)
+| Dimension | Assessment |
+|-----------|------------|
+| Pattern Alignment | Does proposed change match existing module/layer patterns? |
+| Coupling Delta | Does this increase coupling between modules? |
+| Cohesion Risk | Does this scatter responsibility across layers? |
+
+Flag as `[CONCERN: ARCHITECTURAL REGRESSION]` if any row shows degradation.
+
+---
+
 ## ❌ NEVER DO THIS
 
 ```markdown

@@ -209,6 +209,13 @@ Before completing, verify:
 
 ---
 
+## 🏗️ Non-Functional Requirements (Architecture)
+For each feature, check architectural constraints. Add as `REQ-NFR-XXX`:
+- e.g., `REQ-NFR-001: WHEN adding a service, SHALL follow existing Repository pattern`
+At least 1 architectural/maintainability NFR is expected per spec.
+
+---
+
 ## 🔍 PRD ALIGNMENT (WHEN PRD EXISTS)
 
 > [!IMPORTANT]

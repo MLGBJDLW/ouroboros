@@ -248,6 +248,14 @@ Before completing, verify:
 
 ---
 
+## 🏗️ Architectural Constraints (MANDATORY in research.md output)
+List 3-5 existing patterns the spec MUST respect, e.g.:
+- "All async operations use Result<T> not throws"
+- "Services never import from UI layer"
+This section feeds directly into design.md constraints.
+
+---
+
 ## 📐 RESEARCH PRINCIPLES
 
 | Principle | Meaning |

@@ -100,6 +100,8 @@ Before completing, verify:
 - [ ] I checked for similar bugs in related code
 - [ ] Fix is surgical (minimal change at the SOURCE)
 - [ ] No cascading breakage from the fix
+- [ ] Fix does not cross architectural module boundaries (no new cross-layer imports introduced)
+- [ ] Fix does not introduce a new pattern when an existing one already handles this case
 
 ---
 

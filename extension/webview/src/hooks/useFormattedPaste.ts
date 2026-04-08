@@ -23,7 +23,7 @@ import { htmlToMarkdown } from '../utils/htmlToMarkdown';
 
 /** Returns true if the HTML contains meaningful rich-text markup. */
 function hasRichContent(html: string): boolean {
-    // Browsers wrap even plain text in <html><body>…</body></html>.
+    // Browsers wrap even plain text in <html><body>...</body></html>.
     // Strip those wrappers and check whether any real tags remain.
     const stripped = html
         .replace(/<\/?(html|head|body|meta|!doctype)[^>]*>/gi, '')
@@ -64,11 +64,16 @@ export function useFormattedPaste(
             const newCursor = start + markdown.length;
             setCursorPosition?.(newCursor);
 
-            // Restore cursor after React re-renders the controlled value
+            // Restore cursor and trigger resize after React re-renders the controlled value.
+            // e.preventDefault() suppressed the browser's default paste, so no DOM input
+            // event fired and onChange/handleTextareaChange was never called. We must
+            // manually expand the height here.
             requestAnimationFrame(() => {
                 if (textareaRef.current) {
                     textareaRef.current.selectionStart = newCursor;
                     textareaRef.current.selectionEnd = newCursor;
+                    textareaRef.current.style.height = 'auto';
+                    textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 240) + 'px';
                 }
             });
 

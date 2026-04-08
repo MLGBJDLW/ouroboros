@@ -167,6 +167,11 @@ Full implementation: .ouroboros/subagent-docs/coder-auth-impl-2025-12-11.md
 - Identify coding patterns, naming conventions, and import structures
 - Note any related files that might be affected
 
+### Architecture Fit Check (MANDATORY before planning)
+- Identify which architectural layer/module this change belongs to (service, util, UI, hook, etc.)
+- Confirm change stays within that layer — raise `[CONCERN: ARCHITECTURAL IMPACT]` if it crosses module boundaries
+- Check: does an existing pattern already solve this? Only introduce new abstractions if proven necessary.
+
 ### Step 2.5: Verify Library Capabilities (MANDATORY)
 
 Before implementing features that rely on external libraries:

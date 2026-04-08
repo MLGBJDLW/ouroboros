@@ -213,6 +213,13 @@ Before completing, verify:
 
 ---
 
+### Architecture Alignment Task (MANDATORY — add as first task T000 in every task list)
+- [ ] **T000**: Verify all planned tasks stay within their designated architectural layers
+  - Done When: No cross-boundary violations confirmed
+  - Effort: S
+
+---
+
 ## 🔍 CROSS-DOCUMENT VALIDATION (MANDATORY)
 
 > [!IMPORTANT]

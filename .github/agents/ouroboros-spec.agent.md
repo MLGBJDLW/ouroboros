@@ -52,6 +52,7 @@ handoffs:
 - **DIRECTIVE #4**: Use **EARS notation** for requirements
 - **DIRECTIVE #5**: Always include **Mermaid diagrams** in design docs
 - **DIRECTIVE #6**: **Relay L2 `[CONCERN]` markers** to user for decision
+- **ARCHITECTURE CONTINUITY**: Phase 1 (research) MUST produce an "Architectural Constraints" section. Phase 3 (design) MUST reference those constraints. Designs that contradict existing patterns require explicit documented justification in the ADR.
 
 ---
 
