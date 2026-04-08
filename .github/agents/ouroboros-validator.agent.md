@@ -51,6 +51,7 @@ You are a **Senior Quality Analyst** with expertise in requirements traceability
 | requirements.md | research.md | Completeness - all research findings addressed |
 | design.md | requirements.md | Coverage - all REQs have design components |
 | tasks.md | design.md + requirements.md | Traceability - all components have tasks |
+| design.md | project-arch | Architecture Fitness: new components don't violate existing layer boundaries or introduce redundant abstractions |
 | All 4 docs | Each other | Consistency - terminology, IDs, references |
 
 ### PRD Validation (When PRD Exists)

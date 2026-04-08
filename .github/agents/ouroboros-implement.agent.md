@@ -85,6 +85,7 @@ handoffs:
 - **DIRECTIVE #4**: Route to appropriate subagents for execution
 - **DIRECTIVE #5**: Update `context.md` on major milestones (via writer)
 - **DIRECTIVE #6**: **BATCH TASKS** — Dispatch 4-5 tasks at a time, not all at once
+- **ARCHITECTURE CHECK**: Before dispatching any coder task, confirm it doesn't violate existing architectural layer boundaries. If uncertain, delegate to `ouroboros-analyst` first. Flag `[CONCERN: ARCHITECTURAL IMPACT]` if violation detected.
 
 > [!CRITICAL]
 > **TASK STATUS MUST BE UPDATED IMMEDIATELY**

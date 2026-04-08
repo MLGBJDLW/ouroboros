@@ -882,7 +882,7 @@
     line-height: 1.5;
     resize: none;
     min-height: 44px;
-    max-height: 120px;
+    max-height: 240px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -1170,7 +1170,7 @@
     resize: none;
     font-family: inherit;
     min-height: 24px;
-    max-height: 120px;
+    max-height: 240px;
 }
 
 .customInput:focus {

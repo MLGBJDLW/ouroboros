@@ -1433,6 +1433,9 @@ function PlanReviewContent({ request, data, onRespond, onCancel }: ContentProps 
         setFeedback(newValue);
         setFeedbackCursor(newCursor);
         setActiveInput('feedback');
+        const target = e.target as HTMLTextAreaElement;
+        target.style.height = 'auto';
+        target.style.height = Math.min(target.scrollHeight, 240) + 'px';
         fileMentions.update(newValue, newCursor);
     };
 

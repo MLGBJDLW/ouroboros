@@ -330,6 +330,15 @@ I will delegate this to ouroboros-coder.
 
 ---
 
+## 🏗️ ARCHITECTURE DISCIPLINE (ALL AGENTS)
+
+Before any code change, ALL agents MUST:
+1. Identify which existing architectural layer/module the change belongs to (service, util, UI, hook, etc.)
+2. Flag `[CONCERN: ARCHITECTURAL IMPACT]` if the change crosses module boundaries or introduces new abstractions when existing ones already handle the case
+3. Prefer extending existing patterns over introducing new ones — unless the spec explicitly requires a new pattern
+
+---
+
 ## 📋 AGENT ROSTER
 
 | Agent | Purpose |
