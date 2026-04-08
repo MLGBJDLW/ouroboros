@@ -2,6 +2,19 @@
 
 All notable changes to the Ouroboros AI VS Code Extension will be documented in this file.
 
+## [3.3.25] - 2026-04-07
+
+### Textarea Auto-Resize and Agent Architecture Integration
+
+### Added
+- **Textarea Auto-Resize on Paste** — Textarea now automatically resizes to fit content when text is pasted, preventing overflow and improving readability. Works across all input areas (Ask, Menu, Confirm, Plan Review feedback)
+- **Agent Architecture Awareness** — Enhanced integration with agent architecture patterns including improved context propagation for different agent execution levels and modes
+
+### Fixed
+- Textarea height calculation not updating correctly on paste events
+
+---
+
 ## [3.3.24] - 2026-03-06
 
 ### Added

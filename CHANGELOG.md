@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.25] - 2026-04-07
+
+### Textarea Auto-Resize and Agent Architecture Integration
+
+Enhanced user input experience with automatic textarea resizing and improved agent architecture awareness throughout the system.
+
+### Added
+- **Agent Architecture Awareness** — Enhanced agent context with better understanding of different agent types, execution modes, and architectural patterns:
+  - Improved Level 0/1/2 agent differentiation in task routing
+  - Better support for hierarchical agent workflows and delegation patterns
+  - Enhanced metadata tracking for agent execution context
+
+### Fixed
+- **Textarea Auto-Resize on Paste** — Fixed issue where textarea didn't automatically resize when content was pasted. Now properly recalculates height on paste events, preventing text overflow and improving usability in all input areas (Ask, Menu, Confirm, Plan Review)
+
+---
+
 ## [3.3.24] - 2026-03-06
 
 ### Insert to Custom Input
