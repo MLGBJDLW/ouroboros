@@ -8,6 +8,9 @@
 [![VS Code Extension](https://img.shields.io/visual-studio-marketplace/v/MLGBJDLW.ouroboros-ai?label=VS%20Code%20Extension&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=MLGBJDLW.ouroboros-ai)
 [![CI](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml/badge.svg)](https://github.com/MLGBJDLW/ouroboros/actions/workflows/ci.yml)
 
+> [!WARNING]
+> **Deprecation Notice**: This repository will be officially deprecated on **June 1, 2026**, due to upcoming changes to GitHub Copilot's billing model.
+
 ---
 
 ## 💰 Why Ouroboros?
